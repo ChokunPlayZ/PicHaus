@@ -7,8 +7,8 @@
                     <div class="flex items-center">
                         <h1 class="text-2xl font-bold text-white">📸 PicHaus</h1>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <span class="text-purple-200">{{ user?.name || 'User' }}</span>
+                    <div v-if="user" class="flex items-center space-x-4">
+                        <span class="text-purple-200">{{ user.name }}</span>
                         <button @click="handleLogout"
                             class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg transition">
                             Logout
@@ -21,13 +21,13 @@
         <!-- Main Content -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header with Create Button -->
-            <div class="flex justify-between items-center mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
                     <h2 class="text-3xl font-bold text-white mb-2">My Albums</h2>
                     <p class="text-purple-200">Manage your photo collections</p>
                 </div>
                 <button @click="showCreateModal = true"
-                    class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition duration-200 transform hover:scale-105 flex items-center space-x-2">
+                    class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition duration-200 transform hover:scale-105 flex items-center justify-center space-x-2">
                     <span>+</span>
                     <span>Create Album</span>
                 </button>

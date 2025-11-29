@@ -54,6 +54,8 @@ model Photo {
   thumbnailUrl String?
   blurhash     String? // Blurhash for progressive image loading
   size         Int
+  width        Int
+  height       Int
   mimeType     String
   fileHash     String // SHA-256 hash for duplicate detection
 

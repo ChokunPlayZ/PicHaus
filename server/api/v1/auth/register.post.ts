@@ -50,7 +50,10 @@ export default defineEventHandler(async (event) => {
 
         return {
             success: true,
-            data: user,
+            data: {
+                ...user,
+                createdAt: Number(user.createdAt),
+            },
         }
     } catch (error: any) {
         console.error('Error creating user:', error)

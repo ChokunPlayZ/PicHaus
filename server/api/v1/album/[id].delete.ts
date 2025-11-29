@@ -1,4 +1,6 @@
 import prisma from '../../../utils/prisma'
+import { deleteFile } from '../../../utils/upload'
+import { requireAuth } from '../../../utils/auth'
 
 /**
  * Delete album and all associated photos
@@ -15,18 +17,12 @@ export default defineEventHandler(async (event) => {
         }
 
         // Get authenticated user
-        const authToken = getCookie(event, 'auth-token')
-
-        if (!authToken) {
-            throw createError({
-                statusCode: 401,
-                statusMessage: 'Not authenticated',
-            })
-        }
+        const user = await requireAuth(event)
 
         // Check if album exists and user is owner
         const album = await prisma.album.findUnique({
             where: { id },
+            include: { photos: true },
         })
 
         if (!album) {
@@ -36,11 +32,23 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        if (album.ownerId !== authToken) {
+        if (album.ownerId !== user.id) {
             throw createError({
                 statusCode: 403,
                 statusMessage: 'Only the album owner can delete this album',
             })
+        }
+
+        // Delete photo files from disk
+        if (album.photos && album.photos.length > 0) {
+            for (const photo of album.photos) {
+                if (photo.url) {
+                    await deleteFile(photo.url)
+                }
+                if (photo.thumbnailUrl) {
+                    await deleteFile(photo.thumbnailUrl)
+                }
+            }
         }
 
         // Delete album (cascade will delete photos and collaborators)

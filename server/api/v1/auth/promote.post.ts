@@ -1,11 +1,12 @@
 import prisma from '../../../utils/prisma'
-import { hashPassword, getUnixTimestamp } from '../../../utils/auth'
+import { hashPassword, getUnixTimestamp, requireAuth } from '../../../utils/auth'
 
 /**
  * Promote a guest user (no password) to a registered user with login credentials
  */
 export default defineEventHandler(async (event) => {
     try {
+        const currentUser = await requireAuth(event)
         const body = await readBody(event)
 
         // Validate required fields
@@ -13,6 +14,14 @@ export default defineEventHandler(async (event) => {
             throw createError({
                 statusCode: 400,
                 statusMessage: 'User ID, email, and password are required',
+            })
+        }
+
+        // Verify the authenticated user matches the user to be promoted
+        if (currentUser.id !== body.userId) {
+            throw createError({
+                statusCode: 403,
+                statusMessage: 'You can only promote your own account',
             })
         }
 

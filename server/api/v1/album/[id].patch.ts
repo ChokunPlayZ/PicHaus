@@ -1,5 +1,5 @@
 import prisma from '../../../utils/prisma'
-import { getUnixTimestamp } from '../../../utils/auth'
+import { getUnixTimestamp, requireAuth } from '../../../utils/auth'
 
 /**
  * Update album details
@@ -16,14 +16,7 @@ export default defineEventHandler(async (event) => {
         }
 
         // Get authenticated user
-        const authToken = getCookie(event, 'auth-token')
-
-        if (!authToken) {
-            throw createError({
-                statusCode: 401,
-                statusMessage: 'Not authenticated',
-            })
-        }
+        const user = await requireAuth(event)
 
         // Check if album exists and user has permission
         const album = await prisma.album.findUnique({
@@ -31,7 +24,7 @@ export default defineEventHandler(async (event) => {
             include: {
                 collaborators: {
                     where: {
-                        userId: authToken,
+                        userId: user.id,
                         role: {
                             in: ['admin', 'editor'],
                         },
@@ -47,7 +40,7 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        const isOwner = album.ownerId === authToken
+        const isOwner = album.ownerId === user.id
         const isAdminCollaborator = album.collaborators.length > 0
 
         if (!isOwner && !isAdminCollaborator) {

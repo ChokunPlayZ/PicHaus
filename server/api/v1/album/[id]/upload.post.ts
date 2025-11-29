@@ -1,5 +1,5 @@
 import prisma from '../../../../utils/prisma'
-import { getUnixTimestamp } from '../../../../utils/auth'
+import { getUnixTimestamp, requireAuth } from '../../../../utils/auth'
 import {
     calculateFileHash,
     generateThumbnail,
@@ -36,8 +36,30 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // Get authenticated user (optional - can upload via upload link)
-        const authToken = getCookie(event, 'auth-token')
+        // Get authenticated user
+        const user = await requireAuth(event)
+
+        // Check permissions
+        const isOwner = album.ownerId === user.id
+        // TODO: Check for collaborator permissions if needed
+
+        if (!isOwner) {
+            // Check if user is a collaborator with editor role
+            const collaborator = await prisma.albumCollaborator.findFirst({
+                where: {
+                    albumId,
+                    userId: user.id,
+                    role: { in: ['admin', 'editor'] }
+                }
+            })
+
+            if (!collaborator) {
+                throw createError({
+                    statusCode: 403,
+                    statusMessage: 'You do not have permission to upload to this album',
+                })
+            }
+        }
 
         // Parse multipart form data
         const formData = await readMultipartFormData(event)
@@ -119,7 +141,7 @@ export default defineEventHandler(async (event) => {
                 mimeType: fileData.type || 'image/jpeg',
                 fileHash,
                 albumId,
-                uploaderId: authToken || null,
+                uploaderId: user.id,
                 cameraModel: exifData.cameraModel || null,
                 lens: exifData.lens || null,
                 focalLength: exifData.focalLength || null,
@@ -127,6 +149,8 @@ export default defineEventHandler(async (event) => {
                 aperture: exifData.aperture || null,
                 shutterSpeed: exifData.shutterSpeed || null,
                 dateTaken: exifData.dateTaken ? BigInt(exifData.dateTaken) : null,
+                width: exifData.width || 0,
+                height: exifData.height || 0,
                 createdAt: now,
                 updatedAt: now,
             },

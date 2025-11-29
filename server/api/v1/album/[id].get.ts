@@ -17,6 +17,12 @@ export default defineEventHandler(async (event) => {
         // Get authenticated user (optional for public albums)
         const authToken = getCookie(event, 'auth-token')
 
+        const query = getQuery(event)
+        const page = Number(query.page) || 1
+        const limit = Number(query.limit) || 50
+        const skip = (page - 1) * limit
+
+        // 1. Fetch Album details (without photos)
         const album = await prisma.album.findUnique({
             where: { id },
             include: {
@@ -28,25 +34,7 @@ export default defineEventHandler(async (event) => {
                         instagram: true,
                     },
                 },
-                photos: {
-                    select: {
-                        id: true,
-                        url: true,
-                        thumbnailUrl: true,
-                        filename: true,
-                        dateTaken: true,
-                        createdAt: true,
-                        uploader: {
-                            select: {
-                                id: true,
-                                name: true,
-                            },
-                        },
-                    },
-                    orderBy: {
-                        createdAt: 'desc',
-                    },
-                },
+                // Photos are fetched separately for pagination
                 collaborators: {
                     include: {
                         user: {
@@ -86,8 +74,44 @@ export default defineEventHandler(async (event) => {
             })
         }
 
+        // 2. Fetch Photos separately with pagination
+        const photos = await prisma.photo.findMany({
+            where: { albumId: id },
+            select: {
+                id: true,
+                url: true,
+                thumbnailUrl: true,
+                filename: true,
+                originalName: true,
+                size: true,
+                blurhash: true,
+                dateTaken: true,
+                createdAt: true,
+                width: true,
+                height: true,
+                // EXIF data
+                cameraModel: true,
+                lens: true,
+                focalLength: true,
+                aperture: true,
+                shutterSpeed: true,
+                iso: true,
+                uploader: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+            skip,
+            take: limit,
+        })
+
         // Convert BigInt timestamps
-        const photos = album.photos.map((photo: any) => ({
+        const mappedPhotos = photos.map((photo: any) => ({
             ...photo,
             dateTaken: photo.dateTaken ? Number(photo.dateTaken) : null,
             createdAt: Number(photo.createdAt),
@@ -107,7 +131,7 @@ export default defineEventHandler(async (event) => {
                 createdAt: Number(album.createdAt),
                 updatedAt: Number(album.updatedAt),
                 eventDate: album.eventDate ? Number(album.eventDate) : null,
-                photos,
+                photos: mappedPhotos,
                 collaborators,
                 permissions: {
                     isOwner,
@@ -115,6 +139,12 @@ export default defineEventHandler(async (event) => {
                     canEdit: isOwner || isCollaborator,
                     canDelete: isOwner,
                 },
+                pagination: {
+                    page,
+                    limit,
+                    total: album._count.photos,
+                    hasMore: skip + photos.length < album._count.photos
+                }
             },
         }
     } catch (error: any) {

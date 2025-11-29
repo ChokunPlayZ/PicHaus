@@ -13,12 +13,58 @@
             </div>
         </div>
 
+        <!-- Guest Login -->
+        <div v-else-if="!isLoggedIn && albumInfo" class="max-w-md mx-auto px-4 py-12">
+            <div class="text-center mb-8">
+                <h1 class="text-5xl font-bold text-white mb-2">📸 PicHaus</h1>
+                <p class="text-purple-200">Join to upload photos</p>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8">
+                <h2 class="text-2xl font-bold text-white mb-2">{{ albumInfo.albumName }}</h2>
+                <p class="text-purple-200 mb-6 text-sm">Please identify yourself to contribute</p>
+
+                <form @submit.prevent="handleGuestLogin" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Name</label>
+                        <input v-model="guestForm.name" type="text" required
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="Your Name" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Email</label>
+                        <input v-model="guestForm.email" type="email" required
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="your@email.com" />
+                    </div>
+
+                    <div v-if="albumInfo.requiresPassword">
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Album Password</label>
+                        <input v-model="guestForm.password" type="password" required
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="Enter album password" />
+                    </div>
+
+                    <div v-if="loginError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
+                        <p class="text-red-200 text-sm">{{ loginError }}</p>
+                    </div>
+
+                    <button type="submit" :disabled="loggingIn"
+                        class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50">
+                        {{ loggingIn ? 'Joining...' : 'Join Album' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+
         <!-- Upload Page -->
-        <div v-else-if="albumInfo" class="max-w-4xl mx-auto px-4 py-12">
+        <div v-else class="max-w-4xl mx-auto px-4 py-12">
             <!-- Header -->
             <div class="text-center mb-8">
                 <h1 class="text-5xl font-bold text-white mb-2">📸 PicHaus</h1>
                 <p class="text-purple-200">Upload your photos</p>
+                <p class="text-sm text-purple-300 mt-2">Logged in as {{ user?.name }}</p>
             </div>
 
             <!-- Album Info Card -->
@@ -91,6 +137,17 @@ const token = route.params.token as string
 const loading = ref(true)
 const error = ref('')
 const albumInfo = ref<any>(null)
+const isLoggedIn = ref(false)
+const user = ref<any>(null)
+
+// Guest login form
+const guestForm = ref({
+    name: '',
+    email: '',
+    password: '',
+})
+const loggingIn = ref(false)
+const loginError = ref('')
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFiles = ref<File[]>([])
@@ -98,6 +155,17 @@ const uploading = ref(false)
 const uploadProgress = ref({ current: 0, total: 0 })
 const uploadSuccess = ref(false)
 const uploadError = ref('')
+
+// Check auth
+const checkAuth = async () => {
+    try {
+        const response = await $fetch<{ success: boolean; data: any }>('/api/v1/auth/me')
+        user.value = response.data
+        isLoggedIn.value = true
+    } catch (err) {
+        isLoggedIn.value = false
+    }
+}
 
 // Fetch album info
 const fetchAlbumInfo = async () => {
@@ -108,6 +176,31 @@ const fetchAlbumInfo = async () => {
         error.value = err.data?.statusMessage || 'Invalid or expired upload link'
     } finally {
         loading.value = false
+    }
+}
+
+// Handle guest login
+const handleGuestLogin = async () => {
+    loggingIn.value = true
+    loginError.value = ''
+
+    try {
+        const response = await $fetch<{ success: boolean; data: any }>('/api/v1/auth/guest-login', {
+            method: 'POST',
+            body: {
+                token,
+                name: guestForm.value.name,
+                email: guestForm.value.email,
+                password: guestForm.value.password,
+            },
+        })
+
+        user.value = response.data
+        isLoggedIn.value = true
+    } catch (err: any) {
+        loginError.value = err.data?.statusMessage || 'Login failed'
+    } finally {
+        loggingIn.value = false
     }
 }
 
@@ -173,6 +266,7 @@ const formatDate = (timestamp: number) => {
 
 // Initialize
 onMounted(async () => {
+    await checkAuth()
     await fetchAlbumInfo()
 })
 </script>

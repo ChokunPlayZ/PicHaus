@@ -50,9 +50,11 @@ export async function generateBlurhash(buffer: Buffer): Promise<string> {
 }
 
 /**
- * Extract EXIF data from image buffer
+ * Extract EXIF data and dimensions from image buffer
  */
 export async function extractExifData(buffer: Buffer): Promise<{
+    width?: number
+    height?: number
     cameraModel?: string
     lens?: string
     focalLength?: string
@@ -62,23 +64,29 @@ export async function extractExifData(buffer: Buffer): Promise<{
     dateTaken?: number
 }> {
     try {
+        // Get dimensions from sharp
+        const metadata = await sharp(buffer).metadata()
+
         const exif = await exifr.parse(buffer, {
             pick: ['Make', 'Model', 'LensModel', 'FocalLength', 'ISO', 'FNumber', 'ExposureTime', 'DateTimeOriginal'],
         })
 
-        if (!exif) {
-            return {}
+        const result: any = {
+            width: metadata.width,
+            height: metadata.height,
         }
 
-        return {
-            cameraModel: exif.Model ? `${exif.Make || ''} ${exif.Model}`.trim() : undefined,
-            lens: exif.LensModel || undefined,
-            focalLength: exif.FocalLength ? `${exif.FocalLength}mm` : undefined,
-            iso: exif.ISO || undefined,
-            aperture: exif.FNumber ? `f/${exif.FNumber}` : undefined,
-            shutterSpeed: exif.ExposureTime ? `1/${Math.round(1 / exif.ExposureTime)}s` : undefined,
-            dateTaken: exif.DateTimeOriginal ? Math.floor(new Date(exif.DateTimeOriginal).getTime() / 1000) : undefined,
+        if (exif) {
+            result.cameraModel = exif.Model ? `${exif.Make || ''} ${exif.Model}`.trim() : undefined
+            result.lens = exif.LensModel || undefined
+            result.focalLength = exif.FocalLength ? `${exif.FocalLength}mm` : undefined
+            result.iso = exif.ISO || undefined
+            result.aperture = exif.FNumber ? `f/${exif.FNumber}` : undefined
+            result.shutterSpeed = exif.ExposureTime ? `1/${Math.round(1 / exif.ExposureTime)}s` : undefined
+            result.dateTaken = exif.DateTimeOriginal ? Math.floor(new Date(exif.DateTimeOriginal).getTime() / 1000) : undefined
         }
+
+        return result
     } catch (error) {
         console.error('Error extracting EXIF data:', error)
         return {}
@@ -134,4 +142,38 @@ export function generateUniqueFilename(originalName: string, hash: string, isWeb
     const ext = isWebP ? 'webp' : (originalName.split('.').pop() || 'jpg')
     const timestamp = Date.now()
     return `${hash.substring(0, 16)}_${timestamp}.${ext}`
+}
+
+/**
+ * Delete file from disk
+ */
+export async function deleteFile(publicPath: string): Promise<boolean> {
+    if (!publicPath) return false
+
+    try {
+        const uploadBaseDir = process.env.UPLOAD_DIR || 'public/uploads'
+        // publicPath typically starts with /, e.g. /uploads/photos/filename.jpg
+        // We need to construct the absolute path
+
+        // Remove leading slash if present
+        const relativePath = publicPath.startsWith('/') ? publicPath.substring(1) : publicPath
+
+        // If the path already includes the base dir (e.g. uploads/...), we need to be careful
+        // The saveFile function returns paths like /uploads/photos/filename.jpg (if base is public/uploads)
+        // So we can map it back.
+
+        // Let's assume standard structure: public/uploads/photos/filename.jpg
+        // publicPath: /uploads/photos/filename.jpg
+
+        // If we join process.cwd() + public + publicPath (as returned by saveFile which strips 'public')
+        const fullPath = join(process.cwd(), 'public', relativePath)
+
+        // Check if file exists (using fs/promises access or just try unlink)
+        const { unlink } = await import('fs/promises')
+        await unlink(fullPath)
+        return true
+    } catch (error) {
+        console.error(`Failed to delete file ${publicPath}:`, error)
+        return false
+    }
 }

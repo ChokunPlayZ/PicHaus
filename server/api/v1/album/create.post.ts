@@ -1,5 +1,5 @@
 import prisma from '../../../utils/prisma'
-import { hashPassword, getUnixTimestamp } from '../../../utils/auth'
+import { hashPassword, getUnixTimestamp, requireAuth } from '../../../utils/auth'
 import { nanoid } from 'nanoid'
 
 /**
@@ -8,14 +8,7 @@ import { nanoid } from 'nanoid'
 export default defineEventHandler(async (event) => {
     try {
         // Get authenticated user
-        const authToken = getCookie(event, 'auth-token')
-
-        if (!authToken) {
-            throw createError({
-                statusCode: 401,
-                statusMessage: 'Not authenticated',
-            })
-        }
+        const user = await requireAuth(event)
 
         const body = await readBody(event)
 
@@ -42,7 +35,7 @@ export default defineEventHandler(async (event) => {
                 description: body.description || null,
                 eventDate: body.eventDate ? BigInt(body.eventDate) : null,
                 isPublic: body.isPublic ?? false,
-                ownerId: authToken,
+                ownerId: user.id,
                 uploadLink: uploadLinkToken,
                 uploadPassword,
                 createdAt: now,

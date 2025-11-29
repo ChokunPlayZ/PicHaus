@@ -64,3 +64,35 @@ export function unixTimestampToDate(timestamp: bigint | number): Date {
     const ts = typeof timestamp === 'bigint' ? Number(timestamp) : timestamp
     return new Date(ts * 1000)
 }
+/**
+ * Require authentication for a request
+ * @param event - H3 event
+ * @returns Authenticated user
+ * @throws 401 if not authenticated
+ */
+export async function requireAuth(event: any) {
+    const authToken = getCookie(event, 'auth-token')
+
+    if (!authToken) {
+        throw createError({
+            statusCode: 401,
+            statusMessage: 'Not authenticated',
+        })
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { id: authToken },
+    })
+
+    if (!user) {
+        // Clear invalid cookie
+        deleteCookie(event, 'auth-token')
+
+        throw createError({
+            statusCode: 401,
+            statusMessage: 'Invalid session',
+        })
+    }
+
+    return user
+}
