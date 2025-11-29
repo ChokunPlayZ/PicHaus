@@ -31,11 +31,12 @@
         </div>
 
         <!-- Album Content (Authenticated) -->
-        <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
             <!-- Header -->
-            <div class="mb-8 text-center md:text-left">
-                <h1 class="text-4xl font-bold text-white mb-2">{{ albumName }}</h1>
-                <div class="flex flex-col md:flex-row items-center md:items-start text-purple-200 gap-2 md:gap-4">
+            <div class="mb-6 sm:mb-8 text-center md:text-left">
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">{{ albumName }}</h1>
+                <div
+                    class="flex flex-col md:flex-row items-center md:items-start text-purple-200 gap-2 md:gap-4 text-sm sm:text-base">
                     <span v-if="eventDate">{{ formatDate(eventDate) }}</span>
                     <span v-if="description" class="text-white/60">{{ description }}</span>
                     <span v-if="ownerName" class="text-white/40">by {{ ownerName }}</span>
@@ -44,20 +45,20 @@
 
             <!-- Loading Photos State -->
             <div v-if="loadingPhotos && photos.length === 0" class="text-center py-12">
-                <div class="animate-pulse text-purple-300 text-xl">Loading photos...</div>
+                <div class="animate-pulse text-purple-300 text-lg sm:text-xl">Loading photos...</div>
             </div>
 
             <!-- Empty State -->
             <div v-else-if="photos.length === 0" class="text-center py-12 bg-white/5 rounded-xl border border-white/10">
-                <div class="text-6xl mb-4">📷</div>
-                <h3 class="text-xl font-bold text-white mb-2">No photos yet</h3>
+                <div class="text-5xl sm:text-6xl mb-4">📷</div>
+                <h3 class="text-lg sm:text-xl font-bold text-white mb-2">No photos yet</h3>
             </div>
 
             <!-- Photo Grid -->
             <div v-else-if="picturesLayout" ref="containerRef" class="relative mx-auto"
                 :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
                 <div v-for="(photo, index) in photos" :key="photo.id" @click="openPhotoViewer(index)"
-                    class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 hover:border-purple-400/50 transition-transform hover:-translate-y-1 group"
+                    class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 hover:border-purple-400/50 transition-all hover:-translate-y-1 active:scale-95 group"
                     :style="{
                         top: `${picturesLayout.getPosition(index).top}px`,
                         left: `${picturesLayout.getPosition(index).left}px`,
@@ -70,14 +71,15 @@
                         class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
                     <div v-else
                         class="w-full h-full bg-gradient-to-br from-purple-900/30 to-pink-900/30 flex items-center justify-center relative z-10">
-                        <span class="text-4xl">📸</span>
+                        <span class="text-3xl sm:text-4xl">📸</span>
                     </div>
                 </div>
             </div>
 
             <!-- Infinite Scroll Sentinel -->
             <div ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
-                <div v-if="loadingMore" class="animate-pulse text-purple-300">Loading more photos...</div>
+                <div v-if="loadingMore" class="animate-pulse text-purple-300 text-sm sm:text-base">Loading more
+                    photos...</div>
             </div>
         </div>
 
@@ -256,10 +258,13 @@ const picturesLayout = computed(() => {
         photos.value.map(photo => (photo.width || 1) / (photo.height || 1))
     )
 
+    // Responsive row height based on screen size
+    const rowHeight = typeof window !== 'undefined' && window.innerWidth < 640 ? 120 : 180
+
     return new JustifiedLayout(aspectRatios, {
-        rowHeight: 180,
+        rowHeight,
         rowWidth: containerWidth.value,
-        spacing: 12,
+        spacing: typeof window !== 'undefined' && window.innerWidth < 640 ? 8 : 12,
         heightTolerance: 0.1,
     })
 })
