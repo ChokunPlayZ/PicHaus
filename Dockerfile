@@ -19,6 +19,7 @@ COPY . .
 RUN bunx prisma generate
 
 RUN bun --bun run build
+RUN apt-get update -y && apt-get install -y openssl
 
 # copy production dependencies and source code into final image
 FROM oven/bun:slim AS production
