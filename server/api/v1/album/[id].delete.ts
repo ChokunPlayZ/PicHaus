@@ -42,11 +42,11 @@ export default defineEventHandler(async (event) => {
         // Delete photo files from disk
         if (album.photos && album.photos.length > 0) {
             for (const photo of album.photos) {
-                if (photo.url) {
-                    await deleteFile(photo.url)
+                if (photo.storagePath) {
+                    await deleteFile(photo.storagePath)
                 }
-                if (photo.thumbnailUrl) {
-                    await deleteFile(photo.thumbnailUrl)
+                if (photo.thumbnailStoragePath) {
+                    await deleteFile(photo.thumbnailStoragePath)
                 }
             }
         }
