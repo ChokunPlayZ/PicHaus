@@ -110,10 +110,10 @@
                 <div v-if="uploading" class="mt-4 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-4">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-white">Uploading {{ uploadProgress.current }} of {{ uploadProgress.total
-                        }}...</span>
+                            }}...</span>
                         <span class="text-purple-300">{{ Math.round((uploadProgress.current / uploadProgress.total) *
                             100)
-                        }}%</span>
+                            }}%</span>
                     </div>
                     <div class="w-full bg-white/10 rounded-full h-2">
                         <div class="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-300"
@@ -174,7 +174,7 @@
                         <p class="text-purple-300 text-sm">{{ collab.user.email }}</p>
                     </div>
                     <span class="px-3 py-1 bg-purple-500/20 text-purple-200 rounded-full text-sm">{{ collab.role
-                        }}</span>
+                    }}</span>
                 </div>
             </div>
         </div>
@@ -460,9 +460,15 @@ const selectedPhoto = computed(() => {
     return photos.value[selectedPhotoIndex.value]
 })
 
-// Set page title dynamically
-useHead({
-    title: computed(() => album.value?.name ? `${album.value.name} | PicHaus` : 'PicHaus')
+// Set page title and SEO meta
+useSeoMeta({
+    title: computed(() => album.value?.name ? `${album.value.name} | PicHaus` : 'PicHaus'),
+    ogTitle: computed(() => album.value?.name),
+    description: computed(() => album.value?.description || `View ${album.value?.name || 'album'} on PicHaus`),
+    ogDescription: computed(() => album.value?.description || `View ${album.value?.name || 'album'} on PicHaus`),
+    ogImage: computed(() => album.value ? `/api/v1/album/${albumId}/og-image` : null),
+    twitterCard: 'summary_large_image',
+    twitterImage: computed(() => album.value ? `/api/v1/album/${albumId}/og-image` : null),
 })
 
 // Share Modal State
