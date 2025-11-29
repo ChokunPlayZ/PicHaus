@@ -27,37 +27,54 @@ model User {
 }
 
 model Album {
-  id             String  @id @default(uuid()) @db.Uuid
-  title          String
-  description    String?
-  eventDate      BigInt? // Unix timestamp for when the event occurred
-  uploadLink     String  @unique
-  uploadPassword String?
-  isPublic       Boolean @default(false)
-  createdAt      BigInt // Unix timestamp
-  updatedAt      BigInt // Unix timestamp
+  id          String  @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  eventDate   BigInt? // Unix timestamp for when the event occurred
+  isPublic    Boolean @default(false)
+  createdAt   BigInt // Unix timestamp
+  updatedAt   BigInt // Unix timestamp
 
   ownerId String @db.Uuid
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   photos        Photo[]
   collaborators AlbumCollaborator[]
+  shareLinks    ShareLink[]
 
   @@map("albums")
 }
 
+model ShareLink {
+  id        String  @id @default(uuid()) @db.Uuid
+  token     String  @unique
+  type      String  @default("view") // view, upload
+  password  String?
+  label     String?
+  views     Int     @default(0)
+  createdAt BigInt // Unix timestamp
+  expiresAt BigInt? // Unix timestamp
+
+  albumId String @db.Uuid
+  album   Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@map("share_links")
+}
+
 model Photo {
-  id           String  @id @default(uuid()) @db.Uuid
-  filename     String
-  originalName String
-  url          String
-  thumbnailUrl String?
-  blurhash     String? // Blurhash for progressive image loading
-  size         Int
-  width        Int
-  height       Int
-  mimeType     String
-  fileHash     String // SHA-256 hash for duplicate detection
+  id                   String  @id @default(uuid()) @db.Uuid
+  filename             String
+  originalName         String
+  url                  String // Public API URL
+  thumbnailUrl         String? // Public API URL
+  storagePath          String? // Internal storage path
+  thumbnailStoragePath String? // Internal storage path for thumbnail
+  blurhash             String? // Blurhash for progressive image loading
+  size                 Int
+  width                Int
+  height               Int
+  mimeType             String
+  fileHash             String // SHA-256 hash for duplicate detection
 
   // EXIF data
   cameraModel  String?

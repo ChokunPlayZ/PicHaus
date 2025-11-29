@@ -14,45 +14,55 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // Find album by upload link token
-        const album = await prisma.album.findUnique({
-            where: { uploadLink: token },
-            select: {
-                id: true,
-                title: true,
-                description: true,
-                eventDate: true,
-                uploadPassword: true,
-                owner: {
+        // Find share link
+        const shareLink = await prisma.shareLink.findUnique({
+            where: { token },
+            include: {
+                album: {
                     select: {
-                        name: true,
-                    },
-                },
-                _count: {
-                    select: {
-                        photos: true,
+                        id: true,
+                        title: true,
+                        description: true,
+                        eventDate: true,
+                        owner: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                        _count: {
+                            select: {
+                                photos: true,
+                            },
+                        },
                     },
                 },
             },
         })
 
-        if (!album) {
+        if (!shareLink) {
             throw createError({
                 statusCode: 404,
-                statusMessage: 'Upload link not found or expired',
+                statusMessage: 'Link not found or expired',
             })
         }
+
+        // Check if it's an upload link (if this endpoint is strictly for upload page)
+        // The user said "link can be view and upload".
+        // If this is for the upload page, maybe we only allow upload links?
+        // But maybe we want to show the album info regardless.
+        // Let's return the type so frontend can decide.
 
         return {
             success: true,
             data: {
-                albumId: album.id,
-                albumName: album.title,
-                description: album.description,
-                eventDate: album.eventDate ? Number(album.eventDate) : null,
-                ownerName: album.owner.name,
-                photoCount: album._count.photos,
-                requiresPassword: !!album.uploadPassword,
+                albumId: shareLink.album.id,
+                albumName: shareLink.album.title,
+                description: shareLink.album.description,
+                eventDate: shareLink.album.eventDate ? Number(shareLink.album.eventDate) : null,
+                ownerName: shareLink.album.owner.name,
+                photoCount: shareLink.album._count.photos,
+                requiresPassword: !!shareLink.password,
+                type: shareLink.type,
             },
         }
     } catch (error: any) {

@@ -26,3 +26,4 @@ logs
 /app/generated/prisma
 /prisma/migrations
 /public/uploads
+/storage

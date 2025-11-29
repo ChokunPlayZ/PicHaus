@@ -127,7 +127,6 @@ export default defineEventHandler(async (event) => {
             data: {
                 ...album,
                 name: album.title, // Map title to name for frontend
-                uploadLinkToken: album.uploadLink, // Map uploadLink to uploadLinkToken for frontend
                 createdAt: Number(album.createdAt),
                 updatedAt: Number(album.updatedAt),
                 eventDate: album.eventDate ? Number(album.eventDate) : null,

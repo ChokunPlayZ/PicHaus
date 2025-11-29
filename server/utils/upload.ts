@@ -101,8 +101,8 @@ export async function saveFile(
     filename: string,
     subdirectory: string = 'photos'
 ): Promise<string> {
-    const uploadBaseDir = process.env.UPLOAD_DIR || 'public/uploads'
-    const uploadDir = join(process.cwd(), uploadBaseDir, subdirectory)
+    const storageBaseDir = process.env.STORAGE_DIR || 'storage/uploads'
+    const uploadDir = join(process.cwd(), storageBaseDir, subdirectory)
 
     // Ensure directory exists
     await mkdir(uploadDir, { recursive: true })
@@ -110,9 +110,16 @@ export async function saveFile(
     const filePath = join(uploadDir, filename)
     await writeFile(filePath, buffer)
 
-    // Return public URL path (remove 'public/' prefix)
-    const publicPath = uploadBaseDir.replace(/^public\//, '')
-    return `/${publicPath}/${subdirectory}/${filename}`
+    // Return storage path (relative to storage root)
+    return `${subdirectory}/${filename}`
+}
+
+/**
+ * Get absolute file path from storage path
+ */
+export function getAbsoluteFilePath(storagePath: string): string {
+    const storageBaseDir = process.env.STORAGE_DIR || 'storage/uploads'
+    return join(process.cwd(), storageBaseDir, storagePath)
 }
 
 /**
@@ -147,33 +154,18 @@ export function generateUniqueFilename(originalName: string, hash: string, isWeb
 /**
  * Delete file from disk
  */
-export async function deleteFile(publicPath: string): Promise<boolean> {
-    if (!publicPath) return false
+export async function deleteFile(storagePath: string): Promise<boolean> {
+    if (!storagePath) return false
 
     try {
-        const uploadBaseDir = process.env.UPLOAD_DIR || 'public/uploads'
-        // publicPath typically starts with /, e.g. /uploads/photos/filename.jpg
-        // We need to construct the absolute path
-
-        // Remove leading slash if present
-        const relativePath = publicPath.startsWith('/') ? publicPath.substring(1) : publicPath
-
-        // If the path already includes the base dir (e.g. uploads/...), we need to be careful
-        // The saveFile function returns paths like /uploads/photos/filename.jpg (if base is public/uploads)
-        // So we can map it back.
-
-        // Let's assume standard structure: public/uploads/photos/filename.jpg
-        // publicPath: /uploads/photos/filename.jpg
-
-        // If we join process.cwd() + public + publicPath (as returned by saveFile which strips 'public')
-        const fullPath = join(process.cwd(), 'public', relativePath)
+        const fullPath = getAbsoluteFilePath(storagePath)
 
         // Check if file exists (using fs/promises access or just try unlink)
         const { unlink } = await import('fs/promises')
         await unlink(fullPath)
         return true
     } catch (error) {
-        console.error(`Failed to delete file ${publicPath}:`, error)
+        console.error(`Failed to delete file ${storagePath}:`, error)
         return false
     }
 }

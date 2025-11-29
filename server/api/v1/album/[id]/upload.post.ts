@@ -1,5 +1,6 @@
 import prisma from '../../../../utils/prisma'
 import { getUnixTimestamp, requireAuth } from '../../../../utils/auth'
+import crypto from 'crypto'
 import {
     calculateFileHash,
     generateThumbnail,
@@ -119,23 +120,29 @@ export default defineEventHandler(async (event) => {
         const filename = generateUniqueFilename(originalFilename, fileHash)
         const thumbnailFilename = generateUniqueFilename(originalFilename, fileHash, true) // WebP
 
-        // Get directories from env
-        const photoDir = process.env.PHOTO_DIR || 'uploads/photos'
-        const thumbnailDir = process.env.THUMBNAIL_DIR || 'uploads/thumbnails'
+        // Generate ID upfront
+        const photoId = crypto.randomUUID()
 
         // Save files
-        const url = await saveFile(fileData.data, filename, photoDir)
-        const thumbnailUrl = await saveFile(thumbnailBuffer, thumbnailFilename, thumbnailDir)
+        // saveFile now returns the relative storage path
+        const storagePath = await saveFile(fileData.data, filename, 'photos')
+        const thumbnailStoragePath = await saveFile(thumbnailBuffer, thumbnailFilename, 'thumbnails')
+
+        const url = `/api/assets/${photoId}/full`
+        const thumbnailUrl = `/api/assets/${photoId}/thumb`
 
         const now = getUnixTimestamp()
 
         // Create photo record
         const photo = await prisma.photo.create({
             data: {
+                id: photoId,
                 filename,
                 originalName: originalFilename,
                 url,
                 thumbnailUrl,
+                storagePath,
+                thumbnailStoragePath,
                 blurhash,
                 size: fileData.data.length,
                 mimeType: fileData.type || 'image/jpeg',

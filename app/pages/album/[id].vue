@@ -1,19 +1,17 @@
 <template>
     <div class="min-h-screen bg-gradient-to-br from-[#5e4d56] to-[#3e3c5f]">
         <!-- Navigation Bar -->
-        <nav class="bg-white/10 backdrop-blur-lg border-b border-white/20">
+        <nav v-if="album && (album.permissions.isOwner || album.permissions.canEdit)"
+            class="bg-white/10 backdrop-blur-lg border-b border-white/20">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
-                    <button v-if="user" @click="navigateTo('/album')"
+                    <button @click="navigateTo('/album')"
                         class="flex items-center space-x-2 text-white hover:text-purple-300 transition">
                         <span>←</span>
                         <span>Back to Albums</span>
                     </button>
-                    <div v-else class="flex items-center">
-                        <h1 class="text-xl font-bold text-white">📸 PicHaus</h1>
-                    </div>
-                    <div v-if="user" class="flex items-center space-x-4">
-                        <span class="text-purple-200">{{ user.name }}</span>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-purple-200">{{ user?.name }}</span>
                         <button @click="handleLogout"
                             class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg transition">
                             Logout
@@ -51,10 +49,9 @@
 
                 <div class="flex flex-wrap gap-3 w-full md:w-auto">
                     <!-- Share Button -->
-                    <button v-if="album.isPublic" @click="copyAlbumLink"
+                    <button v-if="album.permissions.isOwner" @click="openShareModal"
                         class="flex-1 md:flex-none px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center gap-2">
-                        <span v-if="copied">Copied!</span>
-                        <span v-else>Share Album</span>
+                        <span>Share</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -63,7 +60,8 @@
                     </button>
 
                     <!-- Download All Button -->
-                    <button @click="downloadAll" :disabled="downloading"
+                    <button v-if="album.permissions.isOwner || album.permissions.canEdit" @click="downloadAll"
+                        :disabled="downloading"
                         class="flex-1 md:flex-none px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center gap-2 disabled:opacity-50">
                         <span v-if="downloading">
                             {{ downloadProgress.current }}/{{ downloadProgress.total }}
@@ -129,10 +127,10 @@
                 class="text-center py-12 bg-white/5 rounded-xl border border-white/10">
                 <div class="text-6xl mb-4">📷</div>
                 <h3 class="text-xl font-bold text-white mb-2">No photos yet</h3>
-                <p class="text-purple-200 mb-4">Upload photos or share the upload link</p>
-                <button @click="copyUploadLink"
+                <p class="text-purple-200 mb-4">Upload photos to get started</p>
+                <button v-if="album.permissions.isOwner" @click="openShareModal"
                     class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition">
-                    Get Upload Link
+                    Share Album
                 </button>
             </div>
 
@@ -165,7 +163,7 @@
         </div>
 
         <!-- Collaborators Section -->
-        <div v-if="album?.collaborators && album.collaborators.length > 0">
+        <div v-if="album?.collaborators && album.collaborators.length > 0 && album.permissions.isOwner">
             <h2 class="text-2xl font-bold text-white mb-4">Collaborators</h2>
             <div class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4">
                 <div v-for="collab in album.collaborators" :key="collab.id"
@@ -228,6 +226,101 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div v-if="showShareModal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        @click.self="showShareModal = false">
+        <div
+            class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-white">Share Album</h3>
+                <button @click="showShareModal = false" class="text-white/60 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Create New Link -->
+            <div class="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
+                <h4 class="text-lg font-semibold text-white mb-4">Create New Link</h4>
+                <form @submit.prevent="createShareLink" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-purple-200 mb-2">Type</label>
+                            <select v-model="newLink.type"
+                                class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="view">View Only</option>
+                                <option value="upload">Allow Uploads</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-purple-200 mb-2">Label (Optional)</label>
+                            <input v-model="newLink.label" type="text" placeholder="e.g. Family Group"
+                                class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Password (Optional)</label>
+                        <input v-model="newLink.password" type="password" placeholder="Leave empty for no password"
+                            class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    </div>
+                    <button type="submit" :disabled="creatingLink"
+                        class="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                        {{ creatingLink ? 'Creating...' : 'Create Link' }}
+                    </button>
+                </form>
+            </div>
+
+            <!-- Existing Links -->
+            <div>
+                <h4 class="text-lg font-semibold text-white mb-4">Active Links</h4>
+                <div v-if="loadingLinks" class="text-center py-4 text-purple-300">Loading links...</div>
+                <div v-else-if="shareLinks.length === 0" class="text-center py-4 text-white/50">
+                    No active share links.
+                </div>
+                <div v-else class="space-y-3">
+                    <div v-for="link in shareLinks" :key="link.id"
+                        class="bg-white/5 rounded-lg p-4 border border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-medium text-white">{{ link.label || 'Untitled Link' }}</span>
+                                <span :class="{
+                                    'bg-blue-500/20 text-blue-300': link.type === 'view',
+                                    'bg-green-500/20 text-green-300': link.type === 'upload'
+                                }" class="px-2 py-0.5 rounded text-xs uppercase border border-white/10">
+                                    {{ link.type }}
+                                </span>
+                                <span v-if="link.password" class="text-xs text-yellow-300 flex items-center gap-1">
+                                    🔒 Password
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2 text-sm text-white/60">
+                                <span class="truncate max-w-[200px]">{{ getShareUrl(link) }}</span>
+                                <button @click="copyLink(link)" class="text-purple-300 hover:text-purple-200">
+                                    {{ link.copied ? 'Copied!' : 'Copy' }}
+                                </button>
+                            </div>
+                            <div class="text-xs text-white/40 mt-1">
+                                Created {{ formatDate(link.createdAt) }} • {{ link.views }} views
+                            </div>
+                        </div>
+                        <button @click="deleteLink(link.id)"
+                            class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -300,7 +393,6 @@ interface Album {
     description: string | null
     eventDate: number | null
     isPublic: boolean
-    uploadLinkToken: string
     owner: User
     photos: Photo[]
     collaborators: Collaborator[]
@@ -309,6 +401,17 @@ interface Album {
         collaborators: number
     }
     permissions: Permissions
+}
+
+interface ShareLink {
+    id: string
+    token: string
+    type: 'view' | 'upload'
+    label: string | null
+    password: boolean // Backend returns boolean if password exists
+    views: number
+    createdAt: number
+    copied?: boolean
 }
 
 const route = useRoute()
@@ -348,6 +451,17 @@ const selectedPhotoIndex = ref<number | null>(null)
 const selectedPhoto = computed(() => {
     if (selectedPhotoIndex.value === null || !photos.value.length) return null
     return photos.value[selectedPhotoIndex.value]
+})
+
+// Share Modal State
+const showShareModal = ref(false)
+const shareLinks = ref<ShareLink[]>([])
+const loadingLinks = ref(false)
+const creatingLink = ref(false)
+const newLink = ref({
+    type: 'view',
+    label: '',
+    password: ''
 })
 
 // Layout state
@@ -571,13 +685,61 @@ const confirmDelete = async () => {
     }
 }
 
-// Copy upload link
-const copyUploadLink = async () => {
-    if (!album.value) return
-    const link = `${window.location.origin}/upload/${album.value.uploadLinkToken}`
-    await navigator.clipboard.writeText(link)
-    copied.value = true
-    setTimeout(() => copied.value = false, 2000)
+// Share Logic
+const openShareModal = async () => {
+    showShareModal.value = true
+    await fetchShareLinks()
+}
+
+const fetchShareLinks = async () => {
+    loadingLinks.value = true
+    try {
+        const response = await $fetch<{ success: boolean; data: ShareLink[] }>(`/api/v1/album/${albumId}/share-links`)
+        shareLinks.value = response.data
+    } catch (err) {
+        console.error('Failed to fetch share links:', err)
+    } finally {
+        loadingLinks.value = false
+    }
+}
+
+const createShareLink = async () => {
+    creatingLink.value = true
+    try {
+        await $fetch(`/api/v1/album/${albumId}/share-links`, {
+            method: 'POST',
+            body: newLink.value
+        })
+        newLink.value = { type: 'view', label: '', password: '' }
+        await fetchShareLinks()
+    } catch (err: any) {
+        alert(err.data?.statusMessage || 'Failed to create link')
+    } finally {
+        creatingLink.value = false
+    }
+}
+
+const deleteLink = async (id: string) => {
+    if (!confirm('Delete this link? Users will no longer be able to access it.')) return
+    try {
+        await $fetch(`/api/v1/share-links/${id}`, { method: 'DELETE' })
+        await fetchShareLinks()
+    } catch (err: any) {
+        alert(err.data?.statusMessage || 'Failed to delete link')
+    }
+}
+
+const getShareUrl = (link: ShareLink) => {
+    if (link.type === 'upload') {
+        return `${window.location.origin}/u/${link.token}`
+    }
+    return `${window.location.origin}/v/${link.token}`
+}
+
+const copyLink = async (link: ShareLink) => {
+    await navigator.clipboard.writeText(getShareUrl(link))
+    link.copied = true
+    setTimeout(() => link.copied = false, 2000)
 }
 
 // Download all photos
