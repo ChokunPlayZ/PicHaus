@@ -52,6 +52,63 @@ export default defineEventHandler(async (event) => {
         // But maybe we want to show the album info regardless.
         // Let's return the type so frontend can decide.
 
+        let photos: any[] = []
+        let pagination: any = null
+
+        if (!shareLink.password) {
+            const query = getQuery(event)
+            const page = Number(query.page) || 1
+            const limit = Number(query.limit) || 50
+            const skip = (page - 1) * limit
+
+            const [fetchedPhotos, total] = await Promise.all([
+                prisma.photo.findMany({
+                    where: { albumId: shareLink.album.id },
+                    select: {
+                        id: true,
+                        filename: true,
+                        originalName: true,
+                        size: true,
+                        blurhash: true,
+                        dateTaken: true,
+                        createdAt: true,
+                        width: true,
+                        height: true,
+                        cameraModel: true,
+                        lens: true,
+                        focalLength: true,
+                        aperture: true,
+                        shutterSpeed: true,
+                        iso: true,
+                        uploader: {
+                            select: {
+                                id: true,
+                                name: true,
+                                instagram: true,
+                            },
+                        },
+                    },
+                    orderBy: { createdAt: 'desc' },
+                    skip,
+                    take: limit,
+                }),
+                prisma.photo.count({ where: { albumId: shareLink.album.id } })
+            ])
+
+            photos = fetchedPhotos.map((photo: any) => ({
+                ...photo,
+                dateTaken: photo.dateTaken ? Number(photo.dateTaken) : null,
+                createdAt: Number(photo.createdAt),
+            }))
+
+            pagination = {
+                page,
+                limit,
+                total,
+                hasMore: skip + fetchedPhotos.length < total
+            }
+        }
+
         return {
             success: true,
             data: {
@@ -63,6 +120,8 @@ export default defineEventHandler(async (event) => {
                 photoCount: shareLink.album._count.photos,
                 requiresPassword: !!shareLink.password,
                 type: shareLink.type,
+                photos,
+                pagination,
             },
         }
     } catch (error: any) {
