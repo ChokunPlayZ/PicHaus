@@ -31,12 +31,12 @@
         </div>
 
         <!-- Album Content (Authenticated) -->
-        <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-4 sm:pb-8">
             <!-- Header -->
-            <div class="mb-6 sm:mb-8 text-center md:text-left">
-                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">{{ albumName }}</h1>
+            <div class="mb-6 sm:mb-8 text-left md:text-left">
+                <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">{{ albumName }}</h1>
                 <div
-                    class="flex flex-col md:flex-row items-center md:items-start text-purple-200 gap-2 md:gap-4 text-sm sm:text-base">
+                    class="flex flex-col md:flex-row items-start md:items-start text-purple-200 gap-2 md:gap-4 text-base sm:text-base">
                     <span v-if="eventDate">{{ formatDate(eventDate) }}</span>
                     <span v-if="description" class="text-white/60">{{ description }}</span>
                     <span v-if="ownerName" class="text-white/40">by {{ ownerName }}</span>
@@ -155,6 +155,11 @@ const selectedPhotoIndex = ref<number | null>(null)
 const selectedPhoto = computed(() => {
     if (selectedPhotoIndex.value === null || !photos.value.length) return null
     return photos.value[selectedPhotoIndex.value]
+})
+
+// Set page title dynamically
+useHead({
+    title: computed(() => albumName.value ? `${albumName.value} | PicHaus` : 'PicHaus')
 })
 
 // Initial Check

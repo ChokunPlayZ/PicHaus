@@ -300,10 +300,16 @@
                                     🔒 Password
                                 </span>
                             </div>
-                            <div class="flex items-center gap-2 text-sm text-white/60">
-                                <span class="truncate max-w-[200px]">{{ getShareUrl(link) }}</span>
-                                <button @click="copyLink(link)" class="text-purple-300 hover:text-purple-200">
-                                    {{ link.copied ? 'Copied!' : 'Copy' }}
+                            <div class="flex items-center gap-2 text-sm">
+                                <button @click="copyLink(link)"
+                                    class="truncate max-w-[200px] text-white/60 hover:text-purple-300 transition underline decoration-dotted">
+                                    {{ getShareUrl(link) }}
+                                </button>
+                                <button @click="copyLink(link)" :class="[
+                                    'px-2 py-1 rounded transition text-xs font-medium',
+                                    link.copied ? 'bg-green-500/20 text-green-300' : 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30'
+                                ]">
+                                    {{ link.copied ? '✓ Copied!' : 'Copy' }}
                                 </button>
                             </div>
                             <div class="text-xs text-white/40 mt-1">
@@ -451,6 +457,11 @@ const selectedPhotoIndex = ref<number | null>(null)
 const selectedPhoto = computed(() => {
     if (selectedPhotoIndex.value === null || !photos.value.length) return null
     return photos.value[selectedPhotoIndex.value]
+})
+
+// Set page title dynamically
+useHead({
+    title: computed(() => album.value?.name ? `${album.value.name} | PicHaus` : 'PicHaus')
 })
 
 // Share Modal State
@@ -737,9 +748,38 @@ const getShareUrl = (link: ShareLink) => {
 }
 
 const copyLink = async (link: ShareLink) => {
-    await navigator.clipboard.writeText(getShareUrl(link))
-    link.copied = true
-    setTimeout(() => link.copied = false, 2000)
+    const url = getShareUrl(link)
+
+    try {
+        // Try modern clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(url)
+        } else {
+            // Fallback for mobile devices or older browsers
+            const textArea = document.createElement('textarea')
+            textArea.value = url
+            textArea.style.position = 'fixed'
+            textArea.style.left = '-999999px'
+            textArea.style.top = '-999999px'
+            document.body.appendChild(textArea)
+            textArea.focus()
+            textArea.select()
+
+            try {
+                document.execCommand('copy')
+            } catch (err) {
+                console.error('Fallback copy failed:', err)
+            }
+
+            document.body.removeChild(textArea)
+        }
+
+        link.copied = true
+        setTimeout(() => link.copied = false, 2000)
+    } catch (err) {
+        console.error('Failed to copy link:', err)
+        alert('Failed to copy link. Please copy manually: ' + url)
+    }
 }
 
 // Download all photos
