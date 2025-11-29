@@ -18,12 +18,18 @@ model User {
   instagram    String?
   createdAt    BigInt // Unix timestamp
   updatedAt    BigInt // Unix timestamp
+  role         Role    @default(USER)
 
   ownedAlbums        Album[]
   uploadedPhotos     Photo[]
   albumCollaborators AlbumCollaborator[]
 
   @@map("users")
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 model Album {

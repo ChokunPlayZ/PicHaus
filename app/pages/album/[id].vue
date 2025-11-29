@@ -1,25 +1,9 @@
 <template>
     <div class="min-h-screen bg-gradient-to-br from-[#5e4d56] to-[#3e3c5f]">
         <!-- Navigation Bar -->
-        <nav v-if="album && (album.permissions.isOwner || album.permissions.canEdit)"
-            class="bg-white/10 backdrop-blur-lg border-b border-white/20">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <button @click="navigateTo('/album')"
-                        class="flex items-center space-x-2 text-white hover:text-purple-300 transition">
-                        <span>←</span>
-                        <span>Back to Albums</span>
-                    </button>
-                    <div class="flex items-center space-x-4">
-                        <span class="text-purple-200">{{ user?.name }}</span>
-                        <button @click="handleLogout"
-                            class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg transition">
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </nav>
+        <!-- Navigation Bar -->
+        <NavBar v-if="album && (album.permissions.isOwner || album.permissions.canEdit)" :show-back="true"
+            back-text="Back to Albums" back-to="/album" />
 
         <!-- Loading State -->
         <div v-if="loading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
@@ -138,8 +122,10 @@
             <!-- Photo Grid -->
             <div v-else-if="picturesLayout" ref="containerRef" class="relative"
                 :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
-                <div v-for="(photo, index) in photos" :key="photo.id" @click="openPhotoViewer(index)"
-                    class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 hover:border-purple-400/50 transition-transform hover:-translate-y-1 group"
+                <div v-for="(photo, index) in photos" :key="photo.id" @click="handlePhotoClick($event, photo, index)"
+                    @contextmenu.prevent="handleContextMenu($event, photo)"
+                    class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 transition-transform hover:-translate-y-1 group"
+                    :class="{ 'ring-4 ring-purple-500 ring-offset-2 ring-offset-black/50': selectedPhotoIds.has(photo.id) }"
                     :style="{
                         top: `${picturesLayout.getPosition(index).top}px`,
                         left: `${picturesLayout.getPosition(index).left}px`,
@@ -150,7 +136,65 @@
                         class="absolute inset-0 w-full h-full object-cover" />
                     <img :src="`/api/assets/${photo.id}/thumb`" :alt="photo.filename" loading="lazy"
                         class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
+
+                    <!-- Selection Indicator -->
+                    <div v-if="selectedPhotoIds.has(photo.id)"
+                        class="absolute top-2 right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Selection Action Bar -->
+            <div v-if="selectedPhotoIds.size > 0"
+                class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl px-6 py-3 flex items-center gap-4 z-40">
+                <div class="text-white font-medium border-r border-white/20 pr-4">
+                    {{ selectedPhotoIds.size }} selected
+                </div>
+
+                <button @click="clearSelection" class="text-white/60 hover:text-white transition text-sm">
+                    Clear
+                </button>
+
+                <div class="h-6 w-px bg-white/20"></div>
+
+                <button @click="downloadSelected" :disabled="downloading"
+                    class="flex items-center gap-2 text-white hover:text-purple-300 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span v-if="downloading">{{ downloadProgress.current }}/{{ downloadProgress.total }}</span>
+                    <span v-else>Download</span>
+                </button>
+
+                <template v-if="album?.permissions.canEdit">
+                    <button v-if="selectedPhotoIds.size === 1" @click="openEditPhotoModal"
+                        class="flex items-center gap-2 text-white hover:text-purple-300 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        <span>Edit Info</span>
+                    </button>
+
+                    <button @click="deleteSelected"
+                        class="flex items-center gap-2 text-red-400 hover:text-red-300 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span>Delete</span>
+                    </button>
+                </template>
             </div>
 
             <!-- Infinite Scroll Sentinel -->
@@ -173,6 +217,78 @@
                     }}</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Edit Photo Modal -->
+    <div v-if="showEditPhotoModal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        @click.self="showEditPhotoModal = false">
+        <div
+            class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 class="text-2xl font-bold text-white mb-4">Edit Photo Info</h3>
+
+            <form @submit.prevent="handleUpdatePhoto" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-purple-200 mb-2">Date Taken</label>
+                    <input v-model="editPhotoForm.dateTaken" type="datetime-local"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Camera</label>
+                        <input v-model="editPhotoForm.cameraModel" type="text"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Lens</label>
+                        <input v-model="editPhotoForm.lens" type="text"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Focal Length</label>
+                        <input v-model="editPhotoForm.focalLength" type="text"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Aperture</label>
+                        <input v-model="editPhotoForm.aperture" type="text"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Shutter Speed</label>
+                        <input v-model="editPhotoForm.shutterSpeed" type="text"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">ISO</label>
+                        <input v-model="editPhotoForm.iso" type="number"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    </div>
+                </div>
+
+                <div v-if="editPhotoError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
+                    <p class="text-red-200 text-sm">{{ editPhotoError }}</p>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button type="button" @click="showEditPhotoModal = false"
+                        class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button type="submit" :disabled="updatingPhoto"
+                        class="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                        {{ updatingPhoto ? 'Updating...' : 'Update' }}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -327,6 +443,57 @@
         </div>
     </div>
 
+    <!-- Context Menu -->
+    <div v-if="contextMenu.visible"
+        class="fixed z-50 bg-gray-800 border border-white/10 rounded-lg shadow-xl py-1 w-48 backdrop-blur-xl"
+        :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }">
+
+        <button @click="toggleSelection(contextMenu.photo!.id); closeContextMenu()"
+            class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
+                    v-if="selectedPhotoIds.has(contextMenu.photo!.id)" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" v-else />
+            </svg>
+            {{ selectedPhotoIds.has(contextMenu.photo!.id) ? 'Deselect' : 'Select' }}
+        </button>
+
+        <button @click="downloadPhoto(contextMenu.photo!); closeContextMenu()"
+            class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download
+        </button>
+
+        <template v-if="album?.permissions.canEdit">
+            <div class="h-px bg-white/10 my-1"></div>
+
+            <button @click="openEditPhotoModalFromMenu(contextMenu.photo!); closeContextMenu()"
+                class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit Info
+            </button>
+
+            <button @click="deletePhoto(contextMenu.photo!.id); closeContextMenu()"
+                class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete
+            </button>
+        </template>
+    </div>
+
     <!-- Photo Viewer -->
     <PhotoViewer v-if="selectedPhoto" :photo="selectedPhoto" :has-previous="selectedPhotoIndex! > 0"
         :has-next="selectedPhotoIndex! < (photos.length || 0) - 1" @close="closePhotoViewer" @previous="previousPhoto"
@@ -442,6 +609,20 @@ const editForm = ref({
 const updating = ref(false)
 const editError = ref('')
 
+const showEditPhotoModal = ref(false)
+const editPhotoForm = ref({
+    id: '',
+    dateTaken: '',
+    cameraModel: '',
+    lens: '',
+    focalLength: '',
+    aperture: '',
+    shutterSpeed: '',
+    iso: null as number | null,
+})
+const updatingPhoto = ref(false)
+const editPhotoError = ref('')
+
 const copied = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploading = ref(false)
@@ -455,7 +636,169 @@ const selectedPhoto = computed(() => {
     return photos.value[selectedPhotoIndex.value]
 })
 
-// Set page title and SEO meta
+// Multi-select State
+const selectedPhotoIds = ref(new Set<string>())
+const lastSelectedId = ref<string | null>(null)
+
+const handlePhotoClick = (event: MouseEvent, photo: Photo, index: number) => {
+    // If clicking with Cmd/Ctrl, toggle selection
+    if (event.metaKey || event.ctrlKey) {
+        toggleSelection(photo.id)
+        lastSelectedId.value = photo.id
+    }
+    // If clicking with Shift, range select
+    else if (event.shiftKey && lastSelectedId.value) {
+        const lastIndex = photos.value.findIndex(p => p.id === lastSelectedId.value)
+        if (lastIndex !== -1) {
+            const start = Math.min(lastIndex, index)
+            const end = Math.max(lastIndex, index)
+            const range = photos.value.slice(start, end + 1)
+
+            // If all in range are selected, deselect them. Otherwise select all.
+            const allSelected = range.every(p => selectedPhotoIds.value.has(p.id))
+
+            range.forEach(p => {
+                if (allSelected) {
+                    selectedPhotoIds.value.delete(p.id)
+                } else {
+                    selectedPhotoIds.value.add(p.id)
+                }
+            })
+        }
+    }
+    // If in selection mode (some photos selected) and simple click, toggle
+    else if (selectedPhotoIds.value.size > 0) {
+        toggleSelection(photo.id)
+        lastSelectedId.value = photo.id
+    }
+    // Otherwise open viewer
+    else {
+        openPhotoViewer(index)
+    }
+}
+
+const toggleSelection = (id: string) => {
+    if (selectedPhotoIds.value.has(id)) {
+        selectedPhotoIds.value.delete(id)
+    } else {
+        selectedPhotoIds.value.add(id)
+    }
+}
+
+const selectAll = () => {
+    photos.value.forEach(p => selectedPhotoIds.value.add(p.id))
+}
+
+const clearSelection = () => {
+    selectedPhotoIds.value.clear()
+    lastSelectedId.value = null
+}
+
+// Keyboard Shortcuts
+const handleKeydown = (e: KeyboardEvent) => {
+    // Cmd/Ctrl + A to select all
+    if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
+        e.preventDefault()
+        selectAll()
+    }
+    // Esc to clear selection
+    if (e.key === 'Escape') {
+        clearSelection()
+    }
+    // Delete/Backspace to delete selected
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPhotoIds.value.size > 0 && album.value?.permissions.canEdit) {
+        deleteSelected()
+    }
+}
+
+// Context Menu State
+const contextMenu = ref({
+    visible: false,
+    x: 0,
+    y: 0,
+    photo: null as Photo | null
+})
+
+const handleContextMenu = (event: MouseEvent, photo: Photo) => {
+    contextMenu.value = {
+        visible: true,
+        x: event.clientX,
+        y: event.clientY,
+        photo
+    }
+}
+
+const closeContextMenu = () => {
+    contextMenu.value.visible = false
+}
+
+// Close context menu on click outside
+onMounted(() => {
+    window.addEventListener('click', closeContextMenu)
+    window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+    window.removeEventListener('click', closeContextMenu)
+    window.removeEventListener('keydown', handleKeydown)
+    if (resizeObserver) {
+        resizeObserver.disconnect()
+    }
+})
+
+// Bulk Actions
+const downloadSelected = async () => {
+    if (downloading.value || selectedPhotoIds.value.size === 0) return
+    downloading.value = true
+    downloadProgress.value = { current: 0, total: selectedPhotoIds.value.size }
+
+    try {
+        const zip = new JSZip()
+        const folder = zip.folder(album.value?.name || 'photos')
+        const selectedPhotos = photos.value.filter(p => selectedPhotoIds.value.has(p.id))
+
+        await Promise.all(selectedPhotos.map(async (photo) => {
+            try {
+                const res = await fetch(`/api/assets/${photo.id}/full`)
+                const blob = await res.blob()
+                folder?.file(photo.originalName, blob)
+                downloadProgress.value.current++
+            } catch (err) {
+                console.error(`Failed to download ${photo.originalName}`, err)
+            }
+        }))
+
+        const content = await zip.generateAsync({ type: 'blob' })
+        saveAs(content, `${album.value?.name || 'album'}-selected.zip`)
+    } catch (err) {
+        console.error('Download selected error:', err)
+        alert('Failed to download selected photos')
+    } finally {
+        downloading.value = false
+        downloadProgress.value = { current: 0, total: 0 }
+    }
+}
+
+const deleteSelected = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedPhotoIds.value.size} photos?`)) return
+
+    try {
+        const ids = Array.from(selectedPhotoIds.value)
+        await $fetch(`/api/v1/album/${albumId}/photos/batch-delete`, {
+            method: 'POST',
+            body: { ids }
+        })
+
+        // Remove from local state
+        photos.value = photos.value.filter(p => !selectedPhotoIds.value.has(p.id))
+        clearSelection()
+
+        // Refresh album to update counts
+        await fetchAlbum()
+    } catch (err: any) {
+        alert(err.data?.statusMessage || 'Failed to delete photos')
+    }
+}
 useSeoMeta({
     title: computed(() => album.value?.name ? `${album.value.name} | PicHaus` : 'PicHaus'),
     ogTitle: computed(() => album.value?.name),
@@ -525,6 +868,7 @@ watch(containerRef, (el) => {
 })
 
 onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeydown)
     if (resizeObserver) {
         resizeObserver.disconnect()
     }
@@ -694,7 +1038,58 @@ const confirmDelete = async () => {
         await $fetch(`/api/v1/album/${albumId}`, { method: 'DELETE' })
         await navigateTo('/album')
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to delete album')
+        alert(err.data?.statusMessage || 'Failed to delete photos')
+    }
+}
+
+const openEditPhotoModal = () => {
+    if (selectedPhotoIds.value.size !== 1) return
+    const photoId = Array.from(selectedPhotoIds.value)[0]
+    const photo = photos.value.find(p => p.id === photoId)
+    if (!photo) return
+
+    editPhotoForm.value = {
+        id: photo.id,
+        dateTaken: photo.dateTaken ? new Date(photo.dateTaken * 1000).toISOString().slice(0, 16) : '',
+        cameraModel: photo.cameraModel || '',
+        lens: photo.lens || '',
+        focalLength: photo.focalLength || '',
+        aperture: photo.aperture || '',
+        shutterSpeed: photo.shutterSpeed || '',
+        iso: photo.iso || null,
+    }
+    showEditPhotoModal.value = true
+}
+
+const handleUpdatePhoto = async () => {
+    updatingPhoto.value = true
+    editPhotoError.value = ''
+
+    try {
+        const dateTaken = editPhotoForm.value.dateTaken
+            ? Math.floor(new Date(editPhotoForm.value.dateTaken).getTime() / 1000)
+            : null
+
+        const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/photo/${editPhotoForm.value.id}`, {
+            method: 'PATCH',
+            body: {
+                ...editPhotoForm.value,
+                dateTaken
+            }
+        })
+
+        // Update local state
+        const index = photos.value.findIndex(p => p.id === editPhotoForm.value.id)
+        if (index !== -1) {
+            photos.value[index] = { ...photos.value[index], ...response.data }
+        }
+
+        showEditPhotoModal.value = false
+        clearSelection()
+    } catch (err: any) {
+        editPhotoError.value = err.data?.statusMessage || 'Failed to update photo'
+    } finally {
+        updatingPhoto.value = false
     }
 }
 
@@ -782,6 +1177,47 @@ const copyLink = async (link: ShareLink) => {
         console.error('Failed to copy link:', err)
         alert('Failed to copy link. Please copy manually: ' + url)
     }
+}
+
+// Single Photo Actions
+const downloadPhoto = async (photo: Photo) => {
+    try {
+        const res = await fetch(`/api/assets/${photo.id}/full`)
+        const blob = await res.blob()
+        saveAs(blob, photo.originalName)
+    } catch (err) {
+        console.error('Failed to download photo', err)
+        alert('Failed to download photo')
+    }
+}
+
+const deletePhoto = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this photo?')) return
+    try {
+        await $fetch(`/api/v1/album/${albumId}/photos/batch-delete`, {
+            method: 'POST',
+            body: { ids: [id] }
+        })
+        photos.value = photos.value.filter(p => p.id !== id)
+        selectedPhotoIds.value.delete(id)
+        await fetchAlbum()
+    } catch (err: any) {
+        alert(err.data?.statusMessage || 'Failed to delete photo')
+    }
+}
+
+const openEditPhotoModalFromMenu = (photo: Photo) => {
+    editPhotoForm.value = {
+        id: photo.id,
+        dateTaken: photo.dateTaken ? new Date(photo.dateTaken * 1000).toISOString().slice(0, 16) : '',
+        cameraModel: photo.cameraModel || '',
+        lens: photo.lens || '',
+        focalLength: photo.focalLength || '',
+        aperture: photo.aperture || '',
+        shutterSpeed: photo.shutterSpeed || '',
+        iso: photo.iso || null,
+    }
+    showEditPhotoModal.value = true
 }
 
 // Download all photos

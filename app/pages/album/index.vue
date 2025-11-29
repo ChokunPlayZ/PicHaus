@@ -1,22 +1,8 @@
 <template>
     <div class="min-h-screen bg-gradient-to-br from-[#5e4d56] to-[#3e3c5f]">
         <!-- Navigation Bar -->
-        <nav class="bg-white/10 backdrop-blur-lg border-b border-white/20">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <div class="flex items-center">
-                        <h1 class="text-2xl font-bold text-white">📸 PicHaus</h1>
-                    </div>
-                    <div v-if="user" class="flex items-center space-x-4">
-                        <span class="text-purple-200">{{ user.name }}</span>
-                        <button @click="handleLogout"
-                            class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg transition">
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </nav>
+        <!-- Navigation Bar -->
+        <NavBar title="📸 PicHaus" />
 
         <!-- Main Content -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -146,8 +132,22 @@
 </template>
 
 <script setup lang="ts">
-const user = ref(null)
-const albums = ref([])
+interface Album {
+    id: string
+    name: string
+    description: string | null
+    eventDate: number | null
+    isPublic: boolean
+    owner: {
+        name: string | null
+    }
+    _count: {
+        photos: number
+    }
+}
+
+const user = ref<any>(null)
+const albums = ref<Album[]>([])
 const loading = ref(true)
 const error = ref('')
 
@@ -174,7 +174,7 @@ const checkAuth = async () => {
 // Fetch albums
 const fetchAlbums = async () => {
     try {
-        const response = await $fetch<{ success: boolean; data: any[] }>('/api/v1/album')
+        const response = await $fetch<{ success: boolean; data: Album[] }>('/api/v1/album')
         albums.value = response.data
     } catch (err: any) {
         error.value = err.data?.statusMessage || 'Failed to load albums'
