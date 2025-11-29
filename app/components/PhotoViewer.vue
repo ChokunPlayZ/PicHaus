@@ -434,11 +434,12 @@ const downloadPhoto = async () => {
                 })
                 return // Successfully shared, exit early
             } catch (shareErr: any) {
-                // Share was cancelled or not supported, fall through to download
-                // Don't log if user simply cancelled the share
-                if (shareErr.name !== 'AbortError') {
-                    console.log('Share failed, falling back to download:', shareErr.message)
+                // If user cancelled, just return and don't download
+                if (shareErr.name === 'AbortError') {
+                    return
                 }
+                // For other errors, log and fall through to download
+                console.log('Share failed, falling back to download:', shareErr.message)
             }
         }
 

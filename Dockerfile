@@ -24,22 +24,9 @@ RUN bun --bun run build
 FROM oven/bun:slim AS production
 WORKDIR /app
 
-ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
-
-# Copy necessary files from build stage
+# Only `.output` folder is needed from the build stage
 COPY --from=build /app/.output /app
-COPY --from=build /app/prisma /app/prisma
-COPY --from=build /app/node_modules/.prisma /app/node_modules/.prisma
-COPY --from=build /app/node_modules/@prisma /app/node_modules/@prisma
-
-# Create startup script that runs migrations then starts the server
-RUN echo '#!/bin/sh\n\
-echo "Running database migrations..."\n\
-cd /app && bunx prisma migrate deploy\n\
-echo "Starting server..."\n\
-exec bun --bun run /app/server/index.mjs' > /app/start.sh && chmod +x /app/start.sh
 
 # run the app
 EXPOSE 3000/tcp
-ENTRYPOINT [ "/app/start.sh" ]
+ENTRYPOINT [ "bun", "--bun", "run", "/app/server/index.mjs" ]
