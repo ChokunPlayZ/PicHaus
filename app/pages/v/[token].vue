@@ -14,7 +14,7 @@
                 </div>
 
                 <div v-if="!loading && !error && requiresPassword">
-                    <form @submit.prevent="() => handleAccess(false)" class="space-y-6">
+                    <form @submit.prevent="handleAccess" class="space-y-6">
                         <div>
                             <label class="block text-sm font-medium text-purple-200 mb-2">Password Required</label>
                             <input v-model="password" type="password" required placeholder="Enter password"
@@ -152,9 +152,7 @@ const selectedPhoto = computed(() => {
 })
 
 // Initial Data Fetch (SSR)
-const { data: linkData, error: linkError } = await useFetch<{ success: boolean; data: any }>(`/api/v1/upload/${token}`, {
-    params: { page: 1, limit: limit.value }
-})
+const { data: linkData, error: linkError } = await useFetch<{ success: boolean; data: any }>(`/api/v1/upload/${token}`)
 
 // Populate state from SSR data
 if (linkData.value?.data) {
@@ -166,12 +164,7 @@ if (linkData.value?.data) {
     eventDate.value = data.eventDate
     requiresPassword.value = data.requiresPassword
 
-    if (data.photos && data.photos.length > 0) {
-        photos.value = data.photos
-        if (data.pagination) {
-            hasMore.value = data.pagination.hasMore
-        }
-    }
+
 
     loading.value = false
 } else if (linkError.value) {
@@ -193,11 +186,11 @@ useSeoMeta({
 // Auto-access if no password (Client-side only)
 onMounted(async () => {
     if (linkData.value?.data && !linkData.value.data.requiresPassword && !isAuthenticated.value) {
-        await handleAccess(!!linkData.value.data.photos)
+        await handleAccess()
     }
 })
 
-const handleAccess = async (skipFetch = false) => {
+const handleAccess = async () => {
     accessing.value = true
     try {
         const response = await $fetch<{ success: boolean; data: any }>('/api/v1/auth/guest-login', {
@@ -210,11 +203,7 @@ const handleAccess = async (skipFetch = false) => {
 
         albumId.value = response.data.albumId
         isAuthenticated.value = true
-
-        // Only fetch photos if we don't have them yet (e.g. password was required or first load failed)
-        if (!skipFetch) {
-            await fetchPhotos()
-        }
+        await fetchPhotos()
     } catch (err: any) {
         alert(err.data?.statusMessage || 'Failed to access album')
         loading.value = false
