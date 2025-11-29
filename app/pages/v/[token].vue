@@ -156,31 +156,39 @@ const selectedPhoto = computed(() => {
     return photos.value[selectedPhotoIndex.value]
 })
 
-// Set page title dynamically
-useHead({
-    title: computed(() => albumName.value ? `${albumName.value} | PicHaus` : 'PicHaus')
+// Initial Data Fetch (SSR)
+const { data: linkData, error: linkError } = await useFetch<{ success: boolean; data: any }>(`/api/v1/upload/${token}`)
+
+// Populate state from SSR data
+if (linkData.value?.data) {
+    const data = linkData.value.data
+    albumId.value = data.albumId
+    albumName.value = data.albumName
+    ownerName.value = data.ownerName
+    description.value = data.description
+    eventDate.value = data.eventDate
+    requiresPassword.value = data.requiresPassword
+    loading.value = false
+} else if (linkError.value) {
+    error.value = linkError.value.data?.statusMessage || 'Invalid or expired link'
+    loading.value = false
+}
+
+// Set page title and SEO meta
+useSeoMeta({
+    title: computed(() => albumName.value ? `${albumName.value} | PicHaus` : 'PicHaus'),
+    ogTitle: computed(() => albumName.value),
+    description: computed(() => description.value || `View ${albumName.value || 'album'} on PicHaus`),
+    ogDescription: computed(() => description.value || `View ${albumName.value || 'album'} on PicHaus`),
+    ogImage: computed(() => albumId.value ? `/api/v1/album/${albumId.value}/og-image` : null),
+    twitterCard: 'summary_large_image',
+    twitterImage: computed(() => albumId.value ? `/api/v1/album/${albumId.value}/og-image` : null),
 })
 
-// Initial Check
+// Auto-access if no password (Client-side only)
 onMounted(async () => {
-    try {
-        const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/upload/${token}`)
-        const data = response.data
-        albumName.value = data.albumName
-        ownerName.value = data.ownerName
-        description.value = data.description
-        eventDate.value = data.eventDate
-        requiresPassword.value = data.requiresPassword
-
-        // Auto-access if no password
-        if (!data.requiresPassword) {
-            await handleAccess()
-        } else {
-            loading.value = false
-        }
-    } catch (err: any) {
-        error.value = err.data?.statusMessage || 'Invalid or expired link'
-        loading.value = false
+    if (linkData.value?.data && !linkData.value.data.requiresPassword && !isAuthenticated.value) {
+        await handleAccess()
     }
 })
 
