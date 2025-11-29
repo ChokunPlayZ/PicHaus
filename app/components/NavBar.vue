@@ -41,7 +41,7 @@
                             </div>
 
                             <a v-if="user?.role === 'ADMIN'" @click="navigateTo('/admin/users'); closeDropdown()"
-                                class="block px-4 py-2 text-sm text-white hover:bg-white/10 cursor-pointer flex items-center gap-2">
+                                class="px-4 py-2 text-sm text-white hover:bg-white/10 cursor-pointer flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -50,8 +50,8 @@
                                 Admin Dashboard
                             </a>
 
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-white/50 hover:bg-white/5 cursor-not-allowed flex items-center gap-2">
+                            <a @click="navigateTo('/settings'); closeDropdown()"
+                                class="px-4 py-2 text-sm text-white hover:bg-white/10 cursor-pointer flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -65,7 +65,7 @@
                             <div class="border-t border-white/10 my-1"></div>
 
                             <a @click="handleLogout"
-                                class="block px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 cursor-pointer flex items-center gap-2">
+                                class="px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 cursor-pointer flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

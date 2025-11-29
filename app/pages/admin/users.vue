@@ -70,6 +70,14 @@
                                     <div>{{ u._count.uploadedPhotos }} Photos</div>
                                 </td>
                                 <td class="px-6 py-4 text-right">
+                                    <button @click="openEditModal(u)"
+                                        class="text-blue-400 hover:text-blue-300 transition mr-3" title="Edit User">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </button>
                                     <button @click="deleteUser(u)" :disabled="u.id === user?.id"
                                         class="text-red-400 hover:text-red-300 transition disabled:opacity-30 disabled:cursor-not-allowed"
                                         title="Delete User">
@@ -101,6 +109,59 @@
                 </div>
             </div>
         </div>
+        <!-- Edit User Modal -->
+        <div v-if="showEditModal"
+            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            @click.self="showEditModal = false">
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-md w-full">
+                <h3 class="text-2xl font-bold text-white mb-4">Edit User</h3>
+
+                <form @submit.prevent="handleEditSubmit" class="space-y-4">
+                    <!-- Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Name</label>
+                        <input v-model="editForm.name" type="text"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Email</label>
+                        <input v-model="editForm.email" type="email" required
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    </div>
+
+                    <!-- Instagram -->
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Instagram</label>
+                        <input v-model="editForm.instagram" type="text"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    </div>
+
+                    <!-- Role -->
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Role</label>
+                        <select v-model="editForm.role"
+                            class="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="USER">USER</option>
+                            <option value="ADMIN">ADMIN</option>
+                        </select>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex space-x-3 pt-4">
+                        <button type="button" @click="showEditModal = false"
+                            class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                            Cancel
+                        </button>
+                        <button type="submit" :disabled="saving"
+                            class="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                            {{ saving ? 'Saving...' : 'Save Changes' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -111,6 +172,7 @@ interface User {
     id: string
     name: string | null
     email: string | null
+    instagram: string | null
     role: 'USER' | 'ADMIN'
     createdAt: number
     _count: {
@@ -214,5 +276,45 @@ const deleteUser = async (targetUser: User) => {
 
 const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString()
+}
+
+// Edit User Modal
+const showEditModal = ref(false)
+const editingUser = ref<User | null>(null)
+const editForm = ref({
+    name: '',
+    email: '',
+    instagram: '',
+    role: 'USER' as 'USER' | 'ADMIN'
+})
+const saving = ref(false)
+
+const openEditModal = (targetUser: User) => {
+    editingUser.value = targetUser
+    editForm.value = {
+        name: targetUser.name || '',
+        email: targetUser.email || '',
+        instagram: targetUser.instagram || '',
+        role: targetUser.role
+    }
+    showEditModal.value = true
+}
+
+const handleEditSubmit = async () => {
+    if (!editingUser.value) return
+    saving.value = true
+
+    try {
+        await $fetch(`/api/v1/admin/users/${editingUser.value.id}`, {
+            method: 'PATCH',
+            body: editForm.value
+        })
+        showEditModal.value = false
+        fetchUsers()
+    } catch (err: any) {
+        alert(err.data?.statusMessage || 'Failed to update user')
+    } finally {
+        saving.value = false
+    }
 }
 </script>

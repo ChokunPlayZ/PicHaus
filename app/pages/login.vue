@@ -85,14 +85,26 @@ const handleLogin = async () => {
 }
 
 // Check if setup is complete, redirect to setup if not
+// Also check if user is already logged in
 onMounted(async () => {
     try {
+        // Check setup status first
         const status = await $fetch<{ data: { setupComplete: boolean } }>('/api/v1/setup/status')
         if (!status.data.setupComplete) {
             await navigateTo('/setup')
+            return
+        }
+
+        // Check if already logged in
+        try {
+            await $fetch('/api/v1/auth/me')
+            // If successful, user is logged in
+            await navigateTo('/album')
+        } catch (e) {
+            // Not logged in, stay on login page
         }
     } catch (err) {
-        console.error('Error checking setup status:', err)
+        console.error('Error checking status:', err)
     }
 })
 </script>
