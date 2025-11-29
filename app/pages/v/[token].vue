@@ -33,13 +33,27 @@
         <!-- Album Content (Authenticated) -->
         <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-4 sm:pb-8">
             <!-- Header -->
-            <div class="pt-4 sm:pt-0 mb-6 sm:mb-8 text-left md:text-left">
-                <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">{{ albumName }}</h1>
-                <div class="text-purple-200 text-base sm:text-base">
-                    <span v-if="eventDate">{{ formatDate(eventDate) }}</span>
-                    <div v-if="description" class="text-white/60 whitespace-pre-line mt-2">{{ description }}</div>
-                    <span v-if="ownerName" class="text-white/40 block mt-2">by {{ ownerName }}</span>
+            <!-- Header -->
+            <div
+                class="pt-4 sm:pt-0 mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="text-left md:text-left">
+                    <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">{{ albumName }}</h1>
+                    <div class="text-purple-200 text-base sm:text-base">
+                        <span v-if="eventDate">{{ formatDate(eventDate) }}</span>
+                        <div v-if="description" class="text-white/60 whitespace-pre-line mt-2">{{ description }}</div>
+                        <span v-if="ownerName" class="text-white/40 block mt-2">by {{ ownerName }}</span>
+                    </div>
                 </div>
+
+                <button @click="downloadAll" :disabled="downloading"
+                    class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap">
+                    <span>Download All</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                </button>
             </div>
 
             <!-- Loading Photos State -->
@@ -78,6 +92,29 @@
             </div>
         </div>
 
+        <!-- Download Progress Modal -->
+        <div v-if="downloading"
+            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-sm w-full shadow-2xl">
+                <h3 class="text-xl font-bold text-white mb-4 text-center">Downloading Photos</h3>
+
+                <div class="mb-2 flex justify-between text-sm text-purple-200">
+                    <span>Progress</span>
+                    <span>{{ Math.round((downloadProgress.current / downloadProgress.total) * 100) }}%</span>
+                </div>
+
+                <div class="w-full bg-white/10 rounded-full h-4 mb-4 overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-300 ease-out"
+                        :style="{ width: `${(downloadProgress.current / downloadProgress.total) * 100}%` }">
+                    </div>
+                </div>
+
+                <p class="text-center text-white/60 text-sm">
+                    {{ downloadProgress.current }} of {{ downloadProgress.total }} files processed
+                </p>
+            </div>
+        </div>
+
         <!-- Photo Viewer -->
         <PhotoViewer v-if="selectedPhoto" :photo="selectedPhoto" :has-previous="selectedPhotoIndex! > 0"
             :has-next="selectedPhotoIndex! < (photos.length || 0) - 1" @close="closePhotoViewer"
@@ -88,6 +125,8 @@
 <script setup lang="ts">
 import { JustifiedLayout } from '@immich/justified-layout-wasm'
 import { decode } from 'blurhash'
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
 
 interface Photo {
     id: string
@@ -143,6 +182,57 @@ const sentinelRef = ref<HTMLElement | null>(null)
 // Layout State
 const containerRef = ref<HTMLElement | null>(null)
 const containerWidth = ref(typeof window !== 'undefined' ? Math.min(1200, window.innerWidth - 32) : 1200)
+
+// Download State
+const downloading = ref(false)
+const downloadProgress = ref({ current: 0, total: 0 })
+
+// Download all photos
+const downloadAll = async () => {
+    if (downloading.value) return
+    downloading.value = true
+    downloadProgress.value = { current: 0, total: 0 }
+
+    try {
+        // Fetch all photo URLs
+        const response = await $fetch<{ success: boolean; data: any[] }>(`/api/v1/album/${albumId.value}/download-info`)
+        const photosToDownload = response.data
+
+        if (photosToDownload.length === 0) {
+            alert('No photos to download')
+            return
+        }
+
+        downloadProgress.value.total = photosToDownload.length
+
+        const zip = new JSZip()
+        const folder = zip.folder(albumName.value || 'album')
+
+        // Download each photo
+        const promises = photosToDownload.map(async (photo) => {
+            try {
+                const res = await fetch(`/api/assets/${photo.id}/full`)
+                const blob = await res.blob()
+                folder?.file(photo.originalName, blob)
+                downloadProgress.value.current++
+            } catch (err) {
+                console.error(`Failed to download ${photo.originalName}`, err)
+            }
+        })
+
+        await Promise.all(promises)
+
+        // Generate zip
+        const content = await zip.generateAsync({ type: 'blob' })
+        saveAs(content, `${albumName.value || 'album'}.zip`)
+    } catch (err) {
+        console.error('Download all error:', err)
+        alert('Failed to download photos')
+    } finally {
+        downloading.value = false
+        downloadProgress.value = { current: 0, total: 0 }
+    }
+}
 
 // Viewer State
 const selectedPhotoIndex = ref<number | null>(null)

@@ -34,15 +34,29 @@ export default defineEventHandler(async (event) => {
 
         // Check permissions
         if (!album.isPublic) {
-            if (!user) {
-                throw createError({
-                    statusCode: 403,
-                    statusMessage: 'Forbidden',
+            let hasAccess = false
+
+            // Check for share link access (guest)
+            const shareToken = getCookie(event, `album-access-${id}`)
+            if (shareToken) {
+                const link = await prisma.shareLink.findUnique({
+                    where: { token: shareToken }
                 })
+                if (link && link.albumId === id) {
+                    hasAccess = true
+                }
             }
-            const isOwner = album.ownerId === user.id
-            const isCollaborator = album.collaborators.some(c => c.userId === user.id)
-            if (!isOwner && !isCollaborator) {
+
+            // Check for user access (owner/collaborator)
+            if (!hasAccess && user) {
+                const isOwner = album.ownerId === user.id
+                const isCollaborator = album.collaborators.some(c => c.userId === user.id)
+                if (isOwner || isCollaborator) {
+                    hasAccess = true
+                }
+            }
+
+            if (!hasAccess) {
                 throw createError({
                     statusCode: 403,
                     statusMessage: 'Forbidden',
