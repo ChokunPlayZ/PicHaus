@@ -25,8 +25,9 @@ export default defineEventHandler(async (event) => {
 
         return {
             success: true,
-            data: albums.map(album => ({
+            data: albums.map((album: any) => ({
                 ...album,
+                name: album.title, // Map title to name for frontend
                 createdAt: Number(album.createdAt),
                 updatedAt: Number(album.updatedAt),
                 eventDate: album.eventDate ? Number(album.eventDate) : null,
