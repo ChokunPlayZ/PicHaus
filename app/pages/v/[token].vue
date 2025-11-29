@@ -33,13 +33,12 @@
         <!-- Album Content (Authenticated) -->
         <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-4 sm:pb-8">
             <!-- Header -->
-            <div class="mb-6 sm:mb-8 text-left md:text-left">
+            <div class="pt-4 sm:pt-0 mb-6 sm:mb-8 text-left md:text-left">
                 <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">{{ albumName }}</h1>
-                <div
-                    class="flex flex-col md:flex-row items-start md:items-start text-purple-200 gap-2 md:gap-4 text-base sm:text-base">
+                <div class="text-purple-200 text-base sm:text-base">
                     <span v-if="eventDate">{{ formatDate(eventDate) }}</span>
-                    <span v-if="description" class="text-white/60">{{ description }}</span>
-                    <span v-if="ownerName" class="text-white/40">by {{ ownerName }}</span>
+                    <div v-if="description" class="text-white/60 whitespace-pre-line mt-2">{{ description }}</div>
+                    <span v-if="ownerName" class="text-white/40 block mt-2">by {{ ownerName }}</span>
                 </div>
             </div>
 

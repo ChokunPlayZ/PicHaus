@@ -39,11 +39,12 @@
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
                     <h1 class="text-4xl font-bold text-white mb-2">{{ album.name }}</h1>
-                    <div class="flex items-center text-purple-200 gap-4">
+                    <div class="text-purple-200">
                         <span v-if="album.eventDate">{{ formatDate(album.eventDate) }}</span>
-                        <span v-if="album.description" class="text-white/60">{{ album.description }}</span>
+                        <div v-if="album.description" class="text-white/60 whitespace-pre-line mt-2">{{
+                            album.description }}</div>
                         <span v-if="album.isPublic"
-                            class="px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 text-xs border border-green-500/30">Public</span>
+                            class="inline-block mt-2 px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 text-xs border border-green-500/30">Public</span>
                     </div>
                 </div>
 
@@ -109,10 +110,10 @@
                 <div v-if="uploading" class="mt-4 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-4">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-white">Uploading {{ uploadProgress.current }} of {{ uploadProgress.total
-                            }}...</span>
+                        }}...</span>
                         <span class="text-purple-300">{{ Math.round((uploadProgress.current / uploadProgress.total) *
                             100)
-                            }}%</span>
+                        }}%</span>
                     </div>
                     <div class="w-full bg-white/10 rounded-full h-2">
                         <div class="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-300"
@@ -173,7 +174,7 @@
                         <p class="text-purple-300 text-sm">{{ collab.user.email }}</p>
                     </div>
                     <span class="px-3 py-1 bg-purple-500/20 text-purple-200 rounded-full text-sm">{{ collab.role
-                    }}</span>
+                        }}</span>
                 </div>
             </div>
         </div>

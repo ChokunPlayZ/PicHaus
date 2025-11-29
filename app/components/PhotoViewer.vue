@@ -126,7 +126,7 @@
                 </div>
 
                 <div class="px-6 pb-6 md:pt-6">
-                    <h3 class="text-left md:text-center text-2xl md:text-3xl font-bold text-white mb-6 line-clamp-2">
+                    <h3 class="text-left text-2xl font-bold text-white mb-6 line-clamp-2">
                         Photo Details</h3>
 
                     <!-- Uploader Info -->

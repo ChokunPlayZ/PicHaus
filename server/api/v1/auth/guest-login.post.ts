@@ -48,6 +48,33 @@ export default defineEventHandler(async (event) => {
             }
         }
 
+        // Update link views
+        await prisma.shareLink.update({
+            where: { id: shareLink.id },
+            data: { views: { increment: 1 } }
+        })
+
+        // For view-only links, just grant session access without creating user
+        if (shareLink.type === 'view') {
+            // Set a session cookie indicating authenticated access to this album
+            setCookie(event, `album-access-${shareLink.albumId}`, token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 60 * 60 * 24 * 7, // 1 week
+                path: '/',
+            })
+
+            return {
+                success: true,
+                data: {
+                    albumId: shareLink.albumId,
+                    albumName: shareLink.album.title,
+                    type: 'view'
+                },
+            }
+        }
+
+        // For upload links, create/find user and add as collaborator
         // Check if user is already logged in
         const authToken = getCookie(event, 'auth-token')
         let user: any = null
@@ -106,24 +133,15 @@ export default defineEventHandler(async (event) => {
         })
 
         if (!existingCollaborator) {
-            // Determine role based on link type
-            const role = shareLink.type === 'upload' ? 'editor' : 'viewer'
-
             await prisma.albumCollaborator.create({
                 data: {
                     albumId: shareLink.albumId,
                     userId: user.id,
-                    role,
+                    role: 'editor', // Upload links always get editor role
                     createdAt: getUnixTimestamp(),
                 },
             })
         }
-
-        // Update link views
-        await prisma.shareLink.update({
-            where: { id: shareLink.id },
-            data: { views: { increment: 1 } }
-        })
 
         // Set session cookie
         setCookie(event, 'auth-token', user.id, {
