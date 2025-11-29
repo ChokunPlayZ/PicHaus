@@ -79,9 +79,9 @@ export async function extractExifData(buffer: Buffer): Promise<{
         if (exif) {
             result.cameraModel = exif.Model ? `${exif.Make || ''} ${exif.Model}`.trim() : undefined
             result.lens = exif.LensModel || undefined
-            result.focalLength = exif.FocalLength ? `${exif.FocalLength}mm` : undefined
+            result.focalLength = exif.FocalLength ? `${Number(exif.FocalLength).toFixed(1)}mm` : undefined
             result.iso = exif.ISO || undefined
-            result.aperture = exif.FNumber ? `f/${exif.FNumber}` : undefined
+            result.aperture = exif.FNumber ? `f/${Number(exif.FNumber).toFixed(1)}` : undefined
             result.shutterSpeed = exif.ExposureTime ? `1/${Math.round(1 / exif.ExposureTime)}s` : undefined
             result.dateTaken = exif.DateTimeOriginal ? Math.floor(new Date(exif.DateTimeOriginal).getTime() / 1000) : undefined
         }
