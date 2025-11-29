@@ -91,7 +91,7 @@
                     <img v-if="photo.blurhash"
                         :src="getBlurhashUrl(photo.blurhash, photo.width ?? null, photo.height ?? null) || ''"
                         class="absolute inset-0 w-full h-full object-contain blur-xl scale-105 opacity-50" />
-                    <img :src="photo.url" :alt="photo.filename"
+                    <img :src="`/api/assets/${photo.id}/full`" :alt="photo.filename"
                         class="relative max-h-full max-w-full object-contain rounded-lg shadow-2xl z-10" />
                 </div>
             </div>
@@ -222,7 +222,7 @@ import { decode } from 'blurhash'
 
 interface Photo {
     id: string
-    url: string
+
     filename: string
     originalName: string
     size: number
@@ -421,7 +421,7 @@ const getInstagramUrl = (instagram: string | null) => {
 
 const downloadPhoto = async () => {
     try {
-        const response = await fetch(props.photo.url)
+        const response = await fetch(`/api/assets/${props.photo.id}/full`)
         const blob = await response.blob()
         const file = new File([blob], props.photo.originalName, { type: blob.type })
 

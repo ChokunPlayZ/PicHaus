@@ -128,8 +128,6 @@ export default defineEventHandler(async (event) => {
         const storagePath = await saveFile(fileData.data, filename, 'photos')
         const thumbnailStoragePath = await saveFile(thumbnailBuffer, thumbnailFilename, 'thumbnails')
 
-        const url = `/api/assets/${photoId}/full`
-        const thumbnailUrl = `/api/assets/${photoId}/thumb`
 
         const now = getUnixTimestamp()
 
@@ -139,8 +137,6 @@ export default defineEventHandler(async (event) => {
                 id: photoId,
                 filename,
                 originalName: originalFilename,
-                url,
-                thumbnailUrl,
                 storagePath,
                 thumbnailStoragePath,
                 blurhash,

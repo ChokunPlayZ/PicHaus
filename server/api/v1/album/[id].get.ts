@@ -79,8 +79,6 @@ export default defineEventHandler(async (event) => {
             where: { albumId: id },
             select: {
                 id: true,
-                url: true,
-                thumbnailUrl: true,
                 filename: true,
                 originalName: true,
                 size: true,

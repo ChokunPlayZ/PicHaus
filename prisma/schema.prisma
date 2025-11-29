@@ -62,14 +62,12 @@ model ShareLink {
 }
 
 model Photo {
-  id                   String  @id @default(uuid()) @db.Uuid
+  id                   String @id @default(uuid()) @db.Uuid
   filename             String
   originalName         String
-  url                  String // Public API URL
-  thumbnailUrl         String? // Public API URL
-  storagePath          String? // Internal storage path
-  thumbnailStoragePath String? // Internal storage path for thumbnail
-  blurhash             String? // Blurhash for progressive image loading
+  storagePath          String // Internal storage path
+  thumbnailStoragePath String // Internal storage path for thumbnail
+  blurhash             String // Blurhash for progressive image loading
   size                 Int
   width                Int
   height               Int

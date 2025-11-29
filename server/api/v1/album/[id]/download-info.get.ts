@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
         const photos = await prisma.photo.findMany({
             where: { albumId: id },
             select: {
-                url: true,
+                id: true,
                 originalName: true,
                 filename: true,
             },

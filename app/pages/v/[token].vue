@@ -66,12 +66,8 @@
                     }">
                     <img v-if="photo.blurhash" :src="getBlurhashUrl(photo.blurhash, photo.width, photo.height) || ''"
                         class="absolute inset-0 w-full h-full object-cover" />
-                    <img v-if="photo.thumbnailUrl" :src="photo.thumbnailUrl" :alt="photo.filename" loading="lazy"
+                    <img :src="`/api/assets/${photo.id}/thumb`" :alt="photo.filename" loading="lazy"
                         class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
-                    <div v-else
-                        class="w-full h-full bg-gradient-to-br from-purple-900/30 to-pink-900/30 flex items-center justify-center relative z-10">
-                        <span class="text-3xl sm:text-4xl">📸</span>
-                    </div>
                 </div>
             </div>
 
@@ -95,8 +91,7 @@ import { decode } from 'blurhash'
 
 interface Photo {
     id: string
-    url: string
-    thumbnailUrl: string | null
+
     filename: string
     originalName: string
     size: number
