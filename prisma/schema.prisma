@@ -11,7 +11,7 @@ datasource db {
 }
 
 model User {
-  id           String  @id @default(cuid())
+  id           String  @id @default(uuid()) @db.Uuid
   email        String? @unique
   passwordHash String? // Argon2id hash - null for guest users who can be promoted later
   name         String?
@@ -27,7 +27,7 @@ model User {
 }
 
 model Album {
-  id             String  @id @default(cuid())
+  id             String  @id @default(uuid()) @db.Uuid
   title          String
   description    String?
   eventDate      BigInt? // Unix timestamp for when the event occurred
@@ -37,7 +37,7 @@ model Album {
   createdAt      BigInt // Unix timestamp
   updatedAt      BigInt // Unix timestamp
 
-  ownerId String
+  ownerId String @db.Uuid
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   photos        Photo[]
@@ -47,13 +47,15 @@ model Album {
 }
 
 model Photo {
-  id           String  @id @default(cuid())
+  id           String  @id @default(uuid()) @db.Uuid
   filename     String
   originalName String
   url          String
   thumbnailUrl String?
+  blurhash     String? // Blurhash for progressive image loading
   size         Int
   mimeType     String
+  fileHash     String // SHA-256 hash for duplicate detection
 
   // EXIF data
   cameraModel  String?
@@ -67,24 +69,24 @@ model Photo {
   createdAt BigInt // Unix timestamp
   updatedAt BigInt // Unix timestamp
 
-  albumId String
+  albumId String @db.Uuid
   album   Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
 
-  uploaderId String?
+  uploaderId String? @db.Uuid
   uploader   User?   @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
 
   @@map("photos")
 }
 
 model AlbumCollaborator {
-  id        String @id @default(cuid())
+  id        String @id @default(uuid()) @db.Uuid
   role      String @default("viewer") // viewer, editor, admin
   createdAt BigInt // Unix timestamp
 
-  albumId String
+  albumId String @db.Uuid
   album   Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
 
-  userId String
+  userId String @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([albumId, userId])

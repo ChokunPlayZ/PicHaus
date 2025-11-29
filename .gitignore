@@ -24,3 +24,5 @@ logs
 !.env.example
 
 /app/generated/prisma
+/prisma/migrations
+/public/uploads

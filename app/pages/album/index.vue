@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div class="min-h-screen bg-gradient-to-br from-[#5e4d56] to-[#3e3c5f]">
         <!-- Navigation Bar -->
         <nav class="bg-white/10 backdrop-blur-lg border-b border-white/20">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

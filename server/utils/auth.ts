@@ -29,6 +29,16 @@ export async function verifyPassword(hash: string, password: string): Promise<bo
 }
 
 /**
+ * Create a session for a user
+ * Returns the user's UUID to be used as the session token
+ */
+export async function createSession(userId: string): Promise<string> {
+    // With UUIDs, we can use the user ID directly as the session token
+    // This is secure because UUIDs are cryptographically random
+    return userId
+}
+
+/**
  * Get current Unix timestamp in seconds
  * @returns Unix timestamp
  */

@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div class="min-h-screen bg-gradient-to-br from-[#5e4d56] to-[#3e3c5f]">
         <!-- Navigation Bar -->
         <nav class="bg-white/10 backdrop-blur-lg border-b border-white/20">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,10 +70,35 @@
 
             <!-- Photos Section -->
             <div class="mb-8">
-                <h2 class="text-2xl font-bold text-white mb-4">Photos</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-white">Photos</h2>
+                    <button v-if="album.permissions.canEdit" @click="triggerFileInput"
+                        class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition flex items-center space-x-2">
+                        <span>+</span>
+                        <span>Upload Photos</span>
+                    </button>
+                </div>
+
+                <!-- Hidden file input -->
+                <input ref="fileInput" type="file" accept="image/*" multiple @change="handleFileSelect"
+                    class="hidden" />
+
+                <!-- Upload Progress -->
+                <div v-if="uploading" class="mb-4 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-white">Uploading {{ uploadProgress.current }} of {{ uploadProgress.total
+                            }}...</span>
+                        <span class="text-purple-300">{{ Math.round((uploadProgress.current / uploadProgress.total) *
+                            100) }}%</span>
+                    </div>
+                    <div class="w-full bg-white/10 rounded-full h-2">
+                        <div class="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-300"
+                            :style="{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }"></div>
+                    </div>
+                </div>
 
                 <!-- Empty State -->
-                <div v-if="album.photos.length === 0"
+                <div v-if="album.photos.length === 0 && !uploading"
                     class="text-center py-12 bg-white/5 rounded-xl border border-white/10">
                     <div class="text-6xl mb-4">📷</div>
                     <h3 class="text-xl font-bold text-white mb-2">No photos yet</h3>
@@ -85,10 +110,12 @@
                 </div>
 
                 <!-- Photo Grid -->
-                <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div v-else-if="album.photos.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     <div v-for="photo in album.photos" :key="photo.id"
                         class="aspect-square bg-white/5 rounded-lg border border-white/10 overflow-hidden hover:border-purple-400/50 transition cursor-pointer group">
-                        <div
+                        <img v-if="photo.thumbnailUrl" :src="photo.thumbnailUrl" :alt="photo.filename"
+                            class="w-full h-full object-cover" />
+                        <div v-else
                             class="w-full h-full bg-gradient-to-br from-purple-900/30 to-pink-900/30 flex items-center justify-center">
                             <span class="text-4xl">📸</span>
                         </div>
@@ -107,7 +134,7 @@
                             <p class="text-purple-300 text-sm">{{ collab.user.email }}</p>
                         </div>
                         <span class="px-3 py-1 bg-purple-500/20 text-purple-200 rounded-full text-sm">{{ collab.role
-                            }}</span>
+                        }}</span>
                     </div>
                 </div>
             </div>
@@ -185,6 +212,9 @@ const updating = ref(false)
 const editError = ref('')
 
 const copied = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
+const uploading = ref(false)
+const uploadProgress = ref({ current: 0, total: 0 })
 
 // Check authentication
 const checkAuth = async () => {
@@ -265,6 +295,49 @@ const copyUploadLink = async () => {
     await navigator.clipboard.writeText(link)
     copied.value = true
     setTimeout(() => copied.value = false, 2000)
+}
+
+// Trigger file input
+const triggerFileInput = () => {
+    fileInput.value?.click()
+}
+
+// Handle file selection
+const handleFileSelect = async (event: Event) => {
+    const target = event.target as HTMLInputElement
+    const files = target.files
+
+    if (!files || files.length === 0) return
+
+    uploading.value = true
+    uploadProgress.value = { current: 0, total: files.length }
+
+    try {
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i]
+            const formData = new FormData()
+            formData.append('file', file)
+
+            await $fetch(`/api/v1/album/${albumId}/upload`, {
+                method: 'POST',
+                body: formData,
+            })
+
+            uploadProgress.value.current = i + 1
+        }
+
+        // Refresh album to show new photos
+        await fetchAlbum()
+
+        // Reset file input
+        if (target) target.value = ''
+    } catch (err: any) {
+        console.error('Upload error:', err)
+        alert(err.data?.statusMessage || 'Failed to upload photos')
+    } finally {
+        uploading.value = false
+        uploadProgress.value = { current: 0, total: 0 }
+    }
 }
 
 // Logout
