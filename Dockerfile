@@ -16,6 +16,8 @@ COPY . .
 
 # Generate Prisma client (required before building the app)
 # Uses bunx which is available in the Bun image to run Prisma CLI
+# Inject binary targets for production (debian-openssl-3.0.x)
+RUN sed -i 's/provider = "prisma-client-js"/provider = "prisma-client-js"\n  binaryTargets = ["native", "debian-openssl-3.0.x"]/' prisma/schema.prisma
 RUN bunx prisma generate
 
 RUN bun --bun run build
@@ -29,6 +31,7 @@ RUN apt-get update -y && apt-get install -y openssl
 # Only `.output` folder is needed from the build stage
 COPY --from=build /app/.output /app
 COPY --from=build /app/node_modules/@prisma /app/node_modules/@prisma
+COPY --from=build /app/node_modules/.prisma /app/node_modules/.prisma
 
 # run the app
 EXPOSE 3000/tcp
