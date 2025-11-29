@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String  @id @default(cuid())
+  email        String? @unique
+  passwordHash String? // Argon2id hash - null for guest users who can be promoted later
+  name         String?
+  instagram    String?
+  createdAt    BigInt // Unix timestamp
+  updatedAt    BigInt // Unix timestamp
+
+  ownedAlbums        Album[]
+  uploadedPhotos     Photo[]
+  albumCollaborators AlbumCollaborator[]
+
+  @@map("users")
+}
+
+model Album {
+  id             String  @id @default(cuid())
+  title          String
+  description    String?
+  eventDate      BigInt? // Unix timestamp for when the event occurred
+  uploadLink     String  @unique
+  uploadPassword String?
+  isPublic       Boolean @default(false)
+  createdAt      BigInt // Unix timestamp
+  updatedAt      BigInt // Unix timestamp
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  photos        Photo[]
+  collaborators AlbumCollaborator[]
+
+  @@map("albums")
+}
+
+model Photo {
+  id           String  @id @default(cuid())
+  filename     String
+  originalName String
+  url          String
+  thumbnailUrl String?
+  size         Int
+  mimeType     String
+
+  // EXIF data
+  cameraModel  String?
+  lens         String?
+  focalLength  String?
+  iso          Int?
+  aperture     String?
+  shutterSpeed String?
+  dateTaken    BigInt? // Unix timestamp
+
+  createdAt BigInt // Unix timestamp
+  updatedAt BigInt // Unix timestamp
+
+  albumId String
+  album   Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  uploaderId String?
+  uploader   User?   @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
+
+  @@map("photos")
+}
+
+model AlbumCollaborator {
+  id        String @id @default(cuid())
+  role      String @default("viewer") // viewer, editor, admin
+  createdAt BigInt // Unix timestamp
+
+  albumId String
+  album   Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([albumId, userId])
+  @@map("album_collaborators")
+}

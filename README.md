@@ -1,75 +1,29 @@
-# Nuxt Minimal Starter
+# PicHaus
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+PicHaus is a photo storage and sharing platform.
+Built by Photographer, for Photographers.
 
-## Setup
+PicHaus is fully self-hosted and open source.
 
-Make sure to install dependencies:
+Built on a trusted Tech Stack
+- Nuxt 4
+- TailwindCSS
+- Prisma
+- Postgres
 
-```bash
-# npm
-npm install
+## Features
+- Colabrative photo albums 
+- Photo upload and sharing
+- EXIF support (camera model, lens, focal-length, ISO, aperture, shutter-speed, time shot)
+- Beautiful Album page.
+- Responsive design
+- Easy mobile download via share sheet.
+- support opentelemetry for those data people.
 
-# pnpm
-pnpm install
+## Great for University Photography Club
+that's exactly why it is built.
+the owner only have to share an upload link
+other can upload without an account, just a link and password.
+photographers can attatch their own IG account.
 
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## Fully Self Hosted with Docker.
