@@ -28,6 +28,7 @@ RUN apt-get update -y && apt-get install -y openssl
 
 # Only `.output` folder is needed from the build stage
 COPY --from=build /app/.output /app
+COPY --from=build /app/node_modules/@prisma /app/node_modules/@prisma
 
 # run the app
 EXPOSE 3000/tcp
