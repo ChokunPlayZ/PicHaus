@@ -1,2 +1,31 @@
-User-Agent: *
-Disallow:
+# Allow social media crawlers
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: Discordbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+User-agent: Slackbot-LinkExpanding
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: SkypeUriPreview
+Allow: /
+
+# Disallow everything else (search engines, etc.)
+User-agent: *
+Disallow: /
