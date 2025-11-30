@@ -90,8 +90,8 @@
             <div class="flex-1 flex items-center justify-center relative group overflow-hidden px-4 md:px-0 pt-20 md:pt-0"
                 @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
 
-                <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()"
-                    @touchend.stop.prevent="isIOS ? sharePhoto() : downloadPhoto()"
+                <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()" @touchstart.stop.prevent
+                    @touchmove.stop.prevent
                     class="hidden md:block absolute top-4 right-4 p-3 rounded-full bg-purple-600 text-white hover:bg-purple-700 transition z-20 shadow-lg shadow-purple-600/20">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
@@ -117,7 +117,7 @@
                     </svg>
                 </button>
 
-                <div class="relative w-full h-full flex items-center justify-center">
+                <div class="relative w-full h-full flex items-center justify-center" :style="imageContainerStyle">
                     <img v-if="photo.blurhash"
                         :src="getBlurhashUrl(photo.blurhash, photo.width ?? null, photo.height ?? null) || ''"
                         class="absolute inset-0 w-full h-full object-contain blur-xl scale-105 opacity-50" />
@@ -314,23 +314,56 @@ const mobileTransformStyle = computed(() => {
     }
 })
 
+// Image container style for swipe feedback
+const imageContainerStyle = computed(() => {
+    if (!isImageSwiping.value) {
+        return {
+            transition: 'transform 0.3s ease-out',
+            transform: 'translateX(0)'
+        }
+    }
+    return {
+        transform: `translateX(${imageSwipeOffset.value}px)`,
+        transition: 'none'
+    }
+})
+
 // Touch/Swipe handling for mobile
 const touchStartX = ref(0)
 const touchEndX = ref(0)
 const touchStartY = ref(0)
 const touchEndY = ref(0)
 const minSwipeDistance = 50 // minimum distance for a swipe
+const imageSwipeOffset = ref(0)
+const isImageSwiping = ref(false)
 
 const handleTouchStart = (e: TouchEvent) => {
     if (!e.touches[0]) return
     touchStartX.value = e.touches[0].clientX
     touchStartY.value = e.touches[0].clientY
+    touchEndX.value = e.touches[0].clientX
+    touchEndY.value = e.touches[0].clientY
+    isImageSwiping.value = false
 }
 
 const handleTouchMove = (e: TouchEvent) => {
     if (!e.touches[0]) return
     touchEndX.value = e.touches[0].clientX
     touchEndY.value = e.touches[0].clientY
+
+    const deltaX = touchEndX.value - touchStartX.value
+    const deltaY = touchEndY.value - touchStartY.value
+
+    // Only show swipe feedback for horizontal swipes
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+        isImageSwiping.value = true
+        // Add resistance at boundaries
+        if ((deltaX > 0 && !props.hasPrevious) || (deltaX < 0 && !props.hasNext)) {
+            imageSwipeOffset.value = deltaX * 0.3 // 30% resistance at boundaries
+        } else {
+            imageSwipeOffset.value = deltaX
+        }
+    }
 }
 
 const handleTouchEnd = () => {
@@ -353,6 +386,8 @@ const handleTouchEnd = () => {
     touchEndX.value = 0
     touchStartY.value = 0
     touchEndY.value = 0
+    imageSwipeOffset.value = 0
+    isImageSwiping.value = false
 }
 
 // Info panel touch/swipe handling for dismiss
