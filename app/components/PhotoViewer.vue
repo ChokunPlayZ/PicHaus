@@ -37,7 +37,36 @@
                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </button>
-                <button @click="downloadPhoto"
+                <!-- iOS: Share button only -->
+                <button v-if="isIOS" @click="sharePhoto"
+                    class="p-4 rounded-full bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 transition backdrop-blur-sm shadow-lg shadow-purple-600/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                </button>
+                <!-- Android: Share + Download buttons -->
+                <template v-else-if="isAndroid">
+                    <button @click="sharePhoto"
+                        class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                    </button>
+                    <button @click="downloadPhoto"
+                        class="p-4 rounded-full bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 transition backdrop-blur-sm shadow-lg shadow-purple-600/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    </button>
+                </template>
+                <!-- Desktop/Other: Download button only -->
+                <button v-else @click="downloadPhoto"
                     class="p-4 rounded-full bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 transition backdrop-blur-sm shadow-lg shadow-purple-600/20">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
@@ -253,6 +282,18 @@ const emit = defineEmits(['close', 'previous', 'next'])
 
 const showInfo = ref(false)
 
+// Platform detection
+const isIOS = computed(() => {
+    if (typeof window === 'undefined') return false
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+})
+
+const isAndroid = computed(() => {
+    if (typeof window === 'undefined') return false
+    return /Android/.test(navigator.userAgent)
+})
+
 // Prevent body scroll when viewer is open
 onMounted(() => {
     document.body.style.overflow = 'hidden'
@@ -419,34 +460,37 @@ const getInstagramUrl = (instagram: string | null) => {
     return `https://instagram.com/${username}`
 }
 
-const downloadPhoto = async () => {
+const sharePhoto = async () => {
     try {
         const response = await fetch(`/api/assets/${props.photo.id}/full`)
         const blob = await response.blob()
         const file = new File([blob], props.photo.originalName, { type: blob.type })
 
-        // Use share sheet only on mobile (screen width < 768px)
-        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-
-        if (isMobile && navigator.share) {
-            // Try to share directly on mobile
+        if (navigator.share) {
             try {
                 await navigator.share({
                     files: [file],
                     title: props.photo.originalName,
                 })
-                return // Successfully shared, exit early
             } catch (shareErr: any) {
-                // If user cancelled, just return and don't download
+                // If user cancelled, just return
                 if (shareErr.name === 'AbortError') {
                     return
                 }
-                // For other errors, log and fall through to download
-                console.log('Share failed, falling back to download:', shareErr.message)
+                console.error('Share failed:', shareErr)
             }
         }
+    } catch (err) {
+        console.error('Share failed:', err)
+    }
+}
 
-        // Regular download for desktop or when share is not available/failed
+const downloadPhoto = async () => {
+    try {
+        const response = await fetch(`/api/assets/${props.photo.id}/full`)
+        const blob = await response.blob()
+
+        // Regular download
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
