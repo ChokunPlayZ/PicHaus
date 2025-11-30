@@ -90,7 +90,7 @@
             <div class="flex-1 flex items-center justify-center relative group overflow-hidden px-4 md:px-0 pt-20 md:pt-0"
                 @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
 
-                <button @click="downloadPhoto"
+                <button @click="isIOS ? sharePhoto() : downloadPhoto()"
                     class="hidden md:block absolute top-4 right-4 p-2 rounded-lg bg-black/50 text-white/70 hover:text-white hover:bg-black/70 transition z-20">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
