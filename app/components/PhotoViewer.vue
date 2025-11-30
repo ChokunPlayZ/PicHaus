@@ -37,13 +37,13 @@
                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </button>
-                <!-- iOS: Share button only -->
+                <!-- iOS: Download button that triggers share sheet -->
                 <button v-if="isIOS" @click="sharePhoto"
                     class="p-4 rounded-full bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 transition backdrop-blur-sm shadow-lg shadow-purple-600/20">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                 </button>
                 <!-- Android: Share + Download buttons -->
@@ -90,7 +90,7 @@
             <div class="flex-1 flex items-center justify-center relative group overflow-hidden px-4 md:px-0 pt-20 md:pt-0"
                 @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
 
-                <button @click="isIOS ? sharePhoto() : downloadPhoto()"
+                <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()"
                     class="hidden md:block absolute top-4 right-4 p-2 rounded-lg bg-black/50 text-white/70 hover:text-white hover:bg-black/70 transition z-20">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
