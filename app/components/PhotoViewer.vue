@@ -121,8 +121,16 @@
                     <img v-if="photo.blurhash"
                         :src="getBlurhashUrl(photo.blurhash, photo.width ?? null, photo.height ?? null) || ''"
                         class="absolute inset-0 w-full h-full object-contain blur-xl scale-105 opacity-50" />
-                    <img :src="`/api/assets/${photo.id}/full`" :alt="photo.filename"
-                        class="relative max-h-full max-w-full object-contain rounded-lg shadow-2xl z-10" />
+
+                    <!-- Loading Spinner -->
+                    <div v-if="imageLoading" class="absolute inset-0 flex items-center justify-center z-20">
+                        <div class="animate-spin rounded-full h-16 w-16 border-4 border-white/20 border-t-white">
+                        </div>
+                    </div>
+
+                    <img :src="`/api/assets/${photo.id}/full`" :alt="photo.filename" @load="onImageLoad"
+                        class="relative max-h-full max-w-full object-contain rounded-lg shadow-2xl z-10"
+                        :class="{ 'opacity-0': imageLoading }" />
                 </div>
             </div>
 
@@ -277,11 +285,14 @@ const props = defineProps<{
     photo: Photo
     hasPrevious: boolean
     hasNext: boolean
+    previousPhotoId?: string | null
+    nextPhotoId?: string | null
 }>()
 
 const emit = defineEmits(['close', 'previous', 'next'])
 
 const showInfo = ref(false)
+const imageLoading = ref(true)
 
 // Platform detection
 const isIOS = computed(() => {
@@ -294,6 +305,34 @@ const isAndroid = computed(() => {
     if (typeof window === 'undefined') return false
     return /Android/.test(navigator.userAgent)
 })
+
+// Image loading handler
+const onImageLoad = () => {
+    imageLoading.value = false
+}
+
+// Watch for photo changes to reset loading state and preload adjacent images
+watch(() => props.photo.id, (newId, oldId) => {
+    if (newId !== oldId) {
+        imageLoading.value = true
+
+        // Preload adjacent images
+        nextTick(() => {
+            if (props.previousPhotoId) {
+                preloadImage(props.previousPhotoId)
+            }
+            if (props.nextPhotoId) {
+                preloadImage(props.nextPhotoId)
+            }
+        })
+    }
+}, { immediate: true })
+
+// Preload image function
+const preloadImage = (photoId: string) => {
+    const img = new Image()
+    img.src = `/api/assets/${photoId}/full`
+}
 
 // Prevent body scroll when viewer is open
 onMounted(() => {

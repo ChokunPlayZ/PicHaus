@@ -566,8 +566,9 @@
 
     <!-- Photo Viewer -->
     <PhotoViewer v-if="selectedPhoto" :photo="selectedPhoto" :has-previous="selectedPhotoIndex! > 0"
-        :has-next="selectedPhotoIndex! < (photos.length || 0) - 1" @close="closePhotoViewer" @previous="previousPhoto"
-        @next="nextPhoto" />
+        :has-next="selectedPhotoIndex! < (photos.length || 0) - 1" :previous-photo-id="previousPhotoId"
+        :next-photo-id="nextPhotoId" @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto" />
+
 
 </template>
 
@@ -823,6 +824,19 @@ const selectedPhoto = computed(() => {
     if (selectedPhotoIndex.value === null || !photos.value.length) return null
     return photos.value[selectedPhotoIndex.value]
 })
+
+// Computed: Adjacent photo IDs for preloading
+const previousPhotoId = computed(() => {
+    if (selectedPhotoIndex.value === null || selectedPhotoIndex.value <= 0) return null
+    return photos.value[selectedPhotoIndex.value - 1]?.id || null
+})
+
+const nextPhotoId = computed(() => {
+    if (selectedPhotoIndex.value === null || !photos.value.length) return null
+    if (selectedPhotoIndex.value >= photos.value.length - 1) return null
+    return photos.value[selectedPhotoIndex.value + 1]?.id || null
+})
+
 
 // Multi-select State
 const selectedPhotoIds = ref(new Set<string>())
