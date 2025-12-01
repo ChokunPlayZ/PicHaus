@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
                                 id: true,
                                 name: true,
                                 email: true,
+                                instagram: true,
                             },
                         },
                     },
@@ -74,9 +75,27 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // 2. Fetch Photos separately with pagination
+        // Extract filter parameters
+        const camera = query.camera as string | undefined
+        const lens = query.lens as string | undefined
+        const photographer = query.photographer as string | undefined
+
+        // Build where clause with filters
+        const whereClause: any = { albumId: id }
+
+        if (camera) {
+            whereClause.cameraModel = { contains: camera, mode: 'insensitive' }
+        }
+        if (lens) {
+            whereClause.lens = { contains: lens, mode: 'insensitive' }
+        }
+        if (photographer) {
+            whereClause.uploaderId = photographer
+        }
+
+        // 2. Fetch Photos separately with pagination and filters
         const photos = await prisma.photo.findMany({
-            where: { albumId: id },
+            where: whereClause,
             select: {
                 id: true,
                 filename: true,
@@ -102,9 +121,10 @@ export default defineEventHandler(async (event) => {
                     },
                 },
             },
-            orderBy: {
-                createdAt: 'desc',
-            },
+            orderBy: [
+                { dateTaken: 'desc' },
+                { createdAt: 'desc' }
+            ],
             skip,
             take: limit,
         })

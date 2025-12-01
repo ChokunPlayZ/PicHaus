@@ -27,6 +27,13 @@
                         <span v-if="album.eventDate">{{ formatDate(album.eventDate) }}</span>
                         <div v-if="album.description" class="text-white/60 whitespace-pre-line mt-2">{{
                             album.description }}</div>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-white/40">by</span>
+                            <button @click="showPhotographersModal = true"
+                                class="text-white/80 hover:text-white transition underline decoration-dotted">
+                                {{ getPhotographersDisplay }}
+                            </button>
+                        </div>
                         <span v-if="album.isPublic"
                             class="inline-block mt-2 px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 text-xs border border-green-500/30">Public</span>
                     </div>
@@ -104,6 +111,42 @@
                             :style="{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }">
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="mb-6 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-4">
+                <div class="flex flex-wrap items-center gap-4">
+                    <span class="text-white font-medium">Filters:</span>
+
+                    <!-- Camera Filter -->
+                    <select v-model="filters.camera" @change="applyFilters"
+                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="">All Cameras</option>
+                        <option v-for="camera in availableCameras" :key="camera" :value="camera">{{ camera }}</option>
+                    </select>
+
+                    <!-- Lens Filter -->
+                    <select v-model="filters.lens" @change="applyFilters"
+                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="">All Lenses</option>
+                        <option v-for="lens in availableLenses" :key="lens" :value="lens">{{ lens }}</option>
+                    </select>
+
+                    <!-- Photographer Filter -->
+                    <select v-model="filters.photographer" @change="applyFilters"
+                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="">All Photographers</option>
+                        <option v-for="uploader in availableUploaders" :key="uploader.id" :value="uploader.id">
+                            {{ uploader.name || uploader.email }}
+                        </option>
+                    </select>
+
+                    <!-- Clear Filters -->
+                    <button v-if="filters.camera || filters.lens || filters.photographer" @click="clearFilters"
+                        class="px-3 py-2 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-lg transition text-sm">
+                        Clear Filters
+                    </button>
                 </div>
             </div>
 
@@ -202,19 +245,46 @@
                 <div v-if="loadingPhotos" class="animate-pulse text-purple-300">Loading more photos...</div>
             </div>
         </div>
+    </div>
 
-        <!-- Collaborators Section -->
-        <div v-if="album?.collaborators && album.collaborators.length > 0 && album.permissions.isOwner">
-            <h2 class="text-2xl font-bold text-white mb-4">Collaborators</h2>
-            <div class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4">
-                <div v-for="collab in album.collaborators" :key="collab.id"
-                    class="flex items-center justify-between py-2">
-                    <div>
-                        <p class="text-white font-medium">{{ collab.user.name }}</p>
-                        <p class="text-purple-300 text-sm">{{ collab.user.email }}</p>
+    <!-- Photographers Modal -->
+    <div v-if="showPhotographersModal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        @click.self="showPhotographersModal = false">
+        <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-md w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold text-white">Photographers</h3>
+                <button @click="showPhotographersModal = false" class="text-white/60 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div v-for="photographer in allPhotographers" :key="photographer.id"
+                    class="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1">
+                            <p class="text-white font-medium">{{ photographer.name }}</p>
+                            <p v-if="photographer.email" class="text-purple-300 text-sm">{{ photographer.email }}</p>
+                            <div v-if="photographer.instagram" class="flex items-center gap-2 mt-1">
+                                <span class="text-purple-300 text-sm">@{{ photographer.instagram }}</span>
+                                <a :href="`https://instagram.com/${photographer.instagram || ''}`" target="_blank"
+                                    rel="noopener noreferrer" class="text-pink-400 hover:text-pink-300 transition">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 bg-purple-500/20 text-purple-200 rounded-full text-xs whitespace-nowrap">
+                            {{ photographer.role }}
+                        </span>
                     </div>
-                    <span class="px-3 py-1 bg-purple-500/20 text-purple-200 rounded-full text-sm">{{ collab.role
-                        }}</span>
                 </div>
             </div>
         </div>
@@ -570,6 +640,12 @@ interface Album {
         collaborators: number
     }
     permissions: Permissions
+    pagination?: {
+        page: number
+        limit: number
+        total: number
+        hasMore: boolean
+    }
 }
 
 interface ShareLink {
@@ -598,6 +674,118 @@ const hasMore = ref(false)
 const loadingPhotos = ref(false)
 const photos = ref<Photo[]>([])
 const sentinelRef = ref<HTMLElement | null>(null)
+
+// Filter state
+const filters = ref({
+    camera: '',
+    lens: '',
+    photographer: ''
+})
+
+// Computed: Get unique cameras from all photos
+const availableCameras = computed(() => {
+    const cameras = photos.value
+        .map(p => p.cameraModel)
+        .filter((c): c is string => c != null && c !== '')
+    return Array.from(new Set(cameras)).sort()
+})
+
+// Computed: Get unique lenses from all photos
+const availableLenses = computed(() => {
+    const lenses = photos.value
+        .map(p => p.lens)
+        .filter((l): l is string => l != null && l !== '')
+    return Array.from(new Set(lenses)).sort()
+})
+
+// Computed: Get unique uploaders from all photos
+const availableUploaders = computed(() => {
+    const uploaderMap = new Map()
+    photos.value.forEach(photo => {
+        if (photo.uploader) {
+            uploaderMap.set(photo.uploader.id, photo.uploader)
+        }
+    })
+    return Array.from(uploaderMap.values()).sort((a, b) =>
+        (a.name || a.email || '').localeCompare(b.name || b.email || '')
+    )
+})
+
+const applyFilters = async () => {
+    page.value = 1
+    photos.value = []
+    await fetchAlbum()
+}
+
+const clearFilters = () => {
+    filters.value = {
+        camera: '',
+        lens: '',
+        photographer: ''
+    }
+    applyFilters()
+}
+
+// Photographers modal
+const showPhotographersModal = ref(false)
+
+// Computed: Get all unique photographers (owner + collaborators + uploaders)
+const allPhotographers = computed(() => {
+    if (!album.value) return []
+
+    const photographersMap = new Map()
+
+    // Add owner
+    const owner = album.value.owner
+    console.log('Owner data:', owner) // Debug log
+    console.log('Owner instagram:', owner.instagram) // Debug log
+    photographersMap.set(owner.id, {
+        id: owner.id,
+        name: owner.name || owner.email || 'Unknown',
+        email: owner.email,
+        instagram: owner.instagram,
+        role: 'Owner'
+    })
+
+    // Add collaborators
+    album.value.collaborators?.forEach(collab => {
+        const user = collab.user
+        // Skip if already added (e.g., owner who is also a collaborator)
+        if (!photographersMap.has(user.id)) {
+            photographersMap.set(user.id, {
+                id: user.id,
+                name: user.name || user.email || 'Unknown',
+                email: user.email,
+                instagram: ('instagram' in user) ? user.instagram : null,
+                role: 'Collaborator'
+            })
+        }
+    })
+
+    // Add uploaders from photos
+    photos.value.forEach(photo => {
+        if (photo.uploader && !photographersMap.has(photo.uploader.id)) {
+            photographersMap.set(photo.uploader.id, {
+                id: photo.uploader.id,
+                name: photo.uploader.name || 'Unknown',
+                email: null,
+                instagram: (photo.uploader as any).instagram || null,
+                role: 'Contributor'
+            })
+        }
+    })
+
+    const result = Array.from(photographersMap.values())
+    console.log('All photographers:', result) // Debug log
+    return result
+})
+
+// Computed: Display text for photographers (first names only)
+const getPhotographersDisplay = computed(() => {
+    return allPhotographers.value
+        .map(p => p.name.split(' ')[0]) // Get first name only
+        .join(', ')
+})
 
 const showEditModal = ref(false)
 const editForm = ref({
@@ -887,11 +1075,20 @@ const checkAuth = async () => {
 // Fetch album (initial load)
 const fetchAlbum = async () => {
     try {
-        loading.value = true
-        page.value = 1
-        const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/album/${albumId}`, {
-            params: { page: page.value, limit: limit.value }
+        loading.value = page.value === 1
+        loadingPhotos.value = page.value > 1
+
+        // Build query params with filters
+        const params = new URLSearchParams({
+            page: page.value.toString(),
+            limit: limit.value.toString()
         })
+
+        if (filters.value.camera) params.append('camera', filters.value.camera)
+        if (filters.value.lens) params.append('lens', filters.value.lens)
+        if (filters.value.photographer) params.append('photographer', filters.value.photographer)
+
+        const response = await $fetch<{ success: boolean; data: Album }>(`/api/v1/album/${albumId}?${params.toString()}`)
         album.value = response.data
 
         if (response.data.photos) {
