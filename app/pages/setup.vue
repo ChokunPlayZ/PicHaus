@@ -50,7 +50,7 @@
 
                     <!-- Submit Button -->
                     <button type="submit" :disabled="loading"
-                        class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                        class="w-full bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
                         <span v-if="loading">Setting up...</span>
                         <span v-else>Complete Setup</span>
                     </button>

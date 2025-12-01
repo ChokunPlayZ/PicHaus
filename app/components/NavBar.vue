@@ -33,7 +33,7 @@
                         leave-from-class="transform opacity-100 scale-100"
                         leave-to-class="transform opacity-0 scale-95">
                         <div v-if="showDropdown"
-                            class="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none border border-white/10">
+                            class="absolute right-0 mt-2 w-48 bg-white/10 backdrop-blur-lg rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none border border-white/20">
 
                             <div class="px-4 py-2 border-b border-white/10">
                                 <p class="text-sm text-white font-medium truncate">{{ user?.name }}</p>

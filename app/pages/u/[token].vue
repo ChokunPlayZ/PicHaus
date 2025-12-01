@@ -25,7 +25,7 @@
                             class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-white/30" />
                     </div>
                     <button type="submit" :disabled="verifying"
-                        class="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-purple-900/20 mt-4">
+                        class="w-full px-4 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-[#9995ee]/20 mt-4">
                         {{ verifying ? 'Verifying...' : 'Next' }}
                     </button>
                 </form>
@@ -51,7 +51,7 @@
                     </div>
 
                     <button type="submit" :disabled="accessing"
-                        class="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-purple-900/20 mt-6">
+                        class="w-full px-4 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-[#9995ee]/20 mt-6">
                         {{ accessing ? 'Accessing...' : 'Start Uploading' }}
                     </button>
                 </form>

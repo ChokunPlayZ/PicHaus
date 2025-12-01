@@ -39,7 +39,7 @@
                 </button>
                 <!-- iOS: Download button that triggers share sheet -->
                 <button v-if="isIOS" @click="sharePhoto"
-                    class="p-4 rounded-full bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 transition backdrop-blur-sm shadow-lg shadow-purple-600/20">
+                    class="p-4 rounded-full bg-[#f7c7d5] text-white hover:bg-[#f5b0c3] active:bg-[#e59ab0] transition backdrop-blur-sm shadow-lg shadow-[#f7c7d5]/20">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -57,7 +57,7 @@
                         </svg>
                     </button>
                     <button @click="downloadPhoto"
-                        class="p-4 rounded-full bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 transition backdrop-blur-sm shadow-lg shadow-purple-600/20">
+                        class="p-4 rounded-full bg-[#f7c7d5] text-white hover:bg-[#f5b0c3] active:bg-[#e59ab0] transition backdrop-blur-sm shadow-lg shadow-[#f7c7d5]/20">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -67,7 +67,7 @@
                 </template>
                 <!-- Desktop/Other: Download button only -->
                 <button v-else @click="downloadPhoto"
-                    class="p-4 rounded-full bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 transition backdrop-blur-sm shadow-lg shadow-purple-600/20">
+                    class="p-4 rounded-full bg-[#f7c7d5] text-white hover:bg-[#f5b0c3] active:bg-[#e59ab0] transition backdrop-blur-sm shadow-lg shadow-[#f7c7d5]/20">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -92,7 +92,7 @@
 
                 <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()" @touchstart.stop.prevent
                     @touchmove.stop.prevent
-                    class="hidden md:block absolute top-4 right-4 p-3 rounded-full bg-purple-600 text-white hover:bg-purple-700 transition z-20 shadow-lg shadow-purple-600/20">
+                    class="hidden md:block absolute top-4 right-4 p-3 rounded-full bg-[#f7c7d5] text-white hover:bg-[#f5b0c3] transition z-20 shadow-lg shadow-[#f7c7d5]/20">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -167,7 +167,7 @@
                         <h4 class="text-sm font-medium text-purple-300 mb-2">Uploaded By</h4>
                         <div class="flex items-center space-x-3">
                             <div
-                                class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                                class="w-10 h-10 rounded-full bg-gradient-to-br from-[#f9d4e0] to-[#b0ace8] flex items-center justify-center text-white font-bold">
                                 {{ photo.uploader?.name?.charAt(0) || '?' }}
                             </div>
                             <div class="flex-1">

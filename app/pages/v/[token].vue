@@ -22,7 +22,7 @@
                         </div>
 
                         <button type="submit" :disabled="accessing"
-                            class="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-purple-900/20">
+                            class="w-full px-4 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-[#9995ee]/20">
                             {{ accessing ? 'Accessing...' : 'View Album' }}
                         </button>
                     </form>
@@ -104,7 +104,7 @@
                 </div>
 
                 <div class="w-full bg-white/10 rounded-full h-4 mb-4 overflow-hidden">
-                    <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-300 ease-out"
+                    <div class="bg-gradient-to-r from-[#f9d4e0] to-[#b0ace8] h-full transition-all duration-300 ease-out"
                         :style="{ width: `${(downloadProgress.current / downloadProgress.total) * 100}%` }">
                     </div>
                 </div>

@@ -13,7 +13,7 @@
                     <p class="text-purple-200">Manage your photo collections</p>
                 </div>
                 <button @click="showCreateModal = true"
-                    class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition duration-200 transform hover:scale-105 flex items-center justify-center space-x-2">
+                    class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition duration-200 transform hover:scale-105 flex items-center justify-center space-x-2">
                     <span>+</span>
                     <span>Create Album</span>
                 </button>
@@ -35,7 +35,7 @@
                 <h3 class="text-2xl font-bold text-white mb-2">No albums yet</h3>
                 <p class="text-purple-200 mb-6">Create your first album to get started</p>
                 <button @click="showCreateModal = true"
-                    class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition">
+                    class="px-6 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition">
                     Create Album
                 </button>
             </div>
@@ -121,7 +121,7 @@
                             Cancel
                         </button>
                         <button type="submit" :disabled="creating"
-                            class="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                            class="flex-1 px-4 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
                             {{ creating ? 'Creating...' : 'Create' }}
                         </button>
                     </div>

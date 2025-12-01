@@ -45,7 +45,7 @@
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div
-                                            class="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg mr-3">
+                                            class="h-10 w-10 rounded-full bg-gradient-to-br from-[#f9d4e0] to-[#b0ace8] flex items-center justify-center text-white font-bold text-lg mr-3">
                                             {{ u.name?.[0]?.toUpperCase() || '?' }}
                                         </div>
                                         <div>
@@ -71,7 +71,7 @@
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <button @click="openEditModal(u)"
-                                        class="text-blue-400 hover:text-blue-300 transition mr-3" title="Edit User">
+                                        class="text-purple-300 hover:text-purple-200 transition mr-3" title="Edit User">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
                                             viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -155,7 +155,7 @@
                             Cancel
                         </button>
                         <button type="submit" :disabled="saving"
-                            class="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                            class="flex-1 px-4 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
                             {{ saving ? 'Saving...' : 'Save Changes' }}
                         </button>
                     </div>

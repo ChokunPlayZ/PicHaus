@@ -94,13 +94,13 @@
                 <div v-if="uploading" class="mt-4 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-4">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-white">Uploading {{ uploadProgress.current }} of {{ uploadProgress.total
-                            }}...</span>
+                        }}...</span>
                         <span class="text-purple-300">{{ Math.round((uploadProgress.current / uploadProgress.total) *
                             100)
-                            }}%</span>
+                        }}%</span>
                     </div>
                     <div class="w-full bg-white/10 rounded-full h-2">
-                        <div class="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-300"
+                        <div class="bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] h-2 rounded-full transition-all duration-300"
                             :style="{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }">
                         </div>
                     </div>
@@ -114,7 +114,7 @@
                 <h3 class="text-xl font-bold text-white mb-2">No photos yet</h3>
                 <p class="text-purple-200 mb-4">Upload photos to get started</p>
                 <button v-if="album.permissions.isOwner" @click="openShareModal"
-                    class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition">
+                    class="px-6 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition">
                     Share Album
                 </button>
             </div>
@@ -214,7 +214,7 @@
                         <p class="text-purple-300 text-sm">{{ collab.user.email }}</p>
                     </div>
                     <span class="px-3 py-1 bg-purple-500/20 text-purple-200 rounded-full text-sm">{{ collab.role
-                    }}</span>
+                        }}</span>
                 </div>
             </div>
         </div>
@@ -284,7 +284,7 @@
                         Cancel
                     </button>
                     <button type="submit" :disabled="updatingPhoto"
-                        class="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                        class="flex-1 px-4 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
                         {{ updatingPhoto ? 'Updating...' : 'Update' }}
                     </button>
                 </div>
@@ -334,7 +334,7 @@
                         Cancel
                     </button>
                     <button type="submit" :disabled="updating"
-                        class="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                        class="flex-1 px-4 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
                         {{ updating ? 'Updating...' : 'Update' }}
                     </button>
                 </div>
@@ -384,7 +384,7 @@
                             class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
                     </div>
                     <button type="submit" :disabled="creatingLink"
-                        class="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                        class="w-full px-4 py-2 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
                         {{ creatingLink ? 'Creating...' : 'Create Link' }}
                     </button>
                 </form>
@@ -445,7 +445,7 @@
 
     <!-- Context Menu -->
     <div v-if="contextMenu.visible"
-        class="fixed z-50 bg-gray-800 border border-white/10 rounded-lg shadow-xl py-1 w-48 backdrop-blur-xl"
+        class="fixed z-50 bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg shadow-xl py-1 w-48"
         :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }">
 
         <button @click="toggleSelection(contextMenu.photo!.id); closeContextMenu()"
