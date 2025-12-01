@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[#5e4d56] to-[#3e3c5f] flex items-center justify-center p-4">
+    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] flex items-center justify-center p-4">
         <div class="text-center">
             <h1 class="text-6xl font-bold text-white mb-4">📸 PicHaus</h1>
             <p class="text-purple-200 text-xl mb-8">Collaborative Photo Albums</p>

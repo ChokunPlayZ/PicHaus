@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[#5e4d56] to-[#3e3c5f] flex items-center justify-center p-4">
+    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] flex items-center justify-center p-4">
         <div class="w-full max-w-md">
             <!-- Logo/Header -->
             <div class="text-center mb-8">
@@ -50,7 +50,7 @@
 
                     <!-- Submit Button -->
                     <button type="submit" :disabled="loading"
-                        class="w-full bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                        class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
                         <span v-if="loading">Setting up...</span>
                         <span v-else>Complete Setup</span>
                     </button>

@@ -1,0 +1,41 @@
+:root {
+  /* Background */
+  --bg-primary-start: #5e4d56;
+  --bg-primary-end: #3e3c5f;
+  
+  /* Buttons */
+  --btn-primary-start: #f7c7d5;
+  --btn-primary-end: #9995ee;
+  --btn-primary-hover-start: #f5b0c3;
+  --btn-primary-hover-end: #8580e0;
+  --btn-primary-active: #e59ab0;
+  
+  /* Text */
+  --text-primary: #ffffff;
+  --text-secondary: rgb(216 180 254); /* purple-200 */
+  --text-tertiary: rgb(196 181 253); /* purple-300 */
+  --text-muted: rgba(255, 255, 255, 0.6);
+  --text-subtle: rgba(255, 255, 255, 0.4);
+  --text-faint: rgba(255, 255, 255, 0.3);
+  
+  /* Glass Morphism */
+  --glass-bg-light: rgba(255, 255, 255, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg-strong: rgba(255, 255, 255, 0.2);
+  --glass-border-light: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  
+  /* Status Colors */
+  --error-bg: rgba(239, 68, 68, 0.2);
+  --error-border: rgba(239, 68, 68, 0.5);
+  --error-text: rgb(254 202 202);
+  --error-text-dark: rgb(248 113 113);
+  
+  --success-bg: rgba(34, 197, 94, 0.2);
+  --success-border: rgba(34, 197, 94, 0.5);
+  --success-text: rgb(187 247 208);
+  
+  /* Shadows */
+  --shadow-primary: rgba(247, 199, 213, 0.2);
+  --shadow-secondary: rgba(153, 149, 238, 0.2);
+}

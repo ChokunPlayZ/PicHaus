@@ -39,7 +39,7 @@
                 </button>
                 <!-- iOS: Download button that triggers share sheet -->
                 <button v-if="isIOS" @click="sharePhoto"
-                    class="p-4 rounded-full bg-[#f7c7d5] text-white hover:bg-[#f5b0c3] active:bg-[#e59ab0] transition backdrop-blur-sm shadow-lg shadow-[#f7c7d5]/20">
+                    class="p-4 rounded-full bg-[var(--btn-primary-start)] text-white hover:bg-[var(--btn-primary-hover-start)] active:bg-[var(--btn-primary-active)] transition backdrop-blur-sm shadow-lg shadow-[var(--shadow-primary)]">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -57,7 +57,7 @@
                         </svg>
                     </button>
                     <button @click="downloadPhoto"
-                        class="p-4 rounded-full bg-[#f7c7d5] text-white hover:bg-[#f5b0c3] active:bg-[#e59ab0] transition backdrop-blur-sm shadow-lg shadow-[#f7c7d5]/20">
+                        class="p-4 rounded-full bg-[var(--btn-primary-start)] text-white hover:bg-[var(--btn-primary-hover-start)] active:bg-[var(--btn-primary-active)] transition backdrop-blur-sm shadow-lg shadow-[var(--shadow-primary)]">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -67,7 +67,7 @@
                 </template>
                 <!-- Desktop/Other: Download button only -->
                 <button v-else @click="downloadPhoto"
-                    class="p-4 rounded-full bg-[#f7c7d5] text-white hover:bg-[#f5b0c3] active:bg-[#e59ab0] transition backdrop-blur-sm shadow-lg shadow-[#f7c7d5]/20">
+                    class="p-4 rounded-full bg-[var(--btn-primary-start)] text-white hover:bg-[var(--btn-primary-hover-start)] active:bg-[var(--btn-primary-active)] transition backdrop-blur-sm shadow-lg shadow-[var(--shadow-primary)]">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -92,7 +92,7 @@
 
                 <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()" @touchstart.stop.prevent
                     @touchmove.stop.prevent
-                    class="hidden md:block absolute top-4 right-4 p-3 rounded-full bg-[#f7c7d5] text-white hover:bg-[#f5b0c3] transition z-20 shadow-lg shadow-[#f7c7d5]/20">
+                    class="hidden md:block absolute top-4 right-4 p-3 rounded-full bg-[var(--btn-primary-start)] text-white hover:bg-[var(--btn-primary-hover-start)] transition z-20 shadow-lg shadow-[var(--shadow-primary)]">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

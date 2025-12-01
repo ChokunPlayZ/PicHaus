@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[#5e4d56] to-[#3e3c5f]">
+    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
         <!-- Navigation Bar -->
         <!-- Navigation Bar -->
         <NavBar :show-back="true" back-text="Back to Albums" back-to="/album" title="Admin Dashboard" />
@@ -155,7 +155,7 @@
                             Cancel
                         </button>
                         <button type="submit" :disabled="saving"
-                            class="flex-1 px-4 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                            class="flex-1 px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
                             {{ saving ? 'Saving...' : 'Save Changes' }}
                         </button>
                     </div>

@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[#5e4d56] to-[#3e3c5f]">
+    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
         <!-- Initial Loading/Auth State -->
         <div v-if="!isAuthenticated" class="min-h-screen flex items-center justify-center p-4">
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8 max-w-md w-full shadow-xl">
@@ -22,7 +22,7 @@
                         </div>
 
                         <button type="submit" :disabled="accessing"
-                            class="w-full px-4 py-3 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-[#9995ee]/20">
+                            class="w-full px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-[var(--shadow-secondary)]">
                             {{ accessing ? 'Accessing...' : 'View Album' }}
                         </button>
                     </form>

@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[#5e4d56] to-[#3e3c5f]">
+    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
         <!-- Loading State -->
         <div v-if="loading" class="flex items-center justify-center min-h-screen">
             <div class="animate-pulse text-purple-300 text-xl">Loading...</div>
@@ -51,7 +51,7 @@
                     </div>
 
                     <button type="submit" :disabled="loggingIn"
-                        class="w-full bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50">
+                        class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50">
                         {{ loggingIn ? 'Joining...' : 'Join Album' }}
                     </button>
                 </form>
@@ -86,7 +86,7 @@
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-purple-200 mb-2">Select Photos</label>
                     <input ref="fileInput" type="file" accept="image/*" multiple @change="handleFileSelect"
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#f7c7d5] file:text-white hover:file:bg-purple-700 cursor-pointer" />
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--btn-primary-start)] file:text-white hover:file:bg-[var(--btn-primary-hover-start)] cursor-pointer" />
                     <p class="text-purple-300 text-sm mt-2">You can select multiple photos at once</p>
                 </div>
 
@@ -99,7 +99,7 @@
                             100) }}%</span>
                     </div>
                     <div class="w-full bg-white/10 rounded-full h-3">
-                        <div class="bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] h-3 rounded-full transition-all duration-300"
+                        <div class="bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] h-3 rounded-full transition-all duration-300"
                             :style="{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }"></div>
                     </div>
                 </div>
@@ -116,7 +116,7 @@
 
                 <!-- Upload Button -->
                 <button v-if="selectedFiles.length > 0 && !uploading" @click="uploadPhotos"
-                    class="w-full px-6 py-4 bg-gradient-to-r from-[#f7c7d5] to-[#9995ee] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition text-lg">
+                    class="w-full px-6 py-4 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition text-lg">
                     Upload {{ selectedFiles.length }} Photo{{ selectedFiles.length > 1 ? 's' : '' }}
                 </button>
             </div>
