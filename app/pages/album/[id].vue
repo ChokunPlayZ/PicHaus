@@ -81,7 +81,7 @@
 
             <!-- Upload Section -->
             <div v-if="album.permissions.canEdit" class="mb-8">
-                <div @click="triggerFileInput" @dragover.prevent @drop.prevent="handleFileSelect"
+                <div @click="triggerFileInput" @dragover.prevent @drop.prevent="handleDrop"
                     class="border-2 border-dashed border-white/20 rounded-xl p-4 sm:p-8 text-center hover:border-purple-500/50 hover:bg-white/5 transition cursor-pointer group">
                     <input type="file" ref="fileInput" multiple accept="image/*" class="hidden"
                         @change="handleFileSelect" />
@@ -98,18 +98,30 @@
                 </div>
 
                 <!-- Upload Progress -->
-                <div v-if="uploading" class="mt-4 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-white">Uploading {{ uploadProgress.current }} of {{ uploadProgress.total
-                        }}...</span>
-                        <span class="text-purple-300">{{ Math.round((uploadProgress.current / uploadProgress.total) *
-                            100)
-                        }}%</span>
-                    </div>
-                    <div class="w-full bg-white/10 rounded-full h-2">
-                        <div class="bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] h-2 rounded-full transition-all duration-300"
-                            :style="{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }">
+                <div v-if="uploading" class="mt-4 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-4 space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-white">Uploading {{ uploadProgress.current }} of {{ uploadProgress.total
+                            }}...</span>
+                            <span class="text-purple-300">{{ Math.round((uploadProgress.current / uploadProgress.total) *
+                                100)
+                            }}%</span>
                         </div>
+                        <div class="w-full bg-white/10 rounded-full h-2">
+                            <div class="bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] h-2 rounded-full transition-all duration-300"
+                                :style="{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Skipped Photos Info -->
+                    <div v-if="uploadProgress.skipped > 0" class="pt-2 border-t border-white/10">
+                        <p class="text-sm text-yellow-300 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {{ uploadProgress.skipped }} photo{{ uploadProgress.skipped !== 1 ? 's' : '' }} already exist{{ uploadProgress.skipped !== 1 ? '' : 's' }} (skipped)
+                        </p>
                     </div>
                 </div>
             </div>
@@ -815,7 +827,7 @@ const editPhotoError = ref('')
 const copied = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploading = ref(false)
-const uploadProgress = ref({ current: 0, total: 0 })
+const uploadProgress = ref({ current: 0, total: 0, skipped: 0 })
 const downloading = ref(false)
 const downloadProgress = ref({ current: 0, total: 0 })
 
@@ -1494,7 +1506,7 @@ const handleFileSelect = async (event: Event) => {
     if (!files || files.length === 0) return
 
     uploading.value = true
-    uploadProgress.value = { current: 0, total: files.length }
+    uploadProgress.value = { current: 0, total: files.length, skipped: 0 }
 
     try {
         for (let i = 0; i < files.length; i++) {
@@ -1504,10 +1516,21 @@ const handleFileSelect = async (event: Event) => {
             const formData = new FormData()
             formData.append('file', file)
 
-            await $fetch(`/api/v1/album/${albumId}/upload`, {
-                method: 'POST',
-                body: formData,
-            })
+            try {
+                await $fetch(`/api/v1/album/${albumId}/upload`, {
+                    method: 'POST',
+                    body: formData,
+                })
+            } catch (err: any) {
+                // If file already exists, skip it and continue
+                if (err.status === 409) {
+                    uploadProgress.value.skipped++
+                    uploadProgress.value.current = i + 1
+                    continue
+                }
+                // For other errors, re-throw
+                throw err
+            }
 
             uploadProgress.value.current = i + 1
         }
@@ -1522,7 +1545,57 @@ const handleFileSelect = async (event: Event) => {
         alert(err.data?.statusMessage || 'Failed to upload photos')
     } finally {
         uploading.value = false
-        uploadProgress.value = { current: 0, total: 0 }
+        uploadProgress.value = { current: 0, total: 0, skipped: 0 }
+    }
+}
+
+// Handle drop event (for drag and drop)
+const handleDrop = async (event: DragEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    
+    const files = event.dataTransfer?.files
+    
+    if (!files || files.length === 0) return
+
+    uploading.value = true
+    uploadProgress.value = { current: 0, total: files.length, skipped: 0 }
+
+    try {
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i]
+            if (!file) continue
+
+            const formData = new FormData()
+            formData.append('file', file)
+
+            try {
+                await $fetch(`/api/v1/album/${albumId}/upload`, {
+                    method: 'POST',
+                    body: formData,
+                })
+            } catch (err: any) {
+                // If file already exists, skip it and continue
+                if (err.status === 409) {
+                    uploadProgress.value.skipped++
+                    uploadProgress.value.current = i + 1
+                    continue
+                }
+                // For other errors, re-throw
+                throw err
+            }
+
+            uploadProgress.value.current = i + 1
+        }
+
+        // Refresh album to show new photos
+        await fetchAlbum()
+    } catch (err: any) {
+        console.error('Upload error:', err)
+        alert(err.data?.statusMessage || 'Failed to upload photos')
+    } finally {
+        uploading.value = false
+        uploadProgress.value = { current: 0, total: 0, skipped: 0 }
     }
 }
 
