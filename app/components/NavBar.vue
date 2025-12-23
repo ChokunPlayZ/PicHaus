@@ -62,6 +62,16 @@
                                 Settings
                             </a>
 
+                            <a @click="navigateTo('/api-tokens'); closeDropdown()"
+                                class="px-4 py-2 text-sm text-white hover:bg-white/10 cursor-pointer flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                </svg>
+                                API Tokens
+                            </a>
+
                             <div class="border-t border-white/10 my-1"></div>
 
                             <a @click="handleLogout"
