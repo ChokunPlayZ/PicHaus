@@ -94,7 +94,7 @@
                 <div v-if="uploading" class="mb-6">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-white">Uploading {{ uploadProgress.current }} of {{ uploadProgress.total
-                            }}...</span>
+                        }}...</span>
                         <span class="text-purple-300">{{ Math.round((uploadProgress.current / uploadProgress.total) *
                             100) }}%</span>
                     </div>
@@ -112,6 +112,11 @@
                 <!-- Error Message -->
                 <div v-if="uploadError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6">
                     <p class="text-red-200">{{ uploadError }}</p>
+                </div>
+
+                <!-- Warning Message -->
+                <div v-if="uploadWarning" class="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 mb-6">
+                    <p class="text-yellow-200">{{ uploadWarning }}</p>
                 </div>
 
                 <!-- Upload Button -->
@@ -155,6 +160,15 @@ const uploading = ref(false)
 const uploadProgress = ref({ current: 0, total: 0 })
 const uploadSuccess = ref(false)
 const uploadError = ref('')
+const uploadWarning = ref('')
+
+// Helper to calculate SHA-256 hash
+const calculateFileHash = async (file: File): Promise<string> => {
+    const buffer = await file.arrayBuffer()
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
 
 // Check auth
 const checkAuth = async () => {
@@ -223,11 +237,44 @@ const uploadPhotos = async () => {
     uploading.value = true
     uploadProgress.value = { current: 0, total: selectedFiles.value.length }
     uploadError.value = ''
+    uploadWarning.value = ''
     uploadSuccess.value = false
 
     try {
-        for (let i = 0; i < selectedFiles.value.length; i++) {
-            const file = selectedFiles.value[i]
+        // 1. Calculate hashes and check for duplicates
+        const filesWithHashes: { file: File; hash: string }[] = []
+        for (const file of selectedFiles.value) {
+            const hash = await calculateFileHash(file)
+            filesWithHashes.push({ file, hash })
+        }
+
+        const hashes = filesWithHashes.map(f => f.hash)
+        const { duplicates } = await $fetch<{ success: boolean, duplicates: string[] }>('/api/v1/photos/check-duplicates', {
+            method: 'POST',
+            body: { hashes }
+        })
+
+        // 2. Filter duplicates
+        const filesToUpload = filesWithHashes.filter(f => !duplicates.includes(f.hash))
+        const duplicateCount = filesWithHashes.length - filesToUpload.length
+
+        if (duplicateCount > 0) {
+            uploadWarning.value = `Skipped ${duplicateCount} duplicate photo${duplicateCount > 1 ? 's' : ''}.`
+        }
+
+        if (filesToUpload.length === 0) {
+            uploadError.value = 'All selected photos are already uploaded.'
+            uploading.value = false
+            return
+        }
+
+        // 3. Upload remaining files
+        uploadProgress.value = { current: 0, total: filesToUpload.length }
+
+        for (let i = 0; i < filesToUpload.length; i++) {
+            const item = filesToUpload[i]
+            if (!item) continue
+            const { file } = item
             const formData = new FormData()
             formData.append('file', file)
 
