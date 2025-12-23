@@ -60,11 +60,10 @@ export default defineEventHandler(async (event) => {
     if (photo.storagePath) {
         filePath = getAbsoluteFilePath(photo.storagePath)
     } else {
-        // Legacy fallback: try to find it in public/uploads
-        // photo.url might be /uploads/photos/filename.jpg
-        // We need to map it to filesystem
-        const publicPath = photo.url.startsWith('/') ? photo.url.substring(1) : photo.url
-        filePath = join(process.cwd(), 'public', publicPath)
+        throw createError({
+            statusCode: 404,
+            statusMessage: 'File path not found',
+        })
     }
 
     try {

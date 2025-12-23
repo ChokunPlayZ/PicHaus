@@ -54,10 +54,6 @@ export default defineEventHandler(async (event) => {
     let filePath: string
     if (photo.thumbnailStoragePath) {
         filePath = getAbsoluteFilePath(photo.thumbnailStoragePath)
-    } else if (photo.thumbnailUrl && !photo.thumbnailUrl.startsWith('/api/')) {
-        // Legacy fallback: try to find it in public/uploads
-        const publicPath = photo.thumbnailUrl.startsWith('/') ? photo.thumbnailUrl.substring(1) : photo.thumbnailUrl
-        filePath = join(process.cwd(), 'public', publicPath)
     } else {
         // Fallback to full image if no thumb
         return sendRedirect(event, `/api/assets/${id}/full`)
