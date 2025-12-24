@@ -1,10 +1,10 @@
 ```html
 <template>
     <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
-        <NavBar title="All Photos" :showBack="true" backTo="/album" />
+        <NavBar title="All Photos" :showBack="true" backTo="/album" :solid="true" />
 
-        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Header & Filters -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Header -->
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
                     <h1 class="text-3xl font-bold text-white mb-2">My Gallery</h1>
@@ -12,46 +12,31 @@
                         {{ total }} photos in your library
                     </p>
                 </div>
+            </div>
 
-                <!-- Filters -->
-                <div class="flex flex-wrap items-center gap-3">
-                    <!-- Standard filters (Camera, Lens) -->
-                    <div class="relative group">
-                        <select v-model="filters.camera" @change="applyFilters"
-                            class="appearance-none bg-[var(--glass-bg)] border border-[var(--glass-border-light)] text-white px-4 py-2 pr-8 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--btn-primary-start)] hover:bg-white/10 transition cursor-pointer">
-                            <option value="">All Cameras</option>
-                            <option v-for="cam in options.cameras" :key="cam" :value="cam">{{ cam }}</option>
-                        </select>
-                        <div
-                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/50">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                    </div>
+            <!-- Filters -->
+            <div class="mb-8 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-4">
+                <div class="flex flex-wrap items-center gap-4">
+                    <span class="text-white font-medium">Filters:</span>
 
-                    <div class="relative group">
-                        <select v-model="filters.lens" @change="applyFilters"
-                            class="appearance-none bg-[var(--glass-bg)] border border-[var(--glass-border-light)] text-white px-4 py-2 pr-8 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--btn-primary-start)] hover:bg-white/10 transition cursor-pointer">
-                            <option value="">All Lenses</option>
-                            <option v-for="l in options.lenses" :key="l" :value="l">{{ l }}</option>
-                        </select>
-                        <div
-                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/50">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                    </div>
+                    <select v-model="filters.camera" @change="applyFilters"
+                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="">All Cameras</option>
+                        <option v-for="cam in options.cameras" :key="cam" :value="cam">{{ cam }}</option>
+                    </select>
+
+                    <select v-model="filters.lens" @change="applyFilters"
+                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="">All Lenses</option>
+                        <option v-for="l in options.lenses" :key="l" :value="l">{{ l }}</option>
+                    </select>
 
                     <input v-model="filters.dateFrom" @change="applyFilters" type="date" placeholder="Start Date"
-                        class="bg-[var(--glass-bg)] border border-[var(--glass-border-light)] text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--btn-primary-start)] hover:bg-white/10 transition" />
+                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
 
                     <button v-if="hasActiveFilters" @click="clearFilters"
-                        class="text-red-300 hover:text-red-200 text-sm font-medium px-2 transition">
-                        Clear
+                        class="px-3 py-2 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-lg transition text-sm">
+                        Clear Filters
                     </button>
                 </div>
             </div>
@@ -77,7 +62,7 @@
                     :class="{ 'opacity-50': loading }"
                     :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
                     <div v-for="(photo, index) in photos" :key="photo.id"
-                        class="absolute overflow-hidden rounded-lg bg-[var(--glass-bg-strong)] cursor-pointer group shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 ease-out border border-white/5"
+                        class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 transition-transform hover:-translate-y-1 group"
                         :style="{
                             top: `${picturesLayout.getPosition(index).top}px`,
                             left: `${picturesLayout.getPosition(index).left}px`,
@@ -275,8 +260,8 @@ const picturesLayout = shallowRef<any>(null)
 const updateLayout = () => {
     if (photos.value.length === 0) return
 
-    // Calculate container width - default to window width minus padding if container not ready
-    const containerWidth = containerRef.value?.clientWidth || Math.min(window.innerWidth - 32, 1600 - 32)
+    // Calculate container width - measure parent because we set strict width on self
+    const containerWidth = containerRef.value?.parentElement?.clientWidth || Math.min(window.innerWidth - 32, 1280 - 32)
 
     // Check for missing dimensions
     const validPhotos = photos.value.map(p => ({
@@ -290,10 +275,10 @@ const updateLayout = () => {
 
     // Calculate layout
     picturesLayout.value = new JustifiedLayout(aspectRatios, {
-        rowHeight: 320, // Taller rows for better visibility
+        rowHeight: 180,
         rowWidth: containerWidth,
-        spacing: 16, // More breathing room
-        heightTolerance: 0.15
+        spacing: 12,
+        heightTolerance: 0.1
     })
 }
 
