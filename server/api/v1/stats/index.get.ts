@@ -1,13 +1,17 @@
 import { defineEventHandler } from 'h3'
 import { PrismaClient } from '@prisma/client'
+import { requireAuth } from '../../../utils/auth'
 
 const prisma = new PrismaClient()
 
 export default defineEventHandler(async (event) => {
-    // 1. Basic Counts
+    const user = await requireAuth(event)
+    const userId = user.id
+
+    // 1. Basic Counts (Filtered by user)
     const [totalPhotos, totalAlbums] = await Promise.all([
-        prisma.photo.count(),
-        prisma.album.count(),
+        prisma.photo.count({ where: { uploaderId: userId } }),
+        prisma.album.count({ where: { ownerId: userId } }),
     ])
 
     // 2. Camera & Lens Stats (Existing + Enhanced)
@@ -16,14 +20,14 @@ export default defineEventHandler(async (event) => {
             by: ['cameraModel'],
             _count: { cameraModel: true },
             orderBy: { _count: { cameraModel: 'desc' } },
-            where: { cameraModel: { not: null } },
+            where: { cameraModel: { not: null }, uploaderId: userId },
             take: 10,
         }),
         prisma.photo.groupBy({
             by: ['lens'],
             _count: { lens: true },
             orderBy: { _count: { lens: 'desc' } },
-            where: { lens: { not: null } },
+            where: { lens: { not: null }, uploaderId: userId },
             take: 10,
         }),
     ])
@@ -34,40 +38,42 @@ export default defineEventHandler(async (event) => {
             by: ['aperture'],
             _count: { aperture: true },
             orderBy: { _count: { aperture: 'desc' } },
-            where: { aperture: { not: null } },
+            where: { aperture: { not: null }, uploaderId: userId },
             take: 5,
         }),
         prisma.photo.groupBy({
             by: ['iso'],
             _count: { iso: true },
             orderBy: { _count: { iso: 'desc' } },
-            where: { iso: { not: null } },
+            where: { iso: { not: null }, uploaderId: userId },
             take: 5,
         }),
         prisma.photo.groupBy({
             by: ['shutterSpeed'],
             _count: { shutterSpeed: true },
             orderBy: { _count: { shutterSpeed: 'desc' } },
-            where: { shutterSpeed: { not: null } },
+            where: { shutterSpeed: { not: null }, uploaderId: userId },
             take: 5,
         }),
         prisma.photo.groupBy({
             by: ['focalLength'],
             _count: { focalLength: true },
             orderBy: { _count: { focalLength: 'desc' } },
-            where: { focalLength: { not: null } },
+            where: { focalLength: { not: null }, uploaderId: userId },
             take: 5,
         }),
     ])
 
     // 4. Time Distribution (Group by Month)
-    // Prisma doesn't strictly support date grouping easily without raw query or logic. 
-    // For simplicity/performance on smaller datasets, we can fetch dates or use raw query.
-    // Let's use specific raw query for postgresql for performance.
+    // Using raw query, securely parameterized or carefully updated to include user filter.
+    // Prisma $queryRaw uses strict parameterization if using template literals with variables.
+    // However, table names/columns usually can't be variables.
+    // "uploaderId" is a string (UUID).
+
     const photosByMonth = await prisma.$queryRaw<{ date: string; count: bigint }[]>`
         SELECT TO_CHAR(to_timestamp("dateTaken"), 'YYYY-MM') as date, COUNT(*) as count 
         FROM photos 
-        WHERE "dateTaken" IS NOT NULL 
+        WHERE "dateTaken" IS NOT NULL AND "uploaderId" = ${userId}::uuid
         GROUP BY date 
         ORDER BY date ASC
     `
@@ -77,6 +83,7 @@ export default defineEventHandler(async (event) => {
         _sum: {
             size: true,
         },
+        where: { uploaderId: userId }
     })
 
     // Format the response

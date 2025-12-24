@@ -1,9 +1,11 @@
-import { defineEventHandler, getQuery } from 'h3'
+import { defineEventHandler, getQuery, createError } from 'h3'
 import { PrismaClient, Prisma } from '@prisma/client'
+import { requireAuth } from '../../../utils/auth'
 
 const prisma = new PrismaClient()
 
 export default defineEventHandler(async (event) => {
+    const user = await requireAuth(event)
     const query = getQuery(event)
     const page = Number(query.page) || 1
     const limit = Number(query.limit) || 50
@@ -20,7 +22,10 @@ export default defineEventHandler(async (event) => {
     const sort = (query.sort as string) || 'dateTaken'
     const order = (query.order as string) || 'desc'
 
-    const where: Prisma.PhotoWhereInput = {}
+    // Enforce User Isolation
+    const where: Prisma.PhotoWhereInput = {
+        uploaderId: user.id
+    }
 
     if (camera) where.cameraModel = camera
     if (lens) where.lens = lens
