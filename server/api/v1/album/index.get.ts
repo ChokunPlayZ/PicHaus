@@ -11,6 +11,16 @@ export default defineEventHandler(async (event) => {
                         instagram: true,
                     },
                 },
+                photos: {
+                    take: 1,
+                    orderBy: {
+                        createdAt: 'desc',
+                    },
+                    select: {
+                        id: true,
+                        blurhash: true,
+                    },
+                },
                 _count: {
                     select: {
                         photos: true,
@@ -31,6 +41,7 @@ export default defineEventHandler(async (event) => {
                 createdAt: Number(album.createdAt),
                 updatedAt: Number(album.updatedAt),
                 eventDate: album.eventDate ? Number(album.eventDate) : null,
+                coverPhoto: album.photos[0] || null,
             })),
         }
     } catch (error) {

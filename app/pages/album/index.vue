@@ -46,9 +46,19 @@
                     class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:border-purple-400/50 transition cursor-pointer group"
                     @click="navigateTo(`/album/${album.id}`)">
                     <!-- Album Thumbnail -->
-                    <div
-                        class="aspect-video bg-gradient-to-br from-purple-900/50 to-pink-900/50 flex items-center justify-center">
-                        <span class="text-6xl">📸</span>
+                    <div class="aspect-video relative bg-gray-900 group-hover:brightness-110 transition duration-300">
+                        <!-- Cover Photo -->
+                        <img v-if="album.coverPhoto" :src="`/api/assets/${album.coverPhoto.id}/thumb`"
+                            class="w-full h-full object-cover" loading="lazy" />
+
+                        <!-- Placeholder if no photo -->
+                        <div v-else
+                            class="w-full h-full bg-gradient-to-br from-purple-900/50 to-pink-900/50 flex items-center justify-center">
+                            <span class="text-6xl grayscale opacity-50">📷</span>
+                        </div>
+
+                        <!-- Hover Overlay -->
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
                     </div>
 
                     <!-- Album Info -->
@@ -144,6 +154,10 @@ interface Album {
     _count: {
         photos: number
     }
+    coverPhoto?: {
+        id: string
+        blurhash: string | null
+    } | null
 }
 
 const user = ref<any>(null)
