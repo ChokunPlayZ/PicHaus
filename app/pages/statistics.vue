@@ -23,45 +23,45 @@
 
       <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Storage Card -->
-        <div class="md:col-span-2 bg-gray-800/50 backdrop-blur-xl rounded-2xl p-8 border border-white/5 shadow-xl relative overflow-hidden group hover:border-purple-500/30 transition-all duration-500">
-          <div class="absolute top-0 right-0 p-32 bg-purple-600/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-purple-600/20 transition-all duration-700"></div>
+        <div class="md:col-span-2 bg-[var(--glass-bg)] backdrop-blur-xl rounded-2xl p-8 border border-[var(--glass-border-light)] shadow-xl relative overflow-hidden group hover:border-[var(--btn-primary-end)] transition-all duration-500">
+          <div class="absolute top-0 right-0 p-32 bg-[var(--btn-primary-end)]/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-[var(--btn-primary-end)]/20 transition-all duration-700"></div>
           
           <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
             <div>
-              <h2 class="text-2xl font-bold text-white mb-2 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <h2 class="text-2xl font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
                 Storage Used
               </h2>
-              <p class="text-gray-400">Total space consumed by your original photos.</p>
+              <p class="text-[var(--text-muted)]">Total space consumed by your original photos.</p>
             </div>
-            <div class="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-br from-white to-gray-400">
+            <div class="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-br from-[var(--text-primary)] to-[var(--text-muted)]">
               {{ formatBytes(stats?.storage?.totalBytes || 0) }}
             </div>
           </div>
         </div>
 
         <!-- Cameras Section -->
-        <div class="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-xl hover:border-pink-500/30 transition-all duration-500 flex flex-col">
-          <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="bg-[var(--glass-bg)] backdrop-blur-xl rounded-2xl p-6 border border-[var(--glass-border-light)] shadow-xl hover:border-[var(--btn-primary-start)] transition-all duration-500 flex flex-col">
+          <h2 class="text-2xl font-bold text-[var(--text-primary)] mb-6 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[var(--btn-primary-start)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             Top Cameras
           </h2>
           
-          <div v-if="!stats?.cameras?.length" class="text-gray-500 text-center py-8">No camera data available</div>
+          <div v-if="!stats?.cameras?.length" class="text-[var(--text-muted)] text-center py-8">No camera data available</div>
           
           <div class="space-y-4 flex-1">
             <div v-for="(camera, index) in stats?.cameras?.slice(0, 5)" :key="index" class="relative group">
               <div class="flex justify-between items-end mb-1 text-sm font-medium relative z-10">
-                 <span class="text-white group-hover:text-pink-300 transition-colors">{{ camera.model }}</span>
-                 <span class="text-gray-400">{{ camera.count }} shots</span>
+                 <span class="text-[var(--text-primary)] group-hover:text-[var(--btn-primary-start)] transition-colors">{{ camera.model }}</span>
+                 <span class="text-[var(--text-muted)]">{{ camera.count }} shots</span>
               </div>
-              <div class="w-full bg-gray-700/50 rounded-full h-2.5 overflow-hidden">
-                <div class="bg-gradient-to-r from-pink-500 to-rose-500 h-2.5 rounded-full transition-all duration-1000 ease-out" 
+              <div class="w-full bg-[var(--glass-bg-strong)] rounded-full h-2.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-active)] h-2.5 rounded-full transition-all duration-1000 ease-out" 
                      :style="{ width: `${calculatePercentage(camera.count, stats.cameras[0].count)}%` }">
                 </div>
               </div>
@@ -70,25 +70,25 @@
         </div>
 
         <!-- Lenses Section -->
-        <div class="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-xl hover:border-cyan-500/30 transition-all duration-500 flex flex-col">
-          <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="bg-[var(--glass-bg)] backdrop-blur-xl rounded-2xl p-6 border border-[var(--glass-border-light)] shadow-xl hover:border-[var(--btn-primary-end)] transition-all duration-500 flex flex-col">
+          <h2 class="text-2xl font-bold text-[var(--text-primary)] mb-6 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[var(--btn-primary-end)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
             Top Lenses
           </h2>
 
-          <div v-if="!stats?.lenses?.length" class="text-gray-500 text-center py-8">No lens data available</div>
+          <div v-if="!stats?.lenses?.length" class="text-[var(--text-muted)] text-center py-8">No lens data available</div>
 
           <div class="space-y-4 flex-1">
             <div v-for="(lens, index) in stats?.lenses?.slice(0, 5)" :key="index" class="relative group">
               <div class="flex justify-between items-end mb-1 text-sm font-medium relative z-10">
-                 <span class="text-white group-hover:text-cyan-300 transition-colors">{{ lens.model }}</span>
-                 <span class="text-gray-400">{{ lens.count }} shots</span>
+                 <span class="text-[var(--text-primary)] group-hover:text-[var(--btn-primary-end)] transition-colors">{{ lens.model }}</span>
+                 <span class="text-[var(--text-muted)]">{{ lens.count }} shots</span>
               </div>
-              <div class="w-full bg-gray-700/50 rounded-full h-2.5 overflow-hidden">
-                <div class="bg-gradient-to-r from-cyan-500 to-blue-500 h-2.5 rounded-full transition-all duration-1000 ease-out" 
+              <div class="w-full bg-[var(--glass-bg-strong)] rounded-full h-2.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-[var(--btn-primary-end)] to-[var(--btn-primary-hover-end)] h-2.5 rounded-full transition-all duration-1000 ease-out" 
                      :style="{ width: `${calculatePercentage(lens.count, stats.lenses[0].count)}%` }">
                 </div>
               </div>
