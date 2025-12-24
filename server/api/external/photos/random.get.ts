@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
         SELECT p.id, p."filename", p."originalName", p."width", p."height", p."blurhash", p."dateTaken", p."createdAt", a.id as "albumId", a.title as "albumTitle"
         FROM photos p
         JOIN albums a ON p."albumId" = a.id
-        WHERE a."ownerId" = ${apiToken.userId}::uuid
+        WHERE a."ownerId" = ${apiToken.userId}::uuid AND a."isPublic" = true
         ORDER BY RANDOM()
         LIMIT ${count}
     ` as any[]

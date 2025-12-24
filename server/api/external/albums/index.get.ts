@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const albums = await prisma.album.findMany({
-        where: { ownerId: apiToken.userId, isPublic: true },
+        where: { ownerId: apiToken.userId },
         include: {
             _count: {
                 select: { photos: true }
