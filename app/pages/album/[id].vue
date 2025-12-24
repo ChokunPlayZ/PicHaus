@@ -97,31 +97,65 @@
                     <p class="text-white/60">Drag & drop photos here or click to browse</p>
                 </div>
 
-                <!-- Upload Progress -->
-                <div v-if="uploading" class="mt-4 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-4 space-y-4">
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-white">Uploading {{ uploadProgress.current }} of {{ uploadProgress.total
-                            }}...</span>
-                            <span class="text-purple-300">{{ Math.round((uploadProgress.current / uploadProgress.total) *
-                                100)
-                            }}%</span>
-                        </div>
-                        <div class="w-full bg-white/10 rounded-full h-2">
-                            <div class="bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] h-2 rounded-full transition-all duration-300"
-                                :style="{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }">
-                            </div>
+                <!-- Upload Progress Modal/Panel -->
+                <div v-if="showUploadModal"
+                    class="mt-4 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 overflow-hidden">
+                    <div class="p-4 border-b border-white/10 flex justify-between items-center">
+                        <h3 class="text-white font-medium">Upload Queue</h3>
+                        <div class="flex items-center gap-2">
+                            <button v-if="uploadQueue.some(i => i.status === 'failed')" @click="retryFailed"
+                                class="text-xs bg-red-500/20 text-red-300 hover:bg-red-500/30 px-2 py-1 rounded transition">Retry
+                                Failed</button>
+                            <button @click="clearCompleted"
+                                class="text-xs bg-white/5 text-white/60 hover:text-white px-2 py-1 rounded transition">Clear
+                                Completed</button>
+                            <button @click="showUploadModal = false" class="text-white/40 hover:text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
-                    
-                    <!-- Skipped Photos Info -->
-                    <div v-if="uploadProgress.skipped > 0" class="pt-2 border-t border-white/10">
-                        <p class="text-sm text-yellow-300 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {{ uploadProgress.skipped }} photo{{ uploadProgress.skipped !== 1 ? 's' : '' }} already exist{{ uploadProgress.skipped !== 1 ? '' : 's' }} (skipped)
-                        </p>
+
+                    <!-- Overall Progress Bar -->
+                    <div class="px-4 py-3 border-b border-white/10">
+                        <div class="flex items-center justify-between text-sm mb-2">
+                            <span class="text-white/60">Overall Progress</span>
+                            <span class="text-white font-medium">{{ uploadProgress.completed }}/{{ uploadProgress.total
+                                }} ({{
+                                uploadProgress.percentage }}%)</span>
+                        </div>
+                        <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300 ease-out"
+                                :style="{ width: `${uploadProgress.percentage}%` }"></div>
+                        </div>
+                    </div>
+
+                    <div class="max-h-60 overflow-y-auto p-2 space-y-1">
+                        <div v-for="item in uploadQueue" :key="item.id"
+                            class="flex items-center gap-3 p-2 rounded bg-white/5 border border-white/5">
+                            <!-- Status Icon -->
+                            <div class="shrink-0 w-6 flex justify-center">
+                                <span
+                                    v-if="item.status === 'hashing' || item.status === 'checking' || item.status === 'uploading'"
+                                    class="animate-spin text-purple-400">⏳</span>
+                                <span v-else-if="item.status === 'completed'" class="text-green-400">✓</span>
+                                <span v-else-if="item.status === 'skipped'" class="text-yellow-400">↷</span>
+                                <span v-else-if="item.status === 'failed'" class="text-red-400">✕</span>
+                                <span v-else class="text-white/20">•</span>
+                            </div>
+
+                            <!-- File Info -->
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-white truncate">{{ item.file.name }}</div>
+                                <div class="text-xs text-white/40 flex items-center gap-2">
+                                    <span class="capitalize">{{ item.status }}</span>
+                                    <span v-if="item.error" class="text-red-300">{{ item.error }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -589,6 +623,7 @@ import { JustifiedLayout } from '@immich/justified-layout-wasm'
 import { decode } from 'blurhash'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
+import { calculateSHA256 } from '~/utils/hash'
 
 interface User {
     id: string
@@ -619,6 +654,14 @@ interface Photo {
     aperture?: string | null
     shutterSpeed?: string | null
     iso?: number | null
+}
+
+interface UploadItem {
+    id: string
+    file: File
+    status: 'hashing' | 'checking' | 'pending' | 'uploading' | 'completed' | 'failed' | 'skipped'
+    error?: string
+    progress?: number
 }
 
 interface Collaborator {
@@ -827,7 +870,22 @@ const editPhotoError = ref('')
 const copied = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploading = ref(false)
-const uploadProgress = ref({ current: 0, total: 0, skipped: 0 })
+const uploadQueue = ref<UploadItem[]>([])
+const isProcessingQueue = ref(false)
+const showUploadModal = ref(false)
+
+// Upload progress computed
+const uploadProgress = computed(() => {
+    const total = uploadQueue.value.length
+    if (total === 0) return { completed: 0, total: 0, percentage: 0 }
+    const completed = uploadQueue.value.filter(i => i.status === 'completed' || i.status === 'skipped' || i.status === 'failed').length
+    return {
+        completed,
+        total,
+        percentage: Math.round((completed / total) * 100)
+    }
+})
+
 const downloading = ref(false)
 const downloadProgress = ref({ current: 0, total: 0 })
 
@@ -1498,6 +1556,93 @@ const triggerFileInput = () => {
     fileInput.value?.click()
 }
 
+// Queue Processing Logic
+const processQueue = async () => {
+    if (isProcessingQueue.value) return
+    isProcessingQueue.value = true
+
+    try {
+        // 1. Identify new items needing hashing/checking
+        const itemsToCheck = uploadQueue.value.filter(item => item.status === 'hashing')
+
+        if (itemsToCheck.length > 0) {
+            // Calculate hashes
+            const hashes: string[] = []
+            for (const item of itemsToCheck) {
+                try {
+                    const hash = await calculateSHA256(item.file)
+                    hashes.push(hash)
+                } catch (err) {
+                    item.status = 'failed'
+                    item.error = 'Failed to calculate hash'
+                }
+            }
+
+            // Check duplicates
+            try {
+                const { duplicates } = await $fetch<{ success: boolean, duplicates: string[] }>(`/api/v1/album/${albumId}/check-duplicates`, {
+                    method: 'POST',
+                    body: { hashes }
+                })
+
+                // Update statuses
+                for (let i = 0; i < itemsToCheck.length; i++) {
+                    const item = itemsToCheck[i]
+                    if (!item || item.status === 'failed') continue // Already failed hashing or undefined
+
+                    const hash = hashes[i]
+                    if (hash && duplicates.includes(hash)) {
+                        item.status = 'skipped'
+                    } else {
+                        item.status = 'pending'
+                    }
+                }
+            } catch (err) {
+                // If check fails, fallback to upload attempt (or fail all? safely fail checking)
+                console.error('Duplicate check failed', err)
+                itemsToCheck.forEach(item => {
+                    if (item.status !== 'failed') item.status = 'pending'
+                })
+            }
+        }
+
+        // 2. Process uploads (Sequential)
+        while (true) {
+            const pendingItem = uploadQueue.value.find(item => item.status === 'pending')
+            if (!pendingItem) break
+
+            pendingItem.status = 'uploading'
+
+            try {
+                const formData = new FormData()
+                formData.append('file', pendingItem.file)
+
+                await $fetch(`/api/v1/album/${albumId}/upload`, {
+                    method: 'POST',
+                    body: formData,
+                })
+
+                pendingItem.status = 'completed'
+            } catch (err: any) {
+                if (err.status === 409 || err.statusCode === 409) {
+                    pendingItem.status = 'skipped'
+                } else {
+                    pendingItem.status = 'failed'
+                    pendingItem.error = err.data?.statusMessage || 'Upload failed'
+                }
+            }
+        }
+
+        // Refresh if any completed
+        if (uploadQueue.value.some(i => i.status === 'completed')) {
+            await fetchAlbum()
+        }
+
+    } finally {
+        isProcessingQueue.value = false
+    }
+}
+
 // Handle file selection
 const handleFileSelect = async (event: Event) => {
     const target = event.target as HTMLInputElement
@@ -1505,97 +1650,68 @@ const handleFileSelect = async (event: Event) => {
 
     if (!files || files.length === 0) return
 
-    uploading.value = true
-    uploadProgress.value = { current: 0, total: files.length, skipped: 0 }
+    showUploadModal.value = true
 
-    try {
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i]
-            if (!file) continue
+    // Add to queue
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        if (!file) continue
 
-            const formData = new FormData()
-            formData.append('file', file)
-
-            try {
-                await $fetch(`/api/v1/album/${albumId}/upload`, {
-                    method: 'POST',
-                    body: formData,
-                })
-            } catch (err: any) {
-                // If file already exists, skip it and continue
-                if (err.status === 409) {
-                    uploadProgress.value.skipped++
-                    uploadProgress.value.current = i + 1
-                    continue
-                }
-                // For other errors, re-throw
-                throw err
-            }
-
-            uploadProgress.value.current = i + 1
-        }
-
-        // Refresh album to show new photos
-        await fetchAlbum()
-
-        // Reset file input
-        if (target) target.value = ''
-    } catch (err: any) {
-        console.error('Upload error:', err)
-        alert(err.data?.statusMessage || 'Failed to upload photos')
-    } finally {
-        uploading.value = false
-        uploadProgress.value = { current: 0, total: 0, skipped: 0 }
+        uploadQueue.value.push({
+            id: Math.random().toString(36).substring(7),
+            file,
+            status: 'hashing'
+        })
     }
+
+    // Start processing
+    processQueue()
+
+    if (target) target.value = ''
 }
 
 // Handle drop event (for drag and drop)
 const handleDrop = async (event: DragEvent) => {
     event.preventDefault()
     event.stopPropagation()
-    
+
     const files = event.dataTransfer?.files
-    
+
     if (!files || files.length === 0) return
 
-    uploading.value = true
-    uploadProgress.value = { current: 0, total: files.length, skipped: 0 }
+    showUploadModal.value = true
 
-    try {
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i]
-            if (!file) continue
+    // Add to queue
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        if (!file) continue
 
-            const formData = new FormData()
-            formData.append('file', file)
+        uploadQueue.value.push({
+            id: Math.random().toString(36).substring(7),
+            file,
+            status: 'hashing'
+        })
+    }
 
-            try {
-                await $fetch(`/api/v1/album/${albumId}/upload`, {
-                    method: 'POST',
-                    body: formData,
-                })
-            } catch (err: any) {
-                // If file already exists, skip it and continue
-                if (err.status === 409) {
-                    uploadProgress.value.skipped++
-                    uploadProgress.value.current = i + 1
-                    continue
-                }
-                // For other errors, re-throw
-                throw err
-            }
+    // Start processing
+    processQueue()
+}
 
-            uploadProgress.value.current = i + 1
+// Retry Logic
+const retryFailed = () => {
+    uploadQueue.value.forEach(item => {
+        if (item.status === 'failed') {
+            item.status = 'pending'
+            item.error = undefined
         }
+    })
+    processQueue()
+}
 
-        // Refresh album to show new photos
-        await fetchAlbum()
-    } catch (err: any) {
-        console.error('Upload error:', err)
-        alert(err.data?.statusMessage || 'Failed to upload photos')
-    } finally {
-        uploading.value = false
-        uploadProgress.value = { current: 0, total: 0, skipped: 0 }
+const clearCompleted = () => {
+    uploadQueue.value = uploadQueue.value.filter(item => item.status !== 'completed' && item.status !== 'skipped')
+    if (uploadQueue.value.length === 0) {
+        showUploadModal.value = false
     }
 }
 

@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
     // "uploaderId" is a string (UUID).
 
     const photosByMonth = await prisma.$queryRaw<{ date: string; count: bigint }[]>`
-        SELECT TO_CHAR(to_timestamp("dateTaken"), 'YYYY-MM') as date, COUNT(*) as count 
+        SELECT TO_CHAR(to_timestamp("dateTaken" / 1000.0), 'YYYY-MM') as date, COUNT(*) as count 
         FROM photos 
         WHERE "dateTaken" IS NOT NULL AND "uploaderId" = ${userId}::uuid
         GROUP BY date 
