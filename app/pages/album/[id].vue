@@ -124,7 +124,7 @@
                         <div class="flex items-center justify-between text-sm mb-2">
                             <span class="text-white/60">Overall Progress</span>
                             <span class="text-white font-medium">{{ uploadProgress.completed }}/{{ uploadProgress.total
-                            }} ({{
+                                }} ({{
                                     uploadProgress.percentage }}%)</span>
                         </div>
                         <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
@@ -154,7 +154,7 @@
                                     <span class="capitalize">{{ item.status }}</span>
                                     <span v-if="item.error" class="text-red-300">{{ item.error }}</span>
                                     <span v-if="item.status === 'uploading'" class="text-purple-300">{{ item.progress
-                                        }}%</span>
+                                    }}%</span>
                                 </div>
                                 <div v-if="item.status === 'uploading'"
                                     class="mt-1 h-1 bg-white/10 rounded-full overflow-hidden">
@@ -985,6 +985,9 @@ const clearSelection = () => {
 const handleKeydown = (e: KeyboardEvent) => {
     // Cmd/Ctrl + A to select all
     if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
+        const target = e.target as HTMLElement
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+
         e.preventDefault()
         selectAll()
     }
