@@ -124,8 +124,8 @@
                         <div class="flex items-center justify-between text-sm mb-2">
                             <span class="text-white/60">Overall Progress</span>
                             <span class="text-white font-medium">{{ uploadProgress.completed }}/{{ uploadProgress.total
-                                }} ({{
-                                uploadProgress.percentage }}%)</span>
+                            }} ({{
+                                    uploadProgress.percentage }}%)</span>
                         </div>
                         <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                             <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300 ease-out"
@@ -153,6 +153,13 @@
                                 <div class="text-xs text-white/40 flex items-center gap-2">
                                     <span class="capitalize">{{ item.status }}</span>
                                     <span v-if="item.error" class="text-red-300">{{ item.error }}</span>
+                                    <span v-if="item.status === 'uploading'" class="text-purple-300">{{ item.progress
+                                        }}%</span>
+                                </div>
+                                <div v-if="item.status === 'uploading'"
+                                    class="mt-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                                    <div class="h-full bg-purple-500 transition-all duration-300 ease-out"
+                                        :style="{ width: `${item.progress}%` }"></div>
                                 </div>
                             </div>
                         </div>
@@ -874,15 +881,23 @@ const uploadQueue = ref<UploadItem[]>([])
 const isProcessingQueue = ref(false)
 const showUploadModal = ref(false)
 
-// Upload progress computed
 const uploadProgress = computed(() => {
     const total = uploadQueue.value.length
     if (total === 0) return { completed: 0, total: 0, percentage: 0 }
+
+    // Calculate effective progress based on bytes/percentage of each file
+    const totalProgress = uploadQueue.value.reduce((sum, item) => {
+        // Checking/Hashing counts as 0% for file progress, finished is 100%
+        // We use the item.progress (0-100)
+        return sum + (item.progress || 0)
+    }, 0)
+
     const completed = uploadQueue.value.filter(i => i.status === 'completed' || i.status === 'skipped' || i.status === 'failed').length
+
     return {
         completed,
         total,
-        percentage: Math.round((completed / total) * 100)
+        percentage: Math.round(totalProgress / total)
     }
 })
 
@@ -1556,6 +1571,16 @@ const triggerFileInput = () => {
     fileInput.value?.click()
 }
 
+
+// Helper to safely parse JSON
+const tryParseJSON = (json: string) => {
+    try {
+        return JSON.parse(json)
+    } catch (e) {
+        return null
+    }
+}
+
 // Queue Processing Logic
 const processQueue = async () => {
     if (isProcessingQueue.value) return
@@ -1606,39 +1631,108 @@ const processQueue = async () => {
             }
         }
 
-        // 2. Process uploads (Sequential)
-        while (true) {
-            const pendingItem = uploadQueue.value.find(item => item.status === 'pending')
-            if (!pendingItem) break
+        // 2. Process uploads (Parallel with concurrency limit)
+        const MAX_CONCURRENCY = 3
+        const activeUploads = ref(0)
 
-            pendingItem.status = 'uploading'
+        const uploadFile = async (item: UploadItem) => {
+            item.status = 'uploading'
+            item.progress = 0
 
             try {
                 const formData = new FormData()
-                formData.append('file', pendingItem.file)
+                formData.append('file', item.file)
 
-                await $fetch(`/api/v1/album/${albumId}/upload`, {
-                    method: 'POST',
-                    body: formData,
+                await new Promise<void>((resolve, reject) => {
+                    const xhr = new XMLHttpRequest()
+
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            item.progress = Math.round((e.loaded * 100) / e.total)
+                        }
+                    }
+
+                    xhr.onload = () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve()
+                        } else {
+                            reject({
+                                status: xhr.status,
+                                statusText: xhr.statusText,
+                                data: tryParseJSON(xhr.responseText)
+                            })
+                        }
+                    }
+
+                    xhr.onerror = () => reject({ status: 0, statusText: 'Network Error' })
+
+                    xhr.open('POST', `/api/v1/album/${albumId}/upload`)
+                    xhr.send(formData)
                 })
 
-                pendingItem.status = 'completed'
+                item.status = 'completed'
+                item.progress = 100
             } catch (err: any) {
-                if (err.status === 409 || err.statusCode === 409) {
-                    pendingItem.status = 'skipped'
+                if (err.status === 409) {
+                    item.status = 'skipped'
+                    item.progress = 100
                 } else {
-                    pendingItem.status = 'failed'
-                    pendingItem.error = err.data?.statusMessage || 'Upload failed'
+                    item.status = 'failed'
+                    item.error = err.data?.statusMessage || err.statusText || 'Upload failed'
+                    item.progress = 0
                 }
             }
         }
 
-        // Refresh if any completed
-        if (uploadQueue.value.some(i => i.status === 'completed')) {
-            await fetchAlbum()
+        // Process pool
+        const processNext = async () => {
+            if (!isProcessingQueue.value) return
+
+            // Find next pending item
+            const nextItem = uploadQueue.value.find(item => item.status === 'pending')
+            if (!nextItem) return
+
+            // If we have capacity, start upload
+            if (activeUploads.value < MAX_CONCURRENCY) {
+                activeUploads.value++
+
+                // Start upload but don't await it here (fire and forget)
+                uploadFile(nextItem).then(() => {
+                    activeUploads.value--
+                    // When one finishes, try to pick up another
+                    processNext()
+
+                    // Check if all done
+                    if (activeUploads.value === 0 && !uploadQueue.value.some(i => i.status === 'pending' || i.status === 'hashing' || i.status === 'uploading')) {
+                        // All finished
+                        if (uploadQueue.value.some(i => i.status === 'completed')) {
+                            fetchAlbum()
+                        }
+                        isProcessingQueue.value = false
+                    }
+                })
+
+                // Try to fill more spots if available
+                processNext()
+            }
         }
 
-    } finally {
+        // Kick off
+        // Ensure all items that need hashing/checking are processed to 'pending' or 'skipped' before starting parallel uploads.
+        // This means we need to wait for the initial hashing/duplicate check block to complete.
+        // The current structure already does this sequentially before reaching this point.
+        // So, we just need to kick off the `processNext` calls for all initially pending items.
+        const initialPendingCount = uploadQueue.value.filter(item => item.status === 'pending').length;
+        for (let i = 0; i < Math.min(initialPendingCount, MAX_CONCURRENCY); i++) {
+            processNext();
+        }
+        // If there are no pending items after hashing/checking, we should still set isProcessingQueue to false.
+        if (initialPendingCount === 0 && !uploadQueue.value.some(i => i.status === 'hashing')) {
+            isProcessingQueue.value = false;
+        }
+
+    } catch (err) {
+        console.error('Queue processing error:', err)
         isProcessingQueue.value = false
     }
 }
