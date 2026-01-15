@@ -46,6 +46,19 @@ export default defineEventHandler(async (event) => {
                 }
             }
         }
+
+        // Check for share link access (guest with share link)
+        if (!hasAccess) {
+            const shareToken = getCookie(event, `album-access-${photo.album.id}`)
+            if (shareToken) {
+                const link = await prisma.shareLink.findUnique({
+                    where: { token: shareToken }
+                })
+                if (link && link.albumId === photo.album.id) {
+                    hasAccess = true
+                }
+            }
+        }
     }
 
     if (!hasAccess) {
