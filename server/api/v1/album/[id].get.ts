@@ -66,7 +66,22 @@ export default defineEventHandler(async (event) => {
         // Check permissions
         const isOwner = authToken === album.ownerId
         const isCollaborator = album.collaborators.some((c: any) => c.userId === authToken)
-        const canView = album.isPublic || isOwner || isCollaborator
+        let hasShareLinkAccess = false
+
+        // Check for share link access (guest with share link)
+        if (!album.isPublic && !isOwner && !isCollaborator) {
+            const shareToken = getCookie(event, `album-access-${id}`)
+            if (shareToken) {
+                const link = await prisma.shareLink.findUnique({
+                    where: { token: shareToken }
+                })
+                if (link && link.albumId === id) {
+                    hasShareLinkAccess = true
+                }
+            }
+        }
+
+        const canView = album.isPublic || isOwner || isCollaborator || hasShareLinkAccess
 
         if (!canView) {
             throw createError({
