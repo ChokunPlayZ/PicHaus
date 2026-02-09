@@ -5,10 +5,10 @@
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8 max-w-md w-full shadow-xl">
                 <div class="text-center mb-8">
                     <h1 class="text-3xl font-bold text-white mb-2">📸 PicHaus</h1>
-                    <p v-if="loading" class="text-purple-200 animate-pulse">Loading album...</p>
+                    <p v-if="loading" class="text-purple-200 animate-pulse">Loading...</p>
                     <p v-else-if="error" class="text-red-300">{{ error }}</p>
                     <p v-else class="text-purple-200">
-                        {{ albumName }}
+                        {{ pageTitle }}
                         <span v-if="ownerName" class="block text-sm text-white/60 mt-1">by {{ ownerName }}</span>
                     </p>
                 </div>
@@ -23,78 +23,134 @@
 
                         <button type="submit" :disabled="accessing"
                             class="w-full px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-[var(--shadow-secondary)]">
-                            {{ accessing ? 'Accessing...' : 'View Album' }}
+                            {{ accessing ? 'Accessing...' : 'View Access' }}
                         </button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- Album Content (Authenticated) -->
+        <!-- Authenticated Content -->
         <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-4 sm:pb-8">
-            <!-- Header -->
-            <!-- Header -->
-            <div
-                class="pt-4 sm:pt-0 mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div class="text-left md:text-left">
-                    <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">{{ albumName }}</h1>
-                    <div class="text-purple-200 text-base sm:text-base">
-                        <span v-if="eventDate">{{ formatDate(eventDate) }}</span>
-                        <div v-if="description" class="text-white/60 whitespace-pre-line mt-2">{{ description }}</div>
-                        <div v-if="photographers.length > 0" class="flex items-center gap-2 mt-2">
-                            <span class="text-white/40">by</span>
-                            <button @click="showPhotographersModal = true"
-                                class="text-white/80 hover:text-white transition underline decoration-dotted">
-                                {{ photographersDisplay }}
-                            </button>
-                        </div>
+
+            <!-- Group View -->
+            <div v-if="viewMode === 'group'">
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl sm:text-5xl font-bold text-white mb-4">{{ groupTitle }}</h1>
+                    <p v-if="groupDescription" class="text-purple-200 text-lg max-w-2xl mx-auto">{{ groupDescription }}
+                    </p>
+                    <div class="mt-4 text-white/60">
+                        Collection by {{ ownerName }}
                     </div>
                 </div>
 
-                <button @click="downloadAll" :disabled="downloading"
-                    class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap">
-                    <span>Download All</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                </button>
-            </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="album in groupAlbums" :key="album.id" @click="openAlbum(album)"
+                        class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:border-purple-400/50 transition cursor-pointer group hover:-translate-y-1">
 
-            <!-- Loading Photos State -->
-            <div v-if="loadingPhotos && photos.length === 0" class="text-center py-12">
-                <div class="animate-pulse text-purple-300 text-lg sm:text-xl">Loading photos...</div>
-            </div>
+                        <!-- Album Thumbnail Placeholder since we don't have cover photo in API response yet -->
+                        <div
+                            class="aspect-video relative bg-gray-900 group-hover:brightness-110 transition duration-300 flex items-center justify-center">
+                            <span class="text-6xl grayscale opacity-50">📷</span>
+                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                        </div>
 
-            <!-- Empty State -->
-            <div v-else-if="photos.length === 0" class="text-center py-12 bg-white/5 rounded-xl border border-white/10">
-                <div class="text-5xl sm:text-6xl mb-4">📷</div>
-                <h3 class="text-lg sm:text-xl font-bold text-white mb-2">No photos yet</h3>
-            </div>
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition">
+                                {{ album.name }}
+                            </h3>
+                            <p v-if="album.description" class="text-purple-200 text-sm mb-4 line-clamp-2">
+                                {{ album.description }}
+                            </p>
 
-            <!-- Photo Grid -->
-            <div v-else-if="picturesLayout" ref="containerRef" class="relative mx-auto"
-                :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
-                <div v-for="(photo, index) in photos" :key="photo.id" @click="openPhotoViewer(index)"
-                    class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 hover:border-purple-400/50 transition-all hover:-translate-y-1 active:scale-95 group"
-                    :style="{
-                        top: `${picturesLayout.getPosition(index).top}px`,
-                        left: `${picturesLayout.getPosition(index).left}px`,
-                        width: `${picturesLayout.getPosition(index).width}px`,
-                        height: `${picturesLayout.getPosition(index).height}px`,
-                    }">
-                    <img v-if="photo.blurhash" :src="getBlurhashUrl(photo.blurhash, photo.width, photo.height) || ''"
-                        class="absolute inset-0 w-full h-full object-cover" />
-                    <img :src="`/api/assets/${photo.id}/thumb`" :alt="photo.filename" loading="lazy"
-                        class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
+                            <div class="flex items-center justify-between text-sm text-purple-300">
+                                <span>{{ album.photoCount }} photos</span>
+                                <span v-if="album.eventDate">{{ formatDate(album.eventDate) }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Infinite Scroll Sentinel -->
-            <div ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
-                <div v-if="loadingMore" class="animate-pulse text-purple-300 text-sm sm:text-base">Loading more
-                    photos...</div>
+            <!-- Album View -->
+            <div v-else>
+                <!-- Header -->
+                <div
+                    class="pt-4 sm:pt-0 mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="text-left md:text-left">
+                        <div v-if="shareType === 'group'" class="mb-2">
+                            <button @click="viewMode = 'group'"
+                                class="text-purple-300 hover:text-white flex items-center gap-1 text-sm bg-white/5 px-3 py-1 rounded-full transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                Back to {{ groupTitle }}
+                            </button>
+                        </div>
+                        <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">{{ albumName }}</h1>
+                        <div class="text-purple-200 text-base sm:text-base">
+                            <span v-if="eventDate">{{ formatDate(eventDate) }}</span>
+                            <div v-if="description" class="text-white/60 whitespace-pre-line mt-2">{{ description }}
+                            </div>
+                            <div v-if="photographers.length > 0" class="flex items-center gap-2 mt-2">
+                                <span class="text-white/40">by</span>
+                                <button @click="showPhotographersModal = true"
+                                    class="text-white/80 hover:text-white transition underline decoration-dotted">
+                                    {{ photographersDisplay }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button @click="downloadAll" :disabled="downloading"
+                        class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap">
+                        <span>Download All</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Loading Photos State -->
+                <div v-if="loadingPhotos && photos.length === 0" class="text-center py-12">
+                    <div class="animate-pulse text-purple-300 text-lg sm:text-xl">Loading photos...</div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else-if="photos.length === 0"
+                    class="text-center py-12 bg-white/5 rounded-xl border border-white/10">
+                    <div class="text-5xl sm:text-6xl mb-4">📷</div>
+                    <h3 class="text-lg sm:text-xl font-bold text-white mb-2">No photos yet</h3>
+                </div>
+
+                <!-- Photo Grid -->
+                <div v-else-if="picturesLayout" ref="containerRef" class="relative mx-auto"
+                    :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
+                    <div v-for="(photo, index) in photos" :key="photo.id" @click="openPhotoViewer(index)"
+                        class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 hover:border-purple-400/50 transition-all hover:-translate-y-1 active:scale-95 group"
+                        :style="{
+                            top: `${picturesLayout.getPosition(index).top}px`,
+                            left: `${picturesLayout.getPosition(index).left}px`,
+                            width: `${picturesLayout.getPosition(index).width}px`,
+                            height: `${picturesLayout.getPosition(index).height}px`,
+                        }">
+                        <img v-if="photo.blurhash"
+                            :src="getBlurhashUrl(photo.blurhash, photo.width, photo.height) || ''"
+                            class="absolute inset-0 w-full h-full object-cover" />
+                        <img :src="`/api/assets/${photo.id}/thumb`" :alt="photo.filename" loading="lazy"
+                            class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
+                    </div>
+                </div>
+
+                <!-- Infinite Scroll Sentinel -->
+                <div ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
+                    <div v-if="loadingMore" class="animate-pulse text-purple-300 text-sm sm:text-base">Loading more
+                        photos...</div>
+                </div>
             </div>
         </div>
 
@@ -214,12 +270,25 @@ const password = ref('')
 const accessing = ref(false)
 const isAuthenticated = ref(false)
 
+// View Mode
+const viewMode = ref<'album' | 'group'>('album')
+const shareType = ref<'album' | 'group' | 'view' | 'upload'>('view')
+
+// Group Data
+const groupTitle = ref('')
+const groupDescription = ref('')
+const groupAlbums = ref<any[]>([])
+
 // Album Metadata
 const albumId = ref('')
 const albumName = ref('')
 const ownerName = ref('')
 const description = ref('')
 const eventDate = ref<number | null>(null)
+
+const pageTitle = computed(() => {
+    return viewMode.value === 'group' ? groupTitle.value : albumName.value
+})
 
 // Photos State
 const photos = ref<Photo[]>([])
@@ -327,14 +396,23 @@ const { data: linkData, error: linkError } = await useFetch<{ success: boolean; 
 // Populate state from SSR data
 if (linkData.value?.data) {
     const data = linkData.value.data
-    albumId.value = data.albumId
-    albumName.value = data.albumName
-    ownerName.value = data.ownerName
-    description.value = data.description
-    eventDate.value = data.eventDate
     requiresPassword.value = data.requiresPassword
+    ownerName.value = data.ownerName
 
-
+    if (data.type === 'group') {
+        viewMode.value = 'group'
+        shareType.value = 'group'
+        groupTitle.value = data.title
+        groupDescription.value = data.description
+        groupAlbums.value = data.albums
+    } else {
+        viewMode.value = 'album'
+        shareType.value = data.shareType || 'view' // 'view' or 'upload'
+        albumId.value = data.albumId
+        albumName.value = data.albumName
+        description.value = data.description
+        eventDate.value = data.eventDate
+    }
 
     loading.value = false
 } else if (linkError.value) {
@@ -344,13 +422,13 @@ if (linkData.value?.data) {
 
 // Set page title and SEO meta
 useSeoMeta({
-    title: computed(() => albumName.value ? `${albumName.value} | PicHaus` : 'PicHaus'),
-    ogTitle: computed(() => albumName.value),
-    description: computed(() => description.value || `View ${albumName.value || 'album'} on PicHaus`),
-    ogDescription: computed(() => description.value || `View ${albumName.value || 'album'} on PicHaus`),
-    ogImage: computed(() => albumId.value ? `/api/v1/album/${albumId.value}/og-image` : null),
+    title: computed(() => pageTitle.value ? `${pageTitle.value} | PicHaus` : 'PicHaus'),
+    ogTitle: computed(() => pageTitle.value),
+    description: computed(() => (viewMode.value === 'group' ? groupDescription.value : description.value) || `View ${pageTitle.value || 'photos'} on PicHaus`),
+    ogDescription: computed(() => (viewMode.value === 'group' ? groupDescription.value : description.value) || `View ${pageTitle.value || 'photos'} on PicHaus`),
+    // ogImage: computed(() => albumId.value ? `/api/v1/album/${albumId.value}/og-image` : null), // TODO: Group OG Image
     twitterCard: 'summary_large_image',
-    twitterImage: computed(() => albumId.value ? `/api/v1/album/${albumId.value}/og-image` : null),
+    // twitterImage: computed(() => albumId.value ? `/api/v1/album/${albumId.value}/og-image` : null),
 })
 
 // Auto-access if no password (Client-side only)
@@ -371,15 +449,41 @@ const handleAccess = async () => {
             }
         })
 
-        albumId.value = response.data.albumId
-        isAuthenticated.value = true
-        await fetchPhotos()
+        const data = response.data
+        if (data.type === 'group') {
+            // Just set authenticated, we already have group data from initial fetch
+            // But if initial fetch didn't return sensitive data (if protected), we might need to refetch?
+            // Actually currently initial fetch returns metadata anyway.
+            // If protected, password check passes here.
+            isAuthenticated.value = true
+        } else {
+            albumId.value = data.albumId
+            isAuthenticated.value = true
+            await fetchPhotos()
+        }
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to access album')
+        alert(err.data?.statusMessage || 'Failed to access')
         loading.value = false
     } finally {
         accessing.value = false
     }
+}
+
+// Open Album from Group
+const openAlbum = async (album: any) => {
+    albumId.value = album.id
+    albumName.value = album.name
+    description.value = album.description
+    eventDate.value = album.eventDate
+
+    // Reset photos
+    photos.value = []
+    page.value = 1
+    hasMore.value = false
+
+    viewMode.value = 'album'
+
+    await fetchPhotos()
 }
 
 // Fetch photos after access

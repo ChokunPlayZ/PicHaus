@@ -619,7 +619,7 @@
 
     <!-- Photo Viewer -->
     <PhotoViewer v-if="selectedPhoto" :photo="selectedPhoto" :has-previous="selectedPhotoIndex! > 0"
-        :has-next="selectedPhotoIndex! < (photos.length || 0) - 1" :previous-photo-id="previousPhotoId"
+        :has-next="selectedPhotoIndex! < (photos.length || 0) - 1 || hasMore" :previous-photo-id="previousPhotoId"
         :next-photo-id="nextPhotoId" @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto" />
 
 
@@ -1839,10 +1839,17 @@ const closePhotoViewer = () => {
     selectedPhotoIndex.value = null
 }
 
-const nextPhoto = () => {
+const nextPhoto = async () => {
     if (selectedPhotoIndex.value === null || !photos.value.length) return
     if (selectedPhotoIndex.value < photos.value.length - 1) {
         selectedPhotoIndex.value++
+    } else if (hasMore.value && !loadingPhotos.value) {
+        // At the last photo but more photos are available - load them
+        await loadMorePhotos()
+        // After loading, advance to the next photo if we got more
+        if (selectedPhotoIndex.value !== null && selectedPhotoIndex.value < photos.value.length - 1) {
+            selectedPhotoIndex.value++
+        }
     }
 }
 

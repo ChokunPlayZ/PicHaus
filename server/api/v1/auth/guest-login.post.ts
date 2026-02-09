@@ -21,7 +21,10 @@ export default defineEventHandler(async (event) => {
         // Find share link
         const shareLink = await prisma.shareLink.findUnique({
             where: { token },
-            include: { album: true }
+            include: {
+                album: true,
+                shareGroup: true
+            }
         })
 
         if (!shareLink) {
@@ -53,6 +56,32 @@ export default defineEventHandler(async (event) => {
             where: { id: shareLink.id },
             data: { views: { increment: 1 } }
         })
+
+        // Handle Share Group
+        if (shareLink.shareGroupId && shareLink.shareGroup) {
+            setCookie(event, `group-access-${shareLink.shareGroupId}`, token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 60 * 60 * 24 * 7, // 1 week
+                path: '/',
+            })
+
+            return {
+                success: true,
+                data: {
+                    type: 'group',
+                    groupId: shareLink.shareGroupId,
+                    groupTitle: shareLink.shareGroup.title,
+                },
+            }
+        }
+
+        if (!shareLink.albumId || !shareLink.album) {
+            throw createError({
+                statusCode: 404,
+                statusMessage: 'Album not found',
+            })
+        }
 
         // For view-only links, just grant session access without creating user
         if (shareLink.type === 'view') {

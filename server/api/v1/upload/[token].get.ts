@@ -46,9 +46,71 @@ export default defineEventHandler(async (event) => {
             })
         }
 
+        // Check if it's a group share
+        if (shareLink.shareGroupId) {
+            const group = await prisma.shareGroup.findUnique({
+                where: { id: shareLink.shareGroupId },
+                include: {
+                    owner: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                    albums: {
+                        select: {
+                            id: true,
+                            title: true,
+                            description: true,
+                            eventDate: true,
+                            _count: {
+                                select: {
+                                    photos: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            })
+
+            if (!group) {
+                throw createError({
+                    statusCode: 404,
+                    statusMessage: 'Group not found',
+                })
+            }
+
+            return {
+                success: true,
+                data: {
+                    type: 'group',
+                    groupId: group.id,
+                    title: group.title,
+                    description: group.description,
+                    ownerName: group.owner.name,
+                    requiresPassword: !!shareLink.password,
+                    albums: group.albums.map(album => ({
+                        id: album.id,
+                        name: album.title,
+                        description: album.description,
+                        eventDate: album.eventDate ? Number(album.eventDate) : null,
+                        photoCount: album._count.photos,
+                    })),
+                },
+            }
+        }
+
+        if (!shareLink.album) {
+            throw createError({
+                statusCode: 404,
+                statusMessage: 'Album not found in this link',
+            })
+        }
+
+        // It is an album share
         return {
             success: true,
             data: {
+                type: 'album',
                 albumId: shareLink.album.id,
                 albumName: shareLink.album.title,
                 description: shareLink.album.description,
@@ -56,8 +118,7 @@ export default defineEventHandler(async (event) => {
                 ownerName: shareLink.album.owner.name,
                 photoCount: shareLink.album._count.photos,
                 requiresPassword: !!shareLink.password,
-                type: shareLink.type,
-
+                shareType: shareLink.type, // 'view' or 'upload' for albums
             },
         }
     } catch (error: any) {

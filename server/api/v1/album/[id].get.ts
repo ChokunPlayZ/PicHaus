@@ -79,6 +79,27 @@ export default defineEventHandler(async (event) => {
                     hasShareLinkAccess = true
                 }
             }
+
+            // Check for group access
+            if (!hasShareLinkAccess) {
+                const groups = await prisma.shareGroup.findMany({
+                    where: { albums: { some: { id } } },
+                    select: { id: true }
+                })
+
+                for (const group of groups) {
+                    const groupToken = getCookie(event, `group-access-${group.id}`)
+                    if (groupToken) {
+                        const link = await prisma.shareLink.findUnique({
+                            where: { token: groupToken }
+                        })
+                        if (link && link.shareGroupId === group.id) {
+                            hasShareLinkAccess = true
+                            break
+                        }
+                    }
+                }
+            }
         }
 
         const canView = album.isPublic || isOwner || isCollaborator || hasShareLinkAccess

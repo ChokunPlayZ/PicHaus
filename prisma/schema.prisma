@@ -24,6 +24,7 @@ model User {
   uploadedPhotos     Photo[]
   albumCollaborators AlbumCollaborator[]
   apiTokens          ApiToken[]
+  shareGroups        ShareGroup[]
 
   @@map("users")
 }
@@ -48,6 +49,7 @@ model Album {
   photos        Photo[]
   collaborators AlbumCollaborator[]
   shareLinks    ShareLink[]
+  shareGroups   ShareGroup[]
 
   @@map("albums")
 }
@@ -62,10 +64,29 @@ model ShareLink {
   createdAt BigInt // Unix timestamp
   expiresAt BigInt? // Unix timestamp
 
-  albumId String @db.Uuid
-  album   Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  albumId String? @db.Uuid
+  album   Album?  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  shareGroupId String?     @db.Uuid
+  shareGroup   ShareGroup? @relation(fields: [shareGroupId], references: [id], onDelete: Cascade)
 
   @@map("share_links")
+}
+
+model ShareGroup {
+  id          String  @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  createdAt   BigInt // Unix timestamp
+  updatedAt   BigInt // Unix timestamp
+
+  ownerId String @db.Uuid
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  albums     Album[]
+  shareLinks ShareLink[]
+
+  @@map("share_groups")
 }
 
 model ApiToken {
