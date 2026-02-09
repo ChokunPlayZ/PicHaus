@@ -264,7 +264,14 @@
                     class="bg-white/5 rounded-lg p-4 border border-white/10 mb-6 flex items-center justify-between gap-2">
                     <code class="text-sm text-purple-300 truncate">{{ createdShareLink }}</code>
                     <button @click="copyToClipboard(createdShareLink!)" class="text-white hover:text-purple-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        <span v-if="copied" class="text-green-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                        </span>
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -437,9 +444,41 @@ const handleCreateShareGroup = async () => {
     }
 }
 
-const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    // Maybe show a toast notification here
+const copied = ref(false)
+
+const copyToClipboard = async (text: string) => {
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text)
+        } else {
+            // Fallback
+            const textArea = document.createElement("textarea")
+            textArea.value = text
+
+            textArea.style.position = "fixed"
+            textArea.style.left = "-9999px"
+            textArea.style.top = "0"
+            document.body.appendChild(textArea)
+
+            textArea.focus()
+            textArea.select()
+
+            const successful = document.execCommand('copy')
+            document.body.removeChild(textArea)
+
+            if (!successful) {
+                throw new Error('Unable to copy')
+            }
+        }
+
+        copied.value = true
+        setTimeout(() => {
+            copied.value = false
+        }, 2000)
+    } catch (err) {
+        console.error('Failed to copy', err)
+        alert('Failed to copy link manually: ' + text)
+    }
 }
 
 // Logout

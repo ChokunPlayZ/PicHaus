@@ -67,6 +67,16 @@ export default defineEventHandler(async (event) => {
                                     photos: true,
                                 },
                             },
+                            photos: {
+                                take: 1,
+                                orderBy: {
+                                    createdAt: 'desc'
+                                },
+                                select: {
+                                    id: true,
+                                    blurhash: true
+                                }
+                            }
                         },
                     },
                 },
@@ -94,6 +104,10 @@ export default defineEventHandler(async (event) => {
                         description: album.description,
                         eventDate: album.eventDate ? Number(album.eventDate) : null,
                         photoCount: album._count.photos,
+                        coverPhoto: album.photos[0] ? {
+                            id: album.photos[0].id,
+                            blurhash: album.photos[0].blurhash
+                        } : null
                     })),
                 },
             }

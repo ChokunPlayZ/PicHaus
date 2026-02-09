@@ -48,10 +48,20 @@
                     <div v-for="album in groupAlbums" :key="album.id" @click="openAlbum(album)"
                         class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:border-purple-400/50 transition cursor-pointer group hover:-translate-y-1">
 
-                        <!-- Album Thumbnail Placeholder since we don't have cover photo in API response yet -->
+                        <!-- Album Thumbnail -->
                         <div
-                            class="aspect-video relative bg-gray-900 group-hover:brightness-110 transition duration-300 flex items-center justify-center">
-                            <span class="text-6xl grayscale opacity-50">📷</span>
+                            class="aspect-video relative bg-gray-900 group-hover:brightness-110 transition duration-300">
+                            <!-- Cover Photo -->
+                            <img v-if="album.coverPhoto" :src="`/api/assets/${album.coverPhoto.id}/thumb`"
+                                class="w-full h-full object-cover" loading="lazy" />
+
+                            <!-- Placeholder if no photo -->
+                            <div v-else
+                                class="w-full h-full bg-gradient-to-br from-purple-900/50 to-pink-900/50 flex items-center justify-center">
+                                <span class="text-6xl grayscale opacity-50">📷</span>
+                            </div>
+
+                            <!-- Hover Overlay -->
                             <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
                         </div>
 
