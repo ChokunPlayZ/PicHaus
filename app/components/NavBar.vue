@@ -31,6 +31,10 @@
                         class="text-white/80 hover:text-white transition cursor-pointer text-sm font-medium">
                         Statistics
                     </button>
+                    <button @click="navigateTo('/share-links')"
+                        class="text-white/80 hover:text-white transition cursor-pointer text-sm font-medium">
+                        Share Links
+                    </button>
 
                     <template v-if="user?.role === 'ADMIN'">
                         <button @click="navigateTo('/admin/users')"
