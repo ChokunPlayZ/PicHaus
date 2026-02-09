@@ -73,6 +73,15 @@
                                     {{ formatDate(link.createdAt) }}
                                 </td>
                                 <td class="px-6 py-4 text-right space-x-2">
+                                    <button @click="openEditModal(link)"
+                                        class="text-blue-400 hover:text-white transition p-2 hover:bg-blue-500/10 rounded-lg"
+                                        title="Edit Link">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                    </button>
                                     <button @click="copyLink(link.id, link.url)"
                                         class="text-purple-300 hover:text-white transition p-2 hover:bg-white/10 rounded-lg"
                                         title="Copy Link">
@@ -103,6 +112,120 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- Edit Modal -->
+        <div v-if="showEditModal"
+            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            @click.self="showEditModal = false">
+            <div
+                class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <h3 class="text-2xl font-bold text-white mb-6">Edit Share Link</h3>
+
+                <div v-if="loadingEdit" class="text-center py-8">
+                    <div class="animate-pulse text-purple-300">Loading details...</div>
+                </div>
+
+                <form v-else @submit.prevent="handleUpdateLink" class="space-y-6">
+                    <!-- General Settings -->
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-semibold text-purple-200 border-b border-white/10 pb-2">General Settings
+                        </h4>
+
+                        <div>
+                            <label class="block text-sm font-medium text-purple-200 mb-2">Link Label</label>
+                            <input v-model="editForm.label" type="text"
+                                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                placeholder="Public Link" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-purple-200 mb-2">Password Protection</label>
+                            <div class="flex flex-col gap-2">
+                                <input v-model="editForm.password" type="password"
+                                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    placeholder="Set new password (leave empty to keep current)" />
+
+                                <div v-if="editForm.hasPassword" class="flex items-center mt-1">
+                                    <input v-model="editForm.removePassword" type="checkbox" id="removePass"
+                                        class="w-4 h-4 text-red-500 bg-white/5 border-white/10 rounded focus:ring-red-500" />
+                                    <label for="removePass" class="ml-2 text-sm text-red-300">Remove current
+                                        password</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group Content Settings -->
+                    <div v-if="editForm.isGroup" class="space-y-4 pt-4">
+                        <h4 class="text-lg font-semibold text-purple-200 border-b border-white/10 pb-2">Group Content
+                        </h4>
+
+                        <div>
+                            <label class="block text-sm font-medium text-purple-200 mb-2">Group Title</label>
+                            <input v-model="editForm.groupTitle" type="text"
+                                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-purple-200 mb-2">Description</label>
+                            <textarea v-model="editForm.groupDescription" rows="2"
+                                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-purple-200 mb-3">Albums in Group</label>
+                            <div
+                                class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                                <div v-for="album in availableAlbums" :key="album.id"
+                                    class="flex items-center p-3 rounded-lg border transition cursor-pointer"
+                                    :class="editForm.groupAlbumIds.includes(album.id) ? 'bg-purple-500/20 border-purple-500' : 'bg-white/5 border-white/10 hover:border-white/30'"
+                                    @click="toggleAlbumInGroup(album.id)">
+
+                                    <div class="h-10 w-10 rounded overflow-hidden bg-gray-800 flex-shrink-0 mr-3">
+                                        <img v-if="album.coverPhoto" :src="`/api/assets/${album.coverPhoto.id}/thumb`"
+                                            class="w-full h-full object-cover" />
+                                        <div v-else
+                                            class="w-full h-full flex items-center justify-center text-white/20">📷
+                                        </div>
+                                    </div>
+
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-white truncate">{{ album.name }}</div>
+                                        <div class="text-xs text-purple-300">{{ album.photoCount }} photos</div>
+                                    </div>
+
+                                    <div class="w-5 h-5 rounded-full border border-white/30 flex items-center justify-center ml-2"
+                                        :class="{ 'bg-purple-500 border-purple-500': editForm.groupAlbumIds.includes(album.id) }">
+                                        <svg v-if="editForm.groupAlbumIds.includes(album.id)" class="w-3 h-3 text-white"
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                                d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error -->
+                    <div v-if="editError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
+                        <p class="text-red-200 text-sm">{{ editError }}</p>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="flex space-x-3 pt-4">
+                        <button type="button" @click="showEditModal = false"
+                            class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                            Cancel
+                        </button>
+                        <button type="submit" :disabled="saving"
+                            class="flex-1 px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                            {{ saving ? 'Saving...' : 'Save Changes' }}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -145,6 +268,13 @@ interface ShareLink {
     url: string
 }
 
+interface AvailableAlbum {
+    id: string
+    name: string
+    photoCount: number
+    coverPhoto: { id: string; blurhash: string | null } | null
+}
+
 const loading = ref(true)
 const error = ref('')
 const links = ref<ShareLink[]>([])
@@ -152,8 +282,27 @@ const links = ref<ShareLink[]>([])
 const showDeleteModal = ref(false)
 const linkToDelete = ref<ShareLink | null>(null)
 const deleting = ref(false)
-
 const copiedLinkId = ref<string | null>(null)
+
+// Edit State
+const showEditModal = ref(false)
+const loadingEdit = ref(false)
+const editingLink = ref<ShareLink | null>(null)
+const editError = ref('')
+const saving = ref(false)
+const availableAlbums = ref<AvailableAlbum[]>([])
+
+const editForm = reactive({
+    id: '',
+    label: '',
+    password: '',
+    hasPassword: false,
+    removePassword: false,
+    isGroup: false,
+    groupTitle: '',
+    groupDescription: '',
+    groupAlbumIds: [] as string[]
+})
 
 // Fetch Links
 const fetchLinks = async () => {
@@ -180,6 +329,80 @@ const formatDate = (timestamp: number) => {
         month: 'short',
         day: 'numeric'
     })
+}
+
+// Edit Logic
+const openEditModal = async (link: ShareLink) => {
+    editingLink.value = link
+    showEditModal.value = true
+    loadingEdit.value = true
+    editError.value = ''
+
+    // Reset Form
+    editForm.id = link.id
+
+    try {
+        // Fetch Details
+        const details = await $fetch<{ success: boolean; data: any }>(`/api/v1/share-links/${link.id}`)
+        const data = details.data
+
+        editForm.label = data.label || ''
+        editForm.password = ''
+        editForm.hasPassword = data.hasPassword
+        editForm.removePassword = false
+        editForm.isGroup = data.isGroup
+
+        if (data.isGroup) {
+            editForm.groupTitle = data.groupTitle
+            editForm.groupDescription = data.groupDescription || ''
+            editForm.groupAlbumIds = data.groupAlbumIds
+
+            // Fetch Available Albums
+            const albumsResponse = await $fetch<{ success: boolean; data: AvailableAlbum[] }>('/api/v1/albums/list')
+            availableAlbums.value = albumsResponse.data
+        }
+    } catch (err: any) {
+        editError.value = 'Failed to load details'
+        console.error(err)
+    } finally {
+        loadingEdit.value = false
+    }
+}
+
+const toggleAlbumInGroup = (albumId: string) => {
+    const index = editForm.groupAlbumIds.indexOf(albumId)
+    if (index === -1) {
+        editForm.groupAlbumIds.push(albumId)
+    } else {
+        editForm.groupAlbumIds.splice(index, 1)
+    }
+}
+
+const handleUpdateLink = async () => {
+    saving.value = true
+    editError.value = ''
+
+    try {
+        await $fetch(`/api/v1/share-links/${editForm.id}`, {
+            method: 'PUT',
+            body: {
+                label: editForm.label,
+                password: editForm.password || undefined,
+                removePassword: editForm.removePassword,
+                isGroup: editForm.isGroup,
+                groupTitle: editForm.groupTitle,
+                groupDescription: editForm.groupDescription,
+                groupAlbumIds: editForm.groupAlbumIds
+            }
+        })
+
+        showEditModal.value = false
+        await fetchLinks() // Refresh list
+    } catch (err: any) {
+        editError.value = err.data?.statusMessage || 'Failed to update link'
+    } finally {
+        saving.value = false
+    }
 }
 
 const copyLink = async (id: string, path: string) => {
@@ -248,3 +471,22 @@ onMounted(() => {
     fetchLinks()
 })
 </script>
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+</style>
