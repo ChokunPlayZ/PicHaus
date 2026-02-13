@@ -72,6 +72,7 @@ export default defineEventHandler(async (event) => {
                     type: 'group',
                     groupId: shareLink.shareGroupId,
                     groupTitle: shareLink.shareGroup.title,
+                    showMetadata: shareLink.showMetadata,
                 },
             }
         }
@@ -98,7 +99,8 @@ export default defineEventHandler(async (event) => {
                 data: {
                     albumId: shareLink.albumId,
                     albumName: shareLink.album.title,
-                    type: 'view'
+                    type: 'view',
+                    showMetadata: shareLink.showMetadata,
                 },
             }
         }
@@ -186,7 +188,8 @@ export default defineEventHandler(async (event) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                albumId: shareLink.albumId // Return albumId for redirect
+                albumId: shareLink.albumId, // Return albumId for redirect
+                showMetadata: shareLink.showMetadata,
             },
         }
     } catch (error: any) {

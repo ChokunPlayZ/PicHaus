@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
             type,
             label,
             password: passwordHash,
+            showMetadata: body.showMetadata !== undefined ? body.showMetadata : true,
             albumId: albumId!,
             createdAt: getUnixTimestamp(),
         }

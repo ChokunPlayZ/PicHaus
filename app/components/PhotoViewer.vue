@@ -197,7 +197,7 @@
                     </div>
 
                     <!-- EXIF Data -->
-                    <div class="space-y-4">
+                    <div class="space-y-4" v-if="showMetadata">
                         <h4 class="text-sm font-medium text-purple-300 border-b border-white/10 pb-2">Camera Info</h4>
 
                         <div v-if="photo.cameraModel" class="flex justify-between md:grid md:grid-cols-2 gap-2 text-sm">
@@ -238,7 +238,7 @@
                     </div>
 
                     <!-- File Info -->
-                    <div class="mt-8 pt-6 border-t border-white/10 space-y-2">
+                    <div class="mt-8 pt-6 border-t border-white/10 space-y-2" v-if="showMetadata">
                         <div class="flex justify-between md:grid md:grid-cols-2 gap-2 text-xs">
                             <span class="text-white/50">Filename</span>
                             <span class="text-white md:text-right truncate" :title="photo.originalName">{{
@@ -281,13 +281,16 @@ interface Photo {
     height?: number | null
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     photo: Photo
     hasPrevious: boolean
     hasNext: boolean
     previousPhotoId?: string | null
     nextPhotoId?: string | null
-}>()
+    showMetadata?: boolean
+}>(), {
+    showMetadata: true
+})
 
 const emit = defineEmits(['close', 'previous', 'next'])
 

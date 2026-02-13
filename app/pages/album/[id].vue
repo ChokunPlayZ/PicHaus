@@ -106,13 +106,8 @@
                             <!-- Concurrency Setting -->
                             <div class="flex items-center gap-2 text-xs text-white/60 bg-white/5 px-2 py-1 rounded">
                                 <span>Concurrent:</span>
-                                <input 
-                                    type="number" 
-                                    v-model.number="maxConcurrency" 
-                                    min="1" 
-                                    max="5" 
-                                    class="w-8 bg-transparent text-center text-white border-b border-white/20 focus:border-purple-500 focus:outline-none"
-                                />
+                                <input type="number" v-model.number="maxConcurrency" min="1" max="5"
+                                    class="w-8 bg-transparent text-center text-white border-b border-white/20 focus:border-purple-500 focus:outline-none" />
                             </div>
                             <button v-if="uploadQueue.some(i => i.status === 'failed')" @click="retryFailed"
                                 class="text-xs bg-red-500/20 text-red-300 hover:bg-red-500/30 px-2 py-1 rounded transition">Retry
@@ -517,6 +512,14 @@
                         <input v-model="newLink.password" type="password" placeholder="Leave empty for no password"
                             class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
                     </div>
+                    <div>
+                        <div class="flex items-center mb-4">
+                            <input v-model="newLink.showMetadata" type="checkbox" id="showMetadata"
+                                class="w-4 h-4 text-purple-600 bg-white/5 border-white/10 rounded focus:ring-purple-500" />
+                            <label for="showMetadata" class="ml-2 text-sm text-purple-200">Show photo metadata (date,
+                                camera, etc.)</label>
+                        </div>
+                    </div>
                     <button type="submit" :disabled="creatingLink"
                         class="w-full px-4 py-2 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
                         {{ creatingLink ? 'Creating...' : 'Create Link' }}
@@ -545,6 +548,9 @@
                                 </span>
                                 <span v-if="link.password" class="text-xs text-yellow-300 flex items-center gap-1">
                                     🔒 Password
+                                </span>
+                                <span v-if="!link.showMetadata" class="text-xs text-orange-300 flex items-center gap-1">
+                                    🚫 No Metadata
                                 </span>
                             </div>
                             <div class="flex items-center gap-2 text-sm">
@@ -645,14 +651,10 @@
 
     <!-- Toast Notifications -->
     <div class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none">
-        <TransitionGroup
-            enter-active-class="transition duration-300 ease-out"
-            enter-from-class="transform translate-y-2 opacity-0"
-            enter-to-class="transform translate-y-0 opacity-100"
-            leave-active-class="transition duration-200 ease-in"
-            leave-from-class="transform translate-y-0 opacity-100"
-            leave-to-class="transform translate-y-2 opacity-0"
-        >
+        <TransitionGroup enter-active-class="transition duration-300 ease-out"
+            enter-from-class="transform translate-y-2 opacity-0" enter-to-class="transform translate-y-0 opacity-100"
+            leave-active-class="transition duration-200 ease-in" leave-from-class="transform translate-y-0 opacity-100"
+            leave-to-class="transform translate-y-2 opacity-0">
             <div v-for="toast in toasts" :key="toast.id"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border backdrop-blur-md pointer-events-auto"
                 :class="{
@@ -762,6 +764,7 @@ interface ShareLink {
     type: 'view' | 'upload'
     label: string | null
     password: boolean // Backend returns boolean if password exists
+    showMetadata: boolean
     views: number
     createdAt: number
     copied?: boolean
@@ -1168,7 +1171,8 @@ const creatingLink = ref(false)
 const newLink = ref({
     type: 'view',
     label: '',
-    password: ''
+    password: '',
+    showMetadata: true
 })
 
 // Layout state
@@ -1454,6 +1458,7 @@ const handleUpdatePhoto = async () => {
 }
 
 // Share Logic
+
 const openShareModal = async () => {
     showShareModal.value = true
     await fetchShareLinks()
@@ -1478,7 +1483,7 @@ const createShareLink = async () => {
             method: 'POST',
             body: newLink.value
         })
-        newLink.value = { type: 'view', label: '', password: '' }
+        newLink.value = { type: 'view', label: '', password: '', showMetadata: true }
         await fetchShareLinks()
         showToast('Link created')
     } catch (err: any) {

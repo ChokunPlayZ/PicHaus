@@ -109,6 +109,7 @@ export default defineEventHandler(async (event) => {
                             blurhash: album.photos[0].blurhash
                         } : null
                     })),
+                    showMetadata: shareLink.showMetadata,
                 },
             }
         }
@@ -133,6 +134,7 @@ export default defineEventHandler(async (event) => {
                 photoCount: shareLink.album._count.photos,
                 requiresPassword: !!shareLink.password,
                 shareType: shareLink.type, // 'view' or 'upload' for albums
+                showMetadata: shareLink.showMetadata,
             },
         }
     } catch (error: any) {

@@ -235,7 +235,8 @@
         <!-- Photo Viewer -->
         <PhotoViewer v-if="selectedPhoto" :photo="selectedPhoto" :has-previous="selectedPhotoIndex! > 0"
             :has-next="selectedPhotoIndex! < (photos.length || 0) - 1" :previous-photo-id="previousPhotoId"
-            :next-photo-id="nextPhotoId" @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto" />
+            :next-photo-id="nextPhotoId" :show-metadata="showMetadata" @close="closePhotoViewer"
+            @previous="previousPhoto" @next="nextPhoto" />
     </div>
 </template>
 
@@ -279,6 +280,7 @@ const requiresPassword = ref(false)
 const password = ref('')
 const accessing = ref(false)
 const isAuthenticated = ref(false)
+const showMetadata = ref(true)
 
 // View Mode
 const viewMode = ref<'album' | 'group'>('album')
@@ -422,6 +424,7 @@ if (linkData.value?.data) {
         albumName.value = data.albumName
         description.value = data.description
         eventDate.value = data.eventDate
+        showMetadata.value = data.showMetadata !== undefined ? data.showMetadata : true
     }
 
     loading.value = false
