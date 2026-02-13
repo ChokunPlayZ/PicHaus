@@ -18,12 +18,16 @@ export default defineEventHandler(async (event) => {
     const album = await prisma.album.findUnique({
         where: { id },
         include: {
+            coverPhoto: {
+                select: {
+                    id: true,
+                    storagePath: true,
+                    thumbnailStoragePath: true,
+                }
+            },
             photos: {
                 take: 100,
                 where: {
-                    // Prisma doesn't support { not: null } for Int fields directly in all versions, 
-                    // but usually it does. If strict, we can filter in JS or ensure schema allows it.
-                    // Let's try standard Prisma syntax.
                     width: { not: undefined },
                     height: { not: undefined }
                 },
@@ -49,6 +53,38 @@ export default defineEventHandler(async (event) => {
     const width = 1200
     const height = 630
 
+    // 1. If Cover Photo exists, use it
+    if (album.coverPhoto && (album.coverPhoto.storagePath || album.coverPhoto.thumbnailStoragePath)) {
+        try {
+            // Prefer original for better quality, but verify what we have
+            // Actually usually we might want to use a generated thumbnail if it's large enough, 
+            // but for OG image (1200x630) we probably want the original or a large variant.
+            // Let's use the storagePath (original) to ensure quality.
+            const path = album.coverPhoto.storagePath
+            if (path) {
+                const fullPath = getAbsoluteFilePath(path)
+                const imageBuffer = await sharp(fullPath)
+                    .resize(width, height, {
+                        fit: 'cover',
+                        position: 'center'
+                    })
+                    .png()
+                    .toBuffer()
+
+                setHeaders(event, {
+                    'Content-Type': 'image/png',
+                    'Cache-Control': 'public, max-age=3600'
+                })
+
+                return imageBuffer
+            }
+        } catch (e) {
+            console.error('Failed to generate OG image from cover photo:', e)
+            // Fallthrough to collage on error
+        }
+    }
+
+    // 2. Fallback to Collage
     // Create base background
     let composite = sharp({
         create: {
@@ -81,20 +117,10 @@ export default defineEventHandler(async (event) => {
             photos.map((photo: any) => (photo.width || 1) / (photo.height || 1))
         )
 
-        // JustifiedLayout from @immich/justified-layout-wasm might work differently than flickr's.
-        // Assuming it returns a geometry object or has a method.
-        // Let's check how it's used in the frontend code I saw earlier.
-        // In frontend: new JustifiedLayout(aspectRatios, config)
-        // It seems it calculates immediately or has a method. 
-        // If it matches the frontend usage:
         // Convert Float32Array to regular array for justified-layout
         const aspectRatiosArray = Array.from(aspectRatios)
 
         // Calculate dynamic row height to ensure we fill the vertical space
-        // Total Area ~= n * H * W_avg
-        // W_avg = H * AR_avg
-        // Total Area ~= n * H^2 * AR_avg
-        // H = sqrt(Total Area / (n * AR_avg))
         const avgAspectRatio = aspectRatiosArray.reduce((a, b) => a + b, 0) / aspectRatiosArray.length
         // Multiply area by 1.2 to ensure we overflow rather than underflow
         const targetRowHeight = Math.sqrt((width * height * 1.2) / (photos.length * avgAspectRatio))
@@ -106,14 +132,6 @@ export default defineEventHandler(async (event) => {
             containerPadding: 20,
             targetRowHeightTolerance: 0.2, // Allow more flexibility
         })
-
-        // The WASM version might expose boxes differently. 
-        // If it's like the JS version, it returns { boxes: [...] }
-        // But here we instantiated a class. 
-        // Let's assume `layout` itself is the geometry or has a `boxes` property.
-        // Based on frontend code: `picturesLayout.getPosition(index)` was used.
-        // So we should use `layout.getPosition(index)` if available, or access boxes.
-        // The frontend used `layout.getPosition(index)`. Let's try that or fallback to boxes.
 
         // Process photos in parallel
         const photoPromises = photos.map(async (photo: any, index: number) => {

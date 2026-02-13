@@ -102,7 +102,18 @@
                     class="mt-4 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 overflow-hidden">
                     <div class="p-4 border-b border-white/10 flex justify-between items-center">
                         <h3 class="text-white font-medium">Upload Queue</h3>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-4">
+                            <!-- Concurrency Setting -->
+                            <div class="flex items-center gap-2 text-xs text-white/60 bg-white/5 px-2 py-1 rounded">
+                                <span>Concurrent:</span>
+                                <input 
+                                    type="number" 
+                                    v-model.number="maxConcurrency" 
+                                    min="1" 
+                                    max="5" 
+                                    class="w-8 bg-transparent text-center text-white border-b border-white/20 focus:border-purple-500 focus:outline-none"
+                                />
+                            </div>
                             <button v-if="uploadQueue.some(i => i.status === 'failed')" @click="retryFailed"
                                 class="text-xs bg-red-500/20 text-red-300 hover:bg-red-500/30 px-2 py-1 rounded transition">Retry
                                 Failed</button>
@@ -1651,159 +1662,127 @@ const tryParseJSON = (json: string) => {
 }
 
 // Queue Processing Logic
-const processQueue = async () => {
-    if (isProcessingQueue.value) return
-    isProcessingQueue.value = true
+const maxConcurrency = ref(3)
+const isHashing = ref(false)
+const activeUploads = ref(0)
 
-    try {
-        // 1. Identify new items needing hashing/checking
-        const itemsToCheck = uploadQueue.value.filter(item => item.status === 'hashing')
+const processNextStep = async () => {
+    // 1. Check if we need to hash/check any files (Sequential: One at a time)
+    if (!isHashing.value) {
+        const itemHashing = uploadQueue.value.find(item => item.status === 'hashing')
 
-        if (itemsToCheck.length > 0) {
-            // Calculate hashes
-            const hashes: string[] = []
-            for (const item of itemsToCheck) {
-                try {
-                    const hash = await calculateSHA256(item.file)
-                    hashes.push(hash)
-                } catch (err) {
-                    item.status = 'failed'
-                    item.error = 'Failed to calculate hash'
-                }
-            }
-
-            // Check duplicates
+        if (itemHashing) {
+            isHashing.value = true
             try {
+                // Calculate hash
+                const hash = await calculateSHA256(itemHashing.file)
+
+                // Check duplicate
+                // We send array of 1 to reuse the existing endpoint
                 const { duplicates } = await $fetch<{ success: boolean, duplicates: string[] }>(`/api/v1/album/${albumId}/check-duplicates`, {
                     method: 'POST',
-                    body: { hashes }
+                    body: { hashes: [hash] }
                 })
 
-                // Update statuses
-                for (let i = 0; i < itemsToCheck.length; i++) {
-                    const item = itemsToCheck[i]
-                    if (!item || item.status === 'failed') continue // Already failed hashing or undefined
-
-                    const hash = hashes[i]
-                    if (hash && duplicates.includes(hash)) {
-                        item.status = 'skipped'
-                    } else {
-                        item.status = 'pending'
-                    }
-                }
-            } catch (err) {
-                // If check fails, fallback to upload attempt (or fail all? safely fail checking)
-                console.error('Duplicate check failed', err)
-                itemsToCheck.forEach(item => {
-                    if (item.status !== 'failed') item.status = 'pending'
-                })
-            }
-        }
-
-        // 2. Process uploads (Parallel with concurrency limit)
-        const MAX_CONCURRENCY = 3
-        const activeUploads = ref(0)
-
-        const uploadFile = async (item: UploadItem) => {
-            item.status = 'uploading'
-            item.progress = 0
-
-            try {
-                const formData = new FormData()
-                formData.append('file', item.file)
-
-                await new Promise<void>((resolve, reject) => {
-                    const xhr = new XMLHttpRequest()
-
-                    xhr.upload.onprogress = (e) => {
-                        if (e.lengthComputable) {
-                            item.progress = Math.round((e.loaded * 100) / e.total)
-                        }
-                    }
-
-                    xhr.onload = () => {
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            resolve()
-                        } else {
-                            reject({
-                                status: xhr.status,
-                                statusText: xhr.statusText,
-                                data: tryParseJSON(xhr.responseText)
-                            })
-                        }
-                    }
-
-                    xhr.onerror = () => reject({ status: 0, statusText: 'Network Error' })
-
-                    xhr.open('POST', `/api/v1/album/${albumId}/upload`)
-                    xhr.send(formData)
-                })
-
-                item.status = 'completed'
-                item.progress = 100
-            } catch (err: any) {
-                if (err.status === 409) {
-                    item.status = 'skipped'
-                    item.progress = 100
+                if (duplicates.includes(hash)) {
+                    itemHashing.status = 'skipped'
+                    itemHashing.progress = 100
                 } else {
-                    item.status = 'failed'
-                    item.error = err.data?.statusMessage || err.statusText || 'Upload failed'
-                    item.progress = 0
+                    itemHashing.status = 'pending'
+                }
+            } catch (err: any) {
+                console.error('Hash/Check failed:', err)
+                itemHashing.status = 'failed'
+                itemHashing.error = err.message || 'Verification failed'
+            } finally {
+                isHashing.value = false
+                // Trigger next step immediately after hashing one
+                processNextStep()
+            }
+        }
+    }
+
+    // 2. Check if we can start more uploads (Concurrent: Up to maxConcurrency)
+    // Filter for actual active uploads to be safe (though activeUploads ref should track it)
+    const currentActive = uploadQueue.value.filter(i => i.status === 'uploading').length
+    // Sync ref just in case
+    activeUploads.value = currentActive
+
+    if (currentActive < maxConcurrency.value) {
+        const nextItem = uploadQueue.value.find(item => item.status === 'pending')
+
+        if (nextItem) {
+            // Start upload (async fire and forget)
+            uploadFile(nextItem)
+            // Try to start another if we still have capacity
+            processNextStep()
+        }
+    }
+}
+
+const uploadFile = async (item: UploadItem) => {
+    item.status = 'uploading'
+    item.progress = 0
+    // activeUploads is updated by the loop check or we can track it here but better to rely on status
+
+    try {
+        const formData = new FormData()
+        formData.append('file', item.file)
+
+        await new Promise<void>((resolve, reject) => {
+            const xhr = new XMLHttpRequest()
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    item.progress = Math.round((e.loaded * 100) / e.total)
                 }
             }
-        }
 
-        // Process pool
-        const processNext = async () => {
-            if (!isProcessingQueue.value) return
-
-            // Find next pending item
-            const nextItem = uploadQueue.value.find(item => item.status === 'pending')
-            if (!nextItem) return
-
-            // If we have capacity, start upload
-            if (activeUploads.value < MAX_CONCURRENCY) {
-                activeUploads.value++
-
-                // Start upload but don't await it here (fire and forget)
-                uploadFile(nextItem).then(() => {
-                    activeUploads.value--
-                    // When one finishes, try to pick up another
-                    processNext()
-
-                    // Check if all done
-                    if (activeUploads.value === 0 && !uploadQueue.value.some(i => i.status === 'pending' || i.status === 'hashing' || i.status === 'uploading')) {
-                        // All finished
-                        if (uploadQueue.value.some(i => i.status === 'completed')) {
-                            fetchAlbum()
-                        }
-                        isProcessingQueue.value = false
-                    }
-                })
-
-                // Try to fill more spots if available
-                processNext()
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve()
+                } else {
+                    reject({
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        data: tryParseJSON(xhr.responseText)
+                    })
+                }
             }
+
+            xhr.onerror = () => reject({ status: 0, statusText: 'Network Error' })
+
+            xhr.open('POST', `/api/v1/album/${albumId}/upload`)
+            xhr.send(formData)
+        })
+
+        item.status = 'completed'
+        item.progress = 100
+
+        // Check if all done to refresh album
+        if (uploadQueue.value.every(i => ['completed', 'skipped', 'failed'].includes(i.status))) {
+            fetchAlbum()
         }
 
-        // Kick off
-        // Ensure all items that need hashing/checking are processed to 'pending' or 'skipped' before starting parallel uploads.
-        // This means we need to wait for the initial hashing/duplicate check block to complete.
-        // The current structure already does this sequentially before reaching this point.
-        // So, we just need to kick off the `processNext` calls for all initially pending items.
-        const initialPendingCount = uploadQueue.value.filter(item => item.status === 'pending').length;
-        for (let i = 0; i < Math.min(initialPendingCount, MAX_CONCURRENCY); i++) {
-            processNext();
+    } catch (err: any) {
+        if (err.status === 409) {
+            item.status = 'skipped'
+            item.progress = 100
+        } else {
+            console.error('Upload failed:', err)
+            item.status = 'failed'
+            item.error = err.data?.statusMessage || err.statusText || 'Upload failed'
+            item.progress = 0
         }
-        // If there are no pending items after hashing/checking, we should still set isProcessingQueue to false.
-        if (initialPendingCount === 0 && !uploadQueue.value.some(i => i.status === 'hashing')) {
-            isProcessingQueue.value = false;
-        }
-
-    } catch (err) {
-        console.error('Queue processing error:', err)
-        isProcessingQueue.value = false
+    } finally {
+        // activeUploads decrement happens implicitly because status changes from 'uploading'
+        processNextStep()
     }
+}
+
+// Entry point for processing
+const processQueue = () => {
+    processNextStep()
 }
 
 // Handle file selection

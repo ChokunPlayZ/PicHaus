@@ -431,14 +431,27 @@ if (linkData.value?.data) {
 }
 
 // Set page title and SEO meta
+const url = useRequestURL()
+const origin = url.origin
+
 useSeoMeta({
     title: computed(() => pageTitle.value ? `${pageTitle.value} | PicHaus` : 'PicHaus'),
     ogTitle: computed(() => pageTitle.value),
     description: computed(() => (viewMode.value === 'group' ? groupDescription.value : description.value) || `View ${pageTitle.value || 'photos'} on PicHaus`),
     ogDescription: computed(() => (viewMode.value === 'group' ? groupDescription.value : description.value) || `View ${pageTitle.value || 'photos'} on PicHaus`),
-    // ogImage: computed(() => albumId.value ? `/api/v1/album/${albumId.value}/og-image` : null), // TODO: Group OG Image
+    ogImage: computed(() => {
+        if (viewMode.value === 'group' && groupAlbums.value.length > 0) {
+            return `${origin}/api/v1/album/${groupAlbums.value[0].id}/og-image`
+        }
+        return albumId.value ? `${origin}/api/v1/album/${albumId.value}/og-image` : null
+    }),
     twitterCard: 'summary_large_image',
-    // twitterImage: computed(() => albumId.value ? `/api/v1/album/${albumId.value}/og-image` : null),
+    twitterImage: computed(() => {
+        if (viewMode.value === 'group' && groupAlbums.value.length > 0) {
+            return `${origin}/api/v1/album/${groupAlbums.value[0].id}/og-image`
+        }
+        return albumId.value ? `${origin}/api/v1/album/${albumId.value}/og-image` : null
+    }),
 })
 
 // Auto-access if no password (Client-side only)
