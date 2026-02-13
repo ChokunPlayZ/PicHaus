@@ -53,6 +53,12 @@ export default defineEventHandler(async (event) => {
                         collaborators: true,
                     },
                 },
+                coverPhoto: {
+                    select: {
+                        id: true,
+                        blurhash: true,
+                    },
+                },
             },
         })
 
@@ -177,10 +183,29 @@ export default defineEventHandler(async (event) => {
             createdAt: Number(collab.createdAt),
         }))
 
+        // Handle cover photo fallback if not explicitly set
+        let coverPhoto = album.coverPhoto
+        if (!coverPhoto) {
+            const fallbackCover = await prisma.$queryRaw`
+                SELECT id, blurhash 
+                FROM photos 
+                WHERE "albumId" = ${id}::uuid
+                ORDER BY 
+                    CASE WHEN width >= height THEN 1 ELSE 0 END DESC,
+                    "createdAt" DESC
+                LIMIT 1
+            ` as any[]
+
+            if (fallbackCover.length > 0) {
+                coverPhoto = fallbackCover[0]
+            }
+        }
+
         return {
             success: true,
             data: {
                 ...album,
+                coverPhoto,
                 name: album.title, // Map title to name for frontend
                 createdAt: Number(album.createdAt),
                 updatedAt: Number(album.updatedAt),

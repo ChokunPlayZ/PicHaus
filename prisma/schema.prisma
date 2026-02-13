@@ -46,7 +46,9 @@ model Album {
   ownerId String @db.Uuid
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  photos        Photo[]
+  photos        Photo[]             @relation("AlbumPhotos")
+  coverPhotoId  String?             @db.Uuid
+  coverPhoto    Photo?              @relation("AlbumCover", fields: [coverPhotoId], references: [id], onDelete: SetNull)
   collaborators AlbumCollaborator[]
   shareLinks    ShareLink[]
   shareGroups   ShareGroup[]
@@ -131,10 +133,12 @@ model Photo {
   updatedAt BigInt // Unix timestamp
 
   albumId String @db.Uuid
-  album   Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  album   Album  @relation("AlbumPhotos", fields: [albumId], references: [id], onDelete: Cascade)
 
   uploaderId String? @db.Uuid
   uploader   User?   @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
+
+  coverForAlbum Album[] @relation("AlbumCover")
 
   @@map("photos")
 }

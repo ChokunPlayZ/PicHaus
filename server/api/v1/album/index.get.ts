@@ -16,14 +16,21 @@ export default defineEventHandler(async (event) => {
                 u.instagram as "ownerInstagram",
                 (SELECT COUNT(*)::int FROM photos p WHERE p."albumId" = a.id) as "photoCount",
                 (SELECT COUNT(*)::int FROM album_collaborators ac WHERE ac."albumId" = a.id) as "collaboratorCount",
-                (
-                    SELECT json_build_object('id', p.id, 'blurhash', p.blurhash)
-                    FROM photos p
-                    WHERE p."albumId" = a.id
-                    ORDER BY
-                        CASE WHEN p.width >= p.height THEN 1 ELSE 0 END DESC,
-                        p."createdAt" DESC
-                    LIMIT 1
+                COALESCE(
+                    (
+                        SELECT json_build_object('id', p.id, 'blurhash', p.blurhash)
+                        FROM photos p
+                        WHERE p.id = a."coverPhotoId"
+                    ),
+                    (
+                        SELECT json_build_object('id', p.id, 'blurhash', p.blurhash)
+                        FROM photos p
+                        WHERE p."albumId" = a.id
+                        ORDER BY
+                            CASE WHEN p.width >= p.height THEN 1 ELSE 0 END DESC,
+                            p."createdAt" DESC
+                        LIMIT 1
+                    )
                 ) as "coverPhoto"
             FROM albums a
             JOIN users u ON a."ownerId" = u.id

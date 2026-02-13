@@ -595,6 +595,16 @@
         <template v-if="album?.permissions.canEdit">
             <div class="h-px bg-white/10 my-1"></div>
 
+            <button @click="setAsCover(contextMenu.photo!); closeContextMenu()"
+                class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Set as Album Cover
+            </button>
+
             <button @click="openEditPhotoModalFromMenu(contextMenu.photo!); closeContextMenu()"
                 class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
@@ -622,6 +632,30 @@
         :has-next="selectedPhotoIndex! < (photos.length || 0) - 1 || hasMore" :previous-photo-id="previousPhotoId"
         :next-photo-id="nextPhotoId" @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto" />
 
+    <!-- Toast Notifications -->
+    <div class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none">
+        <TransitionGroup
+            enter-active-class="transition duration-300 ease-out"
+            enter-from-class="transform translate-y-2 opacity-0"
+            enter-to-class="transform translate-y-0 opacity-100"
+            leave-active-class="transition duration-200 ease-in"
+            leave-from-class="transform translate-y-0 opacity-100"
+            leave-to-class="transform translate-y-2 opacity-0"
+        >
+            <div v-for="toast in toasts" :key="toast.id"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border backdrop-blur-md pointer-events-auto"
+                :class="{
+                    'bg-green-500/20 border-green-500/30 text-green-200': toast.type === 'success',
+                    'bg-red-500/20 border-red-500/30 text-red-200': toast.type === 'error',
+                    'bg-blue-500/20 border-blue-500/30 text-blue-200': toast.type === 'info'
+                }">
+                <span v-if="toast.type === 'success'">✓</span>
+                <span v-else-if="toast.type === 'error'">✕</span>
+                <span v-else>ℹ</span>
+                <span>{{ toast.message }}</span>
+            </div>
+        </TransitionGroup>
+    </div>
 
 </template>
 
@@ -744,6 +778,22 @@ const filters = ref({
     lens: '',
     photographer: ''
 })
+
+// Toasts
+interface Toast {
+    id: string
+    message: string
+    type: 'success' | 'error' | 'info'
+}
+const toasts = ref<Toast[]>([])
+
+const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = Math.random().toString(36).substring(7)
+    toasts.value.push({ id, message, type })
+    setTimeout(() => {
+        toasts.value = toasts.value.filter(t => t.id !== id)
+    }, 3000)
+}
 
 // Computed: Get unique cameras from all photos
 const availableCameras = computed(() => {
@@ -1337,7 +1387,7 @@ const confirmDelete = async () => {
         await $fetch(`/api/v1/album/${albumId}`, { method: 'DELETE' })
         await navigateTo('/album')
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to delete photos')
+        showToast(err.data?.statusMessage || 'Failed to delete album', 'error')
     }
 }
 
@@ -1419,8 +1469,9 @@ const createShareLink = async () => {
         })
         newLink.value = { type: 'view', label: '', password: '' }
         await fetchShareLinks()
+        showToast('Link created')
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to create link')
+        showToast(err.data?.statusMessage || 'Failed to create link', 'error')
     } finally {
         creatingLink.value = false
     }
@@ -1431,8 +1482,9 @@ const deleteLink = async (id: string) => {
     try {
         await $fetch(`/api/v1/share-links/${id}`, { method: 'DELETE' })
         await fetchShareLinks()
+        showToast('Link deleted')
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to delete link')
+        showToast(err.data?.statusMessage || 'Failed to delete link', 'error')
     }
 }
 
@@ -1474,11 +1526,24 @@ const copyLink = async (link: ShareLink) => {
         setTimeout(() => link.copied = false, 2000)
     } catch (err) {
         console.error('Failed to copy link:', err)
-        alert('Failed to copy link. Please copy manually: ' + url)
+        showToast('Failed to copy link', 'error')
     }
 }
 
 // Single Photo Actions
+const setAsCover = async (photo: Photo) => {
+    try {
+        await $fetch(`/api/v1/album/${albumId}/cover`, {
+            method: 'PATCH',
+            body: { photoId: photo.id }
+        })
+        // Feedback
+        showToast('Album cover updated!')
+    } catch (err: any) {
+        showToast(err.data?.statusMessage || 'Failed to update album cover', 'error')
+    }
+}
+
 const downloadPhoto = async (photo: Photo) => {
     try {
         const res = await fetch(`/api/assets/${photo.id}/full`)
@@ -1486,7 +1551,7 @@ const downloadPhoto = async (photo: Photo) => {
         saveAs(blob, photo.originalName)
     } catch (err) {
         console.error('Failed to download photo', err)
-        alert('Failed to download photo')
+        showToast('Failed to download photo', 'error')
     }
 }
 
@@ -1500,8 +1565,9 @@ const deletePhoto = async (id: string) => {
         photos.value = photos.value.filter(p => p.id !== id)
         selectedPhotoIds.value.delete(id)
         await fetchAlbum()
+        showToast('Photo deleted')
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to delete photo')
+        showToast(err.data?.statusMessage || 'Failed to delete photo', 'error')
     }
 }
 
@@ -1531,7 +1597,7 @@ const downloadAll = async () => {
         const photosToDownload = response.data
 
         if (photosToDownload.length === 0) {
-            alert('No photos to download')
+            showToast('No photos to download', 'info')
             return
         }
 
@@ -1562,7 +1628,7 @@ const downloadAll = async () => {
         saveAs(content, `${album.value?.name || 'album'}.zip`)
     } catch (err) {
         console.error('Download all error:', err)
-        alert('Failed to download photos')
+        showToast('Failed to download photos', 'error')
     } finally {
         downloading.value = false
         downloadProgress.value = { current: 0, total: 0 }
