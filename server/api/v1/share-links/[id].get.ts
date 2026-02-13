@@ -65,6 +65,7 @@ export default defineEventHandler(async (event) => {
             token: link.token,
             hasPassword: !!link.password,
             type: link.type,
+            showMetadata: link.showMetadata,
 
             // Group specific
             isGroup: !!link.shareGroupId,

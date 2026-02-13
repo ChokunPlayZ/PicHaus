@@ -488,15 +488,21 @@
                 </button>
             </div>
 
-            <!-- Create New Link -->
-            <div class="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
-                <h4 class="text-lg font-semibold text-white mb-4">Create New Link</h4>
-                <form @submit.prevent="createShareLink" class="space-y-4">
+            <!-- Create/Edit Link -->
+            <div class="bg-white/5 rounded-xl p-4 mb-6 border border-white/10"
+                :class="{ 'bg-purple-900/20 border-purple-500/30': isEditing }">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="text-lg font-semibold text-white">{{ isEditing ? 'Edit Link' : 'Create New Link' }}</h4>
+                    <button v-if="isEditing" @click="cancelEditing"
+                        class="text-xs text-white/50 hover:text-white">Cancel
+                        Edit</button>
+                </div>
+                <form @submit.prevent="isEditing ? updateShareLink() : createShareLink()" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-purple-200 mb-2">Type</label>
-                            <select v-model="newLink.type"
-                                class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <select v-model="newLink.type" :disabled="isEditing"
+                                class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <option value="view">View Only</option>
                                 <option value="upload">Allow Uploads</option>
                             </select>
@@ -509,8 +515,18 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-purple-200 mb-2">Password (Optional)</label>
-                        <input v-model="newLink.password" type="password" placeholder="Leave empty for no password"
+                        <div v-if="isEditing && newLink.password === ''" class="text-xs text-purple-300 mb-1">
+                            Current password will be kept. Enter new one to change, or clear checkbox to remove.
+                        </div>
+                        <input v-model="newLink.password" type="password"
+                            :placeholder="isEditing ? 'Leave empty to keep current password' : 'Leave empty for no password'"
                             class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+
+                        <div v-if="isEditing && editingLinkHasPassword" class="mt-2 flex items-center">
+                            <input v-model="removePassword" type="checkbox" id="removePassword"
+                                class="w-4 h-4 text-red-600 bg-white/5 border-white/10 rounded focus:ring-red-500" />
+                            <label for="removePassword" class="ml-2 text-sm text-red-300">Remove Password</label>
+                        </div>
                     </div>
                     <div>
                         <div class="flex items-center mb-4">
@@ -520,9 +536,10 @@
                                 camera, etc.)</label>
                         </div>
                     </div>
-                    <button type="submit" :disabled="creatingLink"
+                    <button type="submit" :disabled="creatingLink || updatingLink"
                         class="w-full px-4 py-2 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
-                        {{ creatingLink ? 'Creating...' : 'Create Link' }}
+                        {{ isEditing ? (updatingLink ? 'Updating...' : 'Update Link') : (creatingLink ? 'Creating...' :
+                            'Create Link') }}
                     </button>
                 </form>
             </div>
@@ -569,105 +586,117 @@
                                 Created {{ formatDate(link.createdAt) }} • {{ link.views }} views
                             </div>
                         </div>
-                        <button @click="deleteLink(link.id)"
-                            class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
+                        <div class="flex items-center gap-1">
+                            <button @click="startEditing(link)"
+                                class="p-2 text-purple-300 hover:bg-purple-500/10 rounded-lg transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </button>
+                            <button @click="deleteLink(link.id)"
+                                class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Context Menu -->
-    <div v-if="contextMenu.visible"
-        class="fixed z-50 bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg shadow-xl py-1 w-48"
-        :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }">
+        <!-- Context Menu -->
+        <div v-if="contextMenu.visible"
+            class="fixed z-50 bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg shadow-xl py-1 w-48"
+            :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }">
 
-        <button @click="toggleSelection(contextMenu.photo!.id); closeContextMenu()"
-            class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
-                    v-if="selectedPhotoIds.has(contextMenu.photo!.id)" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" v-else />
-            </svg>
-            {{ selectedPhotoIds.has(contextMenu.photo!.id) ? 'Deselect' : 'Select' }}
-        </button>
+            <button @click="toggleSelection(contextMenu.photo!.id); closeContextMenu()"
+                class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
+                        v-if="selectedPhotoIds.has(contextMenu.photo!.id)" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" v-else />
+                </svg>
+                {{ selectedPhotoIds.has(contextMenu.photo!.id) ? 'Deselect' : 'Select' }}
+            </button>
 
-        <button @click="downloadPhoto(contextMenu.photo!); closeContextMenu()"
-            class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Download
-        </button>
-
-        <template v-if="album?.permissions.canEdit">
-            <div class="h-px bg-white/10 my-1"></div>
-
-            <button @click="setAsCover(contextMenu.photo!); closeContextMenu()"
+            <button @click="downloadPhoto(contextMenu.photo!); closeContextMenu()"
                 class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Set as Album Cover
+                Download
             </button>
 
-            <button @click="openEditPhotoModalFromMenu(contextMenu.photo!); closeContextMenu()"
-                class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Edit Info
-            </button>
+            <template v-if="album?.permissions.canEdit">
+                <div class="h-px bg-white/10 my-1"></div>
 
-            <button @click="deletePhoto(contextMenu.photo!.id); closeContextMenu()"
-                class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Delete
-            </button>
-        </template>
-    </div>
+                <button @click="setAsCover(contextMenu.photo!); closeContextMenu()"
+                    class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Set as Album Cover
+                </button>
 
-    <!-- Photo Viewer -->
-    <PhotoViewer v-if="selectedPhoto" :photo="selectedPhoto" :has-previous="selectedPhotoIndex! > 0"
-        :has-next="selectedPhotoIndex! < (photos.length || 0) - 1 || hasMore" :previous-photo-id="previousPhotoId"
-        :next-photo-id="nextPhotoId" @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto" />
+                <button @click="openEditPhotoModalFromMenu(contextMenu.photo!); closeContextMenu()"
+                    class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Info
+                </button>
 
-    <!-- Toast Notifications -->
-    <div class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none">
-        <TransitionGroup enter-active-class="transition duration-300 ease-out"
-            enter-from-class="transform translate-y-2 opacity-0" enter-to-class="transform translate-y-0 opacity-100"
-            leave-active-class="transition duration-200 ease-in" leave-from-class="transform translate-y-0 opacity-100"
-            leave-to-class="transform translate-y-2 opacity-0">
-            <div v-for="toast in toasts" :key="toast.id"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border backdrop-blur-md pointer-events-auto"
-                :class="{
-                    'bg-green-500/20 border-green-500/30 text-green-200': toast.type === 'success',
-                    'bg-red-500/20 border-red-500/30 text-red-200': toast.type === 'error',
-                    'bg-blue-500/20 border-blue-500/30 text-blue-200': toast.type === 'info'
-                }">
-                <span v-if="toast.type === 'success'">✓</span>
-                <span v-else-if="toast.type === 'error'">✕</span>
-                <span v-else>ℹ</span>
-                <span>{{ toast.message }}</span>
-            </div>
-        </TransitionGroup>
+                <button @click="deletePhoto(contextMenu.photo!.id); closeContextMenu()"
+                    class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                </button>
+            </template>
+        </div>
+
+        <!-- Photo Viewer -->
+        <PhotoViewer v-if="selectedPhoto" :photo="selectedPhoto" :has-previous="selectedPhotoIndex! > 0"
+            :has-next="selectedPhotoIndex! < (photos.length || 0) - 1 || hasMore" :previous-photo-id="previousPhotoId"
+            :next-photo-id="nextPhotoId" @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto" />
+
+        <!-- Toast Notifications -->
+        <div class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none">
+            <TransitionGroup enter-active-class="transition duration-300 ease-out"
+                enter-from-class="transform translate-y-2 opacity-0"
+                enter-to-class="transform translate-y-0 opacity-100"
+                leave-active-class="transition duration-200 ease-in"
+                leave-from-class="transform translate-y-0 opacity-100"
+                leave-to-class="transform translate-y-2 opacity-0">
+                <div v-for="toast in toasts" :key="toast.id"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border backdrop-blur-md pointer-events-auto"
+                    :class="{
+                        'bg-green-500/20 border-green-500/30 text-green-200': toast.type === 'success',
+                        'bg-red-500/20 border-red-500/30 text-red-200': toast.type === 'error',
+                        'bg-blue-500/20 border-blue-500/30 text-blue-200': toast.type === 'info'
+                    }">
+                    <span v-if="toast.type === 'success'">✓</span>
+                    <span v-else-if="toast.type === 'error'">✕</span>
+                    <span v-else>ℹ</span>
+                    <span>{{ toast.message }}</span>
+                </div>
+            </TransitionGroup>
+        </div>
     </div>
 
 </template>
@@ -1476,6 +1505,13 @@ const fetchShareLinks = async () => {
     }
 }
 
+const updatingLink = ref(false)
+const editingLinkId = ref<string | null>(null)
+const removePassword = ref(false)
+const editingLinkHasPassword = ref(false)
+
+const isEditing = computed(() => !!editingLinkId.value)
+
 const createShareLink = async () => {
     creatingLink.value = true
     try {
@@ -1492,6 +1528,57 @@ const createShareLink = async () => {
         creatingLink.value = false
     }
 }
+
+const startEditing = (link: ShareLink) => {
+    editingLinkId.value = link.id
+    newLink.value = {
+        type: link.type,
+        label: link.label || '',
+        password: '', // Clear password field
+        showMetadata: link.showMetadata
+    }
+    editingLinkHasPassword.value = link.password
+    removePassword.value = false
+}
+
+const cancelEditing = () => {
+    editingLinkId.value = null
+    newLink.value = { type: 'view', label: '', password: '', showMetadata: true }
+    removePassword.value = false
+    editingLinkHasPassword.value = false
+}
+
+const updateShareLink = async () => {
+    if (!editingLinkId.value) return
+    updatingLink.value = true
+
+    try {
+        const body: any = {
+            label: newLink.value.label,
+            showMetadata: newLink.value.showMetadata
+        }
+
+        if (newLink.value.password) {
+            body.password = newLink.value.password
+        } else if (removePassword.value) {
+            body.removePassword = true
+        }
+
+        await $fetch(`/api/v1/share-links/${editingLinkId.value}`, {
+            method: 'PUT',
+            body
+        })
+
+        showToast('Link updated')
+        cancelEditing()
+        await fetchShareLinks()
+    } catch (err: any) {
+        showToast(err.data?.statusMessage || 'Failed to update link', 'error')
+    } finally {
+        updatingLink.value = false
+    }
+}
+
 
 const deleteLink = async (id: string) => {
     if (!confirm('Delete this link? Users will no longer be able to access it.')) return

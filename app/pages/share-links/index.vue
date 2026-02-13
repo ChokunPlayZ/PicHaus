@@ -52,8 +52,14 @@
                                         <span v-if="link.hasPassword" title="Password Protected">🔒</span>
                                         {{ link.label || 'No Label' }}
                                     </div>
-                                    <div class="text-xs text-purple-400 mt-1 font-mono truncate max-w-[200px]">
-                                        {{ getFullUrl(link.url) }}
+                                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                                        <div class="text-xs text-purple-400 font-mono truncate max-w-[200px]">
+                                            {{ getFullUrl(link.url) }}
+                                        </div>
+                                        <span v-if="!link.showMetadata"
+                                            class="text-[10px] bg-orange-500/20 text-orange-200 px-1.5 py-0.5 rounded flex items-center gap-1 border border-orange-500/30">
+                                            🚫 No Metadata
+                                        </span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
@@ -138,6 +144,15 @@
                             <input v-model="editForm.label" type="text"
                                 class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                                 placeholder="Public Link" />
+                        </div>
+
+                        <div>
+                            <div class="flex items-center p-3 bg-white/5 border border-white/10 rounded-lg">
+                                <input v-model="editForm.showMetadata" type="checkbox" id="editShowMetadata"
+                                    class="w-4 h-4 text-purple-600 bg-white/5 border-white/10 rounded focus:ring-purple-500" />
+                                <label for="editShowMetadata" class="ml-2 text-sm text-purple-200">Show photo metadata
+                                    (date, camera, etc.)</label>
+                            </div>
                         </div>
 
                         <div>
@@ -265,6 +280,7 @@ interface ShareLink {
     createdAt: number
     expiresAt: number | null
     hasPassword: boolean
+    showMetadata: boolean
     url: string
 }
 
@@ -298,6 +314,7 @@ const editForm = reactive({
     password: '',
     hasPassword: false,
     removePassword: false,
+    showMetadata: true,
     isGroup: false,
     groupTitle: '',
     groupDescription: '',
@@ -350,6 +367,7 @@ const openEditModal = async (link: ShareLink) => {
         editForm.password = ''
         editForm.hasPassword = data.hasPassword
         editForm.removePassword = false
+        editForm.showMetadata = data.showMetadata !== undefined ? data.showMetadata : true
         editForm.isGroup = data.isGroup
 
         if (data.isGroup) {
@@ -387,6 +405,7 @@ const handleUpdateLink = async () => {
             method: 'PUT',
             body: {
                 label: editForm.label,
+                showMetadata: editForm.showMetadata,
                 password: editForm.password || undefined,
                 removePassword: editForm.removePassword,
                 isGroup: editForm.isGroup,

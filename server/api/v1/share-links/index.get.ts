@@ -57,6 +57,7 @@ export default defineEventHandler(async (event) => {
                 createdAt: link.createdAt ? Number(link.createdAt) : null,
                 expiresAt: link.expiresAt ? Number(link.expiresAt) : null,
                 hasPassword: !!link.password,
+                showMetadata: link.showMetadata,
                 url: `/v/${link.token}`
             }
         })

@@ -41,9 +41,9 @@ export default defineEventHandler(async (event) => {
         })
     }
 
-    // Prepare Update Data
     const linkUpdateData: any = {}
     if (body.label !== undefined) linkUpdateData.label = body.label
+    if (body.showMetadata !== undefined) linkUpdateData.showMetadata = body.showMetadata
 
     // Password update
     if (body.password) {
