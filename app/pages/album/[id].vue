@@ -224,7 +224,7 @@
             <!-- Photo Grid -->
             <div v-else-if="picturesLayout" ref="containerRef" class="relative"
                 :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
-                <div v-for="(photo, index) in photos" :key="photo.id" @click="handlePhotoClick($event, photo, index)"
+                <div v-for="(photo, index) in photos" :key="photo.id" @click.stop="handlePhotoTileClick(index, $event)"
                     @contextmenu.prevent="handleContextMenu($event, photo)"
                     class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 transition-transform hover:-translate-y-1 group"
                     :class="{ 'ring-4 ring-purple-500 ring-offset-2 ring-offset-black/50': selectedPhotoIds.has(photo.id) }"
@@ -608,6 +608,7 @@
                 </div>
             </div>
         </div>
+    </div>
 
         <!-- Context Menu -->
         <div v-if="contextMenu.visible"
@@ -697,7 +698,6 @@
                 </div>
             </TransitionGroup>
         </div>
-    </div>
 
 </template>
 
@@ -894,8 +894,6 @@ const allPhotographers = computed(() => {
 
     // Add owner
     const owner = album.value.owner
-    console.log('Owner data:', owner) // Debug log
-    console.log('Owner instagram:', owner.instagram) // Debug log
     photographersMap.set(owner.id, {
         id: owner.id,
         name: owner.name || owner.email || 'Unknown',
@@ -932,9 +930,7 @@ const allPhotographers = computed(() => {
         }
     })
 
-    const result = Array.from(photographersMap.values())
-    console.log('All photographers:', result) // Debug log
-    return result
+    return Array.from(photographersMap.values())
 })
 
 // Computed: Display text for photographers (first names only)
@@ -1020,43 +1016,6 @@ const nextPhotoId = computed(() => {
 // Multi-select State
 const selectedPhotoIds = ref(new Set<string>())
 const lastSelectedId = ref<string | null>(null)
-
-const handlePhotoClick = (event: MouseEvent, photo: Photo, index: number) => {
-    // If clicking with Cmd/Ctrl, toggle selection
-    if (event.metaKey || event.ctrlKey) {
-        toggleSelection(photo.id)
-        lastSelectedId.value = photo.id
-    }
-    // If clicking with Shift, range select
-    else if (event.shiftKey && lastSelectedId.value) {
-        const lastIndex = photos.value.findIndex(p => p.id === lastSelectedId.value)
-        if (lastIndex !== -1) {
-            const start = Math.min(lastIndex, index)
-            const end = Math.max(lastIndex, index)
-            const range = photos.value.slice(start, end + 1)
-
-            // If all in range are selected, deselect them. Otherwise select all.
-            const allSelected = range.every(p => selectedPhotoIds.value.has(p.id))
-
-            range.forEach(p => {
-                if (allSelected) {
-                    selectedPhotoIds.value.delete(p.id)
-                } else {
-                    selectedPhotoIds.value.add(p.id)
-                }
-            })
-        }
-    }
-    // If in selection mode (some photos selected) and simple click, toggle
-    else if (selectedPhotoIds.value.size > 0) {
-        toggleSelection(photo.id)
-        lastSelectedId.value = photo.id
-    }
-    // Otherwise open viewer
-    else {
-        openPhotoViewer(index)
-    }
-}
 
 const toggleSelection = (id: string) => {
     if (selectedPhotoIds.value.has(id)) {
@@ -1968,6 +1927,11 @@ const formatDate = (timestamp: number) => {
         month: 'short',
         day: 'numeric',
     })
+}
+
+const handlePhotoTileClick = (index: number, event: MouseEvent) => {
+    if (event.button !== 0) return
+    openPhotoViewer(index)
 }
 
 const openPhotoViewer = (index: number) => {

@@ -197,7 +197,6 @@ onMounted(async () => {
     try {
         const { data } = await $fetch<{ success: boolean; data: any }>('/api/v1/auth/me')
         user.value = data
-        console.log('Current user:', user.value)
 
         if (user.value?.role !== 'ADMIN') {
             navigateTo('/album')
