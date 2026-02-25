@@ -299,12 +299,22 @@ const showInfo = ref(false)
 const imageLoading = ref(true)
 const cachedImageUrls = new Map<string, string>()
 const pendingImageLoads = new Map<string, Promise<string | null>>()
+const loadedImageSrcByPhotoId = new Map<string, string>()
 
 const fullImageSrc = computed(() => buildAssetUrl(`/api/assets/full/${props.photo.id}`))
 const currentImageSrc = ref(fullImageSrc.value)
 
 const getCachedImageUrl = (photoId: string) => {
     return cachedImageUrls.get(photoId) || null
+}
+
+const getKnownImageSrc = (photoId: string) => {
+    const loadedSrc = loadedImageSrcByPhotoId.get(photoId)
+    if (loadedSrc) {
+        return loadedSrc
+    }
+
+    return getCachedImageUrl(photoId)
 }
 
 const setCachedImageUrl = (photoId: string, objectUrl: string) => {
@@ -376,29 +386,49 @@ const isAndroid = computed(() => {
 
 // Image loading handler
 const onImageLoad = () => {
+    loadedImageSrcByPhotoId.set(props.photo.id, currentImageSrc.value)
     imageLoading.value = false
 }
 
 // Watch for photo changes to reset loading state and preload adjacent images
-watch(() => props.photo.id, (newId, oldId) => {
-    if (newId !== oldId) {
-        imageLoading.value = true
-        currentImageSrc.value = getCachedImageUrl(newId) || fullImageSrc.value
-
-        // Preload adjacent images
-        nextTick(() => {
-            if (props.previousPhotoId) {
-                preloadImage(props.previousPhotoId)
-            }
-            if (props.nextPhotoId) {
-                preloadImage(props.nextPhotoId)
-            }
-        })
+watch(() => props.photo.id, async (newId, oldId) => {
+    if (newId === oldId) {
+        return
     }
+
+    imageLoading.value = true
+
+    const knownSrc = getKnownImageSrc(newId)
+    if (knownSrc) {
+        currentImageSrc.value = knownSrc
+        imageLoading.value = false
+    } else {
+        const loaded = await cacheImage(newId)
+
+        if (props.photo.id !== newId) {
+            return
+        }
+
+        currentImageSrc.value = loaded || buildAssetUrl(`/api/assets/full/${newId}`)
+    }
+
+    // Preload adjacent images
+    nextTick(() => {
+        if (props.previousPhotoId) {
+            preloadImage(props.previousPhotoId)
+        }
+        if (props.nextPhotoId) {
+            preloadImage(props.nextPhotoId)
+        }
+    })
 }, { immediate: true })
 
 // Preload image function
 const preloadImage = (photoId: string) => {
+    if (getKnownImageSrc(photoId)) {
+        return
+    }
+
     void cacheImage(photoId)
 }
 
@@ -412,6 +442,7 @@ onUnmounted(() => {
         URL.revokeObjectURL(objectUrl)
     }
     cachedImageUrls.clear()
+    loadedImageSrcByPhotoId.clear()
     pendingImageLoads.clear()
     document.body.style.overflow = ''
 })
