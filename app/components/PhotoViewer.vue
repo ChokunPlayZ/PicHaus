@@ -128,7 +128,7 @@
                         </div>
                     </div>
 
-                    <img :src="fallbackImageUrl || fullImageSrc" :alt="photo.filename" @load="onImageLoad" @error="onImageError"
+                    <img :src="currentImageSrc" :alt="photo.filename" @load="onImageLoad" @error="onImageError"
                         class="relative max-h-full max-w-full object-contain rounded-lg shadow-2xl z-10"
                         :class="{ 'opacity-0': imageLoading }" />
                 </div>
@@ -297,30 +297,67 @@ const emit = defineEmits(['close', 'previous', 'next'])
 
 const showInfo = ref(false)
 const imageLoading = ref(true)
-const fallbackImageUrl = ref<string | null>(null)
+const cachedImageUrls = new Map<string, string>()
+const pendingImageLoads = new Map<string, Promise<string | null>>()
 
 const fullImageSrc = computed(() => buildAssetUrl(`/api/assets/full/${props.photo.id}`))
+const currentImageSrc = ref(fullImageSrc.value)
 
-const revokeFallbackImageUrl = () => {
-    if (fallbackImageUrl.value) {
-        URL.revokeObjectURL(fallbackImageUrl.value)
-        fallbackImageUrl.value = null
+const getCachedImageUrl = (photoId: string) => {
+    return cachedImageUrls.get(photoId) || null
+}
+
+const setCachedImageUrl = (photoId: string, objectUrl: string) => {
+    cachedImageUrls.set(photoId, objectUrl)
+
+    if (cachedImageUrls.size > 30) {
+        const oldestPhotoId = cachedImageUrls.keys().next().value
+        if (oldestPhotoId) {
+            const oldestUrl = cachedImageUrls.get(oldestPhotoId)
+            if (oldestUrl) {
+                URL.revokeObjectURL(oldestUrl)
+            }
+            cachedImageUrls.delete(oldestPhotoId)
+        }
     }
 }
 
-const onImageError = async () => {
-    try {
-        revokeFallbackImageUrl()
-        const response = await fetch(fullImageSrc.value)
+const cacheImage = async (photoId: string) => {
+    const cached = getCachedImageUrl(photoId)
+    if (cached) return cached
 
-        if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${response.status}`)
+    const pending = pendingImageLoads.get(photoId)
+    if (pending) return pending
+
+    const loadPromise = (async () => {
+        try {
+            const response = await fetch(buildAssetUrl(`/api/assets/full/${photoId}`), { cache: 'force-cache' })
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch image: ${response.status}`)
+            }
+
+            const blob = await response.blob()
+            const objectUrl = URL.createObjectURL(blob)
+            setCachedImageUrl(photoId, objectUrl)
+            return objectUrl
+        } catch {
+            return null
+        } finally {
+            pendingImageLoads.delete(photoId)
         }
+    })()
 
-        const blob = await response.blob()
-        fallbackImageUrl.value = URL.createObjectURL(blob)
-    } catch (error) {
-        console.error('Image fallback load failed:', error)
+    pendingImageLoads.set(photoId, loadPromise)
+    return loadPromise
+}
+
+const onImageError = async () => {
+    const cachedUrl = await cacheImage(props.photo.id)
+
+    if (cachedUrl) {
+        currentImageSrc.value = cachedUrl
+    } else {
         imageLoading.value = false
     }
 }
@@ -345,8 +382,8 @@ const onImageLoad = () => {
 // Watch for photo changes to reset loading state and preload adjacent images
 watch(() => props.photo.id, (newId, oldId) => {
     if (newId !== oldId) {
-        revokeFallbackImageUrl()
         imageLoading.value = true
+        currentImageSrc.value = getCachedImageUrl(newId) || fullImageSrc.value
 
         // Preload adjacent images
         nextTick(() => {
@@ -362,8 +399,7 @@ watch(() => props.photo.id, (newId, oldId) => {
 
 // Preload image function
 const preloadImage = (photoId: string) => {
-    const img = new Image()
-    img.src = buildAssetUrl(`/api/assets/full/${photoId}`)
+    void cacheImage(photoId)
 }
 
 // Prevent body scroll when viewer is open
@@ -372,7 +408,11 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    revokeFallbackImageUrl()
+    for (const objectUrl of cachedImageUrls.values()) {
+        URL.revokeObjectURL(objectUrl)
+    }
+    cachedImageUrls.clear()
+    pendingImageLoads.clear()
     document.body.style.overflow = ''
 })
 
