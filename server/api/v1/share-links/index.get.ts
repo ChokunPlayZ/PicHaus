@@ -45,6 +45,7 @@ export default defineEventHandler(async (event) => {
         data: shareLinks.map(link => {
             const isGroup = !!link.shareGroupId
             const targetName = isGroup ? link.shareGroup?.title : link.album?.title
+            const url = !isGroup && link.type === 'upload' ? `/u/${link.token}` : `/v/${link.token}`
 
             return {
                 id: link.id,
@@ -58,7 +59,7 @@ export default defineEventHandler(async (event) => {
                 expiresAt: link.expiresAt ? Number(link.expiresAt) : null,
                 hasPassword: !!link.password,
                 showMetadata: link.showMetadata,
-                url: `/v/${link.token}`
+                url
             }
         })
     }

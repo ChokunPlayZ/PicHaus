@@ -28,6 +28,11 @@
                         class="w-full px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-[var(--shadow-secondary)] mt-4">
                         {{ verifying ? 'Verifying...' : 'Next' }}
                     </button>
+
+                    <button type="button" @click="goToLogin"
+                        class="w-full px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        Have an account? Sign in
+                    </button>
                 </form>
 
                 <!-- Step 2: Info -->
@@ -53,6 +58,11 @@
                     <button type="submit" :disabled="accessing"
                         class="w-full px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-[var(--shadow-secondary)] mt-6">
                         {{ accessing ? 'Accessing...' : 'Start Uploading' }}
+                    </button>
+
+                    <button type="button" @click="goToLogin"
+                        class="w-full px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        Have an account? Sign in
                     </button>
                 </form>
 
@@ -160,7 +170,8 @@ onMounted(async () => {
         requiresPassword.value = data.requiresPassword
         albumId.value = data.albumId
 
-        if (data.type !== 'upload') {
+        const isUploadLink = data.shareType === 'upload' || data.type === 'upload'
+        if (!isUploadLink) {
             error.value = 'This link is not for uploading.'
             loading.value = false
             return
@@ -229,6 +240,10 @@ const handleInfoSubmit = async () => {
     } finally {
         accessing.value = false
     }
+}
+
+const goToLogin = async () => {
+    await navigateTo(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
 }
 
 // Step 3: Upload

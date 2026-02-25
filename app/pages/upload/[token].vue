@@ -54,6 +54,11 @@
                         class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50">
                         {{ loggingIn ? 'Joining...' : 'Join Album' }}
                     </button>
+
+                    <button type="button" @click="goToLogin"
+                        class="w-full px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        Have an account? Sign in
+                    </button>
                 </form>
             </div>
         </div>
@@ -222,6 +227,10 @@ const handleGuestLogin = async () => {
     } finally {
         loggingIn.value = false
     }
+}
+
+const goToLogin = async () => {
+    await navigateTo(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
 }
 
 // Handle file selection

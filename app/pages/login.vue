@@ -57,6 +57,16 @@
 <script setup lang="ts">
 import { setAuthToken, clearAuthToken } from '~/utils/auth-client'
 
+const route = useRoute()
+
+const getRedirectTarget = () => {
+    const redirect = route.query.redirect
+    if (typeof redirect === 'string' && redirect.startsWith('/')) {
+        return redirect
+    }
+    return '/album'
+}
+
 const form = ref({
     email: '',
     password: '',
@@ -77,8 +87,7 @@ const handleLogin = async () => {
 
         if (response.success) {
             setAuthToken(response.data.accessToken)
-            // Redirect to albums page after successful login
-            await navigateTo('/album')
+            await navigateTo(getRedirectTarget())
         }
     } catch (err: any) {
         error.value = err.data?.statusMessage || 'Login failed. Please check your credentials.'
@@ -102,7 +111,7 @@ onMounted(async () => {
         try {
             await $fetch('/api/v1/auth/me')
             // If successful, user is logged in
-            await navigateTo('/album')
+            await navigateTo(getRedirectTarget())
         } catch (e) {
             // Not logged in, stay on login page
             clearAuthToken()
