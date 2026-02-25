@@ -1,5 +1,5 @@
 import prisma from '../../../utils/prisma'
-import { getUnixTimestamp } from '../../../utils/auth'
+import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
 
 /**
  * Validate upload token and get album info
@@ -16,6 +16,8 @@ export default defineEventHandler(async (event) => {
             })
         }
 
+        const authUserId = getAuthUserId(event)
+
         // Find share link
         const shareLink = await prisma.shareLink.findUnique({
             where: { token },
@@ -26,6 +28,7 @@ export default defineEventHandler(async (event) => {
                         title: true,
                         description: true,
                         eventDate: true,
+                        ownerId: true,
                         owner: {
                             select: {
                                 name: true,
@@ -55,8 +58,36 @@ export default defineEventHandler(async (event) => {
             })
         }
 
+        const authUser = authUserId
+            ? await prisma.user.findUnique({
+                where: { id: authUserId },
+                select: { id: true, role: true }
+            })
+            : null
+
         // Check if it's a group share
         if (shareLink.shareGroupId) {
+            const hasGroupCookieAccess = getCookie(event, `group-access-${shareLink.shareGroupId}`) === token
+            const hasUserAdminAccess = authUser?.role === 'ADMIN'
+            const hasGroupOwnerAccess = !!(authUser && await prisma.shareGroup.findFirst({
+                where: {
+                    id: shareLink.shareGroupId,
+                    ownerId: authUser.id,
+                },
+                select: { id: true },
+            }))
+
+            if (shareLink.password && !hasGroupCookieAccess && !hasUserAdminAccess && !hasGroupOwnerAccess) {
+                return {
+                    success: true,
+                    data: {
+                        type: 'group',
+                        requiresPassword: true,
+                        showMetadata: shareLink.showMetadata,
+                    },
+                }
+            }
+
             const group = await prisma.shareGroup.findUnique({
                 where: { id: shareLink.shareGroupId },
                 include: {
@@ -128,6 +159,35 @@ export default defineEventHandler(async (event) => {
                 statusCode: 404,
                 statusMessage: 'Album not found in this link',
             })
+        }
+
+        const hasAlbumCookieAccess = !!shareLink.albumId && getCookie(event, `album-access-${shareLink.albumId}`) === token
+        const hasUserAdminAccess = authUser?.role === 'ADMIN'
+        const hasAlbumOwnerAccess = !!(authUser && shareLink.album.ownerId === authUser.id)
+        const hasAlbumCollaboratorAccess = !!(authUser && await prisma.albumCollaborator.findFirst({
+            where: {
+                albumId: shareLink.album.id,
+                userId: authUser.id,
+            },
+            select: { id: true },
+        }))
+
+        if (
+            shareLink.password &&
+            !hasAlbumCookieAccess &&
+            !hasUserAdminAccess &&
+            !hasAlbumOwnerAccess &&
+            !hasAlbumCollaboratorAccess
+        ) {
+            return {
+                success: true,
+                data: {
+                    type: 'album',
+                    requiresPassword: true,
+                    shareType: shareLink.type,
+                    showMetadata: shareLink.showMetadata,
+                },
+            }
         }
 
         if (shareLink.type !== 'upload') {

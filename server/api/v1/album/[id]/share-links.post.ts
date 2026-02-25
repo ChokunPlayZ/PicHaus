@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
         passwordHash = await argon2.hash(password)
     }
 
-    const token = nanoid(10) // 10 chars is usually enough for share links
+    const token = nanoid(32)
 
     const link = await prisma.shareLink.create({
         data: {

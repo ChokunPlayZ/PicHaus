@@ -11,7 +11,7 @@
                         {{ getStepTitle }}
                     </p>
                     <p class="text-purple-200 text-sm">
-                        to album "{{ albumName }}"
+                        to album "{{ albumName || 'Private Album' }}"
                     </p>
                 </div>
             </div>

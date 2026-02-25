@@ -409,22 +409,23 @@ const { data: linkData, error: linkError } = await useFetch<{ success: boolean; 
 // Populate state from SSR data
 if (linkData.value?.data) {
     const data = linkData.value.data
-    requiresPassword.value = data.requiresPassword
-    ownerName.value = data.ownerName
+    requiresPassword.value = !!data.requiresPassword
+    ownerName.value = data.ownerName || ''
 
     if (data.type === 'group') {
         viewMode.value = 'group'
         shareType.value = 'group'
-        groupTitle.value = data.title
-        groupDescription.value = data.description
-        groupAlbums.value = data.albums
+        groupTitle.value = data.title || ''
+        groupDescription.value = data.description || ''
+        groupAlbums.value = Array.isArray(data.albums) ? data.albums : []
+        showMetadata.value = data.showMetadata !== undefined ? data.showMetadata : true
     } else {
         viewMode.value = 'album'
         shareType.value = data.shareType || 'view' // 'view' or 'upload'
-        albumId.value = data.albumId
-        albumName.value = data.albumName
-        description.value = data.description
-        eventDate.value = data.eventDate
+        albumId.value = data.albumId || ''
+        albumName.value = data.albumName || ''
+        description.value = data.description || ''
+        eventDate.value = data.eventDate || null
         showMetadata.value = data.showMetadata !== undefined ? data.showMetadata : true
     }
 
@@ -482,13 +483,16 @@ const handleAccess = async () => {
 
         const data = response.data
         if (data.type === 'group') {
-            // Just set authenticated, we already have group data from initial fetch
-            // But if initial fetch didn't return sensitive data (if protected), we might need to refetch?
-            // Actually currently initial fetch returns metadata anyway.
-            // If protected, password check passes here.
+            groupTitle.value = data.title || groupTitle.value
+            groupDescription.value = data.description || groupDescription.value
+            ownerName.value = data.ownerName || ownerName.value
+            groupAlbums.value = Array.isArray(data.albums) ? data.albums : groupAlbums.value
+            showMetadata.value = data.showMetadata !== undefined ? data.showMetadata : showMetadata.value
             isAuthenticated.value = true
         } else {
             albumId.value = data.albumId
+            albumName.value = data.albumName || albumName.value
+            ownerName.value = data.ownerName || ownerName.value
             isAuthenticated.value = true
             await fetchPhotos()
         }

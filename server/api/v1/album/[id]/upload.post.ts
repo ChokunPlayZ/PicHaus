@@ -1,6 +1,7 @@
 import prisma from '../../../../utils/prisma'
 import { getUnixTimestamp, requireAuth } from '../../../../utils/auth'
 import crypto from 'crypto'
+import sharp from 'sharp'
 import {
     calculateFileHash,
     generateThumbnail,
@@ -90,6 +91,42 @@ export default defineEventHandler(async (event) => {
             })
         }
 
+        let trustedMimeType = 'application/octet-stream'
+        try {
+            const metadata = await sharp(fileData.data).metadata()
+            const format = metadata.format
+
+            const mimeTypeByFormat: Record<string, string> = {
+                jpeg: 'image/jpeg',
+                jpg: 'image/jpeg',
+                png: 'image/png',
+                webp: 'image/webp',
+                gif: 'image/gif',
+                tiff: 'image/tiff',
+                avif: 'image/avif',
+                heif: 'image/heif',
+                heic: 'image/heic',
+            }
+
+            if (!format || !mimeTypeByFormat[format]) {
+                throw createError({
+                    statusCode: 400,
+                    statusMessage: 'Unsupported or invalid image format',
+                })
+            }
+
+            trustedMimeType = mimeTypeByFormat[format]
+        } catch (error: any) {
+            if (error?.statusCode) {
+                throw error
+            }
+
+            throw createError({
+                statusCode: 400,
+                statusMessage: 'Invalid image file',
+            })
+        }
+
         // Calculate file hash
         const fileHash = calculateFileHash(fileData.data)
 
@@ -141,7 +178,7 @@ export default defineEventHandler(async (event) => {
                 thumbnailStoragePath,
                 blurhash,
                 size: fileData.data.length,
-                mimeType: fileData.type || 'image/jpeg',
+                mimeType: trustedMimeType,
                 fileHash,
                 albumId,
                 uploaderId: user.id,

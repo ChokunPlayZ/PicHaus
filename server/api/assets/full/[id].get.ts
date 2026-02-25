@@ -74,7 +74,20 @@ export default defineEventHandler(async (event) => {
     try {
         const stats = await stat(filePath)
 
-        setHeader(event, 'Content-Type', photo.mimeType)
+        const allowedMimeTypes = new Set([
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/gif',
+            'image/tiff',
+            'image/avif',
+            'image/heif',
+            'image/heic',
+        ])
+        const safeMimeType = allowedMimeTypes.has(photo.mimeType) ? photo.mimeType : 'application/octet-stream'
+
+        setHeader(event, 'Content-Type', safeMimeType)
+        setHeader(event, 'X-Content-Type-Options', 'nosniff')
         setHeader(event, 'Content-Length', stats.size)
         setHeader(event, 'Cache-Control', 'public, max-age=31536000, immutable')
 

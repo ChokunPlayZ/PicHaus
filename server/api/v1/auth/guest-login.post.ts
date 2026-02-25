@@ -23,7 +23,15 @@ export default defineEventHandler(async (event) => {
         const shareLink = await prisma.shareLink.findUnique({
             where: { token },
             include: {
-                album: true,
+                album: {
+                    include: {
+                        owner: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                },
                 shareGroup: true
             }
         })
@@ -74,12 +82,66 @@ export default defineEventHandler(async (event) => {
                 path: '/',
             })
 
+            const group = await prisma.shareGroup.findUnique({
+                where: { id: shareLink.shareGroupId },
+                include: {
+                    owner: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                    albums: {
+                        select: {
+                            id: true,
+                            title: true,
+                            description: true,
+                            eventDate: true,
+                            _count: {
+                                select: {
+                                    photos: true,
+                                },
+                            },
+                            photos: {
+                                take: 1,
+                                orderBy: {
+                                    createdAt: 'desc'
+                                },
+                                select: {
+                                    id: true,
+                                    blurhash: true
+                                }
+                            }
+                        },
+                    },
+                },
+            })
+
+            if (!group) {
+                throw createError({
+                    statusCode: 404,
+                    statusMessage: 'Group not found',
+                })
+            }
+
             return {
                 success: true,
                 data: {
                     type: 'group',
                     groupId: shareLink.shareGroupId,
-                    groupTitle: shareLink.shareGroup.title,
+                    title: group.title,
+                    description: group.description,
+                    ownerName: group.owner.name,
+                    albums: group.albums.map(album => ({
+                        id: album.id,
+                        name: album.title,
+                        description: album.description,
+                        eventDate: album.eventDate ? Number(album.eventDate) : null,
+                        photoCount: album._count.photos,
+                        coverPhoto: album.photos[0] ? {
+                            id: album.photos[0].id,
+                            blurhash: album.photos[0].blurhash
+                        } : null
+                    })),
                     showMetadata: shareLink.showMetadata,
                 },
             }
@@ -187,11 +249,15 @@ export default defineEventHandler(async (event) => {
         return {
             success: true,
             data: {
-            accessToken,
+                accessToken,
                 id: user.id,
                 name: user.name,
                 email: user.email,
                 albumId: shareLink.albumId, // Return albumId for redirect
+                albumName: shareLink.album.title,
+                description: shareLink.album.description,
+                eventDate: shareLink.album.eventDate ? Number(shareLink.album.eventDate) : null,
+                ownerName: shareLink.album.owner?.name || null,
                 showMetadata: shareLink.showMetadata,
             },
         }

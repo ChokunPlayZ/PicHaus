@@ -73,7 +73,9 @@ export default defineEventHandler(async (event) => {
 
         // Check permissions
         const isOwner = authUserId === album.ownerId
-        const isCollaborator = album.collaborators.some((c: any) => c.userId === authUserId)
+        const collaborator = album.collaborators.find((c: any) => c.userId === authUserId)
+        const isCollaborator = !!collaborator
+        const canEditAsCollaborator = !!collaborator && collaborator.role !== 'viewer'
         let hasShareLinkAccess = false
 
         // Check for share link access (guest with share link)
@@ -217,7 +219,7 @@ export default defineEventHandler(async (event) => {
                 permissions: {
                     isOwner,
                     isCollaborator,
-                    canEdit: isOwner || isCollaborator,
+                    canEdit: isOwner || canEditAsCollaborator,
                     canDelete: isOwner,
                 },
                 pagination: {

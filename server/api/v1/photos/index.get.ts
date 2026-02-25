@@ -45,14 +45,14 @@ export default defineEventHandler(async (event) => {
             if (!Number.isFinite(parsedFrom)) {
                 throw createError({ statusCode: 400, statusMessage: 'Invalid dateFrom value' })
             }
-            where.dateTaken.gte = BigInt(parsedFrom)
+            where.dateTaken.gte = BigInt(Math.floor(parsedFrom / 1000))
         }
         if (dateTo) {
             const parsedTo = Date.parse(dateTo)
             if (!Number.isFinite(parsedTo)) {
                 throw createError({ statusCode: 400, statusMessage: 'Invalid dateTo value' })
             }
-            where.dateTaken.lte = BigInt(parsedTo)
+            where.dateTaken.lte = BigInt(Math.floor(parsedTo / 1000))
         }
     }
 

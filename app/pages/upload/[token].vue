@@ -220,6 +220,15 @@ const handleGuestLogin = async () => {
             setAuthToken(response.data.accessToken)
         }
 
+        albumInfo.value = {
+            ...albumInfo.value,
+            albumId: response.data.albumId || albumInfo.value?.albumId,
+            albumName: response.data.albumName || albumInfo.value?.albumName,
+            description: response.data.description || albumInfo.value?.description,
+            ownerName: response.data.ownerName || albumInfo.value?.ownerName,
+            eventDate: response.data.eventDate ?? albumInfo.value?.eventDate,
+        }
+
         user.value = response.data
         isLoggedIn.value = true
     } catch (err: any) {
