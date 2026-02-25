@@ -39,3 +39,125 @@
   --shadow-primary: rgba(247, 199, 213, 0.2);
   --shadow-secondary: rgba(153, 149, 238, 0.2);
 }
+
+/* Global UI standardization across existing Tailwind-heavy templates */
+
+/* Glass card containers */
+[class*="bg-white/10"][class*="backdrop-blur"][class*="border-white/20"] {
+  border-radius: 1rem;
+  border-color: var(--glass-border);
+  background-color: var(--glass-bg);
+}
+
+/* Text inputs, selects and textareas using existing glass input classes */
+input[class*="bg-white/5"][class*="border-white/10"],
+select[class*="bg-white/5"][class*="border-white/10"],
+textarea[class*="bg-white/5"][class*="border-white/10"] {
+  border-color: var(--glass-border-light);
+  background-color: var(--glass-bg-light);
+  color: var(--text-primary);
+  border-radius: 0.75rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+input[class*="bg-white/5"][class*="border-white/10"]:focus,
+select[class*="bg-white/5"][class*="border-white/10"]:focus,
+textarea[class*="bg-white/5"][class*="border-white/10"]:focus {
+  border-color: rgba(167, 139, 250, 0.7);
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+  outline: none;
+}
+
+/* Primary action buttons */
+button[class*="bg-gradient-to-r"][class*="--btn-primary-start"] {
+  border-radius: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 6px 18px var(--shadow-primary);
+  transition: transform 0.15s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+button[class*="bg-gradient-to-r"][class*="--btn-primary-start"]:hover {
+  filter: brightness(1.03);
+  box-shadow: 0 8px 20px var(--shadow-secondary);
+}
+
+button[class*="bg-gradient-to-r"][class*="--btn-primary-start"]:active {
+  transform: translateY(1px);
+}
+
+/* Secondary ghost buttons */
+button[class*="bg-white/5"],
+button[class*="bg-white/10"] {
+  border-radius: 0.75rem;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Repeated icon-button patterns */
+button[class*="rounded-lg"][class*="p-2"],
+button[class*="rounded-lg"][class*="p-3"] {
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+button[class*="rounded-lg"][class*="p-2"]:active,
+button[class*="rounded-lg"][class*="p-3"]:active {
+  transform: translateY(1px);
+}
+
+/* Grid cards / photo tiles reused in multiple pages */
+[class*="cursor-pointer"][class*="overflow-hidden"][class*="bg-white/5"][class*="border-white/10"] {
+  border-color: var(--glass-border-light);
+  border-radius: 0.75rem;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+[class*="cursor-pointer"][class*="overflow-hidden"][class*="bg-white/5"][class*="border-white/10"]:hover {
+  border-color: rgba(167, 139, 250, 0.5);
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.22);
+}
+
+/* Generic glass list rows and grouped items */
+[class*="bg-white/5"][class*="rounded-lg"][class*="border-white/10"] {
+  border-color: var(--glass-border-light);
+  border-radius: 0.75rem;
+}
+
+/* Floating bulk action bars and quick action trays */
+[class*="fixed"][class*="backdrop-blur-xl"][class*="border-white/20"][class*="rounded-2xl"] {
+  border-color: var(--glass-border);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.35);
+}
+
+/* Context menus reused in album/list pages */
+[class*="fixed"][class*="z-50"][class*="shadow-xl"][class*="border-white/20"] {
+  border-color: var(--glass-border);
+  background-color: rgba(30, 27, 45, 0.88);
+}
+
+/* Modal wrappers and modal panels */
+[class*="fixed inset-0 bg-black/50"][class*="backdrop-blur-sm"] {
+  backdrop-filter: blur(6px);
+}
+
+[class*="max-w-md"][class*="backdrop-blur-lg"][class*="border-white/20"],
+[class*="max-w-sm"][class*="backdrop-blur-lg"][class*="border-white/20"],
+[class*="max-w-2xl"][class*="backdrop-blur-lg"][class*="border-white/20"] {
+  border-color: var(--glass-border);
+  box-shadow: 0 20px 42px rgba(15, 23, 42, 0.42);
+}
+
+/* Progress tracks reused in uploader and viewers */
+[class*="bg-white/10"][class*="rounded-full"][class*="h-3"],
+[class*="bg-white/10"][class*="rounded-full"][class*="h-4"] {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Consistent alert styles */
+[class*="bg-red-500/20"][class*="border-red-500/50"],
+[class*="bg-green-500/20"][class*="border-green-500/50"],
+[class*="bg-yellow-500/20"][class*="border-yellow-500/50"] {
+  border-radius: 0.75rem;
+}
