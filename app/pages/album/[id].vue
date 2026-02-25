@@ -1967,5 +1967,9 @@ const previousPhoto = () => {
 onMounted(async () => {
     await checkAuth()
     await fetchAlbum()
+
+    if (route.query.edit === '1') {
+        showEditModal.value = true
+    }
 })
 </script>

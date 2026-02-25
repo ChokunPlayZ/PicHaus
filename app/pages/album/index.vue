@@ -50,7 +50,8 @@
                 <div v-for="album in albums" :key="album.id"
                     class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:border-purple-400/50 transition cursor-pointer group relative"
                     :class="{ 'ring-2 ring-purple-500': selectedAlbumIds.has(album.id) }"
-                    @click="handleAlbumClick(album)">
+                    @click="handleAlbumClick(album)"
+                    @contextmenu.prevent="handleAlbumRightClick(album)">
 
                     <!-- Selection Checkbox -->
                     <div v-if="isSelectionMode" class="absolute top-3 right-3 z-10 transition-transform duration-200"
@@ -378,6 +379,11 @@ const handleAlbumClick = (album: Album) => {
     } else {
         navigateTo(`/album/${album.id}`)
     }
+}
+
+const handleAlbumRightClick = (album: Album) => {
+    if (isSelectionMode.value) return
+    navigateTo(`/album/${album.id}?edit=1`)
 }
 
 const clearSelection = () => {
