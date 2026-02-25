@@ -52,7 +52,7 @@
                         <div
                             class="aspect-video relative bg-gray-900 group-hover:brightness-110 transition duration-300">
                             <!-- Cover Photo -->
-                            <img v-if="album.coverPhoto" :src="`/api/assets/${album.coverPhoto.id}/thumb`"
+                            <img v-if="album.coverPhoto" :src="buildAssetUrl(`/api/assets/${album.coverPhoto.id}/thumb`)"
                                 class="w-full h-full object-cover" loading="lazy" />
 
                             <!-- Placeholder if no photo -->
@@ -151,7 +151,7 @@
                         <img v-if="photo.blurhash"
                             :src="getBlurhashUrl(photo.blurhash, photo.width, photo.height) || ''"
                             class="absolute inset-0 w-full h-full object-cover" />
-                        <img :src="`/api/assets/${photo.id}/thumb`" :alt="photo.filename" loading="lazy"
+                        <img :src="buildAssetUrl(`/api/assets/${photo.id}/thumb`)" :alt="photo.filename" loading="lazy"
                             class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
                     </div>
                 </div>
@@ -245,6 +245,7 @@ import { JustifiedLayout } from '@immich/justified-layout-wasm'
 import { decode } from 'blurhash'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
+import { setAuthToken, buildAssetUrl } from '~/utils/auth-client'
 
 interface Photo {
     id: string
@@ -474,6 +475,10 @@ const handleAccess = async () => {
                 password: password.value,
             }
         })
+
+        if (response.data?.accessToken) {
+            setAuthToken(response.data.accessToken)
+        }
 
         const data = response.data
         if (data.type === 'group') {

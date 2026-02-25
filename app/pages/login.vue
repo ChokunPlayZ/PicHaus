@@ -55,6 +55,8 @@
 </template>
 
 <script setup lang="ts">
+import { setAuthToken, clearAuthToken } from '~/utils/auth-client'
+
 const form = ref({
     email: '',
     password: '',
@@ -68,12 +70,13 @@ const handleLogin = async () => {
     error.value = ''
 
     try {
-        const response = await $fetch<{ success: boolean }>('/api/v1/auth/login', {
+        const response = await $fetch<{ success: boolean; data: { accessToken: string } }>('/api/v1/auth/login', {
             method: 'POST',
             body: form.value,
         })
 
         if (response.success) {
+            setAuthToken(response.data.accessToken)
             // Redirect to albums page after successful login
             await navigateTo('/album')
         }
@@ -102,6 +105,7 @@ onMounted(async () => {
             await navigateTo('/album')
         } catch (e) {
             // Not logged in, stay on login page
+            clearAuthToken()
         }
     } catch (err) {
         console.error('Error checking status:', err)

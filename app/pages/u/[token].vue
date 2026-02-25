@@ -109,6 +109,8 @@
 </template>
 
 <script setup lang="ts">
+import { setAuthToken } from '~/utils/auth-client'
+
 const route = useRoute()
 const token = route.params.token as string
 
@@ -215,6 +217,11 @@ const handleInfoSubmit = async () => {
                 instagram: form.value.instagram
             }
         })
+
+        if (response.data?.accessToken) {
+            setAuthToken(response.data.accessToken)
+        }
+
         albumId.value = response.data.albumId
         step.value = 'upload'
     } catch (err: any) {

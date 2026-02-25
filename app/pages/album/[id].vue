@@ -236,7 +236,7 @@
                     }">
                     <img v-if="photo.blurhash" :src="getBlurhashUrl(photo.blurhash, photo.width, photo.height) || ''"
                         class="absolute inset-0 w-full h-full object-cover" />
-                    <img :src="`/api/assets/${photo.id}/thumb`" :alt="photo.filename" loading="lazy"
+                    <img :src="buildAssetUrl(`/api/assets/${photo.id}/thumb`)" :alt="photo.filename" loading="lazy"
                         class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
 
                     <!-- Selection Indicator -->
@@ -706,6 +706,7 @@ import { JustifiedLayout } from '@immich/justified-layout-wasm'
 import { decode } from 'blurhash'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
+import { clearAuthToken, buildAssetUrl } from '~/utils/auth-client'
 import { calculateSHA256 } from '~/utils/hash'
 
 interface User {
@@ -1953,6 +1954,7 @@ const clearCompleted = () => {
 const handleLogout = async () => {
     try {
         await $fetch('/api/v1/auth/logout', { method: 'POST' })
+        clearAuthToken()
         await navigateTo('/login')
     } catch (err) {
         console.error('Logout error:', err)

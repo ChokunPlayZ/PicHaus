@@ -1,5 +1,5 @@
 import prisma from '../../../utils/prisma'
-import { verifyPassword, setAuthCookie } from '../../../utils/auth'
+import { verifyPassword, createAccessToken } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -43,12 +43,13 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        await setAuthCookie(event, user.id)
+        const accessToken = await createAccessToken(user.id)
 
         return {
             success: true,
             message: 'Login successful',
             data: {
+                accessToken,
                 id: user.id,
                 email: user.email,
                 name: user.name,

@@ -136,6 +136,8 @@
 </template>
 
 <script setup lang="ts">
+import { setAuthToken } from '~/utils/auth-client'
+
 const route = useRoute()
 const token = route.params.token as string
 
@@ -208,6 +210,10 @@ const handleGuestLogin = async () => {
                 password: guestForm.value.password,
             },
         })
+
+        if (response.data?.accessToken) {
+            setAuthToken(response.data.accessToken)
+        }
 
         user.value = response.data
         isLoggedIn.value = true

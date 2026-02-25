@@ -128,7 +128,7 @@
                         </div>
                     </div>
 
-                    <img :src="`/api/assets/${photo.id}/full`" :alt="photo.filename" @load="onImageLoad"
+                    <img :src="fallbackImageUrl || fullImageSrc" :alt="photo.filename" @load="onImageLoad" @error="onImageError"
                         class="relative max-h-full max-w-full object-contain rounded-lg shadow-2xl z-10"
                         :class="{ 'opacity-0': imageLoading }" />
                 </div>
@@ -257,6 +257,7 @@
 
 <script setup lang="ts">
 import { decode } from 'blurhash'
+import { buildAssetUrl } from '~/utils/auth-client'
 
 interface Photo {
     id: string
@@ -296,6 +297,33 @@ const emit = defineEmits(['close', 'previous', 'next'])
 
 const showInfo = ref(false)
 const imageLoading = ref(true)
+const fallbackImageUrl = ref<string | null>(null)
+
+const fullImageSrc = computed(() => buildAssetUrl(`/api/assets/${props.photo.id}/full`))
+
+const revokeFallbackImageUrl = () => {
+    if (fallbackImageUrl.value) {
+        URL.revokeObjectURL(fallbackImageUrl.value)
+        fallbackImageUrl.value = null
+    }
+}
+
+const onImageError = async () => {
+    try {
+        revokeFallbackImageUrl()
+        const response = await fetch(fullImageSrc.value)
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`)
+        }
+
+        const blob = await response.blob()
+        fallbackImageUrl.value = URL.createObjectURL(blob)
+    } catch (error) {
+        console.error('Image fallback load failed:', error)
+        imageLoading.value = false
+    }
+}
 
 // Platform detection
 const isIOS = computed(() => {
@@ -317,6 +345,7 @@ const onImageLoad = () => {
 // Watch for photo changes to reset loading state and preload adjacent images
 watch(() => props.photo.id, (newId, oldId) => {
     if (newId !== oldId) {
+        revokeFallbackImageUrl()
         imageLoading.value = true
 
         // Preload adjacent images
@@ -334,7 +363,7 @@ watch(() => props.photo.id, (newId, oldId) => {
 // Preload image function
 const preloadImage = (photoId: string) => {
     const img = new Image()
-    img.src = `/api/assets/${photoId}/full`
+    img.src = buildAssetUrl(`/api/assets/${photoId}/full`)
 }
 
 // Prevent body scroll when viewer is open
@@ -343,6 +372,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+    revokeFallbackImageUrl()
     document.body.style.overflow = ''
 })
 
@@ -540,7 +570,7 @@ const getInstagramUrl = (instagram: string | null) => {
 
 const sharePhoto = async () => {
     try {
-        const response = await fetch(`/api/assets/${props.photo.id}/full`)
+        const response = await fetch(buildAssetUrl(`/api/assets/${props.photo.id}/full`))
         const blob = await response.blob()
         const file = new File([blob], props.photo.originalName, { type: blob.type })
 
@@ -565,7 +595,7 @@ const sharePhoto = async () => {
 
 const downloadPhoto = async () => {
     try {
-        const response = await fetch(`/api/assets/${props.photo.id}/full`)
+        const response = await fetch(buildAssetUrl(`/api/assets/${props.photo.id}/full`))
         const blob = await response.blob()
 
         // Regular download

@@ -75,7 +75,7 @@
                             :src="getBlurhashUrl(photo.blurhash, photo.width!, photo.height!) || ''"
                             class="absolute inset-0 w-full h-full object-cover" />
 
-                        <img :src="`/api/assets/${photo.id}/thumb`" loading="lazy"
+                        <img :src="buildAssetUrl(`/api/assets/${photo.id}/thumb`)" loading="lazy"
                             class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 hover:opacity-100" />
 
                         <!-- Overlay -->
@@ -122,6 +122,7 @@
 import { JustifiedLayout } from '@immich/justified-layout-wasm'
 import { decode } from 'blurhash'
 import { debounce } from 'lodash-es'
+import { buildAssetUrl } from '~/utils/auth-client'
 
 // Create proper interface for our photo object
 interface Photo {

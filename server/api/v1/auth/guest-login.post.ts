@@ -1,5 +1,5 @@
 import prisma from '../../../utils/prisma'
-import { getUnixTimestamp, getAuthUserId, setAuthCookie } from '../../../utils/auth'
+import { getUnixTimestamp, getAuthUserId, createAccessToken } from '../../../utils/auth'
 import argon2 from 'argon2'
 
 /**
@@ -182,11 +182,12 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        await setAuthCookie(event, user.id)
+        const accessToken = await createAccessToken(user.id)
 
         return {
             success: true,
             data: {
+            accessToken,
                 id: user.id,
                 name: user.name,
                 email: user.email,

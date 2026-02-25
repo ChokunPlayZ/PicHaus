@@ -1,8 +1,7 @@
 import * as argon2 from 'argon2'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
-const SESSION_COOKIE_NAME = 'auth-token'
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7 // 7 days
+const ACCESS_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7 // 7 days
 
 function base64UrlEncode(value: string): string {
     return Buffer.from(value, 'utf8').toString('base64url')
@@ -68,10 +67,10 @@ export async function verifyPassword(hash: string, password: string): Promise<bo
  * Create a session for a user
  * Returns the user's UUID to be used as the session token
  */
-export async function createSession(userId: string): Promise<string> {
+export async function createAccessToken(userId: string): Promise<string> {
     const payload = {
         sub: userId,
-        exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS,
+        exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL_SECONDS,
     }
 
     const encodedPayload = base64UrlEncode(JSON.stringify(payload))
@@ -120,30 +119,39 @@ function verifySessionToken(token: string): { userId: string } | null {
     }
 }
 
-export function getAuthUserId(event: any): string | null {
-    const authToken = getCookie(event, SESSION_COOKIE_NAME)
-    if (!authToken) {
+function getBearerToken(event: any): string | null {
+    const authHeader = getRequestHeader(event, 'Authorization')
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return null
     }
 
-    const session = verifySessionToken(authToken)
+    const token = authHeader.slice(7).trim()
+    return token || null
+}
+
+export function getAuthUserId(event: any): string | null {
+    const bearerToken = getBearerToken(event)
+
+    if (bearerToken) {
+        const session = verifySessionToken(bearerToken)
+        if (session?.userId) {
+            return session.userId
+        }
+    }
+
+    const requestPath = getRequestURL(event).pathname
+    if (!requestPath.startsWith('/api/assets/')) {
+        return null
+    }
+
+    const tokenFromQuery = getQuery(event).access_token
+    if (typeof tokenFromQuery !== 'string' || !tokenFromQuery) {
+        return null
+    }
+
+    const session = verifySessionToken(tokenFromQuery)
     return session?.userId || null
-}
-
-export async function setAuthCookie(event: any, userId: string): Promise<void> {
-    const sessionToken = await createSession(userId)
-
-    setCookie(event, SESSION_COOKIE_NAME, sessionToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: SESSION_TTL_SECONDS,
-        path: '/',
-    })
-}
-
-export function clearAuthCookie(event: any): void {
-    deleteCookie(event, SESSION_COOKIE_NAME)
 }
 
 /**
@@ -182,7 +190,6 @@ export async function requireAuth(event: any) {
     const userId = getAuthUserId(event)
 
     if (!userId) {
-        clearAuthCookie(event)
         throw createError({
             statusCode: 401,
             statusMessage: 'Not authenticated',
@@ -194,9 +201,6 @@ export async function requireAuth(event: any) {
     })
 
     if (!user) {
-        // Clear invalid cookie
-        clearAuthCookie(event)
-
         throw createError({
             statusCode: 401,
             statusMessage: 'Invalid session',

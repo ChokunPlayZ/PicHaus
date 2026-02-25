@@ -1,12 +1,9 @@
-import { clearAuthCookie } from '../../../utils/auth'
-
 /**
- * Logout endpoint - clears the auth session cookie
+ * Logout endpoint (stateless for bearer auth)
  */
 export default defineEventHandler(async (event) => {
     try {
-        // Clear the auth cookie
-        clearAuthCookie(event)
+        // Stateless for bearer token auth (client drops token locally)
 
         return {
             success: true,

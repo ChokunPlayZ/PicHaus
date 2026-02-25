@@ -62,6 +62,8 @@
 </template>
 
 <script setup lang="ts">
+import { clearAuthToken } from '~/utils/auth-client'
+
 const props = defineProps<{
     title?: string
     showBack?: boolean
@@ -91,6 +93,7 @@ const handleBack = () => {
 const handleLogout = async () => {
     try {
         await $fetch('/api/v1/auth/logout', { method: 'POST' })
+        clearAuthToken()
         window.location.href = '/login'
     } catch (err) {
         console.error('Logout failed', err)

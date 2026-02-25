@@ -68,7 +68,7 @@
                     <!-- Album Thumbnail -->
                     <div class="aspect-video relative bg-gray-900 group-hover:brightness-110 transition duration-300">
                         <!-- Cover Photo -->
-                        <img v-if="album.coverPhoto" :src="`/api/assets/${album.coverPhoto.id}/thumb`"
+                        <img v-if="album.coverPhoto" :src="buildAssetUrl(`/api/assets/${album.coverPhoto.id}/thumb`)"
                             class="w-full h-full object-cover" loading="lazy" />
 
                         <!-- Placeholder if no photo -->
@@ -289,6 +289,8 @@
 </template>
 
 <script setup lang="ts">
+import { clearAuthToken, buildAssetUrl } from '~/utils/auth-client'
+
 interface Album {
     id: string
     name: string
@@ -485,6 +487,7 @@ const copyToClipboard = async (text: string) => {
 const handleLogout = async () => {
     try {
         await $fetch('/api/v1/auth/logout', { method: 'POST' })
+        clearAuthToken()
         await navigateTo('/login')
     } catch (err) {
         console.error('Logout error:', err)
