@@ -1,14 +1,15 @@
 import { defineEventHandler, getQuery, createError } from 'h3'
-import { PrismaClient, Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { requireAuth } from '../../../utils/auth'
+import prisma from '../../../utils/prisma'
 
-const prisma = new PrismaClient()
+const SORTABLE_FIELDS: Array<keyof Prisma.PhotoOrderByWithRelationInput> = ['dateTaken', 'createdAt', 'updatedAt', 'iso']
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
     const query = getQuery(event)
-    const page = Number(query.page) || 1
-    const limit = Number(query.limit) || 50
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 100)
     const skip = (page - 1) * limit
 
     // Filters
@@ -19,8 +20,12 @@ export default defineEventHandler(async (event) => {
     const shutterSpeed = query.shutterSpeed as string
     const dateFrom = query.dateFrom as string
     const dateTo = query.dateTo as string
-    const sort = (query.sort as string) || 'dateTaken'
-    const order = (query.order as string) || 'desc'
+    const sortInput = (query.sort as string) || 'dateTaken'
+    const orderInput = ((query.order as string) || 'desc').toLowerCase()
+    const sort = SORTABLE_FIELDS.includes(sortInput as keyof Prisma.PhotoOrderByWithRelationInput)
+        ? (sortInput as keyof Prisma.PhotoOrderByWithRelationInput)
+        : 'dateTaken'
+    const order: Prisma.SortOrder = orderInput === 'asc' ? 'asc' : 'desc'
 
     // Enforce User Isolation
     const where: Prisma.PhotoWhereInput = {
@@ -35,8 +40,20 @@ export default defineEventHandler(async (event) => {
 
     if (dateFrom || dateTo) {
         where.dateTaken = {}
-        if (dateFrom) where.dateTaken.gte = BigInt(new Date(dateFrom).getTime())
-        if (dateTo) where.dateTaken.lte = BigInt(new Date(dateTo).getTime())
+        if (dateFrom) {
+            const parsedFrom = Date.parse(dateFrom)
+            if (!Number.isFinite(parsedFrom)) {
+                throw createError({ statusCode: 400, statusMessage: 'Invalid dateFrom value' })
+            }
+            where.dateTaken.gte = BigInt(parsedFrom)
+        }
+        if (dateTo) {
+            const parsedTo = Date.parse(dateTo)
+            if (!Number.isFinite(parsedTo)) {
+                throw createError({ statusCode: 400, statusMessage: 'Invalid dateTo value' })
+            }
+            where.dateTaken.lte = BigInt(parsedTo)
+        }
     }
 
     // Get photos

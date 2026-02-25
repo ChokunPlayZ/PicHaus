@@ -1,45 +1,60 @@
 import prisma from '../../../utils/prisma'
+import { requireAuth } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     try {
-        const albums = await prisma.$queryRaw`
-            SELECT
-                a.id,
-                a.title,
-                a.description,
-                a."eventDate",
-                a."isPublic",
-                a."createdAt",
-                a."updatedAt",
-                u.id as "ownerId",
-                u.name as "ownerName",
-                u.instagram as "ownerInstagram",
-                (SELECT COUNT(*)::int FROM photos p WHERE p."albumId" = a.id) as "photoCount",
-                (SELECT COUNT(*)::int FROM album_collaborators ac WHERE ac."albumId" = a.id) as "collaboratorCount",
-                COALESCE(
-                    (
-                        SELECT json_build_object('id', p.id, 'blurhash', p.blurhash)
-                        FROM photos p
-                        WHERE p.id = a."coverPhotoId"
-                    ),
-                    (
-                        SELECT json_build_object('id', p.id, 'blurhash', p.blurhash)
-                        FROM photos p
-                        WHERE p."albumId" = a.id
-                        ORDER BY
-                            CASE WHEN p.width >= p.height THEN 1 ELSE 0 END DESC,
-                            p."createdAt" DESC
-                        LIMIT 1
-                    )
-                ) as "coverPhoto"
-            FROM albums a
-            JOIN users u ON a."ownerId" = u.id
-            ORDER BY a."createdAt" DESC
-        ` as any[]
+        const user = await requireAuth(event)
+
+        const where = user.role === 'ADMIN'
+            ? {}
+            : {
+                OR: [
+                    { ownerId: user.id },
+                    { collaborators: { some: { userId: user.id } } },
+                ],
+            }
+
+        const albums = await prisma.album.findMany({
+            where,
+            include: {
+                owner: {
+                    select: {
+                        id: true,
+                        name: true,
+                        instagram: true,
+                    },
+                },
+                _count: {
+                    select: {
+                        photos: true,
+                        collaborators: true,
+                    },
+                },
+                coverPhoto: {
+                    select: {
+                        id: true,
+                        blurhash: true,
+                    },
+                },
+                photos: {
+                    take: 1,
+                    orderBy: [
+                        { createdAt: 'desc' }
+                    ],
+                    select: {
+                        id: true,
+                        blurhash: true,
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        })
 
         return {
             success: true,
-            data: albums.map((album) => ({
+            data: albums.map((album: any) => ({
                 id: album.id,
                 name: album.title,
                 description: album.description,
@@ -48,15 +63,15 @@ export default defineEventHandler(async (event) => {
                 createdAt: Number(album.createdAt),
                 updatedAt: Number(album.updatedAt),
                 owner: {
-                    id: album.ownerId,
-                    name: album.ownerName,
-                    instagram: album.ownerInstagram,
+                    id: album.owner.id,
+                    name: album.owner.name,
+                    instagram: album.owner.instagram,
                 },
                 _count: {
-                    photos: album.photoCount,
-                    collaborators: album.collaboratorCount,
+                    photos: album._count.photos,
+                    collaborators: album._count.collaborators,
                 },
-                coverPhoto: album.coverPhoto,
+                coverPhoto: album.coverPhoto || album.photos[0] || null,
             })),
         }
     } catch (error) {

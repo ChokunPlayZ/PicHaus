@@ -1,7 +1,6 @@
 import prisma from '../../../../../utils/prisma'
 import { requireAuth } from '../../../../../utils/auth'
-import { rm } from 'fs/promises'
-import { join } from 'path'
+import { deleteFile } from '../../../../../utils/upload'
 
 /**
  * Batch delete photos from album
@@ -19,6 +18,14 @@ export default defineEventHandler(async (event) => {
 
         if (!ids || !Array.isArray(ids) || ids.length === 0) {
             throw createError({ statusCode: 400, statusMessage: 'Photo IDs required' })
+        }
+
+        if (!ids.every((photoId) => typeof photoId === 'string')) {
+            throw createError({ statusCode: 400, statusMessage: 'Invalid photo IDs format' })
+        }
+
+        if (ids.length > 200) {
+            throw createError({ statusCode: 400, statusMessage: 'Too many photos requested (max 200)' })
         }
 
         // Check permissions
@@ -53,10 +60,10 @@ export default defineEventHandler(async (event) => {
         await Promise.all(photos.map(async (photo) => {
             try {
                 if (photo.storagePath) {
-                    await rm(photo.storagePath, { force: true })
+                    await deleteFile(photo.storagePath)
                 }
                 if (photo.thumbnailStoragePath) {
-                    await rm(photo.thumbnailStoragePath, { force: true })
+                    await deleteFile(photo.thumbnailStoragePath)
                 }
             } catch (err) {
                 console.error(`Failed to delete file for photo ${photo.id}`, err)

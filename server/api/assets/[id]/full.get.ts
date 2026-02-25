@@ -1,11 +1,12 @@
 import { createReadStream } from 'fs'
 import { stat } from 'fs/promises'
-import { join } from 'path'
 import prisma from '../../../utils/prisma'
 import { getAbsoluteFilePath } from '../../../utils/upload'
+import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
+    const now = getUnixTimestamp()
 
     const photo = await prisma.photo.findUnique({
         where: { id },
@@ -30,17 +31,17 @@ export default defineEventHandler(async (event) => {
     if (photo.album.isPublic) {
         hasAccess = true
     } else {
-        const authToken = getCookie(event, 'auth-token')
-        if (authToken) {
+        const authUserId = getAuthUserId(event)
+        if (authUserId) {
             // Check if user exists and has access
             // We can optimize this by not querying user if we trust the token ID to check collaborators
             // But let's be safe.
             // Actually, for guest users, the authToken IS the user ID.
 
-            if (photo.album.ownerId === authToken) {
+            if (photo.album.ownerId === authUserId) {
                 hasAccess = true
             } else {
-                const isCollaborator = photo.album.collaborators.some(c => c.userId === authToken)
+                const isCollaborator = photo.album.collaborators.some(c => c.userId === authUserId)
                 if (isCollaborator) {
                     hasAccess = true
                 }
@@ -54,7 +55,7 @@ export default defineEventHandler(async (event) => {
                 const link = await prisma.shareLink.findUnique({
                     where: { token: shareToken }
                 })
-                if (link && link.albumId === photo.album.id) {
+                if (link && link.albumId === photo.album.id && (!link.expiresAt || link.expiresAt >= now)) {
                     hasAccess = true
                 }
             }

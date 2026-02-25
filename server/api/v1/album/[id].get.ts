@@ -1,4 +1,5 @@
 import prisma from '../../../utils/prisma'
+import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
 
 /**
  * Get single album details
@@ -15,11 +16,12 @@ export default defineEventHandler(async (event) => {
         }
 
         // Get authenticated user (optional for public albums)
-        const authToken = getCookie(event, 'auth-token')
+        const authUserId = getAuthUserId(event)
+        const now = getUnixTimestamp()
 
         const query = getQuery(event)
-        const page = Number(query.page) || 1
-        const limit = Number(query.limit) || 50
+        const page = Math.max(1, Number(query.page) || 1)
+        const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 100)
         const skip = (page - 1) * limit
 
         // 1. Fetch Album details (without photos)
@@ -70,8 +72,8 @@ export default defineEventHandler(async (event) => {
         }
 
         // Check permissions
-        const isOwner = authToken === album.ownerId
-        const isCollaborator = album.collaborators.some((c: any) => c.userId === authToken)
+        const isOwner = authUserId === album.ownerId
+        const isCollaborator = album.collaborators.some((c: any) => c.userId === authUserId)
         let hasShareLinkAccess = false
 
         // Check for share link access (guest with share link)
@@ -81,7 +83,7 @@ export default defineEventHandler(async (event) => {
                 const link = await prisma.shareLink.findUnique({
                     where: { token: shareToken }
                 })
-                if (link && link.albumId === id) {
+                if (link && link.albumId === id && (!link.expiresAt || link.expiresAt >= now)) {
                     hasShareLinkAccess = true
                 }
             }
@@ -99,7 +101,7 @@ export default defineEventHandler(async (event) => {
                         const link = await prisma.shareLink.findUnique({
                             where: { token: groupToken }
                         })
-                        if (link && link.shareGroupId === group.id) {
+                        if (link && link.shareGroupId === group.id && (!link.expiresAt || link.expiresAt >= now)) {
                             hasShareLinkAccess = true
                             break
                         }

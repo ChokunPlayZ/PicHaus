@@ -41,8 +41,8 @@ export default defineEventHandler(async (event) => {
     }
 
     const query = getQuery(event)
-    const page = Number(query.page) || 1
-    const limit = Number(query.limit) || 50
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 100)
     const skip = (page - 1) * limit
 
     const photos = await prisma.photo.findMany({

@@ -1,7 +1,7 @@
 import sharp from 'sharp'
 import { createHash } from 'crypto'
 import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
+import { join, resolve, sep } from 'path'
 import exifr from 'exifr'
 import { encode } from 'blurhash'
 
@@ -119,7 +119,15 @@ export async function saveFile(
  */
 export function getAbsoluteFilePath(storagePath: string): string {
     const storageBaseDir = process.env.STORAGE_DIR || 'storage/uploads'
-    return join(process.cwd(), storageBaseDir, storagePath)
+    const storageRoot = resolve(process.cwd(), storageBaseDir)
+    const normalizedStoragePath = storagePath.replace(/^\/+/, '')
+    const resolvedPath = resolve(storageRoot, normalizedStoragePath)
+
+    if (resolvedPath !== storageRoot && !resolvedPath.startsWith(storageRoot + sep)) {
+        throw new Error('Invalid storage path')
+    }
+
+    return resolvedPath
 }
 
 /**

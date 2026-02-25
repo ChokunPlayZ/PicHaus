@@ -1,4 +1,5 @@
 import { isSetupComplete } from '../utils/setup'
+import { getAuthUserId } from '../utils/auth'
 
 export default defineEventHandler(async (event) => {
     const url = getRequestURL(event)
@@ -18,9 +19,9 @@ export default defineEventHandler(async (event) => {
         }
 
         // Setup complete, check if user is logged in
-        const authToken = getCookie(event, 'auth-token')
+        const authUserId = getAuthUserId(event)
 
-        if (authToken) {
+        if (authUserId) {
             // User is logged in, redirect to albums
             return sendRedirect(event, '/album', 302)
         } else {

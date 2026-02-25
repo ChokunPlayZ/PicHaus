@@ -1,5 +1,5 @@
 import prisma from '../../../utils/prisma'
-import { verifyPassword } from '../../../utils/auth'
+import { verifyPassword, setAuthCookie } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -43,14 +43,7 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // Set session cookie
-        setCookie(event, 'auth-token', user.id, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 7, // 7 days
-            path: '/',
-        })
+        await setAuthCookie(event, user.id)
 
         return {
             success: true,

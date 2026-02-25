@@ -1,10 +1,12 @@
+import { clearAuthCookie } from '../../../utils/auth'
+
 /**
  * Logout endpoint - clears the auth session cookie
  */
 export default defineEventHandler(async (event) => {
     try {
         // Clear the auth cookie
-        deleteCookie(event, 'auth-token')
+        clearAuthCookie(event)
 
         return {
             success: true,

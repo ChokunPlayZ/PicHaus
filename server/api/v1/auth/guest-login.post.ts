@@ -1,5 +1,5 @@
 import prisma from '../../../utils/prisma'
-import { getUnixTimestamp } from '../../../utils/auth'
+import { getUnixTimestamp, getAuthUserId, setAuthCookie } from '../../../utils/auth'
 import argon2 from 'argon2'
 
 /**
@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
         const body = await readBody(event)
         const { token, password } = body
         let { name, email, instagram } = body
+        const now = getUnixTimestamp()
 
         if (!token) {
             throw createError({
@@ -28,6 +29,13 @@ export default defineEventHandler(async (event) => {
         })
 
         if (!shareLink) {
+            throw createError({
+                statusCode: 404,
+                statusMessage: 'Invalid link',
+            })
+        }
+
+        if (shareLink.expiresAt && shareLink.expiresAt < now) {
             throw createError({
                 statusCode: 404,
                 statusMessage: 'Invalid link',
@@ -107,12 +115,12 @@ export default defineEventHandler(async (event) => {
 
         // For upload links, create/find user and add as collaborator
         // Check if user is already logged in
-        const authToken = getCookie(event, 'auth-token')
+        const authUserId = getAuthUserId(event)
         let user: any = null
 
-        if (authToken) {
+        if (authUserId) {
             user = await prisma.user.findUnique({
-                where: { id: authToken },
+                where: { id: authUserId },
             })
         }
 
@@ -174,13 +182,7 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // Set session cookie
-        setCookie(event, 'auth-token', user.id, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 24 * 7, // 1 week
-            path: '/',
-        })
+        await setAuthCookie(event, user.id)
 
         return {
             success: true,

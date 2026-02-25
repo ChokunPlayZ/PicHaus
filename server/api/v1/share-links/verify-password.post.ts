@@ -1,9 +1,10 @@
 import prisma from '../../../utils/prisma'
-import { verifyPassword } from '../../../utils/auth'
+import { verifyPassword, getUnixTimestamp } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const { token, password } = body
+    const now = getUnixTimestamp()
 
     if (!token || !password) {
         throw createError({
@@ -17,6 +18,13 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!shareLink) {
+        throw createError({
+            statusCode: 404,
+            statusMessage: 'Invalid link',
+        })
+    }
+
+    if (shareLink.expiresAt && shareLink.expiresAt < now) {
         throw createError({
             statusCode: 404,
             statusMessage: 'Invalid link',

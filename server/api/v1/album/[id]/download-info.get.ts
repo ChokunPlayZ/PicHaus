@@ -1,4 +1,5 @@
 import prisma from '../../../../utils/prisma'
+import { getAuthUserId, getUnixTimestamp } from '../../../../utils/auth'
 
 /**
  * Get all photo URLs for an album (for download all)
@@ -10,11 +11,12 @@ export default defineEventHandler(async (event) => {
         // Check authentication (optional, depending on album privacy)
         // For now, we'll allow public albums to be downloaded without auth
         // But we should check permissions if it's private
-        const authToken = getCookie(event, 'auth-token')
+        const authUserId = getAuthUserId(event)
+        const now = getUnixTimestamp()
         let user = null
-        if (authToken) {
+        if (authUserId) {
             user = await prisma.user.findUnique({
-                where: { id: authToken },
+                where: { id: authUserId },
             })
         }
 
@@ -42,7 +44,7 @@ export default defineEventHandler(async (event) => {
                 const link = await prisma.shareLink.findUnique({
                     where: { token: shareToken }
                 })
-                if (link && link.albumId === id) {
+                if (link && link.albumId === id && (!link.expiresAt || link.expiresAt >= now)) {
                     hasAccess = true
                 }
             }

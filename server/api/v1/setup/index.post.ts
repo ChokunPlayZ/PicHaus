@@ -46,6 +46,7 @@ export default defineEventHandler(async (event) => {
                 email: body.email,
                 passwordHash,
                 name: body.name || 'Admin',
+                role: 'ADMIN',
                 createdAt: now,
                 updatedAt: now,
             },

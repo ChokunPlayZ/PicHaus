@@ -1,4 +1,5 @@
 import prisma from '../../../utils/prisma'
+import { getUnixTimestamp } from '../../../utils/auth'
 
 /**
  * Validate upload token and get album info
@@ -6,6 +7,7 @@ import prisma from '../../../utils/prisma'
 export default defineEventHandler(async (event) => {
     try {
         const token = getRouterParam(event, 'token')
+        const now = getUnixTimestamp()
 
         if (!token) {
             throw createError({
@@ -40,6 +42,13 @@ export default defineEventHandler(async (event) => {
         })
 
         if (!shareLink) {
+            throw createError({
+                statusCode: 404,
+                statusMessage: 'Link not found or expired',
+            })
+        }
+
+        if (shareLink.expiresAt && shareLink.expiresAt < now) {
             throw createError({
                 statusCode: 404,
                 statusMessage: 'Link not found or expired',
@@ -118,6 +127,13 @@ export default defineEventHandler(async (event) => {
             throw createError({
                 statusCode: 404,
                 statusMessage: 'Album not found in this link',
+            })
+        }
+
+        if (shareLink.type !== 'upload') {
+            throw createError({
+                statusCode: 403,
+                statusMessage: 'This link does not allow uploads',
             })
         }
 

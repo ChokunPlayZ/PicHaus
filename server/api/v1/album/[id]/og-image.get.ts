@@ -3,9 +3,11 @@ import { join } from 'path'
 import prisma from '../../../../utils/prisma'
 import { getAbsoluteFilePath } from '../../../../utils/upload'
 import justifiedLayout from 'justified-layout'
+import { getAuthUserId, getUnixTimestamp } from '../../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
+    const now = getUnixTimestamp()
 
     if (!id) {
         throw createError({
@@ -38,7 +40,17 @@ export default defineEventHandler(async (event) => {
                     storagePath: true,
                     thumbnailStoragePath: true,
                 }
-            }
+            },
+            collaborators: {
+                select: {
+                    userId: true,
+                },
+            },
+            owner: {
+                select: {
+                    id: true,
+                },
+            },
         }
     })
 
@@ -47,6 +59,53 @@ export default defineEventHandler(async (event) => {
             statusCode: 404,
             statusMessage: 'Album not found',
         })
+    }
+
+    if (!album.isPublic) {
+        const authUserId = getAuthUserId(event)
+        const isOwner = authUserId === album.owner.id
+        const isCollaborator = !!authUserId && album.collaborators.some((c: any) => c.userId === authUserId)
+
+        let hasShareAccess = false
+        const shareToken = getCookie(event, `album-access-${id}`)
+        if (shareToken) {
+            const link = await prisma.shareLink.findUnique({
+                where: { token: shareToken },
+            })
+            if (link && link.albumId === id && (!link.expiresAt || link.expiresAt >= now)) {
+                hasShareAccess = true
+            }
+        }
+
+        if (!hasShareAccess) {
+            const groups = await prisma.shareGroup.findMany({
+                where: { albums: { some: { id } } },
+                select: { id: true },
+            })
+
+            for (const group of groups) {
+                const groupToken = getCookie(event, `group-access-${group.id}`)
+                if (!groupToken) {
+                    continue
+                }
+
+                const link = await prisma.shareLink.findUnique({
+                    where: { token: groupToken },
+                })
+
+                if (link && link.shareGroupId === group.id && (!link.expiresAt || link.expiresAt >= now)) {
+                    hasShareAccess = true
+                    break
+                }
+            }
+        }
+
+        if (!isOwner && !isCollaborator && !hasShareAccess) {
+            throw createError({
+                statusCode: 403,
+                statusMessage: 'Forbidden',
+            })
+        }
     }
 
     // Canvas dimensions (Open Graph standard)
