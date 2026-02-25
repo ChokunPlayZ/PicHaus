@@ -27,3 +27,8 @@ other can upload without an account, just a link and password.
 photographers can attatch their own IG account.
 
 ## Fully Self Hosted with Docker.
+
+## Environment Setup
+- Copy `.env.example` to `.env`
+- Set `DATABASE_URL`
+- Set `AUTH_SECRET` to a random secret (minimum 32 characters)
