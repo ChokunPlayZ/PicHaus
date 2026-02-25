@@ -58,8 +58,8 @@ export default defineEventHandler(async (event) => {
         success: true,
         data: photos.map((photo: any) => ({
             id: photo.id,
-            url: `${baseUrl}/api/assets/${photo.id}/full`,
-            thumbnailUrl: `${baseUrl}/api/assets/${photo.id}/thumb`,
+            url: `${baseUrl}/api/assets/full/${photo.id}`,
+            thumbnailUrl: `${baseUrl}/api/assets/thumb/${photo.id}`,
             filename: photo.filename,
             originalName: photo.originalName,
             width: photo.width,

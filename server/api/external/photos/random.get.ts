@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
 
     // Construct full URLs (assuming server is hosting or serving static)
     // We need to know the base URL. For now we returns paths or relative URLs.
-    // The previous code suggests assets are served via /api/assets/[id]/full.get.ts
+    // Assets are served via /api/assets/full/:id and /api/assets/thumb/:id
 
     const baseUrl = getRequestURL(event).origin
 
@@ -40,8 +40,8 @@ export default defineEventHandler(async (event) => {
         success: true,
         data: photos.map((photo: any) => ({
             id: photo.id,
-            url: `${baseUrl}/api/assets/${photo.id}/full`,
-            thumbnailUrl: `${baseUrl}/api/assets/${photo.id}/thumb`,
+            url: `${baseUrl}/api/assets/full/${photo.id}`,
+            thumbnailUrl: `${baseUrl}/api/assets/thumb/${photo.id}`,
             filename: photo.filename,
             originalName: photo.originalName,
             width: photo.width,

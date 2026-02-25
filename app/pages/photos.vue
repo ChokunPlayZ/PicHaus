@@ -75,7 +75,7 @@
                             :src="getBlurhashUrl(photo.blurhash, photo.width!, photo.height!) || ''"
                             class="absolute inset-0 w-full h-full object-cover" />
 
-                        <img :src="buildAssetUrl(`/api/assets/${photo.id}/thumb`)" loading="lazy"
+                        <img :src="buildAssetUrl(`/api/assets/thumb/${photo.id}`)" loading="lazy"
                             class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 hover:opacity-100" />
 
                         <!-- Overlay -->

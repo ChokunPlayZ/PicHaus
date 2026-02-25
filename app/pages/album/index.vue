@@ -68,7 +68,7 @@
                     <!-- Album Thumbnail -->
                     <div class="aspect-video relative bg-gray-900 group-hover:brightness-110 transition duration-300">
                         <!-- Cover Photo -->
-                        <img v-if="album.coverPhoto" :src="buildAssetUrl(`/api/assets/${album.coverPhoto.id}/thumb`)"
+                        <img v-if="album.coverPhoto" :src="buildAssetUrl(`/api/assets/thumb/${album.coverPhoto.id}`)"
                             class="w-full h-full object-cover" loading="lazy" />
 
                         <!-- Placeholder if no photo -->

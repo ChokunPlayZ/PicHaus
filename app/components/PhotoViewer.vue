@@ -299,7 +299,7 @@ const showInfo = ref(false)
 const imageLoading = ref(true)
 const fallbackImageUrl = ref<string | null>(null)
 
-const fullImageSrc = computed(() => buildAssetUrl(`/api/assets/${props.photo.id}/full`))
+const fullImageSrc = computed(() => buildAssetUrl(`/api/assets/full/${props.photo.id}`))
 
 const revokeFallbackImageUrl = () => {
     if (fallbackImageUrl.value) {
@@ -363,7 +363,7 @@ watch(() => props.photo.id, (newId, oldId) => {
 // Preload image function
 const preloadImage = (photoId: string) => {
     const img = new Image()
-    img.src = buildAssetUrl(`/api/assets/${photoId}/full`)
+    img.src = buildAssetUrl(`/api/assets/full/${photoId}`)
 }
 
 // Prevent body scroll when viewer is open
@@ -570,7 +570,7 @@ const getInstagramUrl = (instagram: string | null) => {
 
 const sharePhoto = async () => {
     try {
-        const response = await fetch(buildAssetUrl(`/api/assets/${props.photo.id}/full`))
+        const response = await fetch(buildAssetUrl(`/api/assets/full/${props.photo.id}`))
         const blob = await response.blob()
         const file = new File([blob], props.photo.originalName, { type: blob.type })
 
@@ -595,7 +595,7 @@ const sharePhoto = async () => {
 
 const downloadPhoto = async () => {
     try {
-        const response = await fetch(buildAssetUrl(`/api/assets/${props.photo.id}/full`))
+        const response = await fetch(buildAssetUrl(`/api/assets/full/${props.photo.id}`))
         const blob = await response.blob()
 
         // Regular download

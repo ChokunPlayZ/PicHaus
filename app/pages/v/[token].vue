@@ -52,7 +52,7 @@
                         <div
                             class="aspect-video relative bg-gray-900 group-hover:brightness-110 transition duration-300">
                             <!-- Cover Photo -->
-                            <img v-if="album.coverPhoto" :src="buildAssetUrl(`/api/assets/${album.coverPhoto.id}/thumb`)"
+                            <img v-if="album.coverPhoto" :src="buildAssetUrl(`/api/assets/thumb/${album.coverPhoto.id}`)"
                                 class="w-full h-full object-cover" loading="lazy" />
 
                             <!-- Placeholder if no photo -->
@@ -151,7 +151,7 @@
                         <img v-if="photo.blurhash"
                             :src="getBlurhashUrl(photo.blurhash, photo.width, photo.height) || ''"
                             class="absolute inset-0 w-full h-full object-cover" />
-                        <img :src="buildAssetUrl(`/api/assets/${photo.id}/thumb`)" :alt="photo.filename" loading="lazy"
+                        <img :src="buildAssetUrl(`/api/assets/thumb/${photo.id}`)" :alt="photo.filename" loading="lazy"
                             class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
                     </div>
                 </div>
@@ -361,7 +361,7 @@ const downloadAll = async () => {
         // Download each photo
         const promises = photosToDownload.map(async (photo) => {
             try {
-                const res = await fetch(`/api/assets/${photo.id}/full`)
+                const res = await fetch(`/api/assets/full/${photo.id}`)
                 const blob = await res.blob()
                 folder?.file(photo.originalName, blob)
                 downloadProgress.value.current++

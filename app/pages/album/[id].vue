@@ -236,7 +236,7 @@
                     }">
                     <img v-if="photo.blurhash" :src="getBlurhashUrl(photo.blurhash, photo.width, photo.height) || ''"
                         class="absolute inset-0 w-full h-full object-cover" />
-                    <img :src="buildAssetUrl(`/api/assets/${photo.id}/thumb`)" :alt="photo.filename" loading="lazy"
+                    <img :src="buildAssetUrl(`/api/assets/thumb/${photo.id}`)" :alt="photo.filename" loading="lazy"
                         class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
 
                     <!-- Selection Indicator -->
@@ -1102,7 +1102,7 @@ const downloadSelected = async () => {
 
         await Promise.all(selectedPhotos.map(async (photo) => {
             try {
-                const res = await fetch(`/api/assets/${photo.id}/full`)
+                const res = await fetch(`/api/assets/full/${photo.id}`)
                 const blob = await res.blob()
                 folder?.file(photo.originalName, blob)
                 downloadProgress.value.current++
@@ -1609,7 +1609,7 @@ const setAsCover = async (photo: Photo) => {
 
 const downloadPhoto = async (photo: Photo) => {
     try {
-        const res = await fetch(`/api/assets/${photo.id}/full`)
+        const res = await fetch(`/api/assets/full/${photo.id}`)
         const blob = await res.blob()
         saveAs(blob, photo.originalName)
     } catch (err) {
@@ -1672,7 +1672,7 @@ const downloadAll = async () => {
         // Download each photo
         const promises = photosToDownload.map(async (photo) => {
             try {
-                const res = await fetch(`/api/assets/${photo.id}/full`)
+                const res = await fetch(`/api/assets/full/${photo.id}`)
                 const blob = await res.blob()
                 folder?.file(photo.originalName, blob)
                 downloadProgress.value.current++

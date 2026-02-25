@@ -199,7 +199,7 @@
                                     @click="toggleAlbumInGroup(album.id)">
 
                                     <div class="h-10 w-10 rounded overflow-hidden bg-gray-800 flex-shrink-0 mr-3">
-                                        <img v-if="album.coverPhoto" :src="buildAssetUrl(`/api/assets/${album.coverPhoto.id}/thumb`)"
+                                        <img v-if="album.coverPhoto" :src="buildAssetUrl(`/api/assets/thumb/${album.coverPhoto.id}`)"
                                             class="w-full h-full object-cover" />
                                         <div v-else
                                             class="w-full h-full flex items-center justify-center text-white/20">📷
