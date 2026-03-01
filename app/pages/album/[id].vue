@@ -720,7 +720,7 @@ import { JustifiedLayout } from '@immich/justified-layout-wasm'
 import { decode } from 'blurhash'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
-import { clearAuthToken, buildAssetUrl } from '~/utils/auth-client'
+import { clearAuthToken, buildAssetUrl, getAuthToken } from '~/utils/auth-client'
 import { calculateSHA256 } from '~/utils/hash'
 
 interface User {
@@ -1831,7 +1831,11 @@ const uploadFile = async (item: UploadItem) => {
 
             xhr.onerror = () => reject({ status: 0, statusText: 'Network Error' })
 
+            const authToken = getAuthToken()
             xhr.open('POST', `/api/v1/album/${albumId}/upload`)
+            if (authToken) {
+                xhr.setRequestHeader('Authorization', `Bearer ${authToken}`)
+            }
             xhr.send(formData)
         })
 
