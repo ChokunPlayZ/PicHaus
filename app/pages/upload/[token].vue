@@ -141,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { setAuthToken } from '~/utils/auth-client'
+import { getAuthToken, setAuthToken } from '~/utils/auth-client'
 
 const route = useRoute()
 const token = route.params.token as string
@@ -274,6 +274,8 @@ const uploadPhotos = async () => {
     uploadSuccess.value = false
 
     try {
+        const authToken = getAuthToken()
+
         // 1. Calculate hashes and check for duplicates
         const filesWithHashes: { file: File; hash: string }[] = []
         for (const file of selectedFiles.value) {
@@ -284,7 +286,8 @@ const uploadPhotos = async () => {
         const hashes = filesWithHashes.map(f => f.hash)
         const { duplicates } = await $fetch<{ success: boolean, duplicates: string[] }>('/api/v1/photos/check-duplicates', {
             method: 'POST',
-            body: { hashes }
+            body: { hashes },
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
         })
 
         // 2. Filter duplicates
@@ -314,6 +317,7 @@ const uploadPhotos = async () => {
             await $fetch(`/api/v1/album/${albumInfo.value.albumId}/upload`, {
                 method: 'POST',
                 body: formData,
+                headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
             })
 
             uploadProgress.value.current = i + 1

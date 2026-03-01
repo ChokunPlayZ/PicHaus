@@ -119,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { setAuthToken } from '~/utils/auth-client'
+import { getAuthToken, setAuthToken } from '~/utils/auth-client'
 
 const route = useRoute()
 const token = route.params.token as string
@@ -320,7 +320,11 @@ const uploadFile = (fileUpload: FileUpload) => {
         fileUpload.errorMessage = 'Network error'
     })
 
+    const authToken = getAuthToken()
     xhr.open('POST', `/api/v1/album/${albumId.value}/upload`)
+    if (authToken) {
+        xhr.setRequestHeader('Authorization', `Bearer ${authToken}`)
+    }
     xhr.send(formData)
 }
 </script>
