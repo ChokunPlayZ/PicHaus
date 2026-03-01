@@ -164,22 +164,11 @@
         <div
           class="bg-[var(--glass-bg)] backdrop-blur-xl rounded-2xl p-8 border border-[var(--glass-border-light)] shadow-xl">
           <h2 class="text-2xl font-bold text-[var(--text-primary)] mb-6">Activity Timeline</h2>
-          <div
-            class="h-64 flex items-end gap-2 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-            <div v-for="(month, idx) in stats?.timeline" :key="idx"
-              class="flex flex-col items-center gap-2 group flex-shrink-0" style="width: 40px">
-              <div
-                class="w-full bg-white/20 rounded-t-sm relative transition-all duration-300 group-hover:bg-[var(--btn-primary-start)]"
-                :style="{ height: `${calculatePercentage(month.count, Math.max(...stats.timeline.map((t: any) => t.count)))}%`, minHeight: '4px' }">
-                <div
-                  class="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 whitespace-nowrap transition-opacity pointer-events-none border border-white/10 z-20">
-                  {{ month.count }} photos
-                </div>
-              </div>
-              <div
-                class="text-[10px] text-[var(--text-muted)] -rotate-45 origin-top-left translate-y-2 whitespace-nowrap">
-                {{ month.date }}</div>
-            </div>
+          <div v-if="!timelineData.length" class="text-[var(--text-muted)] text-center py-10">No timeline data</div>
+          <div v-else class="h-72">
+            <ClientOnly>
+              <Line :data="timelineChartData" :options="timelineChartOptions" />
+            </ClientOnly>
           </div>
         </div>
       </div>
@@ -188,6 +177,21 @@
 </template>
 
 <script setup lang="ts">
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  Filler,
+  Legend,
+  LineElement,
+  LinearScale,
+  PointElement,
+  Title,
+  Tooltip,
+} from 'chart.js'
+import { Line } from 'vue-chartjs'
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
+
 const stats = ref<any>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -210,6 +214,98 @@ const calculatePercentage = (value: number, max: number) => {
   if (!max) return 0
   return (value / max) * 100
 }
+
+const timelineData = computed(() => {
+  const raw = stats.value?.timeline
+  if (!Array.isArray(raw)) return []
+
+  return raw.map((item: any) => ({
+    date: String(item?.date ?? ''),
+    count: Number(item?.count ?? 0) || 0,
+  }))
+})
+
+const formatTimelineLabel = (value: string) => {
+  const match = value.match(/^(\d{4})-(\d{2})$/)
+  if (!match) return value
+
+  const year = Number(match[1])
+  const monthIndex = Number(match[2]) - 1
+  const date = new Date(Date.UTC(year, monthIndex, 1))
+  return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+}
+
+const timelineLabels = computed(() => {
+  return timelineData.value.map((item) => formatTimelineLabel(item.date))
+})
+
+const timelineCounts = computed(() => {
+  return timelineData.value.map((item) => item.count)
+})
+
+const timelineChartData = computed(() => {
+  return {
+    labels: timelineLabels.value,
+    datasets: [
+      {
+        label: 'Photos',
+        data: timelineCounts.value,
+        borderColor: '#a78bfa',
+        backgroundColor: 'rgba(167, 139, 250, 0.18)',
+        pointBackgroundColor: '#f472b6',
+        pointBorderColor: '#f472b6',
+        pointRadius: 4,
+        pointHoverRadius: 5,
+        borderWidth: 3,
+        tension: 0.3,
+        fill: true,
+      },
+    ],
+  }
+})
+
+const timelineChartOptions = computed(() => {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index' as const,
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => `${context.parsed.y} photos`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: 'rgba(255,255,255,0.6)',
+          maxRotation: 45,
+          minRotation: 45,
+        },
+        grid: {
+          color: 'rgba(255,255,255,0.06)',
+        },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: {
+          color: 'rgba(255,255,255,0.6)',
+          precision: 0,
+        },
+        grid: {
+          color: 'rgba(255,255,255,0.08)',
+        },
+      },
+    },
+  }
+})
 
 onMounted(async () => {
   try {
