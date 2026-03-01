@@ -190,14 +190,7 @@ export default defineEventHandler(async (event) => {
             }
         }
 
-        if (shareLink.type !== 'upload') {
-            throw createError({
-                statusCode: 403,
-                statusMessage: 'This link does not allow uploads',
-            })
-        }
-
-        // It is an album share
+        // It is an album share (view or upload)
         return {
             success: true,
             data: {

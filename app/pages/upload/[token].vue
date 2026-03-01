@@ -192,7 +192,16 @@ const checkAuth = async () => {
 const fetchAlbumInfo = async () => {
     try {
         const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/upload/${token}`)
-        albumInfo.value = response.data
+        const data = response.data
+        const isUploadLink = data.shareType === 'upload' || data.type === 'upload'
+
+        if (!isUploadLink) {
+            error.value = 'This link is not for uploading.'
+            albumInfo.value = null
+            return
+        }
+
+        albumInfo.value = data
     } catch (err: any) {
         error.value = err.data?.statusMessage || 'Invalid or expired upload link'
     } finally {
