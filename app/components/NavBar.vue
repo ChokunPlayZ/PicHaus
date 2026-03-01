@@ -68,7 +68,11 @@
 
             <div class="p-3 border-t border-white/10 space-y-2">
                 <button @click="navigateTo('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2'">
-                    <img v-if="user?.avatar" :src="user.avatar" class="w-6 h-6 rounded-full bg-white/10" />
+                    <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-6 h-6 rounded-full bg-white/10 object-cover" />
+                    <div v-else
+                        class="w-6 h-6 rounded-full bg-white/15 border border-white/20 text-white text-[10px] font-semibold flex items-center justify-center uppercase">
+                        {{ userInitials }}
+                    </div>
                     <span>{{ user?.name || 'Settings' }}</span>
                 </button>
 
@@ -167,7 +171,11 @@
 
                 <div class="border-t border-white/10 pt-3 space-y-2">
                     <button @click="goMobile('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2'">
-                        <img v-if="user?.avatar" :src="user.avatar" class="w-6 h-6 rounded-full bg-white/10" />
+                        <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-6 h-6 rounded-full bg-white/10 object-cover" />
+                        <div v-else
+                            class="w-6 h-6 rounded-full bg-white/15 border border-white/20 text-white text-[10px] font-semibold flex items-center justify-center uppercase">
+                            {{ userInitials }}
+                        </div>
                         <span>{{ user?.name || 'Settings' }}</span>
                     </button>
                     <button @click="handleLogout"
@@ -228,15 +236,35 @@ const goMobile = async (path: string) => {
     await navigateTo(path)
 }
 
-const user = ref<any>(null)
+const user = useState<any>('navbar-user', () => null)
+
+const userAvatarUrl = computed(() => {
+    const avatar = user.value?.avatar
+    return typeof avatar === 'string' && avatar.trim().length > 0 ? avatar : ''
+})
+
+const userInitials = computed(() => {
+    const name = (user.value?.name || '').trim()
+    if (name) {
+        const parts = name.split(/\s+/).filter(Boolean)
+        if (parts.length === 1) return parts[0]?.slice(0, 2) || 'U'
+        return `${parts[0]?.[0] || ''}${parts[1]?.[0] || ''}` || 'U'
+    }
+
+    const email = (user.value?.email || '').trim()
+    if (email) return email.slice(0, 2)
+    return 'U'
+})
 onMounted(async () => {
     const win = window as Window & { __picHausSidebarNavCount?: number }
     win.__picHausSidebarNavCount = (win.__picHausSidebarNavCount || 0) + 1
     document.body.classList.add('has-sidebar-nav')
 
     try {
-        const { data } = await useFetch('/api/v1/auth/me')
-        user.value = data.value?.data
+        const response = await $fetch<{ success: boolean; data: any }>('/api/v1/auth/me')
+        if (response?.data) {
+            user.value = response.data
+        }
     } catch (e) {
         console.error('Failed to fetch user', e)
     }
