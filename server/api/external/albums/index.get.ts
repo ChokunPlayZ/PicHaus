@@ -29,6 +29,7 @@ export default defineEventHandler(async (event) => {
             id: album.id,
             title: album.title,
             description: album.description,
+            tags: album.tags,
             photoCount: album._count.photos,
             eventDate: album.eventDate ? Number(album.eventDate) : null,
             createdAt: Number(album.createdAt),

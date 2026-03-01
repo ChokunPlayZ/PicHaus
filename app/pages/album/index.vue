@@ -90,6 +90,12 @@
                         <p v-if="album.description" class="text-purple-200 text-sm mb-3 line-clamp-2">
                             {{ album.description }}
                         </p>
+                        <div v-if="album.tags && album.tags.length > 0" class="flex flex-wrap gap-1 mb-3">
+                            <span v-for="tag in album.tags" :key="`${album.id}-${tag}`"
+                                class="px-2 py-0.5 rounded-full bg-white/10 text-white/80 text-xs border border-white/10">
+                                #{{ tag }}
+                            </span>
+                        </div>
                         <div class="flex items-center justify-between text-sm text-purple-300">
                             <span>{{ album._count.photos }} photos</span>
                             <span v-if="album.eventDate">{{ formatDate(album.eventDate) }}</span>
@@ -148,6 +154,14 @@
                         <textarea v-model="newAlbum.description" rows="3"
                             class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                             placeholder="Tell us about this album..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Tags</label>
+                        <input v-model="newAlbum.tags" type="text"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="wedding, portrait, night" />
+                        <p class="text-xs text-white/50 mt-1">Separate tags with commas</p>
                     </div>
 
                     <!-- Event Date -->
@@ -296,6 +310,7 @@ interface Album {
     id: string
     name: string
     description: string | null
+    tags: string[]
     eventDate: number | null
     isPublic: boolean
     owner: {
@@ -319,6 +334,7 @@ const showCreateModal = ref(false)
 const newAlbum = ref({
     name: '',
     description: '',
+    tags: '',
     eventDate: '',
     isPublic: false,
 })
@@ -338,6 +354,15 @@ const newShareGroup = ref({
 const creatingShareGroup = ref(false)
 const shareGroupError = ref('')
 const createdShareLink = ref<string | null>(null)
+
+const parseTagsInput = (value: string): string[] => {
+    const tags = value
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0)
+
+    return Array.from(new Set(tags))
+}
 
 // Check authentication
 const checkAuth = async () => {
@@ -405,13 +430,14 @@ const handleCreateAlbum = async () => {
             body: {
                 name: newAlbum.value.name,
                 description: newAlbum.value.description || null,
+                tags: parseTagsInput(newAlbum.value.tags),
                 eventDate,
                 isPublic: newAlbum.value.isPublic,
             },
         })
 
         // Reset form and close modal
-        newAlbum.value = { name: '', description: '', eventDate: '', isPublic: false }
+        newAlbum.value = { name: '', description: '', tags: '', eventDate: '', isPublic: false }
         showCreateModal.value = false
 
         // Refresh albums list

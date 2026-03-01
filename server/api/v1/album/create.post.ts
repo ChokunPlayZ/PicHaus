@@ -1,6 +1,16 @@
 import prisma from '../../../utils/prisma'
 import { hashPassword, getUnixTimestamp, requireAuth } from '../../../utils/auth'
 
+const normalizeTags = (value: unknown): string[] => {
+    if (!Array.isArray(value)) return []
+
+    const normalized = value
+        .map(tag => (typeof tag === 'string' ? tag.trim() : ''))
+        .filter(tag => tag.length > 0)
+
+    return Array.from(new Set(normalized))
+}
+
 /**
  * Create a new album
  */
@@ -10,6 +20,7 @@ export default defineEventHandler(async (event) => {
         const user = await requireAuth(event)
 
         const body = await readBody(event)
+        const tags = normalizeTags(body.tags)
 
         // Validate required fields
         if (!body.name) {
@@ -26,6 +37,7 @@ export default defineEventHandler(async (event) => {
             data: {
                 title: body.name,
                 description: body.description || null,
+                tags,
                 eventDate: body.eventDate ? BigInt(body.eventDate) : null,
                 isPublic: body.isPublic ?? false,
                 ownerId: user.id,

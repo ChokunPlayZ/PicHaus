@@ -38,6 +38,7 @@ model Album {
   id          String  @id @default(uuid()) @db.Uuid
   title       String
   description String?
+  tags        String[] @default([])
   eventDate   BigInt? // Unix timestamp for when the event occurred
   isPublic    Boolean @default(false)
   createdAt   BigInt // Unix timestamp

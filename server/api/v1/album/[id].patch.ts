@@ -1,6 +1,16 @@
 import prisma from '../../../utils/prisma'
 import { getUnixTimestamp, requireAuth } from '../../../utils/auth'
 
+const normalizeTags = (value: unknown): string[] => {
+    if (!Array.isArray(value)) return []
+
+    const normalized = value
+        .map(tag => (typeof tag === 'string' ? tag.trim() : ''))
+        .filter(tag => tag.length > 0)
+
+    return Array.from(new Set(normalized))
+}
+
 /**
  * Update album details
  */
@@ -59,6 +69,7 @@ export default defineEventHandler(async (event) => {
             data: {
                 title: body.name ?? album.title,
                 description: body.description !== undefined ? body.description : album.description,
+                tags: body.tags !== undefined ? normalizeTags(body.tags) : album.tags,
                 eventDate: body.eventDate !== undefined
                     ? (body.eventDate ? BigInt(body.eventDate) : null)
                     : album.eventDate,

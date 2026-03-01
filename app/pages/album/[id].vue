@@ -27,6 +27,12 @@
                         <span v-if="album.eventDate">{{ formatDate(album.eventDate) }}</span>
                         <div v-if="album.description" class="text-white/60 whitespace-pre-line mt-2">{{
                             album.description }}</div>
+                        <div v-if="album.tags && album.tags.length > 0" class="flex flex-wrap gap-1 mt-2">
+                            <span v-for="tag in album.tags" :key="`tag-${tag}`"
+                                class="px-2 py-0.5 rounded-full bg-white/10 text-white/80 text-xs border border-white/10">
+                                #{{ tag }}
+                            </span>
+                        </div>
                         <div class="flex items-center gap-2 mt-2">
                             <span class="text-white/40">by</span>
                             <button @click="showPhotographersModal = true"
@@ -442,6 +448,14 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm font-medium text-purple-200 mb-2">Tags</label>
+                    <input v-model="editForm.tags" type="text"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="wedding, portrait, night" />
+                    <p class="text-xs text-white/50 mt-1">Separate tags with commas</p>
+                </div>
+
+                <div>
                     <label class="block text-sm font-medium text-purple-200 mb-2">Event Date</label>
                     <input v-model="editForm.eventDate" type="date"
                         class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
@@ -770,6 +784,7 @@ interface Album {
     id: string
     name: string
     description: string | null
+    tags: string[]
     eventDate: number | null
     isPublic: boolean
     owner: User
@@ -944,6 +959,7 @@ const showEditModal = ref(false)
 const editForm = ref({
     name: '',
     description: '',
+    tags: '',
     eventDate: '',
     isPublic: false,
 })
@@ -1260,6 +1276,7 @@ const fetchAlbum = async () => {
             editForm.value = {
                 name: album.value.name,
                 description: album.value.description ?? '',
+                tags: (album.value.tags || []).join(', '),
                 eventDate: album.value.eventDate ? (new Date(album.value.eventDate * 1000).toISOString().split('T')[0] ?? '') : '',
                 isPublic: album.value.isPublic,
             }
@@ -1280,6 +1297,15 @@ const copyAlbumLink = async () => {
     await navigator.clipboard.writeText(window.location.href)
     copied.value = true
     setTimeout(() => copied.value = false, 2000)
+}
+
+const parseTagsInput = (value: string): string[] => {
+    const tags = value
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0)
+
+    return Array.from(new Set(tags))
 }
 
 // Load more photos
@@ -1365,6 +1391,7 @@ const handleUpdateAlbum = async () => {
             body: {
                 name: editForm.value.name,
                 description: editForm.value.description || null,
+                tags: parseTagsInput(editForm.value.tags),
                 eventDate,
                 isPublic: editForm.value.isPublic,
             },
