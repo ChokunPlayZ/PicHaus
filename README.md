@@ -32,3 +32,23 @@ photographers can attatch their own IG account.
 - Copy `.env.example` to `.env`
 - Set `DATABASE_URL`
 - Set `AUTH_SECRET` to a random secret (minimum 32 characters)
+
+## External API (API Token)
+
+All external endpoints use `Authorization: Bearer <token>` and require token scopes.
+
+- `GET /api/external/albums` (`albums:read`)
+	- Supports: `page`, `limit`, `q`, `tag`, `tags=tag1,tag2`, `visibility=all|public|private`, `sortBy=createdAt|updatedAt|eventDate|title`, `order=asc|desc`, `fromEventDate`, `toEventDate`
+	- Returns pagination and timeline summary metadata.
+
+- `GET /api/external/albums/:id` (`albums:read`)
+	- Returns album detail + counts + cover URLs + related links.
+
+- `GET /api/external/albums/:id/photos` (`photos:read`)
+	- Supports: `page`, `limit`, `orientation=any|landscape|portrait|square`, `sortBy=createdAt|dateTaken|originalName`, `order=asc|desc`, `fromDateTaken`, `toDateTaken`
+
+- `GET /api/external/albums/:id/random` (`photos:read`)
+	- Supports: `count`, `orientation`, `fromDateTaken`, `toDateTaken`
+
+- `GET /api/external/photos/random` (`photos:read`)
+	- Supports: `count`, `albumId`, `tag`, `orientation`, `visibility=all|public|private`, `fromDateTaken`, `toDateTaken`

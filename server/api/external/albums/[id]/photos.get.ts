@@ -1,6 +1,13 @@
 import prisma from '../../../../utils/prisma'
 import { requireApiToken } from '../../../../utils/api-token'
 
+const parseUnix = (value: unknown): bigint | null => {
+    if (typeof value !== 'string' || value.trim() === '') return null
+    const n = Number(value)
+    if (!Number.isFinite(n)) return null
+    return BigInt(Math.trunc(n))
+}
+
 export default defineEventHandler(async (event) => {
     // Verify API token
     const apiToken = await requireApiToken(event)
@@ -44,19 +51,52 @@ export default defineEventHandler(async (event) => {
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 100)
     const skip = (page - 1) * limit
+    const orientation = typeof query.orientation === 'string' ? query.orientation : 'any'
+    const sortBy = typeof query.sortBy === 'string' ? query.sortBy : 'createdAt'
+    const order = typeof query.order === 'string' ? query.order : 'desc'
+    const fromDateTaken = parseUnix(typeof query.fromDateTaken === 'string' ? query.fromDateTaken : '')
+    const toDateTaken = parseUnix(typeof query.toDateTaken === 'string' ? query.toDateTaken : '')
 
-    const photos = await prisma.photo.findMany({
-        where: { albumId },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit
-    })
+    const where: any = { albumId }
+
+    if (fromDateTaken || toDateTaken) {
+        where.dateTaken = {}
+        if (fromDateTaken) where.dateTaken.gte = fromDateTaken
+        if (toDateTaken) where.dateTaken.lte = toDateTaken
+    }
+
+    const orderBy: any = (() => {
+        const dir = order === 'asc' ? 'asc' : 'desc'
+        if (sortBy === 'dateTaken') return { dateTaken: dir }
+        if (sortBy === 'originalName') return { originalName: dir }
+        return { createdAt: dir }
+    })()
+
+    const [total, photos] = await Promise.all([
+        prisma.photo.count({ where }),
+        prisma.photo.findMany({
+            where,
+            orderBy,
+            skip,
+            take: orientation === 'any' ? limit : limit * 3
+        })
+    ])
+
+    const filteredPhotos = orientation === 'any'
+        ? photos
+        : photos.filter((photo: any) => {
+            if (!photo.width || !photo.height) return false
+            if (orientation === 'landscape') return photo.width > photo.height
+            if (orientation === 'portrait') return photo.height > photo.width
+            if (orientation === 'square') return photo.width === photo.height
+            return true
+        }).slice(0, limit)
 
     const baseUrl = getRequestURL(event).origin
 
     return {
         success: true,
-        data: photos.map((photo: any) => ({
+        data: filteredPhotos.map((photo: any) => ({
             id: photo.id,
             url: `${baseUrl}/api/assets/full/${photo.id}`,
             thumbnailUrl: `${baseUrl}/api/assets/thumb/${photo.id}`,
@@ -71,7 +111,17 @@ export default defineEventHandler(async (event) => {
         pagination: {
             page,
             limit,
-            hasMore: photos.length === limit
+            total,
+            hasMore: orientation === 'any' ? skip + photos.length < total : filteredPhotos.length === limit
+        },
+        meta: {
+            filters: {
+                orientation,
+                sortBy,
+                order: order === 'asc' ? 'asc' : 'desc',
+                fromDateTaken: fromDateTaken ? Number(fromDateTaken) : null,
+                toDateTaken: toDateTaken ? Number(toDateTaken) : null,
+            }
         }
     }
 })
