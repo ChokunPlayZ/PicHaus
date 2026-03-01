@@ -12,7 +12,7 @@
                     <p class="text-purple-200">Manage your photo collections</p>
                 </div>
                 <div class="flex gap-2 w-full sm:w-auto">
-                    <button @click="toggleSelectionMode" v-if="albums.length > 0"
+                    <button @click="toggleSelectionMode" v-if="filteredAlbums.length > 0"
                         class="px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition duration-200 flex items-center justify-center">
                         {{ isSelectionMode ? 'Cancel Selection' : 'Select Albums' }}
                     </button>
@@ -21,6 +21,59 @@
                         <span>+</span>
                         <span>Create Album</span>
                     </button>
+                </div>
+            </div>
+
+            <div v-if="!loading && !error && albums.length > 0"
+                class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4 mb-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input v-model="searchQuery" type="text"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Search albums by name, description, owner" />
+                    <input v-model="tagQuery" type="text"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Search tags" />
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button @click="activeTag = ''" class="px-3 py-1 rounded-full border text-xs transition" :class="
+                        activeTag === ''
+                            ? 'bg-purple-500/30 text-white border-purple-400/50'
+                            : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10'
+                    ">
+                        All tags
+                    </button>
+                    <button v-for="tag in visibleTags" :key="`filter-${tag}`" @click="activeTag = tag"
+                        class="px-3 py-1 rounded-full border text-xs transition" :class="
+                            activeTag === tag
+                                ? 'bg-purple-500/30 text-white border-purple-400/50'
+                                : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10'
+                        ">
+                        #{{ tag }}
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="text-sm text-purple-200">
+                        Showing {{ filteredAlbums.length }} of {{ albums.length }} albums
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button @click="albumViewMode = 'grid'" class="px-3 py-2 rounded-lg text-sm transition" :class="
+                            albumViewMode === 'grid'
+                                ? 'bg-purple-500/30 text-white border border-purple-400/50'
+                                : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10'
+                        ">Grid</button>
+                        <button @click="albumViewMode = 'timeline'" class="px-3 py-2 rounded-lg text-sm transition"
+                            :class="
+                                albumViewMode === 'timeline'
+                                    ? 'bg-purple-500/30 text-white border border-purple-400/50'
+                                    : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10'
+                            ">Timeline</button>
+                        <button v-if="searchQuery || tagQuery || activeTag" @click="clearAlbumFilters"
+                            class="px-3 py-2 bg-white/5 hover:bg-white/10 text-white/80 rounded-lg text-sm transition">
+                            Clear
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -45,12 +98,22 @@
                 </button>
             </div>
 
+            <div v-else-if="filteredAlbums.length === 0" class="text-center py-12">
+                <div class="text-6xl mb-4">🔎</div>
+                <h3 class="text-2xl font-bold text-white mb-2">No matching albums</h3>
+                <p class="text-purple-200 mb-6">Try a different search or clear filters</p>
+                <button @click="clearAlbumFilters"
+                    class="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition">
+                    Clear Filters
+                </button>
+            </div>
+
             <!-- Albums Grid -->
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div v-for="album in albums" :key="album.id"
+            <div v-else-if="albumViewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div v-for="album in filteredAlbums" :key="album.id"
                     class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:border-purple-400/50 transition cursor-pointer group relative"
                     :class="{ 'ring-2 ring-purple-500': selectedAlbumIds.has(album.id) }"
-                    @click="handleAlbumClick(album)"
+                    @click="handleAlbumClick(album, $event)"
                     @contextmenu.prevent="handleAlbumRightClick(album)">
 
                     <!-- Selection Checkbox -->
@@ -106,6 +169,42 @@
                     </div>
                 </div>
             </div>
+
+            <div v-else class="space-y-6">
+                <div v-for="group in timelineGroups" :key="group.key" class="space-y-3">
+                    <div class="sticky top-2 z-10">
+                        <span
+                            class="inline-flex items-center px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-sm text-white">
+                            {{ group.label }}
+                        </span>
+                    </div>
+                    <div class="space-y-3">
+                        <div v-for="album in group.albums" :key="`${group.key}-${album.id}`"
+                            class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4 hover:border-purple-400/50 transition cursor-pointer"
+                            :class="{ 'ring-2 ring-purple-500': selectedAlbumIds.has(album.id) }"
+                            @click="handleAlbumClick(album, $event)" @contextmenu.prevent="handleAlbumRightClick(album)">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="min-w-0">
+                                    <h3 class="text-xl font-bold text-white truncate">{{ album.name }}</h3>
+                                    <p v-if="album.description" class="text-purple-200 text-sm mt-1 line-clamp-2">{{
+                                        album.description }}</p>
+                                    <div v-if="album.tags && album.tags.length > 0" class="flex flex-wrap gap-1 mt-2">
+                                        <span v-for="tag in album.tags" :key="`${album.id}-${group.key}-${tag}`"
+                                            class="px-2 py-0.5 rounded-full bg-white/10 text-white/80 text-xs border border-white/10">
+                                            #{{ tag }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-2 text-xs text-purple-400">by {{ album.owner.name }}</div>
+                                </div>
+                                <div class="text-right text-sm text-purple-300 shrink-0">
+                                    <div>{{ album._count.photos }} photos</div>
+                                    <div v-if="album.eventDate">{{ formatDate(album.eventDate) }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Selection Action Bar -->
@@ -120,6 +219,16 @@
             </button>
 
             <div class="h-6 w-px bg-white/20"></div>
+
+            <button @click="openBatchEditModal"
+                class="flex items-center gap-2 text-white hover:text-purple-300 transition whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span>Batch Edit</span>
+            </button>
 
             <button @click="showShareGroupModal = true"
                 class="flex items-center gap-2 text-white hover:text-purple-300 transition whitespace-nowrap">
@@ -300,6 +409,61 @@
                 </button>
             </div>
         </div>
+
+        <div v-if="showBatchEditModal"
+            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            @click.self="showBatchEditModal = false">
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-md w-full">
+                <h3 class="text-2xl font-bold text-white mb-2">Batch Edit Albums</h3>
+                <p class="text-sm text-purple-200 mb-4">Apply changes to {{ selectedAlbumIds.size }} selected albums</p>
+
+                <form @submit.prevent="handleBatchEditAlbums" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Visibility</label>
+                        <select v-model="batchEdit.visibilityAction"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="keep">Keep unchanged</option>
+                            <option value="public">Make public</option>
+                            <option value="private">Make private</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Tag Action</label>
+                        <select v-model="batchEdit.tagAction"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="none">Keep unchanged</option>
+                            <option value="replace">Replace tags</option>
+                            <option value="add">Add tags</option>
+                            <option value="remove">Remove tags</option>
+                        </select>
+                    </div>
+
+                    <div v-if="batchEdit.tagAction !== 'none'">
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Tags</label>
+                        <input v-model="batchEdit.tags" type="text"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="wedding, portrait, night" />
+                        <p class="text-xs text-white/50 mt-1">Separate tags with commas</p>
+                    </div>
+
+                    <div v-if="batchEditError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
+                        <p class="text-red-200 text-sm">{{ batchEditError }}</p>
+                    </div>
+
+                    <div class="flex space-x-3">
+                        <button type="button" @click="showBatchEditModal = false"
+                            class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                            Cancel
+                        </button>
+                        <button type="submit" :disabled="batchEditing"
+                            class="flex-1 px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                            {{ batchEditing ? 'Applying...' : 'Apply' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -312,6 +476,8 @@ interface Album {
     description: string | null
     tags: string[]
     eventDate: number | null
+    createdAt?: number
+    updatedAt?: number
     isPublic: boolean
     owner: {
         name: string | null
@@ -354,6 +520,97 @@ const newShareGroup = ref({
 const creatingShareGroup = ref(false)
 const shareGroupError = ref('')
 const createdShareLink = ref<string | null>(null)
+const showBatchEditModal = ref(false)
+const batchEdit = ref({
+    visibilityAction: 'keep' as 'keep' | 'public' | 'private',
+    tagAction: 'none' as 'none' | 'replace' | 'add' | 'remove',
+    tags: '',
+})
+const batchEditing = ref(false)
+const batchEditError = ref('')
+const searchQuery = ref('')
+const tagQuery = ref('')
+const activeTag = ref('')
+const albumViewMode = ref<'grid' | 'timeline'>('grid')
+
+const allTags = computed(() => {
+    const tags = albums.value.flatMap(album => album.tags || [])
+    return Array.from(new Set(tags)).sort((a, b) => a.localeCompare(b))
+})
+
+const visibleTags = computed(() => {
+    const query = tagQuery.value.trim().toLowerCase()
+    if (!query) return allTags.value
+    return allTags.value.filter(tag => tag.toLowerCase().includes(query))
+})
+
+const filteredAlbums = computed(() => {
+    const search = searchQuery.value.trim().toLowerCase()
+    const selectedTag = activeTag.value.trim().toLowerCase()
+    const tagSearch = tagQuery.value.trim().toLowerCase()
+
+    return albums.value.filter((album) => {
+        const name = album.name?.toLowerCase() || ''
+        const description = album.description?.toLowerCase() || ''
+        const owner = album.owner.name?.toLowerCase() || ''
+        const tags = (album.tags || []).map(tag => tag.toLowerCase())
+
+        const matchesSearch = !search ||
+            name.includes(search) ||
+            description.includes(search) ||
+            owner.includes(search) ||
+            tags.some(tag => tag.includes(search))
+
+        const matchesSelectedTag = !selectedTag || tags.includes(selectedTag)
+        const matchesTagSearch = !tagSearch || tags.some(tag => tag.includes(tagSearch))
+
+        return matchesSearch && matchesSelectedTag && matchesTagSearch
+    })
+})
+
+const timelineGroups = computed(() => {
+    const groups = new Map<string, Album[]>()
+
+    filteredAlbums.value.forEach((album) => {
+        const timestamp = album.eventDate || album.createdAt || album.updatedAt || 0
+        const date = timestamp > 0 ? new Date(timestamp * 1000) : null
+        const key = !date || isNaN(date.getTime())
+            ? 'Unknown Date'
+            : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+
+        if (!groups.has(key)) {
+            groups.set(key, [])
+        }
+        groups.get(key)?.push(album)
+    })
+
+    return Array.from(groups.entries())
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .map(([key, groupedAlbums]) => {
+            const label = key === 'Unknown Date'
+                ? key
+                : new Date(`${key}-01T00:00:00`).toLocaleDateString('en-US', {
+                    month: 'long',
+                    year: 'numeric'
+                })
+
+            return {
+                key,
+                label,
+                albums: groupedAlbums.sort((a, b) => {
+                    const aTs = a.eventDate || a.createdAt || a.updatedAt || 0
+                    const bTs = b.eventDate || b.createdAt || b.updatedAt || 0
+                    return bTs - aTs
+                })
+            }
+        })
+})
+
+const clearAlbumFilters = () => {
+    searchQuery.value = ''
+    tagQuery.value = ''
+    activeTag.value = ''
+}
 
 const parseTagsInput = (value: string): string[] => {
     const tags = value
@@ -394,8 +651,14 @@ const toggleSelectionMode = () => {
     }
 }
 
-const handleAlbumClick = (album: Album) => {
-    if (isSelectionMode.value) {
+const handleAlbumClick = (album: Album, event?: MouseEvent) => {
+    const isQuickSelect = !!event && (event.metaKey || event.ctrlKey)
+
+    if (isQuickSelect) {
+        isSelectionMode.value = true
+    }
+
+    if (isSelectionMode.value || isQuickSelect) {
         if (selectedAlbumIds.value.has(album.id)) {
             selectedAlbumIds.value.delete(album.id)
         } else {
@@ -413,6 +676,57 @@ const handleAlbumRightClick = (album: Album) => {
 
 const clearSelection = () => {
     selectedAlbumIds.value.clear()
+}
+
+const openBatchEditModal = () => {
+    batchEditError.value = ''
+    showBatchEditModal.value = true
+}
+
+const handleBatchEditAlbums = async () => {
+    batchEditing.value = true
+    batchEditError.value = ''
+
+    try {
+        const albumIds = Array.from(selectedAlbumIds.value)
+        const tags = parseTagsInput(batchEdit.value.tags)
+
+        if (albumIds.length === 0) {
+            throw new Error('Select at least one album')
+        }
+
+        if (batchEdit.value.tagAction !== 'none' && tags.length === 0) {
+            throw new Error('Enter at least one tag for the selected tag action')
+        }
+
+        if (batchEdit.value.visibilityAction === 'keep' && batchEdit.value.tagAction === 'none') {
+            throw new Error('Choose at least one change to apply')
+        }
+
+        await $fetch('/api/v1/album/batch', {
+            method: 'PATCH',
+            body: {
+                albumIds,
+                visibilityAction: batchEdit.value.visibilityAction,
+                tagAction: batchEdit.value.tagAction,
+                tags,
+            }
+        })
+
+        showBatchEditModal.value = false
+        batchEdit.value = {
+            visibilityAction: 'keep',
+            tagAction: 'none',
+            tags: '',
+        }
+        clearSelection()
+        isSelectionMode.value = false
+        await fetchAlbums()
+    } catch (err: any) {
+        batchEditError.value = err?.data?.statusMessage || err.message || 'Failed to batch edit albums'
+    } finally {
+        batchEditing.value = false
+    }
 }
 
 // Create album
