@@ -42,6 +42,13 @@
                     <div class="mt-4 text-white/60">
                         Collection by {{ ownerName }}
                     </div>
+                    <button @click="viewAllGroupPhotos"
+                        class="mt-6 px-6 py-2 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition inline-flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
+                        </svg>
+                        View All Pictures
+                    </button>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -79,6 +86,78 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- All Group Photos View -->
+            <div v-else-if="viewMode === 'all-group-photos'">
+                <!-- Header -->
+                <div
+                    class="pt-4 sm:pt-0 mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="text-left md:text-left">
+                        <div class="mb-2">
+                            <button @click="viewMode = 'group'"
+                                class="text-purple-300 hover:text-white flex items-center gap-1 text-sm bg-white/5 px-3 py-1 rounded-full transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                Back to {{ groupTitle }}
+                            </button>
+                        </div>
+                        <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">All Pictures</h1>
+                        <div class="text-purple-200 text-base sm:text-base">
+                            <span v-if="groupDescription" class="text-white/60">{{ groupDescription }}</span>
+                        </div>
+                    </div>
+
+                    <button @click="downloadAllGroupPhotos" :disabled="downloading"
+                        class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap">
+                        <span>Download All</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Loading Photos State -->
+                <div v-if="loadingPhotos && photos.length === 0" class="text-center py-12">
+                    <div class="animate-pulse text-purple-300 text-lg sm:text-xl">Loading photos...</div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else-if="photos.length === 0"
+                    class="text-center py-12 bg-white/5 rounded-xl border border-white/10">
+                    <div class="text-5xl sm:text-6xl mb-4">📷</div>
+                    <h3 class="text-lg sm:text-xl font-bold text-white mb-2">No photos yet</h3>
+                </div>
+
+                <!-- Photo Grid -->
+                <div v-else-if="picturesLayout" ref="containerRef" class="relative mx-auto"
+                    :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
+                    <div v-for="(photo, index) in photos" :key="photo.id" @click="openPhotoViewer(index)"
+                        class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 hover:border-purple-400/50 transition-all hover:-translate-y-1 active:scale-95 group"
+                        :style="{
+                            top: `${picturesLayout.getPosition(index).top}px`,
+                            left: `${picturesLayout.getPosition(index).left}px`,
+                            width: `${picturesLayout.getPosition(index).width}px`,
+                            height: `${picturesLayout.getPosition(index).height}px`,
+                        }">
+                        <img v-if="photo.blurhash"
+                            :src="getBlurhashUrl(photo.blurhash, photo.width, photo.height) || ''"
+                            class="absolute inset-0 w-full h-full object-cover" />
+                        <img :src="buildAssetUrl(`/api/assets/thumb/${photo.id}`)" :alt="photo.filename" loading="lazy"
+                            class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
+                    </div>
+                </div>
+
+                <!-- Infinite Scroll Sentinel -->
+                <div ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
+                    <div v-if="loadingMore" class="animate-pulse text-purple-300 text-sm sm:text-base">Loading more
+                        photos...</div>
                 </div>
             </div>
 
@@ -284,7 +363,7 @@ const isAuthenticated = ref(false)
 const showMetadata = ref(true)
 
 // View Mode
-const viewMode = ref<'album' | 'group'>('album')
+const viewMode = ref<'album' | 'group' | 'all-group-photos'>('album')
 const shareType = ref<'album' | 'group' | 'view' | 'upload'>('view')
 
 // Group Data
@@ -300,6 +379,7 @@ const description = ref('')
 const eventDate = ref<number | null>(null)
 
 const pageTitle = computed(() => {
+    if (viewMode.value === 'all-group-photos') return `All Pictures from ${groupTitle.value}`
     return viewMode.value === 'group' ? groupTitle.value : albumName.value
 })
 
@@ -377,6 +457,66 @@ const downloadAll = async () => {
         saveAs(content, `${albumName.value || 'album'}.zip`)
     } catch (err) {
         console.error('Download all error:', err)
+        alert('Failed to download photos')
+    } finally {
+        downloading.value = false
+        downloadProgress.value = { current: 0, total: 0 }
+    }
+}
+
+// Download all photos from all group albums
+const downloadAllGroupPhotos = async () => {
+    if (downloading.value) return
+    downloading.value = true
+    downloadProgress.value = { current: 0, total: 0 }
+
+    try {
+        // Collect all photos to download
+        const photosToDownload: any[] = []
+
+        for (const album of groupAlbums.value) {
+            try {
+                const response = await $fetch<{ success: boolean; data: any[] }>(`/api/v1/album/${album.id}/download-info`)
+                if (response.data && Array.isArray(response.data)) {
+                    photosToDownload.push(...response.data.map((p: any) => ({ ...p, albumName: album.name })))
+                }
+            } catch (err) {
+                console.error(`Failed to get download info for album ${album.id}:`, err)
+            }
+        }
+
+        if (photosToDownload.length === 0) {
+            alert('No photos to download')
+            return
+        }
+
+        downloadProgress.value.total = photosToDownload.length
+
+        const zip = new JSZip()
+        const groupFolder = zip.folder(groupTitle.value || 'group')
+
+        // Download each photo
+        const promises = photosToDownload.map(async (photo) => {
+            try {
+                const res = await fetch(`/api/assets/full/${photo.id}`)
+                const blob = await res.blob()
+                
+                // Organize by album folder
+                const albumFolder = groupFolder?.folder(photo.albumName || 'uncategorized')
+                albumFolder?.file(photo.originalName, blob)
+                downloadProgress.value.current++
+            } catch (err) {
+                console.error(`Failed to download ${photo.originalName}`, err)
+            }
+        })
+
+        await Promise.all(promises)
+
+        // Generate zip
+        const content = await zip.generateAsync({ type: 'blob' })
+        saveAs(content, `${groupTitle.value || 'group'}-photos.zip`)
+    } catch (err) {
+        console.error('Download all group photos error:', err)
         alert('Failed to download photos')
     } finally {
         downloading.value = false
@@ -519,6 +659,53 @@ const openAlbum = async (album: any) => {
     viewMode.value = 'album'
 
     await fetchPhotos()
+}
+
+// View all photos from all albums in group
+const viewAllGroupPhotos = async () => {
+    // Reset photos
+    photos.value = []
+    page.value = 1
+    hasMore.value = false
+
+    viewMode.value = 'all-group-photos'
+
+    await fetchAllGroupPhotos()
+}
+
+// Fetch all photos from all albums in group
+const fetchAllGroupPhotos = async () => {
+    try {
+        loadingPhotos.value = page.value === 1
+        loadingMore.value = page.value > 1
+
+        // Fetch photos from all albums in the group
+        const allPhotos: Photo[] = []
+        const photosMap = new Map<string, Photo>() // To avoid duplicates
+
+        for (const album of groupAlbums.value) {
+            try {
+                const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/album/${album.id}?page=1&limit=1000`)
+                if (response.data.photos) {
+                    response.data.photos.forEach((photo: Photo) => {
+                        if (!photosMap.has(photo.id)) {
+                            photosMap.set(photo.id, photo)
+                            allPhotos.push(photo)
+                        }
+                    })
+                }
+            } catch (err) {
+                console.error(`Failed to load photos from album ${album.id}:`, err)
+            }
+        }
+
+        photos.value = allPhotos
+        hasMore.value = false // Since we fetch all at once
+    } catch (err) {
+        console.error('Failed to load all group photos:', err)
+    } finally {
+        loadingPhotos.value = false
+    }
 }
 
 // Fetch photos after access

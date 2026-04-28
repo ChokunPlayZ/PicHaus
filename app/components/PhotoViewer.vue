@@ -248,6 +248,10 @@
                             <span class="text-white/50">Size</span>
                             <span class="text-white md:text-right">{{ formatSize(photo.size) }}</span>
                         </div>
+                        <div v-if="photo.width && photo.height" class="flex justify-between md:grid md:grid-cols-2 gap-2 text-xs">
+                            <span class="text-white/50">Dimensions</span>
+                            <span class="text-white md:text-right">{{ photo.width }} × {{ photo.height }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
