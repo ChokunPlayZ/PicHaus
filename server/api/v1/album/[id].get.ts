@@ -129,6 +129,10 @@ export default defineEventHandler(async (event) => {
         // Build where clause with filters
         const whereClause: any = { albumId: id }
 
+        if (album.coverPhotoId) {
+            whereClause.id = { not: album.coverPhotoId }
+        }
+
         if (camera) {
             whereClause.cameraModel = { contains: camera, mode: 'insensitive' }
         }
@@ -205,6 +209,10 @@ export default defineEventHandler(async (event) => {
             }
         }
 
+        const totalPhotos = await prisma.photo.count({
+            where: whereClause,
+        })
+
         return {
             success: true,
             data: {
@@ -225,8 +233,8 @@ export default defineEventHandler(async (event) => {
                 pagination: {
                     page,
                     limit,
-                    total: album._count.photos,
-                    hasMore: skip + photos.length < album._count.photos
+                    total: totalPhotos,
+                    hasMore: skip + photos.length < totalPhotos
                 }
             },
         }

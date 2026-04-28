@@ -437,7 +437,7 @@
 
             <div v-if="photoCropImage" class="space-y-4">
                 <!-- Instructions -->
-                <p class="text-sm text-purple-200">Click and drag to select the crop area</p>
+                <p class="text-sm text-purple-200">Click and drag to select the crop area (locked to 16:9)</p>
 
                 <!-- Crop Preview -->
                 <div class="relative bg-gray-900 rounded-lg overflow-hidden border border-white/10" style="max-height: 400px;">
@@ -1042,6 +1042,19 @@ const cropArea = ref({ x: 0, y: 0, width: 0, height: 0 })
 const isDragging = ref(false)
 const dragStart = ref({ x: 0, y: 0 })
 const croppingCover = ref(false)
+const COVER_CROP_RATIO = 16 / 9
+
+const clampCropToImage = (x: number, y: number, width: number, height: number, imageWidth: number, imageHeight: number) => {
+    const clampedWidth = Math.min(width, imageWidth)
+    const clampedHeight = Math.min(height, imageHeight)
+
+    return {
+        x: Math.max(0, Math.min(x, imageWidth - clampedWidth)),
+        y: Math.max(0, Math.min(y, imageHeight - clampedHeight)),
+        width: clampedWidth,
+        height: clampedHeight,
+    }
+}
 
 const copied = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -1720,16 +1733,25 @@ const deletePhoto = async (id: string) => {
 const initializeCrop = async () => {
     if (!photoCropImage.value || !cropImageRef.value) return
     
-    // Initialize crop area to full image
+    // Initialize to a centered 16:9 area that fits inside the image
     const img = cropImageRef.value
     if (img.complete) {
-        const containerWidth = img.parentElement?.offsetWidth || 600
-        const ratio = img.naturalHeight / img.naturalWidth
+        const imageWidth = img.naturalWidth
+        const imageHeight = img.naturalHeight
+
+        let width = imageWidth
+        let height = width / COVER_CROP_RATIO
+
+        if (height > imageHeight) {
+            height = imageHeight
+            width = height * COVER_CROP_RATIO
+        }
+
         cropArea.value = {
-            x: 0,
-            y: 0,
-            width: img.naturalWidth,
-            height: img.naturalHeight
+            x: (imageWidth - width) / 2,
+            y: (imageHeight - height) / 2,
+            width,
+            height,
         }
         drawCropOverlay()
     }
@@ -1790,16 +1812,36 @@ const handleCanvasMouseMove = (e: MouseEvent) => {
     
     const currentX = e.clientX - canvas.getBoundingClientRect().left
     const currentY = e.clientY - canvas.getBoundingClientRect().top
-    
-    // Calculate crop area in image coordinates
-    const x = Math.min(dragStart.value.x, currentX) / scale
-    const y = Math.min(dragStart.value.y, currentY) / scale
-    const width = Math.abs(currentX - dragStart.value.x) / scale
-    const height = Math.abs(currentY - dragStart.value.y) / scale
-    
+
+    const deltaX = (currentX - dragStart.value.x) / scale
+    const deltaY = (currentY - dragStart.value.y) / scale
+
+    const absDeltaX = Math.abs(deltaX)
+    const absDeltaY = Math.abs(deltaY)
+
+    // Keep selection locked to 16:9 and inside dragged bounds.
+    const widthFromHeight = absDeltaY * COVER_CROP_RATIO
+    const width = Math.min(absDeltaX, widthFromHeight)
+    const height = width / COVER_CROP_RATIO
+
+    let x = dragStart.value.x / scale
+    let y = dragStart.value.y / scale
+
+    if (deltaX < 0) x -= width
+    if (deltaY < 0) y -= height
+
+    const clampedCrop = clampCropToImage(
+        x,
+        y,
+        width,
+        height,
+        img.naturalWidth,
+        img.naturalHeight
+    )
+
     // Ensure minimum crop size
-    if (width > 50 && height > 50) {
-        cropArea.value = { x, y, width, height }
+    if (clampedCrop.width > 50 && clampedCrop.height > 50) {
+        cropArea.value = clampedCrop
         drawCropOverlay()
     }
 }
