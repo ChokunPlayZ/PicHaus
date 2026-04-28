@@ -100,10 +100,9 @@ export default defineEventHandler(async (event) => {
         // Generate a unique filename for the cover
         const fileHash = crypto.randomBytes(8).toString('hex')
         const coverFilename = `cover_${id}_${fileHash}.jpg`
-        const coverPath = `storage/uploads/photos/${coverFilename}`
 
         // Save the file
-        await saveFile(processedBuffer, `cover_${id}_${fileHash}.jpg`, 'photos')
+        const coverPath = await saveFile(processedBuffer, coverFilename, 'photos')
 
         // Get image dimensions and blurhash
         let metadata
