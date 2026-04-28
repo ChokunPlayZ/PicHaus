@@ -427,6 +427,60 @@
         </div>
     </div>
 
+    <!-- Crop Album Cover Modal -->
+    <div v-if="showCropModal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        @click.self="cancelCrop">
+        <div
+            class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 class="text-2xl font-bold text-white mb-4">Crop Album Cover</h3>
+
+            <div v-if="photoCropImage" class="space-y-4">
+                <!-- Instructions -->
+                <p class="text-sm text-purple-200">Click and drag to select the crop area</p>
+
+                <!-- Crop Preview -->
+                <div class="relative bg-gray-900 rounded-lg overflow-hidden border border-white/10" style="max-height: 400px;">
+                    <div class="relative inline-block w-full">
+                        <img 
+                            ref="cropImageRef"
+                            :src="buildAssetUrl(`/api/assets/full/${photoCropImage.id}`)"
+                            @load="initializeCrop"
+                            class="w-full h-auto block"
+                            style="max-height: 400px; object-fit: contain;"
+                        />
+                        <canvas
+                            ref="cropCanvasRef"
+                            @mousedown="handleCanvasMouseDown"
+                            @mousemove="handleCanvasMouseMove"
+                            @mouseup="handleCanvasMouseUp"
+                            @mouseleave="handleCanvasMouseUp"
+                            class="absolute inset-0 cursor-crosshair"
+                            style="width: 100%; height: auto;"
+                        ></canvas>
+                    </div>
+                </div>
+
+                <!-- Crop Dimensions Info -->
+                <div class="text-xs text-white/60 space-y-1">
+                    <div>Selected: {{ Math.round(cropArea.width) }} × {{ Math.round(cropArea.height) }} px</div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex space-x-3">
+                    <button type="button" @click="cancelCrop"
+                        class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button type="button" @click="confirmCrop" :disabled="croppingCover"
+                        class="flex-1 px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                        {{ croppingCover ? 'Setting...' : 'Set as Cover' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Album Modal -->
     <div v-if="showEditModal"
         class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
@@ -979,6 +1033,15 @@ const editPhotoForm = ref({
 })
 const updatingPhoto = ref(false)
 const editPhotoError = ref('')
+
+const showCropModal = ref(false)
+const photoCropImage = ref<Photo | null>(null)
+const cropCanvasRef = ref<HTMLCanvasElement | null>(null)
+const cropImageRef = ref<HTMLImageElement | null>(null)
+const cropArea = ref({ x: 0, y: 0, width: 0, height: 0 })
+const isDragging = ref(false)
+const dragStart = ref({ x: 0, y: 0 })
+const croppingCover = ref(false)
 
 const copied = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -1622,16 +1685,8 @@ const copyLink = async (link: ShareLink) => {
 
 // Single Photo Actions
 const setAsCover = async (photo: Photo) => {
-    try {
-        await $fetch(`/api/v1/album/${albumId}/cover`, {
-            method: 'PATCH',
-            body: { photoId: photo.id }
-        })
-        // Feedback
-        showToast('Album cover updated!')
-    } catch (err: any) {
-        showToast(err.data?.statusMessage || 'Failed to update album cover', 'error')
-    }
+    photoCropImage.value = photo
+    showCropModal.value = true
 }
 
 const downloadPhoto = async (photo: Photo) => {
@@ -1659,6 +1714,170 @@ const deletePhoto = async (id: string) => {
     } catch (err: any) {
         showToast(err.data?.statusMessage || 'Failed to delete photo', 'error')
     }
+}
+
+// Crop cover image
+const initializeCrop = async () => {
+    if (!photoCropImage.value || !cropImageRef.value) return
+    
+    // Initialize crop area to full image
+    const img = cropImageRef.value
+    if (img.complete) {
+        const containerWidth = img.parentElement?.offsetWidth || 600
+        const ratio = img.naturalHeight / img.naturalWidth
+        cropArea.value = {
+            x: 0,
+            y: 0,
+            width: img.naturalWidth,
+            height: img.naturalHeight
+        }
+        drawCropOverlay()
+    }
+}
+
+const drawCropOverlay = () => {
+    if (!cropImageRef.value || !cropCanvasRef.value) return
+    
+    const canvas = cropCanvasRef.value
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    const img = cropImageRef.value
+    const containerWidth = cropImageRef.value.parentElement?.offsetWidth || 600
+    const scale = containerWidth / img.naturalWidth
+    
+    // Clear canvas
+    canvas.width = containerWidth
+    canvas.height = img.naturalHeight * scale
+    
+    // Draw image
+    ctx.drawImage(img, 0, 0, containerWidth, canvas.height)
+    
+    // Draw semi-transparent overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    
+    // Draw crop area (clear it)
+    const scaledX = cropArea.value.x * scale
+    const scaledY = cropArea.value.y * scale
+    const scaledW = cropArea.value.width * scale
+    const scaledH = cropArea.value.height * scale
+    
+    ctx.clearRect(scaledX, scaledY, scaledW, scaledH)
+    
+    // Draw border
+    ctx.strokeStyle = '#f9d4e0'
+    ctx.lineWidth = 2
+    ctx.strokeRect(scaledX, scaledY, scaledW, scaledH)
+}
+
+const handleCanvasMouseDown = (e: MouseEvent) => {
+    if (!cropCanvasRef.value) return
+    isDragging.value = true
+    dragStart.value = {
+        x: e.clientX - cropCanvasRef.value.getBoundingClientRect().left,
+        y: e.clientY - cropCanvasRef.value.getBoundingClientRect().top
+    }
+}
+
+const handleCanvasMouseMove = (e: MouseEvent) => {
+    if (!isDragging.value || !cropCanvasRef.value || !cropImageRef.value) return
+    
+    const canvas = cropCanvasRef.value
+    const img = cropImageRef.value
+    const containerWidth = img.parentElement?.offsetWidth || 600
+    const scale = containerWidth / img.naturalWidth
+    
+    const currentX = e.clientX - canvas.getBoundingClientRect().left
+    const currentY = e.clientY - canvas.getBoundingClientRect().top
+    
+    // Calculate crop area in image coordinates
+    const x = Math.min(dragStart.value.x, currentX) / scale
+    const y = Math.min(dragStart.value.y, currentY) / scale
+    const width = Math.abs(currentX - dragStart.value.x) / scale
+    const height = Math.abs(currentY - dragStart.value.y) / scale
+    
+    // Ensure minimum crop size
+    if (width > 50 && height > 50) {
+        cropArea.value = { x, y, width, height }
+        drawCropOverlay()
+    }
+}
+
+const handleCanvasMouseUp = () => {
+    isDragging.value = false
+}
+
+const confirmCrop = async () => {
+    if (!photoCropImage.value || !cropImageRef.value) return
+    
+    croppingCover.value = true
+    try {
+        // Convert crop area to canvas coordinates for cropping
+        const img = cropImageRef.value
+        const containerWidth = img.parentElement?.offsetWidth || 600
+        const scale = containerWidth / img.naturalWidth
+        
+        // Create a new image element to draw the original (not scaled) image
+        const canvas = document.createElement('canvas')
+        canvas.width = cropArea.value.width
+        canvas.height = cropArea.value.height
+        
+        const ctx = canvas.getContext('2d')
+        if (!ctx) throw new Error('Failed to get canvas context')
+        
+        // Draw the cropped portion
+        ctx.drawImage(
+            img,
+            cropArea.value.x,
+            cropArea.value.y,
+            cropArea.value.width,
+            cropArea.value.height,
+            0,
+            0,
+            cropArea.value.width,
+            cropArea.value.height
+        )
+        
+        // Convert canvas to blob
+        canvas.toBlob(async (blob) => {
+            if (!blob) throw new Error('Failed to create blob')
+            
+            try {
+                // Upload cropped image as cover
+                const formData = new FormData()
+                formData.append('file', blob, 'cover.jpg')
+                formData.append('cropData', JSON.stringify(cropArea.value))
+                
+                const response = await fetch(`/api/v1/album/${albumId}/cover-crop`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    },
+                    body: formData
+                })
+                
+                if (!response.ok) throw new Error('Failed to set cover')
+                
+                showCropModal.value = false
+                showToast('Album cover updated!')
+                await fetchAlbum()
+            } catch (err: any) {
+                showToast(err.message || 'Failed to set album cover', 'error')
+            } finally {
+                croppingCover.value = false
+            }
+        }, 'image/jpeg', 0.95)
+    } catch (err: any) {
+        console.error('Crop error:', err)
+        showToast(err.message || 'Failed to crop image', 'error')
+        croppingCover.value = false
+    }
+}
+
+const cancelCrop = () => {
+    showCropModal.value = false
+    photoCropImage.value = null
 }
 
 const openEditPhotoModalFromMenu = (photo: Photo) => {
