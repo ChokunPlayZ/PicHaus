@@ -103,15 +103,14 @@ export default defineEventHandler(async (event) => {
         const coverPath = `storage/uploads/photos/${coverFilename}`
 
         // Save the file
-        await saveFile(coverPath, processedBuffer)
+        await saveFile(processedBuffer, `cover_${id}_${fileHash}.jpg`, 'photos')
 
         // Get image dimensions and blurhash
         let metadata
         let blurhash = ''
         try {
             metadata = await sharp(processedBuffer).metadata()
-            const { blurhash: hash } = await generateBlurhash(processedBuffer)
-            blurhash = hash
+            blurhash = await generateBlurhash(processedBuffer)
         } catch (err) {
             console.error('Error generating metadata:', err)
         }
@@ -121,15 +120,19 @@ export default defineEventHandler(async (event) => {
             data: {
                 id: crypto.randomUUID(),
                 filename: coverFilename,
-                originalName: `${album.name}_cover.jpg`,
+                originalName: `${album.title}_cover.jpg`,
                 storagePath: coverPath,
+                thumbnailStoragePath: coverPath,
                 size: processedBuffer.length,
-                width: metadata?.width || null,
-                height: metadata?.height || null,
-                blurhash: blurhash || null,
+                width: metadata?.width || 1,
+                height: metadata?.height || 1,
+                blurhash: blurhash || 'U6PVP-Kh0ffQfQfQfQfQ',
+                mimeType: 'image/jpeg',
+                fileHash: '',
                 albumId: id,
                 uploaderId: user.id,
-                hash: '', // Cover photos don't need hash checking
+                createdAt: BigInt(Date.now()),
+                updatedAt: BigInt(Date.now()),
             },
         })
 
