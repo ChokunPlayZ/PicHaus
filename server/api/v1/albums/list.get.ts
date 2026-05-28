@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
             id: true,
             title: true,
             description: true,
+            tags: true,
             _count: {
                 select: { photos: true }
             },

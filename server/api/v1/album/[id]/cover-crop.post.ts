@@ -1,7 +1,7 @@
 import prisma from '../../../../utils/prisma'
 import { requireAuth } from '../../../../utils/auth'
 import sharp from 'sharp'
-import { saveFile, generateBlurhash, getAbsoluteFilePath } from '../../../../utils/upload'
+import { saveFile, generateBlurhash, deleteFile, calculateFileHash } from '../../../../utils/upload'
 import crypto from 'crypto'
 
 export default defineEventHandler(async (event) => {
@@ -80,12 +80,26 @@ export default defineEventHandler(async (event) => {
         let processedBuffer = buffer
 
         try {
-            // Process with sharp: convert to JPEG, resize to reasonable size, and generate blurhash
-            processedBuffer = await sharp(buffer)
+            let pipeline = sharp(buffer)
+
+            // Apply crop if valid coordinates were provided
+            if (cropData.width > 0 && cropData.height > 0) {
+                const imgMeta = await sharp(buffer).metadata()
+                const imgW = imgMeta.width || 0
+                const imgH = imgMeta.height || 0
+                const left = Math.max(0, Math.round(cropData.x))
+                const top = Math.max(0, Math.round(cropData.y))
+                const width = Math.min(Math.round(cropData.width), imgW - left)
+                const height = Math.min(Math.round(cropData.height), imgH - top)
+                if (width > 0 && height > 0) {
+                    pipeline = pipeline.extract({ left, top, width, height })
+                }
+            }
+
+            processedBuffer = await pipeline
                 .resize(2560, 2560, {
                     fit: 'inside',
                     withoutEnlargement: true,
-                    position: 'center'
                 })
                 .toFormat('jpeg', { quality: 90 })
                 .toBuffer()
@@ -127,7 +141,7 @@ export default defineEventHandler(async (event) => {
                 height: metadata?.height || 1,
                 blurhash: blurhash || 'U6PVP-Kh0ffQfQfQfQfQ',
                 mimeType: 'image/jpeg',
-                fileHash: '',
+                fileHash: calculateFileHash(processedBuffer),
                 albumId: id,
                 uploaderId: user.id,
                 createdAt: BigInt(Date.now()),
@@ -142,15 +156,17 @@ export default defineEventHandler(async (event) => {
             })
             
             if (oldCover) {
-                try {
-                    // Try to delete the file
-                    const filePath = getAbsoluteFilePath(oldCover.storagePath)
-                    // File deletion would happen here if we had a utility for it
-                } catch (err) {
+                // Delete old cover files from disk
+                await deleteFile(oldCover.storagePath).catch(err => {
                     console.error('Failed to delete old cover file:', err)
+                })
+                if (oldCover.thumbnailStoragePath && oldCover.thumbnailStoragePath !== oldCover.storagePath) {
+                    await deleteFile(oldCover.thumbnailStoragePath).catch(err => {
+                        console.error('Failed to delete old cover thumbnail:', err)
+                    })
                 }
-                
-                // Delete the photo record if it's only used as cover
+
+                // Delete the photo record
                 await prisma.photo.delete({
                     where: { id: oldCover.id }
                 }).catch(err => {

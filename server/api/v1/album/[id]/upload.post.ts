@@ -8,6 +8,7 @@ import {
     generateBlurhash,
     extractExifData,
     saveFile,
+    deleteFile,
     validateImageFile,
     generateUniqueFilename,
 } from '../../../../utils/upload'
@@ -16,6 +17,9 @@ import {
  * Upload photo to album
  */
 export default defineEventHandler(async (event) => {
+    let storagePath: string | null = null
+    let thumbnailStoragePath: string | null = null
+
     try {
         const albumId = getRouterParam(event, 'id')
 
@@ -160,11 +164,9 @@ export default defineEventHandler(async (event) => {
         // Generate ID upfront
         const photoId = crypto.randomUUID()
 
-        // Save files
-        // saveFile now returns the relative storage path
-        const storagePath = await saveFile(fileData.data, filename, 'photos')
-        const thumbnailStoragePath = await saveFile(thumbnailBuffer, thumbnailFilename, 'thumbnails')
-
+        // Save files — paths are hoisted so catch can clean up on DB failure
+        storagePath = await saveFile(fileData.data, filename, 'photos')
+        thumbnailStoragePath = await saveFile(thumbnailBuffer, thumbnailFilename, 'thumbnails')
 
         const now = getUnixTimestamp()
 
@@ -216,6 +218,10 @@ export default defineEventHandler(async (event) => {
         }
     } catch (error: any) {
         console.error('Error uploading photo:', error)
+
+        // Clean up files written to disk if the DB record was never created
+        if (storagePath) await deleteFile(storagePath).catch(() => {})
+        if (thumbnailStoragePath) await deleteFile(thumbnailStoragePath).catch(() => {})
 
         if (error.statusCode) {
             throw error

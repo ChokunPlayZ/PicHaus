@@ -142,6 +142,9 @@ model Photo {
 
   coverForAlbum Album[] @relation("AlbumCover")
 
+  @@index([albumId])
+  @@index([uploaderId])
+  @@index([fileHash])
   @@map("photos")
 }
 

@@ -189,11 +189,38 @@ export default defineEventHandler(async (event) => {
         if (!user) {
             if (email) {
                 // Find or create by email
-                user = await prisma.user.findUnique({
+                const existingUser = await prisma.user.findUnique({
                     where: { email },
                 })
 
-                if (!user) {
+                if (existingUser) {
+                    // Account already exists — authenticate it
+                    if (existingUser.passwordHash) {
+                        // Password-protected account: require password
+                        if (!body.accountPassword) {
+                            throw createError({
+                                statusCode: 401,
+                                statusMessage: 'This email is registered. Please provide your account password.',
+                            })
+                        }
+                        const valid = await argon2.verify(existingUser.passwordHash, body.accountPassword)
+                        if (!valid) {
+                            throw createError({
+                                statusCode: 401,
+                                statusMessage: 'Incorrect password',
+                            })
+                        }
+                    }
+                    // Authenticated (or no password on account — guest account from prior session)
+                    user = existingUser
+                    if (instagram && !user.instagram) {
+                        user = await prisma.user.update({
+                            where: { id: user.id },
+                            data: { instagram },
+                        })
+                    }
+                } else {
+                    // New email — create account
                     user = await prisma.user.create({
                         data: {
                             email,
@@ -202,12 +229,6 @@ export default defineEventHandler(async (event) => {
                             createdAt: getUnixTimestamp(),
                             updatedAt: getUnixTimestamp(),
                         },
-                    })
-                } else if (instagram && !user.instagram) {
-                    // Update IG if missing
-                    user = await prisma.user.update({
-                        where: { id: user.id },
-                        data: { instagram },
                     })
                 }
             } else {

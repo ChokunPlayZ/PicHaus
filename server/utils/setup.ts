@@ -19,6 +19,5 @@ export async function isAdmin(userId: string): Promise<boolean> {
         where: { id: userId },
     })
 
-    // First user is always admin, or check for admin flag if you add one
-    return user !== null
+    return user?.role === 'ADMIN'
 }

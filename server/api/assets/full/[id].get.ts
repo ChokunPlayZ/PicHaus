@@ -53,6 +53,32 @@ export default defineEventHandler(async (event) => {
                 }
             }
         }
+
+        // Check group-access cookies (set when accessing via a group share link)
+        if (!hasAccess) {
+            const cookies = parseCookies(event)
+            for (const [key, groupToken] of Object.entries(cookies)) {
+                if (!key.startsWith('group-access-')) continue
+                const groupId = key.slice('group-access-'.length)
+                const link = await prisma.shareLink.findUnique({
+                    where: { token: groupToken },
+                    include: {
+                        shareGroup: {
+                            include: { albums: { select: { id: true } } }
+                        }
+                    }
+                })
+                if (
+                    link &&
+                    link.shareGroupId === groupId &&
+                    (!link.expiresAt || link.expiresAt >= now) &&
+                    link.shareGroup?.albums.some(a => a.id === photo.album.id)
+                ) {
+                    hasAccess = true
+                    break
+                }
+            }
+        }
     }
 
     if (!hasAccess) {
@@ -89,7 +115,9 @@ export default defineEventHandler(async (event) => {
         setHeader(event, 'Content-Type', safeMimeType)
         setHeader(event, 'X-Content-Type-Options', 'nosniff')
         setHeader(event, 'Content-Length', stats.size)
-        setHeader(event, 'Cache-Control', 'public, max-age=31536000, immutable')
+        setHeader(event, 'Cache-Control', photo.album.isPublic
+            ? 'public, max-age=31536000, immutable'
+            : 'private, max-age=3600')
 
         return sendStream(event, createReadStream(filePath))
     } catch (error) {
