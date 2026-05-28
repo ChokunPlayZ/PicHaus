@@ -9,7 +9,7 @@
           class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-4">
           Data Insights
         </h1>
-        <p class="text-gray-400 max-w-2xl mx-auto text-lg">
+        <p class="text-[var(--text-muted)] max-w-2xl mx-auto text-lg">
           A deep dive into your photography habits and storage metrics.
         </p>
       </header>

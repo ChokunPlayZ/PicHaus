@@ -1,4 +1,3 @@
-```html
 <template>
     <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
         <NavBar title="All Photos" :showBack="true" backTo="/album" :solid="true" />
@@ -15,7 +14,7 @@
             </div>
 
             <!-- Filters -->
-            <div class="mb-8 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-4">
+            <div class="mb-8 bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-4">
                 <div class="flex flex-wrap items-center gap-4">
                     <span class="text-white font-medium">Filters:</span>
 

@@ -4,7 +4,7 @@
             <!-- Logo/Header -->
             <div class="text-center mb-8">
                 <h1 class="text-5xl font-bold text-white mb-2">📸 PicHaus</h1>
-                <p class="text-purple-200">Initial Setup</p>
+                <p class="text-[var(--text-secondary)]">Initial Setup</p>
             </div>
 
             <!-- Setup Card -->
@@ -14,7 +14,7 @@
                 <form @submit.prevent="handleSetup" class="space-y-4">
                     <!-- Name Field -->
                     <div>
-                        <label for="name" class="block text-sm font-medium text-purple-200 mb-2">
+                        <label for="name" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                             Name
                         </label>
                         <input id="name" v-model="form.name" type="text" required
@@ -24,7 +24,7 @@
 
                     <!-- Email Field -->
                     <div>
-                        <label for="email" class="block text-sm font-medium text-purple-200 mb-2">
+                        <label for="email" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                             Email
                         </label>
                         <input id="email" v-model="form.email" type="email" required
@@ -34,13 +34,13 @@
 
                     <!-- Password Field -->
                     <div>
-                        <label for="password" class="block text-sm font-medium text-purple-200 mb-2">
+                        <label for="password" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                             Password
                         </label>
                         <input id="password" v-model="form.password" type="password" required minlength="8"
                             class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                             placeholder="At least 8 characters" />
-                        <p class="text-xs text-purple-300 mt-1">Minimum 8 characters</p>
+                        <p class="text-xs text-[var(--text-tertiary)] mt-1">Minimum 8 characters</p>
                     </div>
 
                     <!-- Error Message -->
@@ -50,7 +50,7 @@
 
                     <!-- Submit Button -->
                     <button type="submit" :disabled="loading"
-                        class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                        class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
                         <span v-if="loading">Setting up...</span>
                         <span v-else>Complete Setup</span>
                     </button>
@@ -58,7 +58,7 @@
             </div>
 
             <!-- Footer -->
-            <p class="text-center text-purple-300 text-sm mt-6">
+            <p class="text-center text-[var(--text-tertiary)] text-sm mt-6">
                 This will create the first admin account for PicHaus
             </p>
         </div>

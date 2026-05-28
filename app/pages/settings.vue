@@ -4,31 +4,31 @@
         <NavBar title="Settings" :show-back="true" back-text="Back to Albums" back-to="/album" />
 
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-8">
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8">
                 <h2 class="text-2xl font-bold text-white mb-6">Profile Settings</h2>
 
                 <form @submit.prevent="handleSave" class="space-y-6">
                     <!-- Name -->
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Name</label>
+                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Name</label>
                         <input v-model="form.name" type="text" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition" />
                     </div>
 
                     <!-- Email -->
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Email</label>
+                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Email</label>
                         <input v-model="form.email" type="email" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition" />
                     </div>
 
                     <!-- Instagram -->
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Instagram (Optional)</label>
+                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Instagram (Optional)</label>
                         <div class="relative">
                             <span class="absolute left-4 top-3.5 text-white/40">@</span>
                             <input v-model="form.instagram" type="text"
-                                class="w-full pl-8 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                class="w-full pl-8 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                                 placeholder="username" />
                         </div>
                     </div>
@@ -39,9 +39,9 @@
 
                         <!-- New Password -->
                         <div>
-                            <label class="block text-sm font-medium text-purple-200 mb-2">New Password</label>
+                            <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">New Password</label>
                             <input v-model="form.password" type="password" minlength="6"
-                                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                                 placeholder="••••••••" />
                         </div>
                     </div>
@@ -57,7 +57,7 @@
                     <!-- Actions -->
                     <div class="flex justify-end pt-4">
                         <button type="submit" :disabled="saving"
-                            class="px-6 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                            class="px-6 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold rounded-lg transition disabled:opacity-50">
                             {{ saving ? 'Saving...' : 'Save Changes' }}
                         </button>
                     </div>

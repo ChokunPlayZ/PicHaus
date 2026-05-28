@@ -4,7 +4,7 @@
             <!-- Logo/Header -->
             <div class="text-center mb-8">
                 <h1 class="text-5xl font-bold text-white mb-2">📸 PicHaus</h1>
-                <p class="text-purple-200">Welcome back</p>
+                <p class="text-[var(--text-secondary)]">Welcome back</p>
             </div>
 
             <!-- Login Card -->
@@ -14,7 +14,7 @@
                 <form @submit.prevent="handleLogin" class="space-y-4">
                     <!-- Email Field -->
                     <div>
-                        <label for="email" class="block text-sm font-medium text-purple-200 mb-2">
+                        <label for="email" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                             Email
                         </label>
                         <input id="email" v-model="form.email" type="email" required
@@ -24,7 +24,7 @@
 
                     <!-- Password Field -->
                     <div>
-                        <label for="password" class="block text-sm font-medium text-purple-200 mb-2">
+                        <label for="password" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                             Password
                         </label>
                         <input id="password" v-model="form.password" type="password" required
@@ -39,7 +39,7 @@
 
                     <!-- Submit Button -->
                     <button type="submit" :disabled="loading"
-                        class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                        class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
                         <span v-if="loading">Signing in...</span>
                         <span v-else>Sign In</span>
                     </button>
@@ -47,7 +47,7 @@
             </div>
 
             <!-- Footer -->
-            <p class="text-center text-purple-300 text-sm mt-6">
+            <p class="text-center text-[var(--text-tertiary)] text-sm mt-6">
                 Collaborative photo albums for photography clubs
             </p>
         </div>

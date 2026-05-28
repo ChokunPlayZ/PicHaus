@@ -4,22 +4,22 @@
 
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Create New Token Section -->
-            <div class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6 mb-8">
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 mb-8">
                 <h2 class="text-2xl font-bold text-white mb-4">Create New API Token</h2>
-                <p class="text-purple-200 text-sm mb-6">
+                <p class="text-[var(--text-secondary)] text-sm mb-6">
                     API tokens allow external services to access your photos and albums.
                 </p>
 
                 <form @submit.prevent="handleCreateToken" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Token Name</label>
+                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Token Name</label>
                         <input v-model="newToken.name" type="text" required
                             class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                             placeholder="e.g., My Website Integration" />
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Permissions</label>
+                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Permissions</label>
                         <div class="flex flex-wrap gap-3">
                             <label class="flex items-center gap-2 text-white cursor-pointer">
                                 <input type="checkbox" v-model="newToken.scopes" value="photos:read"
@@ -39,7 +39,7 @@
                     </div>
 
                     <button type="submit" :disabled="creating"
-                        class="px-6 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                        class="px-6 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold rounded-lg transition disabled:opacity-50">
                         {{ creating ? 'Creating...' : 'Create Token' }}
                     </button>
                 </form>
@@ -63,12 +63,12 @@
             </div>
 
             <!-- Existing Tokens List -->
-            <div class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6">
                 <h2 class="text-2xl font-bold text-white mb-4">Your API Tokens</h2>
 
-                <div v-if="loading" class="text-purple-300 animate-pulse">Loading tokens...</div>
+                <div v-if="loading" class="text-[var(--text-tertiary)] animate-pulse">Loading tokens...</div>
 
-                <div v-else-if="tokens.length === 0" class="text-purple-300">
+                <div v-else-if="tokens.length === 0" class="text-[var(--text-tertiary)]">
                     You don't have any API tokens yet.
                 </div>
 
@@ -77,10 +77,10 @@
                         class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
                         <div>
                             <h4 class="text-white font-medium">{{ token.name }}</h4>
-                            <p class="text-purple-300 text-sm font-mono">{{ token.prefix }}</p>
+                            <p class="text-[var(--text-tertiary)] text-sm font-mono">{{ token.prefix }}</p>
                             <div class="flex gap-2 mt-1">
                                 <span v-for="scope in token.scopes" :key="scope"
-                                    class="text-xs px-2 py-0.5 bg-purple-500/30 rounded text-purple-200">
+                                    class="text-xs px-2 py-0.5 bg-purple-500/30 rounded text-[var(--text-secondary)]">
                                     {{ scope }}
                                 </span>
                             </div>
