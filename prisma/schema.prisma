@@ -25,8 +25,27 @@ model User {
   albumCollaborators AlbumCollaborator[]
   apiTokens          ApiToken[]
   shareGroups        ShareGroup[]
+  passkeys           Passkey[]
 
   @@map("users")
+}
+
+model Passkey {
+  id           String  @id @default(uuid()) @db.Uuid
+  credentialId String  @unique
+  publicKey    String
+  counter      Int     @default(0)
+  transports   String[] @default([])
+  deviceType   String  @default("singleDevice")
+  backedUp     Boolean @default(false)
+  name         String  @default("Passkey")
+  createdAt    BigInt
+  lastUsedAt   BigInt?
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("passkeys")
 }
 
 enum Role {

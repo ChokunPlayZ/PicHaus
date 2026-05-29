@@ -44,6 +44,27 @@
                         <span v-else>Sign In</span>
                     </button>
                 </form>
+
+                <!-- Passkey divider -->
+                <div class="flex items-center gap-3 my-5">
+                    <div class="flex-1 h-px bg-white/10"></div>
+                    <span class="text-xs text-[var(--text-muted)]">or</span>
+                    <div class="flex-1 h-px bg-white/10"></div>
+                </div>
+
+                <!-- Passkey Button -->
+                <button @click="handlePasskeyLogin" :disabled="passkeyLoading"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium">
+                    <svg v-if="!passkeyLoading" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a4 4 0 11-2.83 6.83L8 18H5v-3l4.17-4.17A4 4 0 0115 7z" />
+                    </svg>
+                    <div v-else class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                    <span>{{ passkeyLoading ? 'Waiting for passkey…' : 'Sign in with Passkey or Security Key' }}</span>
+                </button>
+
+                <div v-if="passkeyError" class="mt-3 bg-red-500/20 border border-red-500/50 rounded-lg p-3">
+                    <p class="text-red-200 text-sm">{{ passkeyError }}</p>
+                </div>
             </div>
 
             <!-- Footer -->
@@ -67,24 +88,20 @@ const getRedirectTarget = () => {
     return '/album'
 }
 
-const form = ref({
-    email: '',
-    password: '',
-})
-
+const form = ref({ email: '', password: '' })
 const loading = ref(false)
 const error = ref('')
+const passkeyLoading = ref(false)
+const passkeyError = ref('')
 
 const handleLogin = async () => {
     loading.value = true
     error.value = ''
-
     try {
         const response = await $fetch<{ success: boolean; data: { accessToken: string } }>('/api/v1/auth/login', {
             method: 'POST',
             body: form.value,
         })
-
         if (response.success) {
             setAuthToken(response.data.accessToken)
             await navigateTo(getRedirectTarget())
@@ -96,24 +113,47 @@ const handleLogin = async () => {
     }
 }
 
-// Check if setup is complete, redirect to setup if not
-// Also check if user is already logged in
+const handlePasskeyLogin = async () => {
+    passkeyLoading.value = true
+    passkeyError.value = ''
+    try {
+        const { startAuthentication } = await import('@simplewebauthn/browser')
+
+        // Get challenge (discoverable credentials — no email needed)
+        const optRes = await $fetch<{ success: boolean; data: { options: any; challengeId: string } }>(
+            '/api/v1/auth/passkey/login-options', { method: 'POST', body: {} }
+        )
+
+        // Prompt browser/OS to select a passkey or touch a hardware key
+        const authResponse = await startAuthentication({ optionsJSON: optRes.data.options })
+
+        // Verify and get session token
+        const verifyRes = await $fetch<{ success: boolean; data: { accessToken: string } }>(
+            '/api/v1/auth/passkey/login-verify', {
+                method: 'POST',
+                body: { response: authResponse, challengeId: optRes.data.challengeId },
+            }
+        )
+
+        setAuthToken(verifyRes.data.accessToken)
+        await navigateTo(getRedirectTarget())
+    } catch (err: any) {
+        // User cancelled — don't show an error
+        if (err?.name === 'NotAllowedError') return
+        passkeyError.value = err?.data?.statusMessage || err?.message || 'Passkey sign-in failed'
+    } finally {
+        passkeyLoading.value = false
+    }
+}
+
 onMounted(async () => {
     try {
-        // Check setup status first
         const status = await $fetch<{ data: { setupComplete: boolean } }>('/api/v1/setup/status')
-        if (!status.data.setupComplete) {
-            await navigateTo('/setup')
-            return
-        }
-
-        // Check if already logged in
+        if (!status.data.setupComplete) { await navigateTo('/setup'); return }
         try {
             await $fetch('/api/v1/auth/me')
-            // If successful, user is logged in
             await navigateTo(getRedirectTarget())
-        } catch (e) {
-            // Not logged in, stay on login page
+        } catch {
             clearAuthToken()
         }
     } catch (err) {
