@@ -119,6 +119,18 @@ export const apiTokens = pgTable('api_tokens', {
     userId: uuid('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
 })
 
+export const inviteTokens = pgTable('invite_tokens', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    token: text('token').unique().notNull(),
+    type: text('type').notNull(), // 'invite' | 'password_reset'
+    userId: uuid('userId').references(() => users.id, { onDelete: 'cascade' }),
+    label: text('label'),
+    usedAt: bigint('usedAt', { mode: 'bigint' }),
+    expiresAt: bigint('expiresAt', { mode: 'bigint' }).notNull(),
+    createdAt: bigint('createdAt', { mode: 'bigint' }).notNull(),
+    createdBy: uuid('createdBy').references(() => users.id, { onDelete: 'set null' }),
+})
+
 // Prisma implicit M2M creates _AlbumToShareGroup with columns A (albumId) and B (shareGroupId)
 export const albumToShareGroups = pgTable('_AlbumToShareGroup', {
     A: uuid('A').notNull().references(() => albums.id, { onDelete: 'cascade' }),
@@ -179,4 +191,9 @@ export const apiTokensRelations = relations(apiTokens, ({ one }) => ({
 export const albumToShareGroupsRelations = relations(albumToShareGroups, ({ one }) => ({
     album: one(albums, { fields: [albumToShareGroups.A], references: [albums.id] }),
     shareGroup: one(shareGroups, { fields: [albumToShareGroups.B], references: [shareGroups.id] }),
+}))
+
+export const inviteTokensRelations = relations(inviteTokens, ({ one }) => ({
+    user: one(users, { fields: [inviteTokens.userId], references: [users.id] }),
+    creator: one(users, { fields: [inviteTokens.createdBy], references: [users.id] }),
 }))
