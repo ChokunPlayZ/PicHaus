@@ -60,7 +60,17 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-3z" />
                             </svg>
-                            <span>Admin</span>
+                            <span>Users</span>
+                        </span>
+                    </button>
+                    <button @click="navigateTo('/admin/status')" :class="sidebarButtonClass('/admin/status')">
+                        <span class="inline-flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Server Status</span>
                         </span>
                     </button>
                 </template>
@@ -163,7 +173,17 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-3z" />
                                 </svg>
-                                <span>Admin</span>
+                                <span>Users</span>
+                            </span>
+                        </button>
+                        <button @click="goMobile('/admin/status')" :class="sidebarButtonClass('/admin/status')">
+                            <span class="inline-flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Server Status</span>
                             </span>
                         </button>
                     </template>
