@@ -51,7 +51,7 @@ A self-hosted, collaborative photo album platform built for photography clubs. P
 |---|---|
 | Framework | [Nuxt 4](https://nuxt.com) (Vue 3, Nitro server) |
 | Styling | [TailwindCSS](https://tailwindcss.com) + CSS custom properties |
-| ORM / DB | [Prisma](https://prisma.io) + PostgreSQL |
+| ORM / DB | [Drizzle ORM](https://orm.drizzle.team) + PostgreSQL |
 | Image processing | [Sharp](https://sharp.pixelplumbing.com) |
 | EXIF parsing | [exifr](https://mutiny.cz/exifr/) |
 | Blurhash | [blurhash](https://blurha.sh) |
@@ -78,23 +78,18 @@ bun install
 cp .env.example .env
 # Edit .env — set DATABASE_URL and AUTH_SECRET
 
-# Apply database migrations
-bunx prisma migrate deploy
-
 # Start development server
 bun dev
 ```
 
-The app runs at `http://localhost:3000`. On first visit you are redirected to `/setup` to create the admin account.
+The app runs at `http://localhost:3000`. Database migrations run automatically on startup. On first visit you are redirected to `/setup` to create the admin account.
 
 ---
 
 ## Docker Deployment
 
 ```bash
-docker build \
-  --build-arg DATABASE_URL="postgresql://user:pass@host:5432/pichaus" \
-  -t pichaus .
+docker build -t pichaus .
 
 docker run -d \
   --name pichaus \
@@ -105,6 +100,8 @@ docker run -d \
   -v pichaus-storage:/data/uploads \
   pichaus
 ```
+
+> **Note**: `DATABASE_URL` is only needed at runtime — the build step has no database dependency.
 
 ### docker-compose example
 
@@ -627,37 +624,38 @@ Cover photos are processed to JPEG at up to 2560×2560 and stored alongside regu
 
 ## Database
 
-PicHaus uses PostgreSQL via Prisma ORM. All timestamps are stored as Unix seconds (`BigInt`).
+PicHaus uses PostgreSQL via [Drizzle ORM](https://orm.drizzle.team). All timestamps are stored as Unix seconds (`BigInt`).
 
-**Key models**
+**Auto-migration on startup**
 
-| Model | Description |
+Migrations run automatically every time the server starts — no manual steps required when upgrading. The runner (a Nitro server plugin) applies any pending SQL files from `drizzle/migrations/` before the first request is served. Migration SQL is bundled into the production build so the `.output` directory is fully self-contained.
+
+On first boot after upgrading from a Prisma-managed database, the runner detects the existing schema and stamps the migrations as already applied without re-running them — your data is untouched.
+
+**Key tables**
+
+| Table | Description |
 |---|---|
-| `User` | Accounts — email, Argon2id password hash, name, Instagram, role |
-| `Album` | Photo collection — title, description, tags, event date, visibility, cover photo |
-| `Photo` | Image file — storage paths, dimensions, blurhash, SHA-256 hash, full EXIF data |
-| `ShareLink` | Token-based share link — type (view/upload), optional password + expiry |
-| `ShareGroup` | Bundles multiple albums under one share link |
-| `AlbumCollaborator` | Per-album role assignment (viewer / editor / admin) |
-| `ApiToken` | External API token — hashed, scoped, optional expiry |
+| `users` | Accounts — email, Argon2id password hash, name, Instagram, role |
+| `albums` | Photo collection — title, description, tags, event date, visibility, cover photo |
+| `photos` | Image file — storage paths, dimensions, blurhash, SHA-256 hash, full EXIF data |
+| `share_links` | Token-based share link — type (view/upload), optional password + expiry |
+| `share_groups` | Bundles multiple albums under one share link |
+| `album_collaborators` | Per-album role assignment (viewer / editor / admin) |
+| `api_tokens` | External API token — hashed, scoped, optional expiry |
+| `passkeys` | WebAuthn/FIDO2 credentials for passwordless login |
 
-**Indexes on Photo**
+**Schema changes**
 
-```prisma
-@@index([albumId])
-@@index([uploaderId])
-@@index([fileHash])
-```
+Migration files live in `drizzle/migrations/`. To add a column or table:
 
-**Running migrations**
+1. Edit `server/db/schema.ts`
+2. `bun run db:generate` — generates a new SQL migration file (requires `DATABASE_URL`)
+3. Commit both the schema change and the generated SQL file
+4. Deploy — the runner applies the new migration automatically on next boot
 
 ```bash
-# Apply all pending migrations
-bunx prisma migrate deploy
-
-# Create a new migration after schema changes
-bunx prisma migrate dev --name describe_your_change
-
-# Reset the database (dev only — destroys all data)
-bunx prisma migrate reset
+bun run db:generate   # generate migration SQL from schema changes
+bun run db:migrate    # apply migrations manually (normally not needed)
+bun run db:studio     # open Drizzle Studio to browse the database
 ```
