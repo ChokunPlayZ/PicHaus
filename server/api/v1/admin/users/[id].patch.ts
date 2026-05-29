@@ -1,9 +1,7 @@
-import prisma from '../../../../utils/prisma'
+import { eq, and, ne, count } from 'drizzle-orm'
+import { users } from '../../../../db/schema'
 import { requireAuth } from '../../../../utils/auth'
 
-/**
- * Update user role (Admin only)
- */
 export default defineEventHandler(async (event) => {
     try {
         const currentUser = await requireAuth(event)
@@ -11,28 +9,16 @@ export default defineEventHandler(async (event) => {
         const body = await readBody(event)
         const { role, name, email, instagram } = body
 
-        if (currentUser.role !== 'ADMIN') {
-            throw createError({ statusCode: 403, statusMessage: 'Permission denied' })
-        }
+        if (currentUser.role !== 'ADMIN') throw createError({ statusCode: 403, statusMessage: 'Permission denied' })
+        if (!userId) throw createError({ statusCode: 400, statusMessage: 'User ID required' })
 
-        if (!userId) {
-            throw createError({ statusCode: 400, statusMessage: 'User ID required' })
-        }
+        const updateData: Partial<typeof users.$inferInsert> = {}
 
-        const updateData: any = {}
-
-        // Handle role update
         if (role) {
-            if (!['USER', 'ADMIN'].includes(role)) {
-                throw createError({ statusCode: 400, statusMessage: 'Invalid role' })
-            }
-
-            // Prevent demoting self if it's the last admin
+            if (!['USER', 'ADMIN'].includes(role)) throw createError({ statusCode: 400, statusMessage: 'Invalid role' })
             if (userId === currentUser.id && role !== 'ADMIN') {
-                const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } })
-                if (adminCount <= 1) {
-                    throw createError({ statusCode: 400, statusMessage: 'Cannot demote the last admin' })
-                }
+                const [{ value }] = await db.select({ value: count() }).from(users).where(eq(users.role, 'ADMIN'))
+                if (value <= 1) throw createError({ statusCode: 400, statusMessage: 'Cannot demote the last admin' })
             }
             updateData.role = role
         }
@@ -40,45 +26,18 @@ export default defineEventHandler(async (event) => {
         if (name !== undefined) updateData.name = name
         if (instagram !== undefined) updateData.instagram = instagram
 
-        // Handle email update
         if (email) {
-            // Check if email is taken by another user
-            const existingUser = await prisma.user.findFirst({
-                where: {
-                    email,
-                    NOT: { id: userId }
-                }
-            })
-
-            if (existingUser) {
-                throw createError({ statusCode: 400, statusMessage: 'Email already in use' })
-            }
+            const existing = await db.query.users.findFirst({ where: and(eq(users.email, email), ne(users.id, userId)) })
+            if (existing) throw createError({ statusCode: 400, statusMessage: 'Email already in use' })
             updateData.email = email
         }
 
-        const updatedUser = await prisma.user.update({
-            where: { id: userId },
-            data: updateData,
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                instagram: true,
-                role: true,
-                createdAt: true
-            }
+        const [updatedUser] = await db.update(users).set(updateData).where(eq(users.id, userId)).returning({
+            id: users.id, name: users.name, email: users.email, instagram: users.instagram, role: users.role, createdAt: users.createdAt,
         })
 
-        return {
-            success: true,
-            data: {
-                ...updatedUser,
-                createdAt: Number(updatedUser.createdAt)
-            }
-        }
-
+        return { success: true, data: { ...updatedUser, createdAt: Number(updatedUser.createdAt) } }
     } catch (error: any) {
-        console.error('Update user error:', error)
         if (error.statusCode) throw error
         throw createError({ statusCode: 500, statusMessage: 'Failed to update user' })
     }

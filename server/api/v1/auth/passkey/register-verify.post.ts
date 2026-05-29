@@ -1,10 +1,6 @@
-import prisma from '../../../../utils/prisma'
+import { passkeys } from '../../../../db/schema'
 import { requireAuth, getUnixTimestamp } from '../../../../utils/auth'
-import {
-    verifyRegistrationResponse,
-    getRpConfig,
-    consumeChallenge,
-} from '../../../../utils/webauthn'
+import { verifyRegistrationResponse, getRpConfig, consumeChallenge } from '../../../../utils/webauthn'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
@@ -38,13 +34,8 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, statusMessage: 'Passkey registration failed' })
     }
 
-    const { credential, credentialDeviceType, credentialBackedUp } =
-        verification.registrationInfo
-
-    // Store public key as base64url string
+    const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo
     const publicKeyB64 = Buffer.from(credential.publicKey).toString('base64url')
-
-    // Derive a friendly auto-name if caller didn't supply one
     const transports: string[] = credential.transports ?? []
     const autoName = transports.includes('usb') || transports.includes('nfc') || transports.includes('ble')
         ? 'Security Key'
@@ -52,18 +43,16 @@ export default defineEventHandler(async (event) => {
         ? 'Passkey'
         : 'Device Passkey'
 
-    await prisma.passkey.create({
-        data: {
-            credentialId: credential.id,
-            publicKey: publicKeyB64,
-            counter: credential.counter,
-            transports,
-            deviceType: credentialDeviceType,
-            backedUp: credentialBackedUp,
-            name: (typeof name === 'string' && name.trim()) ? name.trim() : autoName,
-            userId: user.id,
-            createdAt: getUnixTimestamp(),
-        },
+    await db.insert(passkeys).values({
+        credentialId: credential.id,
+        publicKey: publicKeyB64,
+        counter: credential.counter,
+        transports,
+        deviceType: credentialDeviceType,
+        backedUp: credentialBackedUp,
+        name: (typeof name === 'string' && name.trim()) ? name.trim() : autoName,
+        userId: user.id,
+        createdAt: getUnixTimestamp(),
     })
 
     return { success: true }

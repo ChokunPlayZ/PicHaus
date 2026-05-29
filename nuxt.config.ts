@@ -4,6 +4,12 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/css/variables.css'],
+  nitro: {
+    serverAssets: [{
+      baseName: 'migrations',
+      dir: './drizzle/migrations',
+    }],
+  },
   app: {
     head: {
       title: 'PicHaus',

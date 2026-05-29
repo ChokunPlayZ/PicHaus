@@ -1,9 +1,10 @@
 import { defineEventHandler, getQuery, createError } from 'h3'
-import { Prisma } from '@prisma/client'
+import { eq, and, asc, desc, gte, lte, ilike, sql, count } from 'drizzle-orm'
+import { photos, users } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
-import prisma from '../../../utils/prisma'
 
-const SORTABLE_FIELDS: Array<keyof Prisma.PhotoOrderByWithRelationInput> = ['dateTaken', 'createdAt', 'updatedAt', 'iso']
+const SORTABLE_FIELDS = ['dateTaken', 'createdAt', 'updatedAt', 'iso'] as const
+type SortableField = typeof SORTABLE_FIELDS[number]
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
@@ -12,7 +13,6 @@ export default defineEventHandler(async (event) => {
     const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 100)
     const skip = (page - 1) * limit
 
-    // Filters
     const camera = query.camera as string
     const lens = query.lens as string
     const iso = query.iso ? Number(query.iso) : undefined
@@ -22,78 +22,78 @@ export default defineEventHandler(async (event) => {
     const dateTo = query.dateTo as string
     const sortInput = (query.sort as string) || 'dateTaken'
     const orderInput = ((query.order as string) || 'desc').toLowerCase()
-    const sort = SORTABLE_FIELDS.includes(sortInput as keyof Prisma.PhotoOrderByWithRelationInput)
-        ? (sortInput as keyof Prisma.PhotoOrderByWithRelationInput)
-        : 'dateTaken'
-    const order: Prisma.SortOrder = orderInput === 'asc' ? 'asc' : 'desc'
+    const sort: SortableField = SORTABLE_FIELDS.includes(sortInput as SortableField) ? sortInput as SortableField : 'dateTaken'
+    const orderFn = orderInput === 'asc' ? asc : desc
 
-    // Enforce User Isolation
-    const where: Prisma.PhotoWhereInput = {
-        uploaderId: user.id
+    const conditions = [
+        eq(photos.uploaderId, user.id),
+        camera ? ilike(photos.cameraModel, `%${camera}%`) : undefined,
+        lens ? ilike(photos.lens, `%${lens}%`) : undefined,
+        iso ? eq(photos.iso, iso) : undefined,
+        aperture ? ilike(photos.aperture, `%${aperture}%`) : undefined,
+        shutterSpeed ? ilike(photos.shutterSpeed, `%${shutterSpeed}%`) : undefined,
+    ].filter(Boolean)
+
+    if (dateFrom) {
+        const parsedFrom = Date.parse(dateFrom)
+        if (!Number.isFinite(parsedFrom)) throw createError({ statusCode: 400, statusMessage: 'Invalid dateFrom value' })
+        conditions.push(gte(photos.dateTaken, BigInt(Math.floor(parsedFrom / 1000))))
+    }
+    if (dateTo) {
+        const parsedTo = Date.parse(dateTo)
+        if (!Number.isFinite(parsedTo)) throw createError({ statusCode: 400, statusMessage: 'Invalid dateTo value' })
+        conditions.push(lte(photos.dateTaken, BigInt(Math.floor(parsedTo / 1000))))
     }
 
-    if (camera) where.cameraModel = camera
-    if (lens) where.lens = lens
-    if (iso) where.iso = iso
-    if (aperture) where.aperture = aperture
-    if (shutterSpeed) where.shutterSpeed = shutterSpeed
+    const where = and(...(conditions as any[]))
 
-    if (dateFrom || dateTo) {
-        where.dateTaken = {}
-        if (dateFrom) {
-            const parsedFrom = Date.parse(dateFrom)
-            if (!Number.isFinite(parsedFrom)) {
-                throw createError({ statusCode: 400, statusMessage: 'Invalid dateFrom value' })
-            }
-            where.dateTaken.gte = BigInt(Math.floor(parsedFrom / 1000))
-        }
-        if (dateTo) {
-            const parsedTo = Date.parse(dateTo)
-            if (!Number.isFinite(parsedTo)) {
-                throw createError({ statusCode: 400, statusMessage: 'Invalid dateTo value' })
-            }
-            where.dateTaken.lte = BigInt(Math.floor(parsedTo / 1000))
-        }
-    }
-
-    // Get photos
-    const [photos, total] = await Promise.all([
-        prisma.photo.findMany({
-            where,
-            orderBy: {
-                [sort]: order,
-            },
-            take: limit,
-            skip,
-            include: {
-                uploader: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        instagram: true,
-                    }
-                }
-            }
-        }),
-        prisma.photo.count({ where }),
+    const [rows, [{ total }]] = await Promise.all([
+        db.select({
+            id: photos.id,
+            filename: photos.filename,
+            originalName: photos.originalName,
+            storagePath: photos.storagePath,
+            thumbnailStoragePath: photos.thumbnailStoragePath,
+            blurhash: photos.blurhash,
+            size: photos.size,
+            width: photos.width,
+            height: photos.height,
+            mimeType: photos.mimeType,
+            fileHash: photos.fileHash,
+            cameraModel: photos.cameraModel,
+            lens: photos.lens,
+            focalLength: photos.focalLength,
+            iso: photos.iso,
+            aperture: photos.aperture,
+            shutterSpeed: photos.shutterSpeed,
+            dateTaken: photos.dateTaken,
+            createdAt: photos.createdAt,
+            updatedAt: photos.updatedAt,
+            albumId: photos.albumId,
+            uploaderId: photos.uploaderId,
+            uploaderName: users.name,
+            uploaderEmail: users.email,
+            uploaderInstagram: users.instagram,
+        })
+            .from(photos)
+            .leftJoin(users, eq(photos.uploaderId, users.id))
+            .where(where)
+            .orderBy(orderFn(photos[sort]))
+            .limit(limit)
+            .offset(skip),
+        db.select({ total: count() }).from(photos).where(where),
     ])
 
-    // Convert BigInt to number for JSON serialization
-    const serializedPhotos = photos.map(p => ({
+    const serializedPhotos = rows.map(p => ({
         ...p,
         dateTaken: p.dateTaken ? Number(p.dateTaken) : null,
         createdAt: Number(p.createdAt),
         updatedAt: Number(p.updatedAt),
+        uploader: p.uploaderId ? { id: p.uploaderId, name: p.uploaderName, email: p.uploaderEmail, instagram: p.uploaderInstagram } : null,
     }))
 
     return {
         photos: serializedPhotos,
-        pagination: {
-            page,
-            limit,
-            total,
-            hasMore: skip + photos.length < total,
-        },
+        pagination: { page, limit, total, hasMore: skip + rows.length < total },
     }
 })

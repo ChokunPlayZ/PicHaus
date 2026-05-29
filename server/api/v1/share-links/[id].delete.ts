@@ -1,56 +1,25 @@
-import prisma from '../../../utils/prisma'
+import { eq } from 'drizzle-orm'
+import { shareLinks } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
     const id = getRouterParam(event, 'id')
+    if (!id) throw createError({ statusCode: 400, statusMessage: 'ID is required' })
 
-    if (!id) {
-        throw createError({
-            statusCode: 400,
-            statusMessage: 'ID is required',
-        })
-    }
-
-    // Find the link first to check ownership
-    const link = await prisma.shareLink.findUnique({
-        where: { id },
-        include: {
-            album: {
-                select: { ownerId: true }
-            },
-            shareGroup: {
-                select: { ownerId: true }
-            }
-        }
+    const link = await db.query.shareLinks.findFirst({
+        where: eq(shareLinks.id, id),
+        with: {
+            album: { columns: { ownerId: true } },
+            shareGroup: { columns: { ownerId: true } },
+        },
     })
 
-    if (!link) {
-        throw createError({
-            statusCode: 404,
-            statusMessage: 'Link not found',
-        })
-    }
+    if (!link) throw createError({ statusCode: 404, statusMessage: 'Link not found' })
 
-    // Check ownership
-    // The link belongs to an album OR a share group owned by the user
-    const albumOwnerId = link.album?.ownerId
-    const groupOwnerId = link.shareGroup?.ownerId
-    const isOwner = (albumOwnerId === user.id) || (groupOwnerId === user.id)
+    const isOwner = (link.album?.ownerId === user.id) || (link.shareGroup?.ownerId === user.id)
+    if (!isOwner && user.role !== 'ADMIN') throw createError({ statusCode: 403, statusMessage: 'Unauthorized' })
 
-    if (!isOwner && user.role !== 'ADMIN') {
-        throw createError({
-            statusCode: 403,
-            statusMessage: 'Unauthorized',
-        })
-    }
-
-    await prisma.shareLink.delete({
-        where: { id }
-    })
-
-    return {
-        success: true,
-        message: 'Link deleted'
-    }
+    await db.delete(shareLinks).where(eq(shareLinks.id, id))
+    return { success: true, message: 'Link deleted' }
 })

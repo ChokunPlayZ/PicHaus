@@ -1,10 +1,7 @@
-import prisma from '../../../../utils/prisma'
+import { eq } from 'drizzle-orm'
+import { passkeys } from '../../../../db/schema'
 import { createAccessToken, getUnixTimestamp } from '../../../../utils/auth'
-import {
-    verifyAuthenticationResponse,
-    getRpConfig,
-    consumeChallenge,
-} from '../../../../utils/webauthn'
+import { verifyAuthenticationResponse, getRpConfig, consumeChallenge } from '../../../../utils/webauthn'
 import type { AuthenticatorTransportFuture } from '../../../../utils/webauthn'
 
 export default defineEventHandler(async (event) => {
@@ -20,11 +17,10 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, statusMessage: 'Invalid or expired challenge' })
     }
 
-    // Look up the passkey by the credential ID the authenticator reported
     const credentialId: string = response.id
-    const passkey = await prisma.passkey.findUnique({
-        where: { credentialId },
-        include: { user: true },
+    const passkey = await db.query.passkeys.findFirst({
+        where: eq(passkeys.credentialId, credentialId),
+        with: { user: true },
     })
 
     if (!passkey) {
@@ -55,24 +51,14 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 401, statusMessage: 'Passkey authentication failed' })
     }
 
-    // Update counter and last-used timestamp (prevents replay attacks)
-    await prisma.passkey.update({
-        where: { id: passkey.id },
-        data: {
-            counter: verification.authenticationInfo.newCounter,
-            lastUsedAt: getUnixTimestamp(),
-        },
-    })
+    await db.update(passkeys)
+        .set({ counter: verification.authenticationInfo.newCounter, lastUsedAt: getUnixTimestamp() })
+        .where(eq(passkeys.id, passkey.id))
 
     const accessToken = await createAccessToken(passkey.userId)
 
     return {
         success: true,
-        data: {
-            accessToken,
-            id: passkey.user.id,
-            name: passkey.user.name,
-            email: passkey.user.email,
-        },
+        data: { accessToken, id: passkey.user.id, name: passkey.user.name, email: passkey.user.email },
     }
 })

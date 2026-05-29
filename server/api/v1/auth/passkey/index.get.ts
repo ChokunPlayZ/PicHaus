@@ -1,26 +1,26 @@
-import prisma from '../../../../utils/prisma'
+import { eq, desc } from 'drizzle-orm'
+import { passkeys } from '../../../../db/schema'
 import { requireAuth } from '../../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
 
-    const passkeys = await prisma.passkey.findMany({
-        where: { userId: user.id },
-        select: {
-            id: true,
-            name: true,
-            transports: true,
-            deviceType: true,
-            backedUp: true,
-            createdAt: true,
-            lastUsedAt: true,
-        },
-        orderBy: { createdAt: 'desc' },
+    const rows = await db.select({
+        id: passkeys.id,
+        name: passkeys.name,
+        transports: passkeys.transports,
+        deviceType: passkeys.deviceType,
+        backedUp: passkeys.backedUp,
+        createdAt: passkeys.createdAt,
+        lastUsedAt: passkeys.lastUsedAt,
     })
+        .from(passkeys)
+        .where(eq(passkeys.userId, user.id))
+        .orderBy(desc(passkeys.createdAt))
 
     return {
         success: true,
-        data: passkeys.map(p => ({
+        data: rows.map(p => ({
             ...p,
             createdAt: Number(p.createdAt),
             lastUsedAt: p.lastUsedAt ? Number(p.lastUsedAt) : null,

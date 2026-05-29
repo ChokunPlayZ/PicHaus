@@ -1,53 +1,39 @@
-import prisma from '../../../utils/prisma'
+import { eq, or, exists, and, inArray } from 'drizzle-orm'
+import { albums, albumCollaborators, photos } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-    // Require authentication
     const user = await requireAuth(event)
-
     const body = await readBody(event)
     const { hashes } = body
 
     if (!hashes || !Array.isArray(hashes)) {
-        throw createError({
-            statusCode: 400,
-            statusMessage: 'Hashes array is required',
-        })
+        throw createError({ statusCode: 400, statusMessage: 'Hashes array is required' })
     }
-
-    // Limit batch size
     if (hashes.length > 500) {
-        throw createError({
-            statusCode: 400,
-            statusMessage: 'Batch size too large (max 500)',
-        })
+        throw createError({ statusCode: 400, statusMessage: 'Batch size too large (max 500)' })
     }
 
-    // Collect album IDs this user owns or collaborates on
-    const accessibleAlbums = await prisma.album.findMany({
-        where: {
-            OR: [
-                { ownerId: user.id },
-                { collaborators: { some: { userId: user.id } } },
-            ],
-        },
-        select: { id: true },
-    })
+    const accessibleAlbums = await db.select({ id: albums.id })
+        .from(albums)
+        .where(
+            or(
+                eq(albums.ownerId, user.id),
+                exists(
+                    db.select().from(albumCollaborators).where(
+                        and(eq(albumCollaborators.albumId, albums.id), eq(albumCollaborators.userId, user.id))
+                    )
+                )
+            )
+        )
+
     const albumIds = accessibleAlbums.map(a => a.id)
+    if (albumIds.length === 0) return { success: true, duplicates: [] }
 
-    const existingPhotos = await prisma.photo.findMany({
-        where: {
-            fileHash: { in: hashes },
-            albumId: { in: albumIds },
-        },
-        select: { fileHash: true },
-        distinct: ['fileHash'],
-    })
+    const existingPhotos = await db.select({ fileHash: photos.fileHash })
+        .from(photos)
+        .where(and(inArray(photos.fileHash, hashes), inArray(photos.albumId, albumIds)))
+        .groupBy(photos.fileHash)
 
-    const duplicates = existingPhotos.map(p => p.fileHash)
-
-    return {
-        success: true,
-        duplicates
-    }
+    return { success: true, duplicates: existingPhotos.map(p => p.fileHash) }
 })

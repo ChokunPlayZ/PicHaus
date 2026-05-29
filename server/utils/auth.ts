@@ -1,5 +1,7 @@
 import * as argon2 from 'argon2'
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { eq } from 'drizzle-orm'
+import { users } from '../db/schema'
 
 const ACCESS_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7 // 7 days
 
@@ -18,74 +20,48 @@ function getSessionSecret(): string {
         if (process.env.NODE_ENV !== 'production') {
             return 'picHaus-dev-session-secret-change-me-immediately'
         }
-
-        throw createError({
-            statusCode: 500,
-            statusMessage: 'Server session secret is missing',
-        })
+        throw createError({ statusCode: 500, statusMessage: 'Server session secret is missing' })
     }
 
     if (secret.length < 32) {
-        throw createError({
-            statusCode: 500,
-            statusMessage: 'Server session secret is too short',
-        })
+        throw createError({ statusCode: 500, statusMessage: 'Server session secret is too short' })
     }
 
     return secret
 }
 
-/**
- * Hash a password using Argon2id
- * @param password - Plain text password
- * @returns Hashed password
- */
 export async function hashPassword(password: string): Promise<string> {
     return await argon2.hash(password, {
         type: argon2.argon2id,
-        memoryCost: 19456, // 19 MiB
+        memoryCost: 19456,
         timeCost: 2,
         parallelism: 1,
     })
 }
 
-/**
- * Verify a password against a hash
- * @param hash - Argon2id hash
- * @param password - Plain text password to verify
- * @returns True if password matches
- */
 export async function verifyPassword(hash: string, password: string): Promise<boolean> {
     try {
         return await argon2.verify(hash, password)
-    } catch (error) {
+    } catch {
         return false
     }
 }
 
-/**
- * Create a session for a user
- * Returns the user's UUID to be used as the session token
- */
 export async function createAccessToken(userId: string): Promise<string> {
     const payload = {
         sub: userId,
         exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL_SECONDS,
     }
-
     const encodedPayload = base64UrlEncode(JSON.stringify(payload))
     const signature = createHmac('sha256', getSessionSecret())
         .update(encodedPayload)
         .digest('base64url')
-
     return `${encodedPayload}.${signature}`
 }
 
 function verifySessionToken(token: string): { userId: string } | null {
     const parts = token.split('.')
-    if (parts.length !== 2) {
-        return null
-    }
+    if (parts.length !== 2) return null
 
     const [encodedPayload, signature] = parts
     const expectedSignature = createHmac('sha256', getSessionSecret())
@@ -95,24 +71,14 @@ function verifySessionToken(token: string): { userId: string } | null {
     const expectedBuffer = Buffer.from(expectedSignature)
     const providedBuffer = Buffer.from(signature)
 
-    if (
-        expectedBuffer.length !== providedBuffer.length ||
-        !timingSafeEqual(expectedBuffer, providedBuffer)
-    ) {
+    if (expectedBuffer.length !== providedBuffer.length || !timingSafeEqual(expectedBuffer, providedBuffer)) {
         return null
     }
 
     try {
         const parsedPayload = JSON.parse(base64UrlDecode(encodedPayload)) as { sub?: string; exp?: number }
-        if (!parsedPayload.sub || !parsedPayload.exp) {
-            return null
-        }
-
-        const now = Math.floor(Date.now() / 1000)
-        if (parsedPayload.exp < now) {
-            return null
-        }
-
+        if (!parsedPayload.sub || !parsedPayload.exp) return null
+        if (parsedPayload.exp < Math.floor(Date.now() / 1000)) return null
         return { userId: parsedPayload.sub }
     } catch {
         return null
@@ -121,90 +87,52 @@ function verifySessionToken(token: string): { userId: string } | null {
 
 function getBearerToken(event: any): string | null {
     const authHeader = getRequestHeader(event, 'Authorization')
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return null
-    }
-
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return null
     const token = authHeader.slice(7).trim()
     return token || null
 }
 
 export function getAuthUserId(event: any): string | null {
     const bearerToken = getBearerToken(event)
-
     if (bearerToken) {
         const session = verifySessionToken(bearerToken)
-        if (session?.userId) {
-            return session.userId
-        }
+        if (session?.userId) return session.userId
     }
 
     const requestPath = getRequestURL(event).pathname
-    if (!requestPath.startsWith('/api/assets/')) {
-        return null
-    }
+    if (!requestPath.startsWith('/api/assets/')) return null
 
     const tokenFromQuery = getQuery(event).access_token
-    if (typeof tokenFromQuery !== 'string' || !tokenFromQuery) {
-        return null
-    }
+    if (typeof tokenFromQuery !== 'string' || !tokenFromQuery) return null
 
     const session = verifySessionToken(tokenFromQuery)
     return session?.userId || null
 }
 
-/**
- * Get current Unix timestamp in seconds
- * @returns Unix timestamp
- */
 export function getUnixTimestamp(): bigint {
     return BigInt(Math.floor(Date.now() / 1000))
 }
 
-/**
- * Convert Date to Unix timestamp
- * @param date - JavaScript Date object
- * @returns Unix timestamp
- */
 export function dateToUnixTimestamp(date: Date): bigint {
     return BigInt(Math.floor(date.getTime() / 1000))
 }
 
-/**
- * Convert Unix timestamp to Date
- * @param timestamp - Unix timestamp (BigInt or number)
- * @returns JavaScript Date object
- */
 export function unixTimestampToDate(timestamp: bigint | number): Date {
     const ts = typeof timestamp === 'bigint' ? Number(timestamp) : timestamp
     return new Date(ts * 1000)
 }
-/**
- * Require authentication for a request
- * @param event - H3 event
- * @returns Authenticated user
- * @throws 401 if not authenticated
- */
+
 export async function requireAuth(event: any) {
     const userId = getAuthUserId(event)
 
     if (!userId) {
-        throw createError({
-            statusCode: 401,
-            statusMessage: 'Not authenticated',
-        })
+        throw createError({ statusCode: 401, statusMessage: 'Not authenticated' })
     }
 
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-    })
+    const user = await db.query.users.findFirst({ where: eq(users.id, userId) })
 
     if (!user) {
-        throw createError({
-            statusCode: 401,
-            statusMessage: 'Invalid session',
-        })
+        throw createError({ statusCode: 401, statusMessage: 'Invalid session' })
     }
 
     return user

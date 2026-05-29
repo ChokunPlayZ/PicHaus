@@ -1,52 +1,39 @@
-import prisma from '../../../utils/prisma'
+import { eq, or, desc } from 'drizzle-orm'
+import { shareLinks, albums, shareGroups } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
 
-    const shareLinks = await prisma.shareLink.findMany({
-        where: {
-            OR: [
-                {
-                    album: {
-                        ownerId: user.id
-                    }
-                },
-                {
-                    shareGroup: {
-                        ownerId: user.id
-                    }
-                }
-            ]
-        },
-        include: {
-            album: {
-                select: {
-                    id: true,
-                    title: true,
-                    ownerId: true
-                }
-            },
-            shareGroup: {
-                select: {
-                    id: true,
-                    title: true,
-                    ownerId: true
-                }
-            }
-        },
-        orderBy: {
-            createdAt: 'desc'
-        }
+    const rows = await db.select({
+        id: shareLinks.id,
+        token: shareLinks.token,
+        type: shareLinks.type,
+        label: shareLinks.label,
+        views: shareLinks.views,
+        createdAt: shareLinks.createdAt,
+        expiresAt: shareLinks.expiresAt,
+        password: shareLinks.password,
+        showMetadata: shareLinks.showMetadata,
+        albumId: shareLinks.albumId,
+        albumTitle: albums.title,
+        albumOwnerId: albums.ownerId,
+        shareGroupId: shareLinks.shareGroupId,
+        shareGroupTitle: shareGroups.title,
+        shareGroupOwnerId: shareGroups.ownerId,
     })
+        .from(shareLinks)
+        .leftJoin(albums, eq(shareLinks.albumId, albums.id))
+        .leftJoin(shareGroups, eq(shareLinks.shareGroupId, shareGroups.id))
+        .where(or(eq(albums.ownerId, user.id), eq(shareGroups.ownerId, user.id)))
+        .orderBy(desc(shareLinks.createdAt))
 
     return {
         success: true,
-        data: shareLinks.map(link => {
+        data: rows.map(link => {
             const isGroup = !!link.shareGroupId
-            const targetName = isGroup ? link.shareGroup?.title : link.album?.title
+            const targetName = isGroup ? link.shareGroupTitle : link.albumTitle
             const url = !isGroup && link.type === 'upload' ? `/u/${link.token}` : `/v/${link.token}`
-
             return {
                 id: link.id,
                 token: link.token,
@@ -59,8 +46,8 @@ export default defineEventHandler(async (event) => {
                 expiresAt: link.expiresAt ? Number(link.expiresAt) : null,
                 hasPassword: !!link.password,
                 showMetadata: link.showMetadata,
-                url
+                url,
             }
-        })
+        }),
     }
 })

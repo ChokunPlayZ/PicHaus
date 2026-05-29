@@ -1,19 +1,18 @@
-import prisma from '../../../utils/prisma'
+import { eq, desc } from 'drizzle-orm'
+import { apiTokens } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-    // Require authentication
     const user = await requireAuth(event)
 
-    // Get tokens
-    const tokens = await prisma.apiToken.findMany({
-        where: { userId: user.id },
-        orderBy: { createdAt: 'desc' },
-    })
+    const tokens = await db.select()
+        .from(apiTokens)
+        .where(eq(apiTokens.userId, user.id))
+        .orderBy(desc(apiTokens.createdAt))
 
     return {
         success: true,
-        data: tokens.map((t: any) => ({
+        data: tokens.map(t => ({
             id: t.id,
             name: t.name,
             prefix: t.tokenPrefix,

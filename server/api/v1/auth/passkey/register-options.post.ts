@@ -1,20 +1,16 @@
-import prisma from '../../../../utils/prisma'
+import { eq } from 'drizzle-orm'
+import { passkeys } from '../../../../db/schema'
 import { requireAuth } from '../../../../utils/auth'
-import {
-    generateRegistrationOptions,
-    getRpConfig,
-    saveChallenge,
-} from '../../../../utils/webauthn'
+import { generateRegistrationOptions, getRpConfig, saveChallenge } from '../../../../utils/webauthn'
 import type { AuthenticatorTransportFuture } from '../../../../utils/webauthn'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
     const { rpID, rpName } = getRpConfig()
 
-    const existing = await prisma.passkey.findMany({
-        where: { userId: user.id },
-        select: { credentialId: true, transports: true },
-    })
+    const existing = await db.select({ credentialId: passkeys.credentialId, transports: passkeys.transports })
+        .from(passkeys)
+        .where(eq(passkeys.userId, user.id))
 
     const options = await generateRegistrationOptions({
         rpName,
@@ -26,8 +22,6 @@ export default defineEventHandler(async (event) => {
         authenticatorSelection: {
             residentKey: 'preferred',
             userVerification: 'preferred',
-            // No authenticatorAttachment restriction → allows both platform (Touch ID / Face ID /
-            // Windows Hello) and roaming authenticators (YubiKey, other FIDO2 hardware keys)
         },
         excludeCredentials: existing.map(p => ({
             id: p.credentialId,
@@ -36,6 +30,5 @@ export default defineEventHandler(async (event) => {
     })
 
     const challengeId = saveChallenge(options.challenge, user.id)
-
     return { success: true, data: { options, challengeId } }
 })

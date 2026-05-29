@@ -1,4 +1,5 @@
-import prisma from '../../../../utils/prisma'
+import { eq, and, inArray } from 'drizzle-orm'
+import { albums, albumCollaborators, photos, users } from '../../../../db/schema'
 import { getUnixTimestamp, requireAuth } from '../../../../utils/auth'
 import crypto from 'crypto'
 import sharp from 'sharp'
@@ -13,197 +14,103 @@ import {
     generateUniqueFilename,
 } from '../../../../utils/upload'
 
-/**
- * Upload photo to album
- */
 export default defineEventHandler(async (event) => {
     let storagePath: string | null = null
     let thumbnailStoragePath: string | null = null
 
     try {
         const albumId = getRouterParam(event, 'id')
+        if (!albumId) throw createError({ statusCode: 400, statusMessage: 'Album ID is required' })
 
-        if (!albumId) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'Album ID is required',
-            })
-        }
+        const album = await db.query.albums.findFirst({ where: eq(albums.id, albumId) })
+        if (!album) throw createError({ statusCode: 404, statusMessage: 'Album not found' })
 
-        // Check if album exists
-        const album = await prisma.album.findUnique({
-            where: { id: albumId },
-        })
-
-        if (!album) {
-            throw createError({
-                statusCode: 404,
-                statusMessage: 'Album not found',
-            })
-        }
-
-        // Get authenticated user
         const user = await requireAuth(event)
 
-        // Check permissions
-        const isOwner = album.ownerId === user.id
-        // TODO: Check for collaborator permissions if needed
-
-        if (!isOwner) {
-            // Check if user is a collaborator with editor role
-            const collaborator = await prisma.albumCollaborator.findFirst({
-                where: {
-                    albumId,
-                    userId: user.id,
-                    role: { in: ['admin', 'editor'] }
-                }
+        if (album.ownerId !== user.id) {
+            const collaborator = await db.query.albumCollaborators.findFirst({
+                where: and(
+                    eq(albumCollaborators.albumId, albumId),
+                    eq(albumCollaborators.userId, user.id),
+                    inArray(albumCollaborators.role, ['admin', 'editor']),
+                ),
             })
-
-            if (!collaborator) {
-                throw createError({
-                    statusCode: 403,
-                    statusMessage: 'You do not have permission to upload to this album',
-                })
-            }
+            if (!collaborator) throw createError({ statusCode: 403, statusMessage: 'You do not have permission to upload to this album' })
         }
 
-        // Parse multipart form data
         const formData = await readMultipartFormData(event)
-
-        if (!formData || formData.length === 0) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'No file uploaded',
-            })
-        }
+        if (!formData || formData.length === 0) throw createError({ statusCode: 400, statusMessage: 'No file uploaded' })
 
         const fileData = formData.find(item => item.name === 'file')
+        if (!fileData || !fileData.data) throw createError({ statusCode: 400, statusMessage: 'No file data found' })
 
-        if (!fileData || !fileData.data) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'No file data found',
-            })
-        }
-
-        // Validate file
         const validation = validateImageFile(fileData.data)
-        if (!validation.valid) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: validation.error || 'Invalid file',
-            })
-        }
+        if (!validation.valid) throw createError({ statusCode: 400, statusMessage: validation.error || 'Invalid file' })
 
         let trustedMimeType = 'application/octet-stream'
         try {
             const metadata = await sharp(fileData.data).metadata()
             const format = metadata.format
-
             const mimeTypeByFormat: Record<string, string> = {
-                jpeg: 'image/jpeg',
-                jpg: 'image/jpeg',
-                png: 'image/png',
-                webp: 'image/webp',
-                gif: 'image/gif',
-                tiff: 'image/tiff',
-                avif: 'image/avif',
-                heif: 'image/heif',
-                heic: 'image/heic',
+                jpeg: 'image/jpeg', jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+                gif: 'image/gif', tiff: 'image/tiff', avif: 'image/avif', heif: 'image/heif', heic: 'image/heic',
             }
-
-            if (!format || !mimeTypeByFormat[format]) {
-                throw createError({
-                    statusCode: 400,
-                    statusMessage: 'Unsupported or invalid image format',
-                })
-            }
-
+            if (!format || !mimeTypeByFormat[format]) throw createError({ statusCode: 400, statusMessage: 'Unsupported or invalid image format' })
             trustedMimeType = mimeTypeByFormat[format]
         } catch (error: any) {
-            if (error?.statusCode) {
-                throw error
-            }
-
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'Invalid image file',
-            })
+            if (error?.statusCode) throw error
+            throw createError({ statusCode: 400, statusMessage: 'Invalid image file' })
         }
 
-        // Calculate file hash
         const fileHash = calculateFileHash(fileData.data)
 
-        // Check for duplicate
-        const existingPhoto = await prisma.photo.findFirst({
-            where: {
-                albumId,
-                fileHash,
-            },
+        const duplicate = await db.query.photos.findFirst({
+            where: and(eq(photos.albumId, albumId), eq(photos.fileHash, fileHash)),
         })
+        if (duplicate) throw createError({ statusCode: 409, statusMessage: 'This photo already exists in the album' })
 
-        if (existingPhoto) {
-            throw createError({
-                statusCode: 409,
-                statusMessage: 'This photo already exists in the album',
-            })
-        }
-
-        // Extract EXIF data
         const exifData = await extractExifData(fileData.data)
-
-        // Generate thumbnail and blurhash
         const thumbnailBuffer = await generateThumbnail(fileData.data)
         const blurhash = await generateBlurhash(fileData.data)
 
-        // Generate filenames
         const originalFilename = fileData.filename || 'photo.jpg'
         const filename = generateUniqueFilename(originalFilename, fileHash)
-        const thumbnailFilename = generateUniqueFilename(originalFilename, fileHash, true) // WebP
-
-        // Generate ID upfront
+        const thumbnailFilename = generateUniqueFilename(originalFilename, fileHash, true)
         const photoId = crypto.randomUUID()
 
-        // Save files — paths are hoisted so catch can clean up on DB failure
         storagePath = await saveFile(fileData.data, filename, 'photos')
         thumbnailStoragePath = await saveFile(thumbnailBuffer, thumbnailFilename, 'thumbnails')
 
         const now = getUnixTimestamp()
 
-        // Create photo record
-        const photo = await prisma.photo.create({
-            data: {
-                id: photoId,
-                filename,
-                originalName: originalFilename,
-                storagePath,
-                thumbnailStoragePath,
-                blurhash,
-                size: fileData.data.length,
-                mimeType: trustedMimeType,
-                fileHash,
-                albumId,
-                uploaderId: user.id,
-                cameraModel: exifData.cameraModel || null,
-                lens: exifData.lens || null,
-                focalLength: exifData.focalLength || null,
-                iso: exifData.iso || null,
-                aperture: exifData.aperture || null,
-                shutterSpeed: exifData.shutterSpeed || null,
-                dateTaken: exifData.dateTaken ? BigInt(exifData.dateTaken) : null,
-                width: exifData.width || 0,
-                height: exifData.height || 0,
-                createdAt: now,
-                updatedAt: now,
-            },
-            include: {
-                uploader: {
-                    select: {
-                        id: true,
-                        name: true,
-                    },
-                },
-            },
+        const [photo] = await db.insert(photos).values({
+            id: photoId,
+            filename,
+            originalName: originalFilename,
+            storagePath,
+            thumbnailStoragePath,
+            blurhash,
+            size: fileData.data.length,
+            mimeType: trustedMimeType,
+            fileHash,
+            albumId,
+            uploaderId: user.id,
+            cameraModel: exifData.cameraModel || null,
+            lens: exifData.lens || null,
+            focalLength: exifData.focalLength || null,
+            iso: exifData.iso || null,
+            aperture: exifData.aperture || null,
+            shutterSpeed: exifData.shutterSpeed || null,
+            dateTaken: exifData.dateTaken ? BigInt(exifData.dateTaken) : null,
+            width: exifData.width || 0,
+            height: exifData.height || 0,
+            createdAt: now,
+            updatedAt: now,
+        }).returning()
+
+        const uploader = await db.query.users.findFirst({
+            where: eq(users.id, user.id),
+            columns: { id: true, name: true },
         })
 
         return {
@@ -214,22 +121,13 @@ export default defineEventHandler(async (event) => {
                 dateTaken: photo.dateTaken ? Number(photo.dateTaken) : null,
                 createdAt: Number(photo.createdAt),
                 updatedAt: Number(photo.updatedAt),
+                uploader,
             },
         }
     } catch (error: any) {
-        console.error('Error uploading photo:', error)
-
-        // Clean up files written to disk if the DB record was never created
         if (storagePath) await deleteFile(storagePath).catch(() => {})
         if (thumbnailStoragePath) await deleteFile(thumbnailStoragePath).catch(() => {})
-
-        if (error.statusCode) {
-            throw error
-        }
-
-        throw createError({
-            statusCode: 500,
-            statusMessage: 'Failed to upload photo',
-        })
+        if (error.statusCode) throw error
+        throw createError({ statusCode: 500, statusMessage: 'Failed to upload photo' })
     }
 })

@@ -1,45 +1,34 @@
-import prisma from '../../../utils/prisma'
+import { eq, desc, sql } from 'drizzle-orm'
+import { albums, photos } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
 
-    const albums = await prisma.album.findMany({
-        where: { ownerId: user.id },
-        select: {
-            id: true,
-            title: true,
-            description: true,
-            tags: true,
-            _count: {
-                select: { photos: true }
-            },
-            photos: {
-                take: 1,
-                orderBy: { createdAt: 'desc' },
-                select: {
-                    id: true,
-                    blurhash: true
-                }
-            }
-        },
-        orderBy: {
-            createdAt: 'desc'
-        }
+    const rows = await db.select({
+        id: albums.id,
+        title: albums.title,
+        description: albums.description,
+        tags: albums.tags,
+        photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = ${albums.id})`,
+        latestPhotoId: sql<string | null>`(SELECT id FROM photos WHERE photos."albumId" = ${albums.id} ORDER BY "createdAt" DESC LIMIT 1)`,
+        latestPhotoBlurhash: sql<string | null>`(SELECT blurhash FROM photos WHERE photos."albumId" = ${albums.id} ORDER BY "createdAt" DESC LIMIT 1)`,
     })
+        .from(albums)
+        .where(eq(albums.ownerId, user.id))
+        .orderBy(desc(albums.createdAt))
 
     return {
         success: true,
-        data: albums.map(album => ({
+        data: rows.map(album => ({
             id: album.id,
             name: album.title,
             description: album.description,
             tags: album.tags,
-            photoCount: album._count.photos,
-            coverPhoto: album.photos[0] ? {
-                id: album.photos[0].id,
-                blurhash: album.photos[0].blurhash
-            } : null
-        }))
+            photoCount: Number(album.photoCount),
+            coverPhoto: album.latestPhotoId
+                ? { id: album.latestPhotoId, blurhash: album.latestPhotoBlurhash ?? '' }
+                : null,
+        })),
     }
 })

@@ -1,4 +1,5 @@
-import prisma from '../../../utils/prisma'
+import { eq } from 'drizzle-orm'
+import { shareLinks } from '../../../db/schema'
 import { verifyPassword, getUnixTimestamp } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -7,41 +8,17 @@ export default defineEventHandler(async (event) => {
     const now = getUnixTimestamp()
 
     if (!token || !password) {
-        throw createError({
-            statusCode: 400,
-            statusMessage: 'Token and password are required',
-        })
+        throw createError({ statusCode: 400, statusMessage: 'Token and password are required' })
     }
 
-    const shareLink = await prisma.shareLink.findUnique({
-        where: { token },
-    })
+    const shareLink = await db.query.shareLinks.findFirst({ where: eq(shareLinks.token, token) })
 
-    if (!shareLink) {
-        throw createError({
-            statusCode: 404,
-            statusMessage: 'Invalid link',
-        })
-    }
-
-    if (shareLink.expiresAt && shareLink.expiresAt < now) {
-        throw createError({
-            statusCode: 404,
-            statusMessage: 'Invalid link',
-        })
-    }
-
-    if (!shareLink.password) {
-        return { success: true }
-    }
+    if (!shareLink) throw createError({ statusCode: 404, statusMessage: 'Invalid link' })
+    if (shareLink.expiresAt && shareLink.expiresAt < now) throw createError({ statusCode: 404, statusMessage: 'Invalid link' })
+    if (!shareLink.password) return { success: true }
 
     const isValid = await verifyPassword(shareLink.password, password)
-    if (!isValid) {
-        throw createError({
-            statusCode: 401,
-            statusMessage: 'Invalid password',
-        })
-    }
+    if (!isValid) throw createError({ statusCode: 401, statusMessage: 'Invalid password' })
 
     return { success: true }
 })

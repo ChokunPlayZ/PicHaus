@@ -1,4 +1,5 @@
-import prisma from '../../../../utils/prisma'
+import { eq, and, asc, desc, gte, lte, count } from 'drizzle-orm'
+import { albums, photos } from '../../../../db/schema'
 import { requireApiToken } from '../../../../utils/api-token'
 
 const parseUnix = (value: unknown): bigint | null => {
@@ -9,43 +10,15 @@ const parseUnix = (value: unknown): bigint | null => {
 }
 
 export default defineEventHandler(async (event) => {
-    // Verify API token
     const apiToken = await requireApiToken(event)
     const albumId = getRouterParam(event, 'id')
 
-    if (!albumId) {
-        throw createError({
-            statusCode: 400,
-            statusMessage: 'Album ID is required'
-        })
-    }
+    if (!albumId) throw createError({ statusCode: 400, statusMessage: 'Album ID is required' })
+    if (!apiToken.scopes.includes('photos:read')) throw createError({ statusCode: 403, statusMessage: 'Missing required scope: photos:read' })
 
-    // Check scope
-    if (!apiToken.scopes.includes('photos:read')) {
-        throw createError({
-            statusCode: 403,
-            statusMessage: 'Missing required scope: photos:read'
-        })
-    }
-
-    // Verify album ownership/access
-    const album = await prisma.album.findUnique({
-        where: { id: albumId }
-    })
-
-    if (!album) {
-        throw createError({
-            statusCode: 404,
-            statusMessage: 'Album not found'
-        })
-    }
-
-    if (album.ownerId !== apiToken.userId) {
-        throw createError({
-            statusCode: 403,
-            statusMessage: 'Permission denied'
-        })
-    }
+    const album = await db.query.albums.findFirst({ where: eq(albums.id, albumId) })
+    if (!album) throw createError({ statusCode: 404, statusMessage: 'Album not found' })
+    if (album.ownerId !== apiToken.userId) throw createError({ statusCode: 403, statusMessage: 'Permission denied' })
 
     const query = getQuery(event)
     const page = Math.max(1, Number(query.page) || 1)
@@ -54,37 +27,32 @@ export default defineEventHandler(async (event) => {
     const orientation = typeof query.orientation === 'string' ? query.orientation : 'any'
     const sortBy = typeof query.sortBy === 'string' ? query.sortBy : 'createdAt'
     const order = typeof query.order === 'string' ? query.order : 'desc'
+    const orderFn = order === 'asc' ? asc : desc
     const fromDateTaken = parseUnix(typeof query.fromDateTaken === 'string' ? query.fromDateTaken : '')
     const toDateTaken = parseUnix(typeof query.toDateTaken === 'string' ? query.toDateTaken : '')
 
-    const where: any = { albumId }
+    const sortCol = sortBy === 'dateTaken' ? photos.dateTaken
+        : sortBy === 'originalName' ? photos.originalName
+        : photos.createdAt
 
-    if (fromDateTaken || toDateTaken) {
-        where.dateTaken = {}
-        if (fromDateTaken) where.dateTaken.gte = fromDateTaken
-        if (toDateTaken) where.dateTaken.lte = toDateTaken
-    }
+    const conditions = [
+        eq(photos.albumId, albumId),
+        fromDateTaken ? gte(photos.dateTaken, fromDateTaken) : undefined,
+        toDateTaken ? lte(photos.dateTaken, toDateTaken) : undefined,
+    ].filter(Boolean) as any[]
 
-    const orderBy: any = (() => {
-        const dir = order === 'asc' ? 'asc' : 'desc'
-        if (sortBy === 'dateTaken') return { dateTaken: dir }
-        if (sortBy === 'originalName') return { originalName: dir }
-        return { createdAt: dir }
-    })()
+    const where = and(...conditions)
 
-    const [total, photos] = await Promise.all([
-        prisma.photo.count({ where }),
-        prisma.photo.findMany({
-            where,
-            orderBy,
-            skip,
-            take: orientation === 'any' ? limit : limit * 3
-        })
+    const fetchLimit = orientation === 'any' ? limit : limit * 3
+
+    const [total, photoRows] = await Promise.all([
+        db.select({ value: count() }).from(photos).where(where),
+        db.select().from(photos).where(where).orderBy(orderFn(sortCol)).limit(fetchLimit).offset(skip),
     ])
 
     const filteredPhotos = orientation === 'any'
-        ? photos
-        : photos.filter((photo: any) => {
+        ? photoRows
+        : photoRows.filter(photo => {
             if (!photo.width || !photo.height) return false
             if (orientation === 'landscape') return photo.width > photo.height
             if (orientation === 'portrait') return photo.height > photo.width
@@ -96,7 +64,7 @@ export default defineEventHandler(async (event) => {
 
     return {
         success: true,
-        data: filteredPhotos.map((photo: any) => ({
+        data: filteredPhotos.map(photo => ({
             id: photo.id,
             url: `${baseUrl}/api/assets/full/${photo.id}`,
             thumbnailUrl: `${baseUrl}/api/assets/thumb/${photo.id}`,
@@ -106,22 +74,16 @@ export default defineEventHandler(async (event) => {
             height: photo.height,
             blurhash: photo.blurhash,
             dateTaken: photo.dateTaken ? Number(photo.dateTaken) : null,
-            createdAt: Number(photo.createdAt)
+            createdAt: Number(photo.createdAt),
         })),
         pagination: {
             page,
             limit,
-            total,
-            hasMore: orientation === 'any' ? skip + photos.length < total : filteredPhotos.length === limit
+            total: total[0].value,
+            hasMore: orientation === 'any' ? skip + photoRows.length < total[0].value : filteredPhotos.length === limit,
         },
         meta: {
-            filters: {
-                orientation,
-                sortBy,
-                order: order === 'asc' ? 'asc' : 'desc',
-                fromDateTaken: fromDateTaken ? Number(fromDateTaken) : null,
-                toDateTaken: toDateTaken ? Number(toDateTaken) : null,
-            }
-        }
+            filters: { orientation, sortBy, order: order === 'asc' ? 'asc' : 'desc', fromDateTaken: fromDateTaken ? Number(fromDateTaken) : null, toDateTaken: toDateTaken ? Number(toDateTaken) : null },
+        },
     }
 })

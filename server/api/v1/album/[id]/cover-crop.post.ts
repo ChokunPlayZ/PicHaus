@@ -1,4 +1,5 @@
-import prisma from '../../../../utils/prisma'
+import { eq, and, inArray } from 'drizzle-orm'
+import { albums, albumCollaborators, photos } from '../../../../db/schema'
 import { requireAuth } from '../../../../utils/auth'
 import sharp from 'sharp'
 import { saveFile, generateBlurhash, deleteFile, calculateFileHash } from '../../../../utils/upload'
@@ -7,179 +8,91 @@ import crypto from 'crypto'
 export default defineEventHandler(async (event) => {
     try {
         const id = getRouterParam(event, 'id')
-        if (!id) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'Album ID is required',
-            })
-        }
+        if (!id) throw createError({ statusCode: 400, statusMessage: 'Album ID is required' })
 
         const user = await requireAuth(event)
 
-        // Check if album exists and user has permission
-        const album = await prisma.album.findUnique({
-            where: { id },
-            include: {
-                collaborators: {
-                    where: {
-                        userId: user.id,
-                        role: {
-                            in: ['admin', 'editor'],
-                        },
-                    },
-                },
-            },
+        const album = await db.query.albums.findFirst({
+            where: eq(albums.id, id),
+            with: { collaborators: { where: and(eq(albumCollaborators.userId, user.id), inArray(albumCollaborators.role, ['admin', 'editor'])) } },
         })
 
-        if (!album) {
-            throw createError({
-                statusCode: 404,
-                statusMessage: 'Album not found',
-            })
+        if (!album) throw createError({ statusCode: 404, statusMessage: 'Album not found' })
+        if (album.ownerId !== user.id && album.collaborators.length === 0) {
+            throw createError({ statusCode: 403, statusMessage: 'You do not have permission to edit this album' })
         }
 
-        const isOwner = album.ownerId === user.id
-        const isAdminCollaborator = album.collaborators.length > 0
-
-        if (!isOwner && !isAdminCollaborator) {
-            throw createError({
-                statusCode: 403,
-                statusMessage: 'You do not have permission to edit this album',
-            })
-        }
-
-        // Parse multipart form data
         const formData = await readMultipartFormData(event)
-        if (!formData) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'No file uploaded',
-            })
-        }
+        if (!formData) throw createError({ statusCode: 400, statusMessage: 'No file uploaded' })
 
         const fileData = formData.find(item => item.name === 'file')
-        if (!fileData || !fileData.data) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'No file data',
-            })
-        }
+        if (!fileData || !fileData.data) throw createError({ statusCode: 400, statusMessage: 'No file data' })
 
-        // The client crops client-side before uploading, so we just resize/convert here
         const buffer = fileData.data
         let processedBuffer = buffer
-
         try {
             processedBuffer = await sharp(buffer)
-                .resize(2560, 2560, {
-                    fit: 'inside',
-                    withoutEnlargement: true,
-                })
+                .resize(2560, 2560, { fit: 'inside', withoutEnlargement: true })
                 .toFormat('jpeg', { quality: 90 })
                 .toBuffer()
-        } catch (err) {
-            console.error('Error processing image:', err)
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'Failed to process image',
-            })
+        } catch {
+            throw createError({ statusCode: 400, statusMessage: 'Failed to process image' })
         }
 
-        // Generate a unique filename for the cover
         const fileHash = crypto.randomBytes(8).toString('hex')
         const coverFilename = `cover_${id}_${fileHash}.jpg`
-
-        // Save the file
         const coverPath = await saveFile(processedBuffer, coverFilename, 'photos')
 
-        // Get image dimensions and blurhash
-        let metadata
+        let metadata: sharp.Metadata | undefined
         let blurhash = ''
         try {
             metadata = await sharp(processedBuffer).metadata()
             blurhash = await generateBlurhash(processedBuffer)
-        } catch (err) {
-            console.error('Error generating metadata:', err)
-        }
+        } catch {}
 
-        // Create or update cover photo record
-        const coverPhoto = await prisma.photo.create({
-            data: {
-                id: crypto.randomUUID(),
-                filename: coverFilename,
-                originalName: `${album.title}_cover.jpg`,
-                storagePath: coverPath,
-                thumbnailStoragePath: coverPath,
-                size: processedBuffer.length,
-                width: metadata?.width || 1,
-                height: metadata?.height || 1,
-                blurhash: blurhash || 'U6PVP-Kh0ffQfQfQfQfQ',
-                mimeType: 'image/jpeg',
-                fileHash: calculateFileHash(processedBuffer),
-                albumId: id,
-                uploaderId: user.id,
-                createdAt: BigInt(Date.now()),
-                updatedAt: BigInt(Date.now()),
-            },
-        })
+        const [coverPhoto] = await db.insert(photos).values({
+            id: crypto.randomUUID(),
+            filename: coverFilename,
+            originalName: `${album.title}_cover.jpg`,
+            storagePath: coverPath,
+            thumbnailStoragePath: coverPath,
+            size: processedBuffer.length,
+            width: metadata?.width || 1,
+            height: metadata?.height || 1,
+            blurhash: blurhash || 'U6PVP-Kh0ffQfQfQfQfQ',
+            mimeType: 'image/jpeg',
+            fileHash: calculateFileHash(processedBuffer),
+            albumId: id,
+            uploaderId: user.id,
+            createdAt: BigInt(Date.now()),
+            updatedAt: BigInt(Date.now()),
+        }).returning()
 
-        // Delete old cover photo if it exists (it's only used for cover)
+        // Delete old cover photo
         if (album.coverPhotoId) {
-            const oldCover = await prisma.photo.findUnique({
-                where: { id: album.coverPhotoId },
-            })
-            
+            const oldCover = await db.query.photos.findFirst({ where: eq(photos.id, album.coverPhotoId) })
             if (oldCover) {
-                // Delete old cover files from disk
-                await deleteFile(oldCover.storagePath).catch(err => {
-                    console.error('Failed to delete old cover file:', err)
-                })
+                await deleteFile(oldCover.storagePath).catch(err => console.error('Failed to delete old cover file:', err))
                 if (oldCover.thumbnailStoragePath && oldCover.thumbnailStoragePath !== oldCover.storagePath) {
-                    await deleteFile(oldCover.thumbnailStoragePath).catch(err => {
-                        console.error('Failed to delete old cover thumbnail:', err)
-                    })
+                    await deleteFile(oldCover.thumbnailStoragePath).catch(err => console.error('Failed to delete old cover thumbnail:', err))
                 }
-
-                // Delete the photo record
-                await prisma.photo.delete({
-                    where: { id: oldCover.id }
-                }).catch(err => {
-                    console.error('Failed to delete old cover photo record:', err)
-                })
+                await db.delete(photos).where(eq(photos.id, oldCover.id)).catch(err => console.error('Failed to delete old cover photo record:', err))
             }
         }
 
-        // Update album with new cover photo
-        const updatedAlbum = await prisma.album.update({
-            where: { id },
-            data: {
-                coverPhotoId: coverPhoto.id,
-            },
-            include: {
-                coverPhoto: {
-                    select: {
-                        id: true,
-                        blurhash: true,
-                    },
-                },
-            },
+        const [updatedAlbum] = await db.update(albums)
+            .set({ coverPhotoId: coverPhoto.id })
+            .where(eq(albums.id, id))
+            .returning()
+
+        const updatedCoverPhoto = await db.query.photos.findFirst({
+            where: eq(photos.id, updatedAlbum.coverPhotoId!),
+            columns: { id: true, blurhash: true },
         })
 
-        return {
-            success: true,
-            message: 'Album cover updated successfully',
-            data: updatedAlbum.coverPhoto,
-        }
+        return { success: true, message: 'Album cover updated successfully', data: updatedCoverPhoto }
     } catch (error: any) {
-        console.error('Error updating album cover with crop:', error)
-
-        if (error.statusCode) {
-            throw error
-        }
-
-        throw createError({
-            statusCode: 500,
-            statusMessage: 'Failed to update album cover',
-        })
+        if (error.statusCode) throw error
+        throw createError({ statusCode: 500, statusMessage: 'Failed to update album cover' })
     }
 })

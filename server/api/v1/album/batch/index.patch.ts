@@ -1,4 +1,5 @@
-import prisma from '../../../../utils/prisma'
+import { eq, and, inArray } from 'drizzle-orm'
+import { albums, albumCollaborators } from '../../../../db/schema'
 import { getUnixTimestamp, requireAuth } from '../../../../utils/auth'
 
 type VisibilityAction = 'keep' | 'public' | 'private'
@@ -6,11 +7,7 @@ type TagAction = 'none' | 'replace' | 'add' | 'remove'
 
 const normalizeTags = (value: unknown): string[] => {
     if (!Array.isArray(value)) return []
-
-    const normalized = value
-        .map(tag => (typeof tag === 'string' ? tag.trim() : ''))
-        .filter(tag => tag.length > 0)
-
+    const normalized = value.map(tag => (typeof tag === 'string' ? tag.trim() : '')).filter(tag => tag.length > 0)
     return Array.from(new Set(normalized))
 }
 
@@ -24,120 +21,64 @@ export default defineEventHandler(async (event) => {
             : []
 
         if (albumIds.length === 0) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'At least one album ID is required',
-            })
+            throw createError({ statusCode: 400, statusMessage: 'At least one album ID is required' })
         }
 
         const visibilityAction: VisibilityAction = ['keep', 'public', 'private'].includes(body.visibilityAction)
-            ? body.visibilityAction
-            : 'keep'
-
+            ? body.visibilityAction : 'keep'
         const tagAction: TagAction = ['none', 'replace', 'add', 'remove'].includes(body.tagAction)
-            ? body.tagAction
-            : 'none'
-
+            ? body.tagAction : 'none'
         const tags = normalizeTags(body.tags)
 
         if (tagAction !== 'none' && tags.length === 0) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'Tags are required for the selected tag action',
-            })
+            throw createError({ statusCode: 400, statusMessage: 'Tags are required for the selected tag action' })
         }
-
         if (visibilityAction === 'keep' && tagAction === 'none') {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'No changes provided',
-            })
+            throw createError({ statusCode: 400, statusMessage: 'No changes provided' })
         }
 
-        const albums = await prisma.album.findMany({
-            where: {
-                id: { in: albumIds },
-            },
-            include: {
+        const albumRows = await db.query.albums.findMany({
+            where: inArray(albums.id, albumIds),
+            with: {
                 collaborators: {
-                    where: {
-                        userId: user.id,
-                        role: {
-                            in: ['admin', 'editor'],
-                        },
-                    },
-                    select: {
-                        id: true,
-                    },
+                    where: and(eq(albumCollaborators.userId, user.id), inArray(albumCollaborators.role, ['admin', 'editor'])),
                 },
             },
         })
 
-        if (albums.length !== albumIds.length) {
-            throw createError({
-                statusCode: 404,
-                statusMessage: 'One or more albums were not found',
-            })
+        if (albumRows.length !== albumIds.length) {
+            throw createError({ statusCode: 404, statusMessage: 'One or more albums were not found' })
         }
 
-        const editableAlbums = albums.filter((album) => {
-            const isOwner = album.ownerId === user.id
-            const isEditorCollaborator = album.collaborators.length > 0
-            return isOwner || isEditorCollaborator
-        })
+        const editableAlbums = albumRows.filter(album => album.ownerId === user.id || album.collaborators.length > 0)
 
-        if (editableAlbums.length !== albums.length) {
-            throw createError({
-                statusCode: 403,
-                statusMessage: 'You do not have permission to edit one or more selected albums',
-            })
+        if (editableAlbums.length !== albumRows.length) {
+            throw createError({ statusCode: 403, statusMessage: 'You do not have permission to edit one or more selected albums' })
         }
 
         const now = getUnixTimestamp()
 
-        await prisma.$transaction(
-            editableAlbums.map((album) => {
+        await db.transaction(async (tx) => {
+            for (const album of editableAlbums) {
                 let nextTags = album.tags
-
-                if (tagAction === 'replace') {
-                    nextTags = tags
-                } else if (tagAction === 'add') {
-                    nextTags = Array.from(new Set([...(album.tags || []), ...tags]))
-                } else if (tagAction === 'remove') {
+                if (tagAction === 'replace') nextTags = tags
+                else if (tagAction === 'add') nextTags = Array.from(new Set([...(album.tags || []), ...tags]))
+                else if (tagAction === 'remove') {
                     const removeSet = new Set(tags)
                     nextTags = (album.tags || []).filter(tag => !removeSet.has(tag))
                 }
 
-                return prisma.album.update({
-                    where: { id: album.id },
-                    data: {
-                        updatedAt: now,
-                        isPublic: visibilityAction === 'keep'
-                            ? album.isPublic
-                            : visibilityAction === 'public',
-                        tags: nextTags,
-                    },
-                })
-            })
-        )
-
-        return {
-            success: true,
-            message: 'Albums updated successfully',
-            data: {
-                updatedCount: editableAlbums.length,
-            },
-        }
-    } catch (error: any) {
-        console.error('Error batch updating albums:', error)
-
-        if (error.statusCode) {
-            throw error
-        }
-
-        throw createError({
-            statusCode: 500,
-            statusMessage: 'Failed to batch update albums',
+                await tx.update(albums).set({
+                    updatedAt: now,
+                    isPublic: visibilityAction === 'keep' ? album.isPublic : visibilityAction === 'public',
+                    tags: nextTags,
+                }).where(eq(albums.id, album.id))
+            }
         })
+
+        return { success: true, message: 'Albums updated successfully', data: { updatedCount: editableAlbums.length } }
+    } catch (error: any) {
+        if (error.statusCode) throw error
+        throw createError({ statusCode: 500, statusMessage: 'Failed to batch update albums' })
     }
 })

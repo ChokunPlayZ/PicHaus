@@ -7,11 +7,13 @@
     "dev": "nuxt dev --host 0.0.0.0",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@immich/justified-layout-wasm": "^0.4.3",
-    "@prisma/client": "^6.18.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.1",
     "@types/file-saver": "^2.0.7",
@@ -19,6 +21,7 @@
     "argon2": "^0.44.0",
     "blurhash": "^2.0.5",
     "chart.js": "^4.5.1",
+    "drizzle-orm": "^0.45.2",
     "exifr": "^7.1.3",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
@@ -26,6 +29,7 @@
     "lodash-es": "^4.17.21",
     "nanoid": "^5.1.6",
     "nuxt": "^4.2.0",
+    "postgres": "^3.4.9",
     "sharp": "^0.34.5",
     "vue": "^3.5.22",
     "vue-chartjs": "^5.3.3",
@@ -35,6 +39,6 @@
     "@nuxtjs/tailwindcss": "^6.14.0",
     "@types/bun": "^1.3.1",
     "@types/lodash-es": "^4.17.12",
-    "prisma": "^6.18.0"
+    "drizzle-kit": "^0.31.10"
   }
 }

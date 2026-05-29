@@ -1,23 +1,12 @@
-import prisma from './prisma'
+import { count, eq } from 'drizzle-orm'
+import { users } from '../db/schema'
 
-/**
- * Check if the application has been set up (i.e., if any users exist)
- * @returns True if setup is complete (users exist), false otherwise
- */
 export async function isSetupComplete(): Promise<boolean> {
-    const userCount = await prisma.user.count()
-    return userCount > 0
+    const [{ value }] = await db.select({ value: count() }).from(users)
+    return value > 0
 }
 
-/**
- * Check if a user is an admin
- * @param userId - User ID to check
- * @returns True if user is admin
- */
 export async function isAdmin(userId: string): Promise<boolean> {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-    })
-
+    const user = await db.query.users.findFirst({ where: eq(users.id, userId) })
     return user?.role === 'ADMIN'
 }

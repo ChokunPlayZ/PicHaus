@@ -1,67 +1,43 @@
-import prisma from '../../../utils/prisma'
+import { eq, inArray, and } from 'drizzle-orm'
+import { albums, shareGroups, shareLinks, albumToShareGroups } from '../../../db/schema'
 import { hashPassword, getUnixTimestamp, requireAuth } from '../../../utils/auth'
-
 import crypto from 'crypto'
 
-/**
- * Create a new share group
- */
 export default defineEventHandler(async (event) => {
     try {
-        // Get authenticated user
         const user = await requireAuth(event)
-
         const body = await readBody(event)
-        const { title, description, albumIds, isPublic, password, type, label } = body
+        const { title, description, albumIds, password, type, label } = body
 
-        if (!title) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'Title is required',
-            })
-        }
-
+        if (!title) throw createError({ statusCode: 400, statusMessage: 'Title is required' })
         if (!albumIds || !Array.isArray(albumIds) || albumIds.length === 0) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'At least one album must be selected',
-            })
+            throw createError({ statusCode: 400, statusMessage: 'At least one album must be selected' })
         }
 
         const now = getUnixTimestamp()
 
-        // Verify albums exist and user owns them
-        const albums = await prisma.album.findMany({
-            where: {
-                id: { in: albumIds },
-                ownerId: user.id
-            }
-        })
+        const ownedAlbums = await db.select({ id: albums.id })
+            .from(albums)
+            .where(and(inArray(albums.id, albumIds), eq(albums.ownerId, user.id)))
 
-        if (albums.length !== albumIds.length) {
-            throw createError({
-                statusCode: 403,
-                statusMessage: 'You can only share albums you own',
-            })
+        if (ownedAlbums.length !== albumIds.length) {
+            throw createError({ statusCode: 403, statusMessage: 'You can only share albums you own' })
         }
 
-        // Create ShareGroup
-        const shareGroup = await prisma.shareGroup.create({
-            data: {
-                title,
-                description: description || null,
-                ownerId: user.id,
-                createdAt: now,
-                updatedAt: now,
-                albums: {
-                    connect: albumIds.map(id => ({ id }))
-                }
-            }
-        })
+        const [shareGroup] = await db.insert(shareGroups).values({
+            title,
+            description: description || null,
+            ownerId: user.id,
+            createdAt: now,
+            updatedAt: now,
+        }).returning()
 
-        // Generate ShareLink for the group
+        await db.insert(albumToShareGroups).values(
+            albumIds.map((id: string) => ({ A: id, B: shareGroup.id }))
+        )
+
         const token = crypto.randomBytes(32).toString('hex')
-        const linkData: any = {
+        const linkData: Partial<typeof shareLinks.$inferInsert> = {
             token,
             type: type || 'view',
             label: label || 'Public Link',
@@ -69,14 +45,9 @@ export default defineEventHandler(async (event) => {
             shareGroupId: shareGroup.id,
             createdAt: now,
         }
+        if (password) linkData.password = await hashPassword(password)
 
-        if (password) {
-            linkData.password = await hashPassword(password)
-        }
-
-        const shareLink = await prisma.shareLink.create({
-            data: linkData
-        })
+        const [shareLink] = await db.insert(shareLinks).values(linkData as typeof shareLinks.$inferInsert).returning()
 
         return {
             success: true,
@@ -87,23 +58,13 @@ export default defineEventHandler(async (event) => {
                     description: shareGroup.description,
                     createdAt: Number(shareGroup.createdAt),
                     updatedAt: Number(shareGroup.updatedAt),
-                    albumsCount: albums.length
+                    albumsCount: ownedAlbums.length,
                 },
-                link: {
-                    token: shareLink.token,
-                    url: `/v/${shareLink.token}`
-                }
+                link: { token: shareLink.token, url: `/v/${shareLink.token}` },
             },
         }
-
     } catch (error: any) {
-        console.error('Error creating share group:', error)
-        if (error.statusCode) {
-            throw error
-        }
-        throw createError({
-            statusCode: 500,
-            statusMessage: 'Failed to create share group',
-        })
+        if (error.statusCode) throw error
+        throw createError({ statusCode: 500, statusMessage: 'Failed to create share group' })
     }
 })
