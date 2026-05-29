@@ -429,54 +429,79 @@
 
     <!-- Crop Album Cover Modal -->
     <div v-if="showCropModal"
-        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto"
         @click.self="cancelCrop">
-        <div
-            class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h3 class="text-2xl font-bold text-white mb-4">Crop Album Cover</h3>
+        <div class="bg-[var(--glass-bg)] backdrop-blur-lg rounded-2xl border border-[var(--glass-border)] w-full max-w-3xl my-8 overflow-hidden">
 
-            <div v-if="photoCropImage" class="space-y-4">
-                <!-- Instructions -->
-                <p class="text-sm text-purple-200">Click and drag to select the crop area (locked to 16:9)</p>
+            <!-- Header -->
+            <div class="flex items-start justify-between p-6 pb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-white">Set Album Cover</h3>
+                    <p class="text-sm text-[var(--text-muted)] mt-1">
+                        Drag inside to move &middot; drag corners to resize &middot; locked to 16:9
+                    </p>
+                </div>
+                <button @click="cancelCrop" class="text-white/40 hover:text-white transition text-3xl leading-none -mt-1 ml-4">&times;</button>
+            </div>
 
-                <!-- Crop Preview -->
-                <div class="relative bg-gray-900 rounded-lg overflow-hidden border border-white/10" style="max-height: 400px;">
-                    <div class="relative inline-block w-full">
-                        <img 
-                            ref="cropImageRef"
-                            :src="buildAssetUrl(`/api/assets/full/${photoCropImage.id}`)"
-                            @load="initializeCrop"
-                            class="w-full h-auto block"
-                            style="max-height: 400px; object-fit: contain;"
-                        />
-                        <canvas
-                            ref="cropCanvasRef"
-                            @mousedown="handleCanvasMouseDown"
-                            @mousemove="handleCanvasMouseMove"
-                            @mouseup="handleCanvasMouseUp"
-                            @mouseleave="handleCanvasMouseUp"
-                            class="absolute inset-0 cursor-crosshair"
-                            style="width: 100%; height: auto;"
-                        ></canvas>
+            <div v-if="photoCropImage" class="px-6 pb-6 space-y-4">
+                <!-- Crop area -->
+                <div class="relative bg-black rounded-xl overflow-hidden select-none" style="height: 420px; touch-action: none;">
+                    <img
+                        ref="cropImageRef"
+                        :src="buildAssetUrl(`/api/assets/full/${photoCropImage.id}`)"
+                        @load="initializeCrop"
+                        class="absolute inset-0 w-full h-full block"
+                        style="object-fit: contain;"
+                        draggable="false"
+                    />
+                    <canvas
+                        ref="cropCanvasRef"
+                        class="absolute"
+                        style="touch-action: none;"
+                        @mousedown="handleCropMouseDown"
+                        @mousemove="handleCropMouseMove"
+                        @mouseup="handleCropMouseUp"
+                        @mouseleave="handleCropMouseUp"
+                        @touchstart.prevent="handleCropTouchStart"
+                        @touchmove.prevent="handleCropTouchMove"
+                        @touchend.prevent="handleCropTouchEnd"
+                    ></canvas>
+                </div>
+
+                <!-- Preview + info row -->
+                <div class="flex gap-4 items-start">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs text-[var(--text-muted)] mb-1.5 font-medium uppercase tracking-wide">Preview</p>
+                        <canvas ref="cropPreviewRef" class="w-full rounded-lg border border-white/10 block bg-black"
+                            style="aspect-ratio: 16/9;"></canvas>
+                    </div>
+                    <div class="shrink-0 text-right space-y-2 pt-6">
+                        <div class="text-xs text-[var(--text-muted)] font-mono">
+                            {{ Math.round(cropArea.width) }} &times; {{ Math.round(cropArea.height) }}
+                        </div>
+                        <button @click="resetCrop"
+                            class="text-xs text-[var(--text-secondary)] hover:text-white transition underline block ml-auto">
+                            Reset
+                        </button>
                     </div>
                 </div>
 
-                <!-- Crop Dimensions Info -->
-                <div class="text-xs text-white/60 space-y-1">
-                    <div>Selected: {{ Math.round(cropArea.width) }} × {{ Math.round(cropArea.height) }} px</div>
-                </div>
-
                 <!-- Actions -->
-                <div class="flex space-x-3">
+                <div class="flex gap-3 pt-1">
                     <button type="button" @click="cancelCrop"
-                        class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition text-sm font-medium">
                         Cancel
                     </button>
                     <button type="button" @click="confirmCrop" :disabled="croppingCover"
-                        class="flex-1 px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
-                        {{ croppingCover ? 'Setting...' : 'Set as Cover' }}
+                        class="flex-1 px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold rounded-xl transition disabled:opacity-50 text-sm">
+                        {{ croppingCover ? 'Saving…' : 'Set as Cover' }}
                     </button>
                 </div>
+            </div>
+
+            <div v-else class="flex justify-center items-center h-48">
+                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
             </div>
         </div>
     </div>
@@ -1038,22 +1063,75 @@ const showCropModal = ref(false)
 const photoCropImage = ref<Photo | null>(null)
 const cropCanvasRef = ref<HTMLCanvasElement | null>(null)
 const cropImageRef = ref<HTMLImageElement | null>(null)
+const cropPreviewRef = ref<HTMLCanvasElement | null>(null)
 const cropArea = ref({ x: 0, y: 0, width: 0, height: 0 })
-const isDragging = ref(false)
-const dragStart = ref({ x: 0, y: 0 })
 const croppingCover = ref(false)
 const COVER_CROP_RATIO = 16 / 9
 
-const clampCropToImage = (x: number, y: number, width: number, height: number, imageWidth: number, imageHeight: number) => {
-    const clampedWidth = Math.min(width, imageWidth)
-    const clampedHeight = Math.min(height, imageHeight)
+type CropDragMode = 'none' | 'move' | 'new' | 'resize-tl' | 'resize-tr' | 'resize-bl' | 'resize-br'
+const cropDragMode = ref<CropDragMode>('none')
+const cropDragOrigin = ref({ x: 0, y: 0 })
+const cropDragSnapshot = ref({ x: 0, y: 0, width: 0, height: 0 })
+const CROP_HANDLE = 14
 
-    return {
-        x: Math.max(0, Math.min(x, imageWidth - clampedWidth)),
-        y: Math.max(0, Math.min(y, imageHeight - clampedHeight)),
-        width: clampedWidth,
-        height: clampedHeight,
+const clampCropToImage = (x: number, y: number, width: number, height: number, W: number, H: number) => {
+    const w = Math.max(Math.min(width, W), 0)
+    let h = w / COVER_CROP_RATIO
+    if (h > H) { h = Math.min(height, H); return { x: Math.max(0, Math.min(x, W - h * COVER_CROP_RATIO)), y: Math.max(0, Math.min(y, H - h)), width: h * COVER_CROP_RATIO, height: h } }
+    return { x: Math.max(0, Math.min(x, W - w)), y: Math.max(0, Math.min(y, H - h)), width: w, height: h }
+}
+
+// Returns scale and pixel offset of the image inside its object-fit:contain container
+const getCropImageLayout = () => {
+    const img = cropImageRef.value
+    const canvas = cropCanvasRef.value
+    if (!img || !canvas) return null
+    const cw = img.parentElement!.offsetWidth
+    const ch = img.parentElement!.offsetHeight
+    const naturalRatio = img.naturalWidth / img.naturalHeight
+    const containerRatio = cw / ch
+    let iw: number, ih: number, il: number, it: number
+    if (naturalRatio > containerRatio) {
+        iw = cw; ih = cw / naturalRatio; il = 0; it = (ch - ih) / 2
+    } else {
+        ih = ch; iw = ch * naturalRatio; il = (cw - iw) / 2; it = 0
     }
+    return { scale: iw / img.naturalWidth, left: il, top: it, width: iw, height: ih }
+}
+
+const syncCanvas = () => {
+    const layout = getCropImageLayout()
+    const canvas = cropCanvasRef.value
+    if (!layout || !canvas) return
+    canvas.width = Math.round(layout.width)
+    canvas.height = Math.round(layout.height)
+    canvas.style.left = layout.left + 'px'
+    canvas.style.top = layout.top + 'px'
+    canvas.style.width = layout.width + 'px'
+    canvas.style.height = layout.height + 'px'
+    return layout
+}
+
+const cropCanvasPoint = (e: { clientX: number; clientY: number }) => {
+    const canvas = cropCanvasRef.value
+    if (!canvas) return { x: 0, y: 0 }
+    const r = canvas.getBoundingClientRect()
+    return { x: e.clientX - r.left, y: e.clientY - r.top }
+}
+
+const cropHitTest = (cx: number, cy: number): CropDragMode => {
+    const layout = getCropImageLayout()
+    if (!layout) return 'new'
+    const { scale } = layout
+    const { x, y, width, height } = cropArea.value
+    const sx = x * scale, sy = y * scale, sw = width * scale, sh = height * scale
+    const r = CROP_HANDLE
+    if (Math.abs(cx - sx) < r && Math.abs(cy - sy) < r) return 'resize-tl'
+    if (Math.abs(cx - (sx + sw)) < r && Math.abs(cy - sy) < r) return 'resize-tr'
+    if (Math.abs(cx - sx) < r && Math.abs(cy - (sy + sh)) < r) return 'resize-bl'
+    if (Math.abs(cx - (sx + sw)) < r && Math.abs(cy - (sy + sh)) < r) return 'resize-br'
+    if (cx > sx && cx < sx + sw && cy > sy && cy < sy + sh) return 'move'
+    return 'new'
 }
 
 const copied = ref(false)
@@ -1729,179 +1807,190 @@ const deletePhoto = async (id: string) => {
     }
 }
 
-// Crop cover image
-const initializeCrop = async () => {
-    if (!photoCropImage.value || !cropImageRef.value) return
-    
-    // Initialize to a centered 16:9 area that fits inside the image
-    const img = cropImageRef.value
-    if (img.complete) {
-        const imageWidth = img.naturalWidth
-        const imageHeight = img.naturalHeight
-
-        let width = imageWidth
-        let height = width / COVER_CROP_RATIO
-
-        if (height > imageHeight) {
-            height = imageHeight
-            width = height * COVER_CROP_RATIO
-        }
-
-        cropArea.value = {
-            x: (imageWidth - width) / 2,
-            y: (imageHeight - height) / 2,
-            width,
-            height,
-        }
-        drawCropOverlay()
-    }
-}
+// ── Crop cover image ──────────────────────────────────────────────────────────
 
 const drawCropOverlay = () => {
-    if (!cropImageRef.value || !cropCanvasRef.value) return
-    
     const canvas = cropCanvasRef.value
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    
-    const img = cropImageRef.value
-    const containerWidth = cropImageRef.value.parentElement?.offsetWidth || 600
-    const scale = containerWidth / img.naturalWidth
-    
-    // Clear canvas
-    canvas.width = containerWidth
-    canvas.height = img.naturalHeight * scale
-    
-    // Draw image
-    ctx.drawImage(img, 0, 0, containerWidth, canvas.height)
-    
-    // Draw semi-transparent overlay
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+    if (!canvas || !cropArea.value.width) return
+    const layout = getCropImageLayout()
+    if (!layout) return
+    const { scale } = layout
+
+    const ctx = canvas.getContext('2d')!
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    const sx = cropArea.value.x * scale
+    const sy = cropArea.value.y * scale
+    const sw = cropArea.value.width * scale
+    const sh = cropArea.value.height * scale
+
+    // Darken area outside crop
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    
-    // Draw crop area (clear it)
-    const scaledX = cropArea.value.x * scale
-    const scaledY = cropArea.value.y * scale
-    const scaledW = cropArea.value.width * scale
-    const scaledH = cropArea.value.height * scale
-    
-    ctx.clearRect(scaledX, scaledY, scaledW, scaledH)
-    
-    // Draw border
-    ctx.strokeStyle = '#f9d4e0'
+    ctx.clearRect(sx, sy, sw, sh)
+
+    // Crop border
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'
     ctx.lineWidth = 2
-    ctx.strokeRect(scaledX, scaledY, scaledW, scaledH)
-}
+    ctx.strokeRect(sx, sy, sw, sh)
 
-const handleCanvasMouseDown = (e: MouseEvent) => {
-    if (!cropCanvasRef.value) return
-    isDragging.value = true
-    dragStart.value = {
-        x: e.clientX - cropCanvasRef.value.getBoundingClientRect().left,
-        y: e.clientY - cropCanvasRef.value.getBoundingClientRect().top
+    // Rule-of-thirds grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.28)'
+    ctx.lineWidth = 1
+    for (let i = 1; i < 3; i++) {
+        ctx.beginPath(); ctx.moveTo(sx + sw * i / 3, sy); ctx.lineTo(sx + sw * i / 3, sy + sh); ctx.stroke()
+        ctx.beginPath(); ctx.moveTo(sx, sy + sh * i / 3); ctx.lineTo(sx + sw, sy + sh * i / 3); ctx.stroke()
     }
+
+    // Corner handles
+    ctx.fillStyle = '#fff'
+    ctx.shadowColor = 'rgba(0,0,0,0.55)'
+    ctx.shadowBlur = 4
+    for (const [hx, hy] of [[sx, sy], [sx + sw, sy], [sx, sy + sh], [sx + sw, sy + sh]]) {
+        ctx.fillRect(hx - CROP_HANDLE / 2, hy - CROP_HANDLE / 2, CROP_HANDLE, CROP_HANDLE)
+    }
+    ctx.shadowBlur = 0
 }
 
-const handleCanvasMouseMove = (e: MouseEvent) => {
-    if (!isDragging.value || !cropCanvasRef.value || !cropImageRef.value) return
-    
-    const canvas = cropCanvasRef.value
+const updateCropPreview = () => {
+    const preview = cropPreviewRef.value
     const img = cropImageRef.value
-    const containerWidth = img.parentElement?.offsetWidth || 600
-    const scale = containerWidth / img.naturalWidth
-    
-    const currentX = e.clientX - canvas.getBoundingClientRect().left
-    const currentY = e.clientY - canvas.getBoundingClientRect().top
+    if (!preview || !img || !cropArea.value.width) return
+    const W = 480, H = Math.round(480 / COVER_CROP_RATIO)
+    preview.width = W; preview.height = H
+    const ctx = preview.getContext('2d')!
+    ctx.clearRect(0, 0, W, H)
+    ctx.drawImage(img, cropArea.value.x, cropArea.value.y, cropArea.value.width, cropArea.value.height, 0, 0, W, H)
+}
 
-    const deltaX = (currentX - dragStart.value.x) / scale
-    const deltaY = (currentY - dragStart.value.y) / scale
+const initializeCrop = () => {
+    const img = cropImageRef.value
+    if (!img || !img.naturalWidth) return
+    syncCanvas()
+    const W = img.naturalWidth, H = img.naturalHeight
+    let width = W, height = width / COVER_CROP_RATIO
+    if (height > H) { height = H; width = height * COVER_CROP_RATIO }
+    cropArea.value = { x: (W - width) / 2, y: (H - height) / 2, width, height }
+    drawCropOverlay()
+    updateCropPreview()
+}
 
-    const absDeltaX = Math.abs(deltaX)
-    const absDeltaY = Math.abs(deltaY)
+const resetCrop = () => {
+    const img = cropImageRef.value
+    if (!img) return
+    const W = img.naturalWidth, H = img.naturalHeight
+    let width = W, height = width / COVER_CROP_RATIO
+    if (height > H) { height = H; width = height * COVER_CROP_RATIO }
+    cropArea.value = { x: (W - width) / 2, y: (H - height) / 2, width, height }
+    drawCropOverlay()
+    updateCropPreview()
+}
 
-    // Keep selection locked to 16:9 and inside dragged bounds.
-    const widthFromHeight = absDeltaY * COVER_CROP_RATIO
-    const width = Math.min(absDeltaX, widthFromHeight)
-    const height = width / COVER_CROP_RATIO
+const cropCursorMap: Record<CropDragMode, string> = {
+    none: 'crosshair', new: 'crosshair', move: 'move',
+    'resize-tl': 'nwse-resize', 'resize-br': 'nwse-resize',
+    'resize-tr': 'nesw-resize', 'resize-bl': 'nesw-resize',
+}
 
-    let x = dragStart.value.x / scale
-    let y = dragStart.value.y / scale
+const handleCropMouseDown = (e: MouseEvent) => {
+    e.preventDefault()
+    const pt = cropCanvasPoint(e)
+    cropDragMode.value = cropHitTest(pt.x, pt.y)
+    cropDragOrigin.value = pt
+    cropDragSnapshot.value = { ...cropArea.value }
+}
 
-    if (deltaX < 0) x -= width
-    if (deltaY < 0) y -= height
+const handleCropMouseMove = (e: MouseEvent) => {
+    const pt = cropCanvasPoint(e)
 
-    const clampedCrop = clampCropToImage(
-        x,
-        y,
-        width,
-        height,
-        img.naturalWidth,
-        img.naturalHeight
-    )
-
-    // Ensure minimum crop size
-    if (clampedCrop.width > 50 && clampedCrop.height > 50) {
-        cropArea.value = clampedCrop
-        drawCropOverlay()
+    if (cropDragMode.value === 'none') {
+        const canvas = cropCanvasRef.value
+        if (canvas) canvas.style.cursor = cropCursorMap[cropHitTest(pt.x, pt.y)]
+        return
     }
+
+    e.preventDefault()
+    const layout = getCropImageLayout()
+    if (!layout) return
+    const { scale } = layout
+    const img = cropImageRef.value!
+    const W = img.naturalWidth, H = img.naturalHeight
+    const snap = cropDragSnapshot.value
+
+    if (cropDragMode.value === 'move') {
+        const dx = (pt.x - cropDragOrigin.value.x) / scale
+        const dy = (pt.y - cropDragOrigin.value.y) / scale
+        cropArea.value = {
+            ...snap,
+            x: Math.max(0, Math.min(snap.x + dx, W - snap.width)),
+            y: Math.max(0, Math.min(snap.y + dy, H - snap.height)),
+        }
+    } else if (cropDragMode.value === 'new') {
+        const ax = cropDragOrigin.value.x / scale, ay = cropDragOrigin.value.y / scale
+        const cx = pt.x / scale, cy = pt.y / scale
+        const rawW = Math.abs(cx - ax), rawH = Math.abs(cy - ay)
+        const width = Math.max(rawW, rawH * COVER_CROP_RATIO)
+        const height = width / COVER_CROP_RATIO
+        const x = cx < ax ? ax - width : ax
+        const y = cy < ay ? ay - height : ay
+        const clamped = clampCropToImage(x, y, width, height, W, H)
+        if (clamped.width > 30) cropArea.value = clamped
+    } else {
+        // Corner resize — keep opposite corner anchored
+        let anchorX: number, anchorY: number
+        if (cropDragMode.value === 'resize-tl') { anchorX = snap.x + snap.width; anchorY = snap.y + snap.height }
+        else if (cropDragMode.value === 'resize-tr') { anchorX = snap.x; anchorY = snap.y + snap.height }
+        else if (cropDragMode.value === 'resize-bl') { anchorX = snap.x + snap.width; anchorY = snap.y }
+        else { anchorX = snap.x; anchorY = snap.y }
+        const cx = pt.x / scale, cy = pt.y / scale
+        const rawW = Math.abs(cx - anchorX), rawH = Math.abs(cy - anchorY)
+        const width = Math.max(rawW, rawH * COVER_CROP_RATIO, 50)
+        const height = width / COVER_CROP_RATIO
+        const x = cx < anchorX ? anchorX - width : anchorX
+        const y = cy < anchorY ? anchorY - height : anchorY
+        cropArea.value = clampCropToImage(x, y, width, height, W, H)
+    }
+
+    drawCropOverlay()
+    updateCropPreview()
 }
 
-const handleCanvasMouseUp = () => {
-    isDragging.value = false
+const handleCropMouseUp = () => { cropDragMode.value = 'none' }
+
+const handleCropTouchStart = (e: TouchEvent) => {
+    const t = e.touches[0]; if (!t) return
+    handleCropMouseDown({ clientX: t.clientX, clientY: t.clientY, preventDefault: () => {} } as any)
 }
+const handleCropTouchMove = (e: TouchEvent) => {
+    const t = e.touches[0]; if (!t) return
+    handleCropMouseMove({ clientX: t.clientX, clientY: t.clientY, preventDefault: () => {} } as any)
+}
+const handleCropTouchEnd = () => { cropDragMode.value = 'none' }
 
 const confirmCrop = async () => {
     if (!photoCropImage.value || !cropImageRef.value) return
-    
     croppingCover.value = true
     try {
-        // Convert crop area to canvas coordinates for cropping
         const img = cropImageRef.value
-        const containerWidth = img.parentElement?.offsetWidth || 600
-        const scale = containerWidth / img.naturalWidth
-        
-        // Create a new image element to draw the original (not scaled) image
-        const canvas = document.createElement('canvas')
-        canvas.width = cropArea.value.width
-        canvas.height = cropArea.value.height
-        
-        const ctx = canvas.getContext('2d')
-        if (!ctx) throw new Error('Failed to get canvas context')
-        
-        // Draw the cropped portion
-        ctx.drawImage(
-            img,
-            cropArea.value.x,
-            cropArea.value.y,
-            cropArea.value.width,
-            cropArea.value.height,
-            0,
-            0,
-            cropArea.value.width,
-            cropArea.value.height
-        )
-        
-        // Convert canvas to blob
-        canvas.toBlob(async (blob) => {
-            if (!blob) throw new Error('Failed to create blob')
-            
+        const offscreen = document.createElement('canvas')
+        offscreen.width = Math.round(cropArea.value.width)
+        offscreen.height = Math.round(cropArea.value.height)
+        const ctx = offscreen.getContext('2d')!
+        ctx.drawImage(img, cropArea.value.x, cropArea.value.y, cropArea.value.width, cropArea.value.height, 0, 0, offscreen.width, offscreen.height)
+
+        offscreen.toBlob(async (blob) => {
+            if (!blob) { showToast('Failed to create image', 'error'); croppingCover.value = false; return }
             try {
-                // Upload cropped image as cover
-                const formData = new FormData()
-                formData.append('file', blob, 'cover.jpg')
-                formData.append('cropData', JSON.stringify(cropArea.value))
-                
-                const response = await fetch(`/api/v1/album/${albumId}/cover-crop`, {
+                const fd = new FormData()
+                fd.append('file', blob, 'cover.jpg')
+                const res = await fetch(`/api/v1/album/${albumId}/cover-crop`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${getAuthToken()}`
-                    },
-                    body: formData
+                    headers: { 'Authorization': `Bearer ${getAuthToken()}` },
+                    body: fd,
                 })
-                
-                if (!response.ok) throw new Error('Failed to set cover')
-                
+                if (!res.ok) throw new Error('Upload failed')
                 showCropModal.value = false
+                photoCropImage.value = null
                 showToast('Album cover updated!')
                 await fetchAlbum()
             } catch (err: any) {
@@ -1911,7 +2000,6 @@ const confirmCrop = async () => {
             }
         }, 'image/jpeg', 0.95)
     } catch (err: any) {
-        console.error('Crop error:', err)
         showToast(err.message || 'Failed to crop image', 'error')
         croppingCover.value = false
     }
@@ -1920,6 +2008,7 @@ const confirmCrop = async () => {
 const cancelCrop = () => {
     showCropModal.value = false
     photoCropImage.value = null
+    cropDragMode.value = 'none'
 }
 
 const openEditPhotoModalFromMenu = (photo: Photo) => {

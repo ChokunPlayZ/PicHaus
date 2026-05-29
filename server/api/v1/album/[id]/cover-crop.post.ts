@@ -65,38 +65,12 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        const cropDataStr = formData.find(item => item.name === 'cropData')?.data?.toString()
-        let cropData = { x: 0, y: 0, width: 0, height: 0 }
-        if (cropDataStr) {
-            try {
-                cropData = JSON.parse(cropDataStr)
-            } catch (e) {
-                console.error('Failed to parse crop data:', e)
-            }
-        }
-
-        // Process the cropped image
+        // The client crops client-side before uploading, so we just resize/convert here
         const buffer = fileData.data
         let processedBuffer = buffer
 
         try {
-            let pipeline = sharp(buffer)
-
-            // Apply crop if valid coordinates were provided
-            if (cropData.width > 0 && cropData.height > 0) {
-                const imgMeta = await sharp(buffer).metadata()
-                const imgW = imgMeta.width || 0
-                const imgH = imgMeta.height || 0
-                const left = Math.max(0, Math.round(cropData.x))
-                const top = Math.max(0, Math.round(cropData.y))
-                const width = Math.min(Math.round(cropData.width), imgW - left)
-                const height = Math.min(Math.round(cropData.height), imgH - top)
-                if (width > 0 && height > 0) {
-                    pipeline = pipeline.extract({ left, top, width, height })
-                }
-            }
-
-            processedBuffer = await pipeline
+            processedBuffer = await sharp(buffer)
                 .resize(2560, 2560, {
                     fit: 'inside',
                     withoutEnlargement: true,
