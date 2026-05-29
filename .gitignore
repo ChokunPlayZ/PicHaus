@@ -17,6 +17,7 @@ logs
 .DS_Store
 .fleet
 .idea
+HANDOFF.md
 
 # Local env files
 .env
