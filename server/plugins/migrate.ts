@@ -4,7 +4,7 @@ export default defineNitroPlugin(async () => {
     // Create migration-tracking table only if it doesn't already exist.
     // Avoids a PostgreSQL NOTICE (code 42P07) that can surface as an error
     // in some driver configurations when using CREATE TABLE IF NOT EXISTS.
-    const [[{ trackingExists }]] = await db.execute(sql`
+    const [{ trackingExists }] = await db.execute(sql`
         SELECT EXISTS (
             SELECT FROM information_schema.tables
             WHERE table_schema = 'public' AND table_name = '__pichaus_migrations'
