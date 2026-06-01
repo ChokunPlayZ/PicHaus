@@ -79,6 +79,7 @@
 import { setAuthToken, clearAuthToken } from '~/utils/auth-client'
 
 const route = useRoute()
+const { trigger: splashTrigger, dismiss: splashDismiss } = useSplash()
 
 const getRedirectTarget = () => {
     const redirect = route.query.redirect
@@ -98,13 +99,15 @@ const handleLogin = async () => {
     loading.value = true
     error.value = ''
     try {
-        const response = await $fetch<{ success: boolean; data: { accessToken: string } }>('/api/v1/auth/login', {
+        const response = await $fetch<{ success: boolean; data: { accessToken: string; name: string } }>('/api/v1/auth/login', {
             method: 'POST',
             body: form.value,
         })
         if (response.success) {
             setAuthToken(response.data.accessToken)
+            splashTrigger(response.data.name)
             await navigateTo(getRedirectTarget())
+            await splashDismiss()
         }
     } catch (err: any) {
         error.value = err.data?.statusMessage || 'Login failed. Please check your credentials.'
@@ -128,7 +131,7 @@ const handlePasskeyLogin = async () => {
         const authResponse = await startAuthentication({ optionsJSON: optRes.data.options })
 
         // Verify and get session token
-        const verifyRes = await $fetch<{ success: boolean; data: { accessToken: string } }>(
+        const verifyRes = await $fetch<{ success: boolean; data: { accessToken: string; name: string } }>(
             '/api/v1/auth/passkey/login-verify', {
                 method: 'POST',
                 body: { response: authResponse, challengeId: optRes.data.challengeId },
@@ -136,7 +139,9 @@ const handlePasskeyLogin = async () => {
         )
 
         setAuthToken(verifyRes.data.accessToken)
+        splashTrigger(verifyRes.data.name)
         await navigateTo(getRedirectTarget())
+        await splashDismiss()
     } catch (err: any) {
         // User cancelled — don't show an error
         if (err?.name === 'NotAllowedError') return
