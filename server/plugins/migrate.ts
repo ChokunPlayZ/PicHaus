@@ -1,14 +1,25 @@
 import { sql } from 'drizzle-orm'
 
 export default defineNitroPlugin(async () => {
-    // Create our migration-tracking table first (idempotent)
-    await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS __pichaus_migrations (
-            id         SERIAL  PRIMARY KEY,
-            name       TEXT    NOT NULL UNIQUE,
-            applied_at BIGINT  NOT NULL
-        )
-    `)
+    // Create migration-tracking table only if it doesn't already exist.
+    // Avoids a PostgreSQL NOTICE (code 42P07) that can surface as an error
+    // in some driver configurations when using CREATE TABLE IF NOT EXISTS.
+    const [[{ trackingExists }]] = await db.execute(sql`
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name = '__pichaus_migrations'
+        ) AS "trackingExists"
+    `) as any[]
+
+    if (!trackingExists) {
+        await db.execute(sql`
+            CREATE TABLE __pichaus_migrations (
+                id         SERIAL  PRIMARY KEY,
+                name       TEXT    NOT NULL UNIQUE,
+                applied_at BIGINT  NOT NULL
+            )
+        `)
+    }
 
     // Get all bundled migration files in sorted order
     const storage = useStorage('assets:migrations')
