@@ -153,6 +153,18 @@
                             class="absolute inset-0 w-full h-full object-cover" />
                         <img :src="buildAssetUrl(`/api/assets/thumb/${photo.id}`)" :alt="photo.filename" loading="lazy"
                             class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
+                        <button @click.stop="toggleFavorite(photo.id)"
+                            class="absolute bottom-2 right-2 z-10 p-1.5 rounded-full transition-all duration-200"
+                            :class="isFavorited(photo.id)
+                                ? 'bg-red-500/80 text-white opacity-100'
+                                : 'bg-black/40 text-white/60 opacity-100 md:opacity-0 md:group-hover:opacity-100'">
+                            <svg v-if="isFavorited(photo.id)" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
+                            </svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -234,6 +246,18 @@
                             class="absolute inset-0 w-full h-full object-cover" />
                         <img :src="buildAssetUrl(`/api/assets/thumb/${photo.id}`)" :alt="photo.filename" loading="lazy"
                             class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
+                        <button @click.stop="toggleFavorite(photo.id)"
+                            class="absolute bottom-2 right-2 z-10 p-1.5 rounded-full transition-all duration-200"
+                            :class="isFavorited(photo.id)
+                                ? 'bg-red-500/80 text-white opacity-100'
+                                : 'bg-black/40 text-white/60 opacity-100 md:opacity-0 md:group-hover:opacity-100'">
+                            <svg v-if="isFavorited(photo.id)" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
+                            </svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -290,6 +314,39 @@
             </div>
         </div>
 
+        <!-- Favorites download bar -->
+        <Transition name="slide-up">
+            <div v-if="favorites.size > 0 && !selectedPhoto"
+                class="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-black/85 backdrop-blur-xl border-t border-white/15">
+                <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
+                        </svg>
+                        <span class="text-white font-medium text-sm sm:text-base">
+                            {{ favorites.size }} {{ favorites.size === 1 ? 'photo' : 'photos' }} selected
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button @click="clearFavorites"
+                            class="px-3 py-1.5 text-sm text-white/60 hover:text-white transition rounded-lg hover:bg-white/10">
+                            Clear
+                        </button>
+                        <button @click="downloadFavorites" :disabled="downloading"
+                            class="px-4 py-2 rounded-lg bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] text-white font-semibold text-sm flex items-center gap-2 disabled:opacity-50 transition shadow-lg shadow-[var(--shadow-secondary)]">
+                            <svg v-if="isIOS" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                            </svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                            {{ isIOS ? 'Share' : 'Download' }}{{ favorites.size > 1 ? ` (${favorites.size})` : '' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+
         <!-- Download Progress Modal -->
         <div v-if="downloading"
             class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -316,8 +373,10 @@
         <!-- Photo Viewer -->
         <PhotoViewer v-if="selectedPhoto" :photo="selectedPhoto" :has-previous="selectedPhotoIndex! > 0"
             :has-next="selectedPhotoIndex! < (photos.length || 0) - 1" :previous-photo-id="previousPhotoId"
-            :next-photo-id="nextPhotoId" :show-metadata="showMetadata" @close="closePhotoViewer"
-            @previous="previousPhoto" @next="nextPhoto" />
+            :next-photo-id="nextPhotoId" :show-metadata="showMetadata"
+            :is-favorited="selectedPhoto ? isFavorited(selectedPhoto.id) : false"
+            @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto"
+            @toggle-favorite="selectedPhoto && toggleFavorite(selectedPhoto.id)" />
     </div>
 </template>
 
@@ -401,6 +460,34 @@ const containerWidth = ref(typeof window !== 'undefined' ? Math.min(1200, window
 // Download State
 const downloading = ref(false)
 const downloadProgress = ref({ current: 0, total: 0 })
+
+// Favorites State
+const favorites = ref<Set<string>>(new Set())
+
+const isFavorited = (photoId: string) => favorites.value.has(photoId)
+
+const toggleFavorite = (photoId: string) => {
+    const s = new Set(favorites.value)
+    if (s.has(photoId)) {
+        s.delete(photoId)
+    } else {
+        s.add(photoId)
+    }
+    favorites.value = s
+    localStorage.setItem(`pichaus_favorites_${token}`, JSON.stringify([...s]))
+}
+
+const clearFavorites = () => {
+    favorites.value = new Set()
+    localStorage.removeItem(`pichaus_favorites_${token}`)
+}
+
+// Platform detection
+const isIOS = computed(() => {
+    if (typeof window === 'undefined') return false
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+})
 
 // Photographers modal state
 const showPhotographersModal = ref(false)
@@ -526,6 +613,60 @@ const downloadAllGroupPhotos = async () => {
     }
 }
 
+// Download selected/favorited photos
+const downloadFavorites = async () => {
+    if (downloading.value || favorites.value.size === 0) return
+
+    const favIds = [...favorites.value]
+    const photosToDownload = photos.value.filter(p => favIds.includes(p.id))
+    if (photosToDownload.length === 0) return
+
+    const folderName = (viewMode.value === 'album' ? albumName.value : groupTitle.value) || 'photos'
+
+    downloading.value = true
+    downloadProgress.value = { current: 0, total: photosToDownload.length }
+
+    try {
+        const files: { blob: Blob; name: string }[] = []
+        for (const photo of photosToDownload) {
+            try {
+                const res = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}`))
+                const blob = await res.blob()
+                files.push({ blob, name: photo.originalName })
+                downloadProgress.value.current++
+            } catch (err) {
+                console.error(`Failed to fetch ${photo.originalName}`, err)
+            }
+        }
+
+        if (files.length === 0) return
+
+        // iOS: try Web Share API with multiple files (no zip needed)
+        if (isIOS.value && navigator.canShare) {
+            const shareFiles = files.map(f => new File([f.blob], f.name, { type: f.blob.type }))
+            if (navigator.canShare({ files: shareFiles })) {
+                await navigator.share({ files: shareFiles })
+                return
+            }
+        }
+
+        // All other platforms: zip download
+        const zip = new JSZip()
+        const folder = zip.folder(folderName)
+        files.forEach(f => folder?.file(f.name, f.blob))
+        const content = await zip.generateAsync({ type: 'blob' })
+        saveAs(content, `${folderName}-selected.zip`)
+    } catch (err: any) {
+        if (err.name !== 'AbortError') {
+            console.error('Download favorites error:', err)
+            alert('Failed to download photos')
+        }
+    } finally {
+        downloading.value = false
+        downloadProgress.value = { current: 0, total: 0 }
+    }
+}
+
 // Viewer State
 const selectedPhotoIndex = ref<number | null>(null)
 const selectedPhoto = computed(() => {
@@ -605,6 +746,12 @@ const { applyTheme, resetTheme } = useAlbumTheme()
 
 // Auto-access if no password (Client-side only)
 onMounted(async () => {
+    // Restore favorites from previous session
+    const saved = localStorage.getItem(`pichaus_favorites_${token}`)
+    if (saved) {
+        try { favorites.value = new Set(JSON.parse(saved)) } catch {}
+    }
+
     if (linkData.value?.data) {
         applyTheme(linkData.value.data.themePreset, linkData.value.data.customTheme)
     }
@@ -907,3 +1054,15 @@ const nextPhoto = () => {
     }
 }
 </script>
+
+<style scoped>
+.slide-up-enter-active,
+.slide-up-leave-active {
+    transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.slide-up-enter-from,
+.slide-up-leave-to {
+    transform: translateY(100%);
+    opacity: 0;
+}
+</style>
