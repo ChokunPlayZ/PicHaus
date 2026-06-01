@@ -27,6 +27,8 @@ export default defineNitroPlugin(async () => {
         .filter(k => k.endsWith('.sql'))
         .sort()
 
+    console.log(`[db] Found ${allNames.length} migration file(s):`, allNames)
+
     if (allNames.length === 0) return
 
     // Detect existing installation: users table exists but we've never tracked migrations.
@@ -44,6 +46,8 @@ export default defineNitroPlugin(async () => {
         `) as Promise<any[]>,
     ])
 
+    console.log(`[db] usersExists=${usersExists} trackedCount=${trackedCount}`)
+
     if (usersExists && Number(trackedCount) === 0) {
         console.log('[db] Existing installation detected — marking migrations as applied')
         for (const name of allNames) {
@@ -57,13 +61,18 @@ export default defineNitroPlugin(async () => {
         return
     }
 
-    // Apply any pending migrations in order
+    // Apply any pending migrations in order.
+    // Statements are split individually because postgres.js does not support
+    // multiple statements in a single query call.
     let applied = 0
     for (const name of allNames) {
         const [existing] = await db.execute(sql`
             SELECT id FROM __pichaus_migrations WHERE name = ${name}
         `) as any[]
-        if (existing) continue
+        if (existing) {
+            console.log(`[db] Already applied: ${name}`)
+            continue
+        }
 
         const content = await storage.getItem(name) as string | null
         if (!content) {
@@ -71,9 +80,18 @@ export default defineNitroPlugin(async () => {
             process.exit(1)
         }
 
+        // Split on semicolons outside of $$ blocks so each statement runs separately
+        const statements = content
+            .replace(/--[^\n]*/g, '')       // strip line comments
+            .split(/;\s*\n|;\s*$/)           // split on ; followed by newline or end
+            .map(s => s.trim())
+            .filter(s => s.length > 0)
+
         try {
-            console.log(`[db] Applying migration: ${name}`)
-            await db.execute(sql.raw(content))
+            console.log(`[db] Applying migration: ${name} (${statements.length} statement(s))`)
+            for (const stmt of statements) {
+                await db.execute(sql.raw(stmt))
+            }
             await db.execute(sql`
                 INSERT INTO __pichaus_migrations (name, applied_at)
                 VALUES (${name}, ${BigInt(Date.now())})
