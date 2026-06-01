@@ -157,7 +157,11 @@ async function resolveGroupAlbums(shareGroupId: string, group: { ownerId: string
             ? db.selectDistinctOn([photos.albumId], { albumId: photos.albumId, id: photos.id, blurhash: photos.blurhash })
                 .from(photos)
                 .where(inArray(photos.albumId, noCoverIds))
-                .orderBy(photos.albumId, desc(photos.createdAt))
+                .orderBy(
+                    photos.albumId,
+                    sql`CASE WHEN ${photos.width} > ${photos.height} THEN 0 WHEN ${photos.width} = ${photos.height} THEN 1 ELSE 2 END`,
+                    desc(photos.createdAt),
+                )
             : Promise.resolve([]),
     ])
 

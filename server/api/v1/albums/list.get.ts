@@ -1,4 +1,4 @@
-import { eq, desc, count, inArray } from 'drizzle-orm'
+import { eq, desc, count, inArray, sql } from 'drizzle-orm'
 import { albums, photos } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
 
@@ -38,7 +38,11 @@ export default defineEventHandler(async (event) => {
             })
                 .from(photos)
                 .where(inArray(photos.albumId, noCoverIds))
-                .orderBy(photos.albumId, desc(photos.createdAt))
+                .orderBy(
+                    photos.albumId,
+                    sql`CASE WHEN ${photos.width} > ${photos.height} THEN 0 WHEN ${photos.width} = ${photos.height} THEN 1 ELSE 2 END`,
+                    desc(photos.createdAt),
+                )
             : Promise.resolve([]),
     ])
 
