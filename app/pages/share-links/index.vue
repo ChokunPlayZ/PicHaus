@@ -189,8 +189,66 @@
                                 class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"></textarea>
                         </div>
 
+                        <!-- Tag Filters -->
+                        <div>
+                            <label class="block text-sm font-medium text-purple-200 mb-1">Tag Filters</label>
+                            <p class="text-xs text-white/40 mb-2">Albums matching any of these tags are included live (in addition to explicitly selected albums below).</p>
+                            <input v-model="editForm.groupTagsInput" type="text"
+                                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                placeholder="wedding, portrait (comma-separated)" />
+                        </div>
+
+                        <!-- Theme -->
+                        <div>
+                            <label class="block text-sm font-medium text-purple-200 mb-2">Theme</label>
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <button v-for="(theme, key) in ALBUM_THEMES" :key="key" type="button"
+                                    @click="editForm.themePreset = key" :title="theme.label"
+                                    class="w-7 h-7 rounded-full border-2 transition"
+                                    :class="editForm.themePreset === key ? 'border-white scale-110' : 'border-white/30 hover:border-white/60'"
+                                    :style="`background: linear-gradient(135deg, ${theme.bgStart}, ${theme.bgEnd})`" />
+                                <button type="button" @click="editForm.themePreset = 'custom'" title="Custom"
+                                    class="w-7 h-7 rounded-full border-2 transition text-xs text-white font-bold"
+                                    :class="editForm.themePreset === 'custom' ? 'border-white scale-110 bg-white/20' : 'border-white/30 bg-white/5 hover:border-white/60'">
+                                    +
+                                </button>
+                                <button type="button" @click="editForm.themePreset = ''" title="Default (none)"
+                                    class="px-2 h-7 rounded-full border-2 transition text-xs text-white/60"
+                                    :class="editForm.themePreset === '' ? 'border-white bg-white/20 text-white' : 'border-white/30 bg-white/5 hover:border-white/60'">
+                                    Default
+                                </button>
+                            </div>
+                            <div v-if="editForm.themePreset === 'custom'" class="mt-3 grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-xs text-purple-300 mb-1 block">BG Start</label>
+                                    <input type="color" v-model="editForm.customTheme.bgStart" class="w-full h-8 rounded cursor-pointer bg-transparent" />
+                                </div>
+                                <div>
+                                    <label class="text-xs text-purple-300 mb-1 block">BG End</label>
+                                    <input type="color" v-model="editForm.customTheme.bgEnd" class="w-full h-8 rounded cursor-pointer bg-transparent" />
+                                </div>
+                                <div>
+                                    <label class="text-xs text-purple-300 mb-1 block">Accent Start</label>
+                                    <input type="color" v-model="editForm.customTheme.btnStart" class="w-full h-8 rounded cursor-pointer bg-transparent" />
+                                </div>
+                                <div>
+                                    <label class="text-xs text-purple-300 mb-1 block">Accent End</label>
+                                    <input type="color" v-model="editForm.customTheme.btnEnd" class="w-full h-8 rounded cursor-pointer bg-transparent" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Logo Text -->
+                        <div>
+                            <label class="block text-sm font-medium text-purple-200 mb-2">Logo Text</label>
+                            <input v-model="editForm.logoText" type="text"
+                                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                placeholder="e.g. Wedding Collection 2025" />
+                        </div>
+
                         <div>
                             <label class="block text-sm font-medium text-purple-200 mb-3">Albums in Group</label>
+                            <p class="text-xs text-white/40 mb-2">Explicit selection. Tag-filtered albums are added on top of these.</p>
                             <div
                                 class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
                                 <div v-for="album in availableAlbums" :key="album.id"
@@ -270,6 +328,7 @@
 
 <script setup lang="ts">
 import { buildAssetUrl } from '~/utils/auth-client'
+import { ALBUM_THEMES } from '~/composables/useAlbumTheme'
 
 interface ShareLink {
     id: string
@@ -320,7 +379,12 @@ const editForm = reactive({
     isGroup: false,
     groupTitle: '',
     groupDescription: '',
-    groupAlbumIds: [] as string[]
+    groupAlbumIds: [] as string[],
+    groupTags: [] as string[],
+    groupTagsInput: '',
+    themePreset: '',
+    customTheme: { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' },
+    logoText: '',
 })
 
 // Fetch Links
@@ -376,6 +440,13 @@ const openEditModal = async (link: ShareLink) => {
             editForm.groupTitle = data.groupTitle
             editForm.groupDescription = data.groupDescription || ''
             editForm.groupAlbumIds = data.groupAlbumIds
+            editForm.groupTags = data.groupTags || []
+            editForm.groupTagsInput = (data.groupTags || []).join(', ')
+            editForm.themePreset = data.groupThemePreset || ''
+            editForm.logoText = data.groupLogoText || ''
+            if (data.groupCustomTheme) {
+                try { Object.assign(editForm.customTheme, JSON.parse(data.groupCustomTheme)) } catch { /* keep defaults */ }
+            }
 
             // Fetch Available Albums
             const albumsResponse = await $fetch<{ success: boolean; data: AvailableAlbum[] }>('/api/v1/albums/list')
@@ -403,6 +474,12 @@ const handleUpdateLink = async () => {
     editError.value = ''
 
     try {
+        const groupTags = editForm.groupTagsInput
+            .split(',').map((t: string) => t.trim()).filter(Boolean)
+        const customTheme = editForm.themePreset === 'custom'
+            ? JSON.stringify(editForm.customTheme)
+            : undefined
+
         await $fetch(`/api/v1/share-links/${editForm.id}`, {
             method: 'PUT',
             body: {
@@ -413,7 +490,11 @@ const handleUpdateLink = async () => {
                 isGroup: editForm.isGroup,
                 groupTitle: editForm.groupTitle,
                 groupDescription: editForm.groupDescription,
-                groupAlbumIds: editForm.groupAlbumIds
+                groupAlbumIds: editForm.groupAlbumIds,
+                groupTags,
+                themePreset: editForm.themePreset || null,
+                customTheme,
+                logoText: editForm.logoText || null,
             }
         })
 

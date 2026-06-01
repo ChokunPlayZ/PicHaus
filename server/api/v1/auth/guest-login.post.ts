@@ -1,4 +1,4 @@
-import { eq, and, desc, inArray, sql } from 'drizzle-orm'
+import { eq, and, desc, inArray, sql, count, arrayOverlaps } from 'drizzle-orm'
 import { users, shareLinks, shareGroups, albumCollaborators, albums, photos, albumToShareGroups } from '../../../db/schema'
 import { getUnixTimestamp, getAuthUserId, createAccessToken } from '../../../utils/auth'
 import argon2 from 'argon2'
@@ -56,35 +56,45 @@ export default defineEventHandler(async (event) => {
 
             if (!group) throw createError({ statusCode: 404, statusMessage: 'Group not found' })
 
-            // Get albums for this group via junction table
-            const groupAlbumRows = await db
-                .select({
-                    id: albums.id,
-                    title: albums.title,
-                    description: albums.description,
-                    eventDate: albums.eventDate,
-                    photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = ${albums.id})`,
-                })
-                .from(albums)
-                .innerJoin(albumToShareGroups, and(
-                    eq(albumToShareGroups.B, shareLink.shareGroupId),
-                    eq(albumToShareGroups.A, albums.id),
-                ))
+            // Resolve explicit + tag-based albums
+            const [explicitRows, tagRows] = await Promise.all([
+                db.select({ id: albums.id, title: albums.title, description: albums.description, eventDate: albums.eventDate, coverPhotoId: albums.coverPhotoId })
+                    .from(albums)
+                    .innerJoin(albumToShareGroups, and(eq(albumToShareGroups.B, shareLink.shareGroupId), eq(albumToShareGroups.A, albums.id))),
+                group.tags.length > 0
+                    ? db.select({ id: albums.id, title: albums.title, description: albums.description, eventDate: albums.eventDate, coverPhotoId: albums.coverPhotoId })
+                        .from(albums)
+                        .where(and(eq(albums.ownerId, group.ownerId), arrayOverlaps(albums.tags, group.tags)))
+                    : Promise.resolve([]),
+            ])
 
-            // Get first photo per album
-            const albumIds = groupAlbumRows.map(a => a.id)
-            const firstPhotos = albumIds.length > 0
-                ? await db.select({ albumId: photos.albumId, id: photos.id, blurhash: photos.blurhash })
-                    .from(photos)
-                    .where(inArray(photos.albumId, albumIds))
-                    .orderBy(desc(photos.createdAt))
-                : []
-            const firstPhotoByAlbum = new Map<string, { id: string; blurhash: string }>()
-            for (const p of firstPhotos) {
-                if (!firstPhotoByAlbum.has(p.albumId)) {
-                    firstPhotoByAlbum.set(p.albumId, { id: p.id, blurhash: p.blurhash })
-                }
-            }
+            const seen = new Set<string>()
+            const allRows = [...explicitRows, ...tagRows].filter(a => {
+                if (seen.has(a.id)) return false
+                seen.add(a.id)
+                return true
+            })
+
+            const albumIds = allRows.map(a => a.id)
+            const coverIds = allRows.map(a => a.coverPhotoId).filter(Boolean) as string[]
+            const noCoverIds = allRows.filter(a => !a.coverPhotoId).map(a => a.id)
+
+            const [countRows, coverRows, fallbackRows] = await Promise.all([
+                albumIds.length > 0
+                    ? db.select({ albumId: photos.albumId, photoCount: count() }).from(photos).where(inArray(photos.albumId, albumIds)).groupBy(photos.albumId)
+                    : Promise.resolve([]),
+                coverIds.length > 0
+                    ? db.select({ id: photos.id, blurhash: photos.blurhash }).from(photos).where(inArray(photos.id, coverIds))
+                    : Promise.resolve([]),
+                noCoverIds.length > 0
+                    ? db.selectDistinctOn([photos.albumId], { albumId: photos.albumId, id: photos.id, blurhash: photos.blurhash })
+                        .from(photos).where(inArray(photos.albumId, noCoverIds)).orderBy(photos.albumId, desc(photos.createdAt))
+                    : Promise.resolve([]),
+            ])
+
+            const countMap = new Map(countRows.map(r => [r.albumId, r.photoCount]))
+            const coverMap = new Map(coverRows.map(p => [p.id, p]))
+            const fallbackMap = new Map(fallbackRows.map(p => [p.albumId!, { id: p.id, blurhash: p.blurhash }]))
 
             return {
                 success: true,
@@ -94,13 +104,19 @@ export default defineEventHandler(async (event) => {
                     title: group.title,
                     description: group.description,
                     ownerName: group.owner.name,
-                    albums: groupAlbumRows.map(album => ({
+                    themePreset: group.themePreset,
+                    customTheme: group.customTheme,
+                    logoText: group.logoText,
+                    logoImageId: group.logoImageId,
+                    albums: allRows.map(album => ({
                         id: album.id,
                         name: album.title,
                         description: album.description,
                         eventDate: album.eventDate ? Number(album.eventDate) : null,
-                        photoCount: Number(album.photoCount),
-                        coverPhoto: firstPhotoByAlbum.get(album.id) || null,
+                        photoCount: countMap.get(album.id) ?? 0,
+                        coverPhoto: album.coverPhotoId
+                            ? (coverMap.get(album.coverPhotoId) ?? null)
+                            : (fallbackMap.get(album.id) ?? null),
                     })),
                     showMetadata: shareLink.showMetadata,
                 },

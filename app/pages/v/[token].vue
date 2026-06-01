@@ -635,6 +635,7 @@ const handleAccess = async () => {
             ownerName.value = data.ownerName || ownerName.value
             groupAlbums.value = Array.isArray(data.albums) ? data.albums : groupAlbums.value
             showMetadata.value = data.showMetadata !== undefined ? data.showMetadata : showMetadata.value
+            if (data.themePreset) applyTheme(data.themePreset, data.customTheme)
             isAuthenticated.value = true
         } else {
             albumId.value = data.albumId

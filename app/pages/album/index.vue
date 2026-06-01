@@ -16,6 +16,11 @@
                         class="px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition duration-200 flex items-center justify-center">
                         {{ isSelectionMode ? 'Cancel Selection' : 'Select Albums' }}
                     </button>
+                    <button @click="openTagGroupModal"
+                        class="px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition duration-200 flex items-center justify-center space-x-2 flex-1 sm:flex-none">
+                        <span>🔗</span>
+                        <span>Group Link</span>
+                    </button>
                     <button @click="showCreateModal = true"
                         class="px-6 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition duration-200 transform hover:scale-105 flex items-center justify-center space-x-2 flex-1 sm:flex-none">
                         <span>+</span>
@@ -311,12 +316,16 @@
         <div v-if="showShareGroupModal"
             class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
             @click.self="showShareGroupModal = false">
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-md w-full">
-                <h3 class="text-2xl font-bold text-white mb-4">Create Share Group</h3>
-                <p class="text-purple-200 text-sm mb-4">Share {{ selectedAlbumIds.size }} albums with a single link.</p>
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                <h3 class="text-2xl font-bold text-white mb-1">Create Group Link</h3>
+                <p v-if="selectedAlbumIds.size > 0" class="text-purple-200 text-sm mb-4">
+                    {{ selectedAlbumIds.size }} album{{ selectedAlbumIds.size !== 1 ? 's' : '' }} selected. You can also add tag filters below.
+                </p>
+                <p v-else class="text-purple-200 text-sm mb-4">
+                    No albums selected — use tag filters to include albums dynamically.
+                </p>
 
                 <form @submit.prevent="handleCreateShareGroup" class="space-y-4">
-                    <!-- Group Title -->
                     <div>
                         <label class="block text-sm font-medium text-purple-200 mb-2">Group Title *</label>
                         <input v-model="newShareGroup.title" type="text" required
@@ -324,15 +333,70 @@
                             placeholder="My Portfolio" />
                     </div>
 
-                    <!-- Description -->
                     <div>
                         <label class="block text-sm font-medium text-purple-200 mb-2">Description</label>
-                        <textarea v-model="newShareGroup.description" rows="3"
+                        <textarea v-model="newShareGroup.description" rows="2"
                             class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                             placeholder="A collection of my best work..."></textarea>
                     </div>
 
-                    <!-- Password (Optional) -->
+                    <!-- Tag Filters -->
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-1">Tag Filters</label>
+                        <p class="text-xs text-white/40 mb-2">All your albums matching any of these tags are included automatically (live).</p>
+                        <input v-model="newShareGroup.tags" type="text"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="wedding, portrait (comma-separated)" />
+                    </div>
+
+                    <!-- Theme -->
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Theme</label>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button v-for="(theme, key) in ALBUM_THEMES" :key="key" type="button"
+                                @click="newShareGroup.themePreset = key" :title="theme.label"
+                                class="w-7 h-7 rounded-full border-2 transition"
+                                :class="newShareGroup.themePreset === key ? 'border-white scale-110' : 'border-white/30 hover:border-white/60'"
+                                :style="`background: linear-gradient(135deg, ${theme.bgStart}, ${theme.bgEnd})`" />
+                            <button type="button" @click="newShareGroup.themePreset = 'custom'" title="Custom"
+                                class="w-7 h-7 rounded-full border-2 transition text-xs text-white font-bold"
+                                :class="newShareGroup.themePreset === 'custom' ? 'border-white scale-110 bg-white/20' : 'border-white/30 bg-white/5 hover:border-white/60'">
+                                +
+                            </button>
+                            <button type="button" @click="newShareGroup.themePreset = ''" title="Default (none)"
+                                class="px-2 h-7 rounded-full border-2 transition text-xs text-white/60"
+                                :class="newShareGroup.themePreset === '' ? 'border-white bg-white/20 text-white' : 'border-white/30 bg-white/5 hover:border-white/60'">
+                                Default
+                            </button>
+                        </div>
+                        <div v-if="newShareGroup.themePreset === 'custom'" class="mt-3 grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-xs text-purple-300 mb-1 block">BG Start</label>
+                                <input type="color" v-model="newShareGroup.customTheme.bgStart" class="w-full h-8 rounded cursor-pointer bg-transparent" />
+                            </div>
+                            <div>
+                                <label class="text-xs text-purple-300 mb-1 block">BG End</label>
+                                <input type="color" v-model="newShareGroup.customTheme.bgEnd" class="w-full h-8 rounded cursor-pointer bg-transparent" />
+                            </div>
+                            <div>
+                                <label class="text-xs text-purple-300 mb-1 block">Accent Start</label>
+                                <input type="color" v-model="newShareGroup.customTheme.btnStart" class="w-full h-8 rounded cursor-pointer bg-transparent" />
+                            </div>
+                            <div>
+                                <label class="text-xs text-purple-300 mb-1 block">Accent End</label>
+                                <input type="color" v-model="newShareGroup.customTheme.btnEnd" class="w-full h-8 rounded cursor-pointer bg-transparent" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logo Text -->
+                    <div>
+                        <label class="block text-sm font-medium text-purple-200 mb-2">Logo Text (Optional)</label>
+                        <input v-model="newShareGroup.logoText" type="text"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="e.g. Wedding Collection 2025" />
+                    </div>
+
                     <div>
                         <label class="block text-sm font-medium text-purple-200 mb-2">Password (Optional)</label>
                         <input v-model="newShareGroup.password" type="password"
@@ -340,7 +404,6 @@
                             placeholder="Leave empty for no password" />
                     </div>
 
-                    <!-- Link Label (Optional) -->
                     <div>
                         <label class="block text-sm font-medium text-purple-200 mb-2">Link Label (Optional)</label>
                         <input v-model="newShareGroup.label" type="text"
@@ -348,12 +411,10 @@
                             placeholder="e.g. For Family" />
                     </div>
 
-                    <!-- Error Message -->
                     <div v-if="shareGroupError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
                         <p class="text-red-200 text-sm">{{ shareGroupError }}</p>
                     </div>
 
-                    <!-- Buttons -->
                     <div class="flex space-x-3">
                         <button type="button" @click="showShareGroupModal = false"
                             class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
@@ -469,6 +530,7 @@
 
 <script setup lang="ts">
 import { clearAuthToken, buildAssetUrl } from '~/utils/auth-client'
+import { ALBUM_THEMES } from '~/composables/useAlbumTheme'
 
 interface Album {
     id: string
@@ -515,7 +577,11 @@ const newShareGroup = ref({
     title: '',
     description: '',
     password: '',
-    label: ''
+    label: '',
+    tags: '',
+    themePreset: '',
+    customTheme: { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' },
+    logoText: '',
 })
 const creatingShareGroup = ref(false)
 const shareGroupError = ref('')
@@ -763,25 +829,40 @@ const handleCreateAlbum = async () => {
     }
 }
 
+const openTagGroupModal = () => {
+    shareGroupError.value = ''
+    showShareGroupModal.value = true
+}
+
 // Create Share Group
 const handleCreateShareGroup = async () => {
     creatingShareGroup.value = true
     shareGroupError.value = ''
 
     try {
+        const tags = parseTagsInput(newShareGroup.value.tags)
+        const albumIds = Array.from(selectedAlbumIds.value)
+        const customTheme = newShareGroup.value.themePreset === 'custom'
+            ? JSON.stringify(newShareGroup.value.customTheme)
+            : undefined
+
         const response = await $fetch<{ success: boolean; data: any }>('/api/v1/share-group/create', {
             method: 'POST',
             body: {
                 title: newShareGroup.value.title,
                 description: newShareGroup.value.description || null,
-                albumIds: Array.from(selectedAlbumIds.value),
+                albumIds,
+                tags,
                 password: newShareGroup.value.password || undefined,
-                label: newShareGroup.value.label || undefined
+                label: newShareGroup.value.label || undefined,
+                themePreset: newShareGroup.value.themePreset || undefined,
+                customTheme,
+                logoText: newShareGroup.value.logoText || undefined,
             }
         })
 
         showShareGroupModal.value = false
-        newShareGroup.value = { title: '', description: '', password: '', label: '' }
+        newShareGroup.value = { title: '', description: '', password: '', label: '', tags: '', themePreset: '', customTheme: { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' }, logoText: '' }
 
         // Show success modal with link
         createdShareLink.value = `${window.location.origin}${response.data.link.url}`

@@ -36,6 +36,11 @@ export default defineEventHandler(async (event) => {
         const groupUpdateData: Partial<typeof shareGroups.$inferInsert> = {}
         if (body.groupTitle !== undefined) groupUpdateData.title = body.groupTitle
         if (body.groupDescription !== undefined) groupUpdateData.description = body.groupDescription
+        if (body.groupTags !== undefined) groupUpdateData.tags = Array.isArray(body.groupTags) ? body.groupTags : []
+        if (body.themePreset !== undefined) groupUpdateData.themePreset = body.themePreset || null
+        if (body.customTheme !== undefined) groupUpdateData.customTheme = body.customTheme ? (typeof body.customTheme === 'string' ? body.customTheme : JSON.stringify(body.customTheme)) : null
+        if (body.logoText !== undefined) groupUpdateData.logoText = body.logoText || null
+        if (body.logoImageId !== undefined) groupUpdateData.logoImageId = body.logoImageId || null
 
         if (body.groupAlbumIds && Array.isArray(body.groupAlbumIds)) {
             const [{ value }] = await db.select({ value: count() })

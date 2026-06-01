@@ -221,6 +221,16 @@ END $$`,
         ],
     },
     {
+        name: '0006_share_group_theming_tags.sql',
+        statements: [
+            `ALTER TABLE "share_groups" ADD COLUMN IF NOT EXISTS "themePreset" TEXT`,
+            `ALTER TABLE "share_groups" ADD COLUMN IF NOT EXISTS "customTheme" TEXT`,
+            `ALTER TABLE "share_groups" ADD COLUMN IF NOT EXISTS "logoText" TEXT`,
+            `ALTER TABLE "share_groups" ADD COLUMN IF NOT EXISTS "logoImageId" UUID REFERENCES "logos"("id") ON DELETE SET NULL`,
+            `ALTER TABLE "share_groups" ADD COLUMN IF NOT EXISTS "tags" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]`,
+        ],
+    },
+    {
         // The 0000 migration was stamped-not-run on existing Prisma installs.
         // Prisma may not have set a DB-level DEFAULT on uuid primary key columns,
         // so Drizzle's INSERT ... VALUES (DEFAULT, ...) returns NULL and violates

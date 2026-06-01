@@ -94,6 +94,11 @@ export const shareGroups = pgTable('share_groups', {
     createdAt: bigint('createdAt', { mode: 'bigint' }).notNull(),
     updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
     ownerId: uuid('ownerId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    themePreset: text('themePreset'),
+    customTheme: text('customTheme'),
+    logoText: text('logoText'),
+    logoImageId: uuid('logoImageId').references(() => logos.id, { onDelete: 'set null' }),
+    tags: text('tags').array().default([]).notNull(),
 })
 
 export const shareLinks = pgTable('share_links', {
@@ -185,6 +190,7 @@ export const shareGroupsRelations = relations(shareGroups, ({ one, many }) => ({
     owner: one(users, { fields: [shareGroups.ownerId], references: [users.id] }),
     shareLinks: many(shareLinks),
     albumMappings: many(albumToShareGroups),
+    logoImage: one(logos, { fields: [shareGroups.logoImageId], references: [logos.id] }),
 }))
 
 export const shareLinksRelations = relations(shareLinks, ({ one }) => ({

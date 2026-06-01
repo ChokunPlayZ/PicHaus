@@ -12,6 +12,7 @@ export default defineEventHandler(async (event) => {
         with: {
             album: { columns: { id: true, title: true, ownerId: true } },
             shareGroup: {
+                columns: { id: true, title: true, description: true, ownerId: true, tags: true, themePreset: true, customTheme: true, logoText: true, logoImageId: true },
                 with: { albumMappings: { with: { album: { columns: { id: true, title: true } } } } },
             },
         },
@@ -38,6 +39,11 @@ export default defineEventHandler(async (event) => {
             isGroup: !!link.shareGroupId,
             groupTitle: link.shareGroup?.title,
             groupDescription: link.shareGroup?.description,
+            groupTags: link.shareGroup?.tags ?? [],
+            groupThemePreset: link.shareGroup?.themePreset ?? '',
+            groupCustomTheme: link.shareGroup?.customTheme ?? '',
+            groupLogoText: link.shareGroup?.logoText ?? '',
+            groupLogoImageId: link.shareGroup?.logoImageId ?? '',
             groupAlbumIds: groupAlbums.map(a => a.id),
             groupAlbums,
             albumId: link.albumId,

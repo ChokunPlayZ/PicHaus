@@ -1,4 +1,4 @@
-import { eq, and, sql } from 'drizzle-orm'
+import { eq, and, sql, count, inArray, desc, arrayOverlaps } from 'drizzle-orm'
 import { shareLinks, shareGroups, albumCollaborators, albums, photos, users, albumToShareGroups } from '../../../db/schema'
 import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
 
@@ -28,37 +28,33 @@ export default defineEventHandler(async (event) => {
             : null
 
         if (shareLink.shareGroupId) {
-            const hasGroupCookieAccess = getCookie(event, `group-access-${shareLink.shareGroupId}`) === token
-            const hasUserAdminAccess = authUser?.role === 'ADMIN'
-            const hasGroupOwnerAccess = !!(authUser && await db.query.shareGroups.findFirst({
-                where: and(eq(shareGroups.id, shareLink.shareGroupId), eq(shareGroups.ownerId, authUser.id)),
-                columns: { id: true },
-            }))
-
-            if (shareLink.password && !hasGroupCookieAccess && !hasUserAdminAccess && !hasGroupOwnerAccess) {
-                return { success: true, data: { type: 'group', requiresPassword: true, showMetadata: shareLink.showMetadata } }
-            }
-
+            // Fetch group early so we can include theme/logo in the requiresPassword response
             const group = await db.query.shareGroups.findFirst({
                 where: eq(shareGroups.id, shareLink.shareGroupId),
                 with: { owner: { columns: { name: true } } },
             })
             if (!group) throw createError({ statusCode: 404, statusMessage: 'Group not found' })
 
-            const groupAlbumRows = await db.select({
-                id: albums.id,
-                title: albums.title,
-                description: albums.description,
-                eventDate: albums.eventDate,
-                photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = ${albums.id})`,
-                latestPhotoId: sql<string | null>`(SELECT id FROM photos WHERE photos."albumId" = ${albums.id} ORDER BY "createdAt" DESC LIMIT 1)`,
-                latestPhotoBlurhash: sql<string | null>`(SELECT blurhash FROM photos WHERE photos."albumId" = ${albums.id} ORDER BY "createdAt" DESC LIMIT 1)`,
-            })
-                .from(albums)
-                .innerJoin(albumToShareGroups, and(
-                    eq(albumToShareGroups.B, shareLink.shareGroupId),
-                    eq(albumToShareGroups.A, albums.id),
-                ))
+            const hasGroupCookieAccess = getCookie(event, `group-access-${shareLink.shareGroupId}`) === token
+            const hasUserAdminAccess = authUser?.role === 'ADMIN'
+            const hasGroupOwnerAccess = group.ownerId === authUser?.id
+
+            if (shareLink.password && !hasGroupCookieAccess && !hasUserAdminAccess && !hasGroupOwnerAccess) {
+                return {
+                    success: true,
+                    data: {
+                        type: 'group',
+                        requiresPassword: true,
+                        showMetadata: shareLink.showMetadata,
+                        themePreset: group.themePreset,
+                        customTheme: group.customTheme,
+                        logoText: group.logoText,
+                        logoImageId: group.logoImageId,
+                    },
+                }
+            }
+
+            const groupAlbumRows = await resolveGroupAlbums(shareLink.shareGroupId, group)
 
             return {
                 success: true,
@@ -69,14 +65,11 @@ export default defineEventHandler(async (event) => {
                     description: group.description,
                     ownerName: group.owner.name,
                     requiresPassword: !!shareLink.password,
-                    albums: groupAlbumRows.map(album => ({
-                        id: album.id,
-                        name: album.title,
-                        description: album.description,
-                        eventDate: album.eventDate ? Number(album.eventDate) : null,
-                        photoCount: Number(album.photoCount),
-                        coverPhoto: album.latestPhotoId ? { id: album.latestPhotoId, blurhash: album.latestPhotoBlurhash ?? '' } : null,
-                    })),
+                    themePreset: group.themePreset,
+                    customTheme: group.customTheme,
+                    logoText: group.logoText,
+                    logoImageId: group.logoImageId,
+                    albums: groupAlbumRows,
                     showMetadata: shareLink.showMetadata,
                 },
             }
@@ -124,3 +117,62 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 500, statusMessage: 'Failed to validate upload link' })
     }
 })
+
+async function resolveGroupAlbums(shareGroupId: string, group: { ownerId: string; tags: string[] }) {
+    const [explicitRows, tagRows] = await Promise.all([
+        db.select({ id: albums.id, title: albums.title, description: albums.description, eventDate: albums.eventDate, coverPhotoId: albums.coverPhotoId })
+            .from(albums)
+            .innerJoin(albumToShareGroups, and(eq(albumToShareGroups.B, shareGroupId), eq(albumToShareGroups.A, albums.id))),
+        group.tags.length > 0
+            ? db.select({ id: albums.id, title: albums.title, description: albums.description, eventDate: albums.eventDate, coverPhotoId: albums.coverPhotoId })
+                .from(albums)
+                .where(and(eq(albums.ownerId, group.ownerId), arrayOverlaps(albums.tags, group.tags)))
+            : Promise.resolve([]),
+    ])
+
+    const seen = new Set<string>()
+    const allRows = [...explicitRows, ...tagRows].filter(a => {
+        if (seen.has(a.id)) return false
+        seen.add(a.id)
+        return true
+    })
+
+    if (allRows.length === 0) return []
+
+    const albumIds = allRows.map(a => a.id)
+    const coverIds = allRows.map(a => a.coverPhotoId).filter(Boolean) as string[]
+    const noCoverIds = allRows.filter(a => !a.coverPhotoId).map(a => a.id)
+
+    const [countRows, coverRows, fallbackRows] = await Promise.all([
+        db.select({ albumId: photos.albumId, photoCount: count() })
+            .from(photos)
+            .where(inArray(photos.albumId, albumIds))
+            .groupBy(photos.albumId),
+        coverIds.length > 0
+            ? db.select({ id: photos.id, blurhash: photos.blurhash })
+                .from(photos)
+                .where(inArray(photos.id, coverIds))
+            : Promise.resolve([]),
+        noCoverIds.length > 0
+            ? db.selectDistinctOn([photos.albumId], { albumId: photos.albumId, id: photos.id, blurhash: photos.blurhash })
+                .from(photos)
+                .where(inArray(photos.albumId, noCoverIds))
+                .orderBy(photos.albumId, desc(photos.createdAt))
+            : Promise.resolve([]),
+    ])
+
+    const countMap = new Map(countRows.map(r => [r.albumId, r.photoCount]))
+    const coverMap = new Map(coverRows.map(p => [p.id, p]))
+    const fallbackMap = new Map(fallbackRows.map(p => [p.albumId!, { id: p.id, blurhash: p.blurhash }]))
+
+    return allRows.map(album => ({
+        id: album.id,
+        name: album.title,
+        description: album.description,
+        eventDate: album.eventDate ? Number(album.eventDate) : null,
+        photoCount: countMap.get(album.id) ?? 0,
+        coverPhoto: album.coverPhotoId
+            ? (coverMap.get(album.coverPhotoId) ?? null)
+            : (fallbackMap.get(album.id) ?? null),
+    }))
+}
