@@ -790,6 +790,12 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-1">
+                            <button @click="showQr(link)" title="Show QR code"
+                                class="p-2 text-purple-300 hover:bg-purple-500/10 rounded-lg transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm10 0h2v2h-2v-2zm-2 2h2v2h-2v-2zm4-2h2v2h-2v-2zm0 4h2v2h-2v-2zm-4 0h2v2h-2v-2z" />
+                                </svg>
+                            </button>
                             <button @click="startEditing(link)"
                                 class="p-2 text-purple-300 hover:bg-purple-500/10 rounded-lg transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
@@ -812,6 +818,30 @@
             </div>
         </div>
     </div>
+
+        <!-- QR Code Modal -->
+        <Teleport to="body">
+            <Transition name="fade">
+                <div v-if="qrLinkId" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" @click.self="closeQr">
+                    <div class="bg-[var(--bg-primary-start)] border border-white/20 rounded-2xl shadow-2xl p-6 flex flex-col items-center gap-4 max-w-xs w-full">
+                        <div class="w-full flex justify-between items-center">
+                            <span class="text-white font-semibold truncate">{{ qrLink?.label || 'Share Link' }}</span>
+                            <button @click="closeQr" class="text-white/50 hover:text-white transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <canvas ref="qrCanvasRef" class="rounded-lg" />
+                        <p class="text-white/50 text-xs text-center break-all">{{ qrLink ? getShareUrl(qrLink) : '' }}</p>
+                        <button v-if="qrLink" @click="copyLink(qrLink); closeQr()"
+                            class="w-full py-2 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition text-sm font-medium">
+                            Copy link
+                        </button>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
 
         <!-- Context Menu -->
         <div v-if="contextMenu.visible"
@@ -1495,6 +1525,22 @@ const newLink = ref({
     showMetadata: true
 })
 
+// QR code modal
+const qrLinkId = ref<string | null>(null)
+const qrCanvasRef = ref<HTMLCanvasElement | null>(null)
+const qrLink = computed(() => shareLinks.value.find(l => l.id === qrLinkId.value) ?? null)
+
+const showQr = async (link: ShareLink) => {
+    qrLinkId.value = link.id
+    await nextTick()
+    if (qrCanvasRef.value) {
+        const QRCode = await import('qrcode')
+        await QRCode.toCanvas(qrCanvasRef.value, getShareUrl(link), { width: 280, margin: 2 })
+    }
+}
+
+const closeQr = () => { qrLinkId.value = null }
+
 // Layout state
 const containerRef = ref<HTMLElement | null>(null)
 const containerWidth = ref(typeof window !== 'undefined' ? Math.min(1200, window.innerWidth - 64) : 1200)
@@ -1831,13 +1877,15 @@ const isEditing = computed(() => !!editingLinkId.value)
 const createShareLink = async () => {
     creatingLink.value = true
     try {
-        await $fetch(`/api/v1/album/${albumId}/share-links`, {
+        const response = await $fetch<{ success: boolean; data: ShareLink }>(`/api/v1/album/${albumId}/share-links`, {
             method: 'POST',
             body: newLink.value
         })
         newLink.value = { type: 'view', label: '', password: '', showMetadata: true }
         await fetchShareLinks()
         showToast('Link created')
+        const created = shareLinks.value.find(l => l.id === response.data?.id)
+        if (created) showQr(created)
     } catch (err: any) {
         showToast(err.data?.statusMessage || 'Failed to create link', 'error')
     } finally {
@@ -2529,3 +2577,8 @@ onMounted(async () => {
     }
 })
 </script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.15s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>
