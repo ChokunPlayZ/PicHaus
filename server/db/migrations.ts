@@ -220,4 +220,21 @@ END $$`,
             `ALTER TABLE "albums" ADD COLUMN IF NOT EXISTS "logoImageId" UUID REFERENCES "logos"("id") ON DELETE SET NULL`,
         ],
     },
+    {
+        // The 0000 migration was stamped-not-run on existing Prisma installs.
+        // Prisma may not have set a DB-level DEFAULT on uuid primary key columns,
+        // so Drizzle's INSERT ... VALUES (DEFAULT, ...) returns NULL and violates
+        // the not-null constraint. This migration fixes all affected tables.
+        name: '0005_fix_uuid_defaults.sql',
+        statements: [
+            `ALTER TABLE "users"               ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`,
+            `ALTER TABLE "albums"              ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`,
+            `ALTER TABLE "photos"              ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`,
+            `ALTER TABLE "passkeys"            ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`,
+            `ALTER TABLE "share_groups"        ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`,
+            `ALTER TABLE "share_links"         ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`,
+            `ALTER TABLE "album_collaborators" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`,
+            `ALTER TABLE "api_tokens"          ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`,
+        ],
+    },
 ]
