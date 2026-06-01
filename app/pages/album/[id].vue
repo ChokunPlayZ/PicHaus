@@ -3,7 +3,7 @@
         <!-- Navigation Bar -->
         <!-- Navigation Bar -->
         <NavBar v-if="album && (album.permissions.isOwner || album.permissions.canEdit)" :show-back="true"
-            back-text="Back to Albums" back-to="/album" />
+            back-text="Back to Albums" back-to="/album" :logo-text="album.logoText || undefined" />
 
         <!-- Loading State -->
         <div v-if="loading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
@@ -546,6 +546,32 @@
                     <label for="editIsPublic" class="ml-2 text-sm text-purple-200">Make album public</label>
                 </div>
 
+                <div>
+                    <label class="block text-sm font-medium text-purple-200 mb-2">Color Theme</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button v-for="(theme, key) in ALBUM_THEMES" :key="key"
+                            type="button"
+                            @click="editForm.themePreset = key"
+                            :class="[
+                                'relative rounded-lg h-12 border-2 transition overflow-hidden',
+                                editForm.themePreset === key ? 'border-white ring-2 ring-white/40' : 'border-white/20 hover:border-white/50'
+                            ]"
+                            :style="{ background: `linear-gradient(135deg, ${theme.bgStart}, ${theme.bgEnd})` }"
+                            :title="theme.label">
+                            <span class="absolute bottom-0.5 left-0 right-0 text-center text-white text-[9px] font-semibold drop-shadow-sm">{{ theme.label }}</span>
+                            <span v-if="editForm.themePreset === key" class="absolute top-0.5 right-0.5 text-white text-[10px] leading-none">✓</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-purple-200 mb-2">Event Branding</label>
+                    <input v-model="editForm.logoText" type="text"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="e.g. TNI Open Day 2026" />
+                    <p class="text-xs text-white/50 mt-1">Replaces 'PicHaus' in the header for this album</p>
+                </div>
+
                 <div v-if="editError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
                     <p class="text-red-200 text-sm">{{ editError }}</p>
                 </div>
@@ -866,6 +892,8 @@ interface Album {
     tags: string[]
     eventDate: number | null
     isPublic: boolean
+    themePreset: string | null
+    logoText: string | null
     owner: User
     photos: Photo[]
     collaborators: Collaborator[]
@@ -1034,6 +1062,8 @@ const getPhotographersDisplay = computed(() => {
         .join(', ')
 })
 
+const { applyTheme, resetTheme, ALBUM_THEMES } = useAlbumTheme()
+
 const showEditModal = ref(false)
 const editForm = ref({
     name: '',
@@ -1041,6 +1071,8 @@ const editForm = ref({
     tags: '',
     eventDate: '',
     isPublic: false,
+    themePreset: 'default' as string,
+    logoText: '',
 })
 const updating = ref(false)
 const editError = ref('')
@@ -1386,6 +1418,7 @@ onUnmounted(() => {
     if (resizeObserver) {
         resizeObserver.disconnect()
     }
+    resetTheme()
 })
 
 // Check authentication (don't redirect if failed, just set user to null)
@@ -1433,7 +1466,10 @@ const fetchAlbum = async () => {
                 tags: (album.value.tags || []).join(', '),
                 eventDate: album.value.eventDate ? (new Date(album.value.eventDate * 1000).toISOString().split('T')[0] ?? '') : '',
                 isPublic: album.value.isPublic,
+                themePreset: album.value.themePreset ?? 'default',
+                logoText: album.value.logoText ?? '',
             }
+            applyTheme(album.value.themePreset)
         }
     } catch (err: any) {
         // If 403 and not logged in, redirect to login
@@ -1548,6 +1584,8 @@ const handleUpdateAlbum = async () => {
                 tags: parseTagsInput(editForm.value.tags),
                 eventDate,
                 isPublic: editForm.value.isPublic,
+                themePreset: editForm.value.themePreset === 'default' ? null : editForm.value.themePreset,
+                logoText: editForm.value.logoText || null,
             },
         })
 

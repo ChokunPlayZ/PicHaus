@@ -43,6 +43,8 @@ export const albums = pgTable('albums', {
     ownerId: uuid('ownerId').notNull().references(() => users.id, { onDelete: 'cascade' }),
     // FK to photos enforced at DB level; omitted here to avoid circular reference
     coverPhotoId: uuid('coverPhotoId'),
+    themePreset: text('themePreset'),
+    logoText: text('logoText'),
 })
 
 export const photos = pgTable('photos', {

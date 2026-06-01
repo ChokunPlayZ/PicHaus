@@ -10,7 +10,7 @@
                             d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                         <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
                     </svg>
-                    <span>PicHaus</span>
+                    <span>{{ props.logoText || 'PicHaus' }}</span>
                 </div>
             </div>
 
@@ -112,7 +112,7 @@
                         d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                     <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
                 </svg>
-                <span>PicHaus</span>
+                <span>{{ props.logoText || 'PicHaus' }}</span>
             </span>
 
             <button @click="mobileOpen = true"
@@ -130,7 +130,7 @@
                                     d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                                 <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
                             </svg>
-                            <span>PicHaus</span>
+                            <span>{{ props.logoText || 'PicHaus' }}</span>
                         </div>
                         <div v-if="displayTitle" class="text-white/60 text-sm">{{ displayTitle }}</div>
                     </div>
@@ -240,6 +240,7 @@ const props = defineProps<{
     backText?: string
     backTo?: string
     solid?: boolean
+    logoText?: string
 }>()
 
 const displayTitle = computed(() => {

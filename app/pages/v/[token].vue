@@ -4,7 +4,7 @@
         <div v-if="!isAuthenticated" class="min-h-screen flex items-center justify-center p-4">
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8 max-w-md w-full shadow-xl">
                 <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-white mb-2">📸 PicHaus</h1>
+                    <h1 class="text-3xl font-bold text-white mb-2">{{ linkData?.data?.logoText || '📸 PicHaus' }}</h1>
                     <p v-if="loading" class="text-purple-200 animate-pulse">Loading...</p>
                     <p v-else-if="error" class="text-red-300">{{ error }}</p>
                     <p v-else class="text-purple-200">
@@ -599,8 +599,13 @@ useSeoMeta({
     }),
 })
 
+const { applyTheme, resetTheme } = useAlbumTheme()
+
 // Auto-access if no password (Client-side only)
 onMounted(async () => {
+    if (linkData.value?.data) {
+        applyTheme(linkData.value.data.themePreset)
+    }
     if (linkData.value?.data && !linkData.value.data.requiresPassword && !isAuthenticated.value) {
         await handleAccess()
     }
@@ -832,6 +837,7 @@ watch(containerRef, (el) => {
 onUnmounted(() => {
     if (resizeObserver) resizeObserver.disconnect()
     if (infiniteScrollObserver) infiniteScrollObserver.disconnect()
+    resetTheme()
 })
 
 // Infinite Scroll

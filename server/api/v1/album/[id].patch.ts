@@ -38,6 +38,8 @@ export default defineEventHandler(async (event) => {
                 ? (body.eventDate ? BigInt(body.eventDate) : null)
                 : album.eventDate,
             isPublic: body.isPublic ?? album.isPublic,
+            themePreset: body.themePreset !== undefined ? (body.themePreset || null) : album.themePreset,
+            logoText: body.logoText !== undefined ? (body.logoText || null) : album.logoText,
             updatedAt: now,
         }).where(eq(albums.id, id)).returning()
 
