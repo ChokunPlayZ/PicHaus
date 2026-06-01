@@ -194,4 +194,14 @@ END $$`,
             `ALTER TABLE "albums" ADD COLUMN IF NOT EXISTS "logoText" text`,
         ],
     },
+    {
+        // 0002 was stamped-but-not-run on existing installs due to a bug in the
+        // existing-installation detection logic. This migration re-runs the same
+        // idempotent ALTER TABLE statements to ensure the columns exist.
+        name: '0003_fix_album_theming.sql',
+        statements: [
+            `ALTER TABLE "albums" ADD COLUMN IF NOT EXISTS "themePreset" text`,
+            `ALTER TABLE "albums" ADD COLUMN IF NOT EXISTS "logoText" text`,
+        ],
+    },
 ]
