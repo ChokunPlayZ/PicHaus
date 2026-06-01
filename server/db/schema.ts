@@ -17,6 +17,15 @@ export const users = pgTable('users', {
     role: roleEnum('role').default('USER').notNull(),
 })
 
+export const logos = pgTable('logos', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    storagePath: text('storagePath').notNull(),
+    originalName: text('originalName').notNull(),
+    mimeType: text('mimeType').notNull(),
+    uploadedById: uuid('uploadedById').references(() => users.id, { onDelete: 'set null' }),
+    uploadedAt: bigint('uploadedAt', { mode: 'bigint' }).notNull(),
+})
+
 export const passkeys = pgTable('passkeys', {
     id: uuid('id').primaryKey().defaultRandom(),
     credentialId: text('credentialId').unique().notNull(),
@@ -44,7 +53,9 @@ export const albums = pgTable('albums', {
     // FK to photos enforced at DB level; omitted here to avoid circular reference
     coverPhotoId: uuid('coverPhotoId'),
     themePreset: text('themePreset'),
+    customTheme: text('customTheme'),
     logoText: text('logoText'),
+    logoImageId: uuid('logoImageId').references(() => logos.id, { onDelete: 'set null' }),
 })
 
 export const photos = pgTable('photos', {
@@ -198,4 +209,8 @@ export const albumToShareGroupsRelations = relations(albumToShareGroups, ({ one 
 export const inviteTokensRelations = relations(inviteTokens, ({ one }) => ({
     user: one(users, { fields: [inviteTokens.userId], references: [users.id] }),
     creator: one(users, { fields: [inviteTokens.createdBy], references: [users.id] }),
+}))
+
+export const logosRelations = relations(logos, ({ one }) => ({
+    uploadedBy: one(users, { fields: [logos.uploadedById], references: [users.id] }),
 }))

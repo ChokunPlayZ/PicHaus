@@ -16,7 +16,9 @@
         <!-- Guest Login -->
         <div v-else-if="!isLoggedIn && albumInfo" class="max-w-md mx-auto px-4 py-12">
             <div class="text-center mb-8">
-                <h1 class="text-5xl font-bold text-white mb-2">{{ albumInfo?.logoText || '📸 PicHaus' }}</h1>
+                <img v-if="albumInfo?.logoImageId" :src="`/api/assets/logo/${albumInfo.logoImageId}`" alt="Logo"
+                    class="h-16 max-w-[200px] object-contain mx-auto mb-2" />
+                <h1 v-else class="text-5xl font-bold text-white mb-2">{{ albumInfo?.logoText || '📸 PicHaus' }}</h1>
                 <p class="text-purple-200">Join to upload photos</p>
             </div>
 
@@ -67,7 +69,9 @@
         <div v-else class="max-w-4xl mx-auto px-4 py-12">
             <!-- Header -->
             <div class="text-center mb-8">
-                <h1 class="text-5xl font-bold text-white mb-2">{{ albumInfo?.logoText || '📸 PicHaus' }}</h1>
+                <img v-if="albumInfo?.logoImageId" :src="`/api/assets/logo/${albumInfo.logoImageId}`" alt="Logo"
+                    class="h-16 max-w-[200px] object-contain mx-auto mb-2" />
+                <h1 v-else class="text-5xl font-bold text-white mb-2">{{ albumInfo?.logoText || '📸 PicHaus' }}</h1>
                 <p class="text-purple-200">Upload your photos</p>
                 <p class="text-sm text-purple-300 mt-2">Logged in as {{ user?.name }}</p>
             </div>
@@ -354,7 +358,7 @@ const { applyTheme, resetTheme } = useAlbumTheme()
 onMounted(async () => {
     await checkAuth()
     await fetchAlbumInfo()
-    applyTheme(albumInfo.value?.themePreset)
+    applyTheme(albumInfo.value?.themePreset, albumInfo.value?.customTheme)
 })
 
 onUnmounted(() => {

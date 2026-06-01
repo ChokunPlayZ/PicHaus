@@ -59,20 +59,62 @@ export const ALBUM_THEMES = {
 
 export type ThemePreset = keyof typeof ALBUM_THEMES
 
+export interface CustomThemeColors {
+    bgStart: string
+    bgEnd: string
+    btnStart: string
+    btnEnd: string
+}
+
+export const DEFAULT_CUSTOM_THEME: CustomThemeColors = {
+    bgStart: '#2d2d2d',
+    bgEnd: '#141414',
+    btnStart: '#d4d4d4',
+    btnEnd: '#a3a3a3',
+}
+
 export const useAlbumTheme = () => {
-    const applyTheme = (preset: string | null | undefined) => {
+    const applyTheme = (preset: string | null | undefined, customTheme?: CustomThemeColors | string | null) => {
         if (import.meta.server) return
-        const key = (preset as ThemePreset) ?? 'default'
-        const theme = ALBUM_THEMES[key] ?? ALBUM_THEMES.default
         const root = document.documentElement
-        root.style.setProperty('--bg-primary-start', theme.bgStart)
-        root.style.setProperty('--bg-primary-end', theme.bgEnd)
-        root.style.setProperty('--btn-primary-start', theme.btnStart)
-        root.style.setProperty('--btn-primary-end', theme.btnEnd)
-        root.style.setProperty('--btn-primary-hover-start', theme.hoverStart)
-        root.style.setProperty('--btn-primary-hover-end', theme.hoverEnd)
-        root.style.setProperty('--text-secondary', theme.accentText)
-        root.style.setProperty('--text-tertiary', theme.accentText)
+
+        let bgStart: string, bgEnd: string, btnStart: string, btnEnd: string,
+            hoverStart: string, hoverEnd: string, accentText: string
+
+        if (preset === 'custom') {
+            let colors: CustomThemeColors = DEFAULT_CUSTOM_THEME
+            if (typeof customTheme === 'string') {
+                try { colors = JSON.parse(customTheme) } catch { /* use defaults */ }
+            } else if (customTheme) {
+                colors = customTheme
+            }
+            bgStart = colors.bgStart
+            bgEnd = colors.bgEnd
+            btnStart = colors.btnStart
+            btnEnd = colors.btnEnd
+            hoverStart = btnStart
+            hoverEnd = btnEnd
+            accentText = btnEnd
+        } else {
+            const key = (preset as ThemePreset) ?? 'default'
+            const theme = ALBUM_THEMES[key] ?? ALBUM_THEMES.default
+            bgStart = theme.bgStart
+            bgEnd = theme.bgEnd
+            btnStart = theme.btnStart
+            btnEnd = theme.btnEnd
+            hoverStart = theme.hoverStart
+            hoverEnd = theme.hoverEnd
+            accentText = theme.accentText
+        }
+
+        root.style.setProperty('--bg-primary-start', bgStart)
+        root.style.setProperty('--bg-primary-end', bgEnd)
+        root.style.setProperty('--btn-primary-start', btnStart)
+        root.style.setProperty('--btn-primary-end', btnEnd)
+        root.style.setProperty('--btn-primary-hover-start', hoverStart)
+        root.style.setProperty('--btn-primary-hover-end', hoverEnd)
+        root.style.setProperty('--text-secondary', accentText)
+        root.style.setProperty('--text-tertiary', accentText)
     }
 
     const resetTheme = () => {

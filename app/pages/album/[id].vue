@@ -3,7 +3,8 @@
         <!-- Navigation Bar -->
         <!-- Navigation Bar -->
         <NavBar v-if="album && (album.permissions.isOwner || album.permissions.canEdit)" :show-back="true"
-            back-text="Back to Albums" back-to="/album" :logo-text="album.logoText || undefined" />
+            back-text="Back to Albums" back-to="/album" :logo-text="album.logoText || undefined"
+            :logo-image-url="album.logoImageId ? `/api/assets/logo/${album.logoImageId}` : undefined" />
 
         <!-- Loading State -->
         <div v-if="loading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
@@ -509,8 +510,8 @@
     <!-- Edit Album Modal -->
     <div v-if="showEditModal"
         class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-        @click.self="showEditModal = false">
-        <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-md w-full">
+        @click.self="showEditModal = false; applyTheme(album?.themePreset, album?.customTheme)">
+        <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
             <h3 class="text-2xl font-bold text-white mb-4">Edit Album</h3>
 
             <form @submit.prevent="handleUpdateAlbum" class="space-y-4">
@@ -561,6 +562,58 @@
                             <span class="absolute bottom-0.5 left-0 right-0 text-center text-white text-[9px] font-semibold drop-shadow-sm">{{ theme.label }}</span>
                             <span v-if="editForm.themePreset === key" class="absolute top-0.5 right-0.5 text-white text-[10px] leading-none">✓</span>
                         </button>
+                        <!-- Custom swatch -->
+                        <button type="button"
+                            @click="editForm.themePreset = 'custom'"
+                            :class="[
+                                'relative rounded-lg h-12 border-2 transition overflow-hidden',
+                                editForm.themePreset === 'custom' ? 'border-white ring-2 ring-white/40' : 'border-white/20 hover:border-white/50'
+                            ]"
+                            :style="{ background: `linear-gradient(135deg, ${editForm.customTheme.bgStart}, ${editForm.customTheme.bgEnd})` }"
+                            title="Custom">
+                            <span class="absolute bottom-0.5 left-0 right-0 text-center text-white text-[9px] font-semibold drop-shadow-sm">Custom</span>
+                            <span v-if="editForm.themePreset === 'custom'" class="absolute top-0.5 right-0.5 text-white text-[10px] leading-none">✓</span>
+                        </button>
+                    </div>
+
+                    <!-- Custom color pickers -->
+                    <div v-if="editForm.themePreset === 'custom'" class="mt-3 grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-white/60 mb-1">Background Start</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" v-model="editForm.customTheme.bgStart"
+                                    class="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent" />
+                                <input type="text" v-model="editForm.customTheme.bgStart"
+                                    class="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-white/60 mb-1">Background End</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" v-model="editForm.customTheme.bgEnd"
+                                    class="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent" />
+                                <input type="text" v-model="editForm.customTheme.bgEnd"
+                                    class="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-white/60 mb-1">Accent Start</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" v-model="editForm.customTheme.btnStart"
+                                    class="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent" />
+                                <input type="text" v-model="editForm.customTheme.btnStart"
+                                    class="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-white/60 mb-1">Accent End</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" v-model="editForm.customTheme.btnEnd"
+                                    class="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent" />
+                                <input type="text" v-model="editForm.customTheme.btnEnd"
+                                    class="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -569,7 +622,38 @@
                     <input v-model="editForm.logoText" type="text"
                         class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                         placeholder="e.g. TNI Open Day 2026" />
-                    <p class="text-xs text-white/50 mt-1">Replaces 'PicHaus' in the header for this album</p>
+                    <p class="text-xs text-white/50 mt-1">Text shown in the header (used when no logo image is set)</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-purple-200 mb-2">Logo Image</label>
+                    <div class="flex items-center gap-2 mb-2">
+                        <button type="button" :disabled="logoUploading"
+                            @click="logoFileInput?.click()"
+                            class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition disabled:opacity-50">
+                            {{ logoUploading ? 'Uploading...' : 'Upload logo' }}
+                        </button>
+                        <button v-if="editForm.logoImageId" type="button"
+                            @click="editForm.logoImageId = null"
+                            class="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 text-sm rounded-lg transition">
+                            Clear
+                        </button>
+                        <input ref="logoFileInput" type="file" accept="image/*" class="hidden" @change="handleLogoUpload" />
+                    </div>
+                    <div v-if="availableLogos.length > 0" class="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto pr-1">
+                        <button v-for="logo in availableLogos" :key="logo.id" type="button"
+                            @click="editForm.logoImageId = editForm.logoImageId === logo.id ? null : logo.id"
+                            :class="[
+                                'relative rounded-lg border-2 overflow-hidden bg-white/5 transition aspect-square flex items-center justify-center p-1',
+                                editForm.logoImageId === logo.id ? 'border-white ring-2 ring-white/40' : 'border-white/20 hover:border-white/50'
+                            ]"
+                            :title="logo.originalName">
+                            <img :src="logo.url" :alt="logo.originalName" class="max-h-full max-w-full object-contain" />
+                            <span v-if="editForm.logoImageId === logo.id" class="absolute top-0.5 right-0.5 text-white text-[10px] leading-none">✓</span>
+                        </button>
+                    </div>
+                    <p v-else class="text-xs text-white/40">No logos uploaded yet — upload one above.</p>
+                    <p class="text-xs text-white/50 mt-1">Logo images replace the text branding in the header.</p>
                 </div>
 
                 <div v-if="editError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
@@ -577,7 +661,7 @@
                 </div>
 
                 <div class="flex space-x-3">
-                    <button type="button" @click="showEditModal = false"
+                    <button type="button" @click="showEditModal = false; applyTheme(album?.themePreset, album?.customTheme)"
                         class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
                         Cancel
                     </button>
@@ -893,7 +977,9 @@ interface Album {
     eventDate: number | null
     isPublic: boolean
     themePreset: string | null
+    customTheme: string | null
     logoText: string | null
+    logoImageId: string | null
     owner: User
     photos: Photo[]
     collaborators: Collaborator[]
@@ -1072,10 +1158,53 @@ const editForm = ref({
     eventDate: '',
     isPublic: false,
     themePreset: 'default' as string,
+    customTheme: { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' },
     logoText: '',
+    logoImageId: null as string | null,
 })
 const updating = ref(false)
 const editError = ref('')
+
+const availableLogos = ref<{ id: string; originalName: string; url: string }[]>([])
+const logoUploading = ref(false)
+const logoFileInput = ref<HTMLInputElement | null>(null)
+
+const fetchLogos = async () => {
+    try {
+        const res = await $fetch<{ success: boolean; data: any[] }>('/api/v1/logos')
+        availableLogos.value = res.data
+    } catch { /* non-critical */ }
+}
+
+const handleLogoUpload = async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (!file) return
+    logoUploading.value = true
+    try {
+        const fd = new FormData()
+        fd.append('file', file)
+        const res = await $fetch<{ success: boolean; data: any }>('/api/v1/logos', { method: 'POST', body: fd })
+        availableLogos.value.unshift(res.data)
+        editForm.value.logoImageId = res.data.id
+    } catch (err: any) {
+        editError.value = err.data?.statusMessage || 'Failed to upload logo'
+    } finally {
+        logoUploading.value = false
+        if (logoFileInput.value) logoFileInput.value.value = ''
+    }
+}
+
+watch(showEditModal, (open) => {
+    if (open) fetchLogos()
+})
+
+watch(
+    [() => editForm.value.themePreset, () => editForm.value.customTheme],
+    ([preset, custom]) => {
+        if (showEditModal.value) applyTheme(preset, custom)
+    },
+    { deep: true },
+)
 
 const showEditPhotoModal = ref(false)
 const editPhotoForm = ref({
@@ -1460,6 +1589,10 @@ const fetchAlbum = async () => {
 
         // Populate edit form
         if (album.value) {
+            let parsedCustomTheme = { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' }
+            if (album.value.customTheme) {
+                try { parsedCustomTheme = JSON.parse(album.value.customTheme) } catch { /* use defaults */ }
+            }
             editForm.value = {
                 name: album.value.name,
                 description: album.value.description ?? '',
@@ -1467,9 +1600,11 @@ const fetchAlbum = async () => {
                 eventDate: album.value.eventDate ? (new Date(album.value.eventDate * 1000).toISOString().split('T')[0] ?? '') : '',
                 isPublic: album.value.isPublic,
                 themePreset: album.value.themePreset ?? 'default',
+                customTheme: parsedCustomTheme,
                 logoText: album.value.logoText ?? '',
+                logoImageId: album.value.logoImageId ?? null,
             }
-            applyTheme(album.value.themePreset)
+            applyTheme(album.value.themePreset, album.value.customTheme)
         }
     } catch (err: any) {
         // If 403 and not logged in, redirect to login
@@ -1585,7 +1720,9 @@ const handleUpdateAlbum = async () => {
                 eventDate,
                 isPublic: editForm.value.isPublic,
                 themePreset: editForm.value.themePreset === 'default' ? null : editForm.value.themePreset,
+                customTheme: editForm.value.themePreset === 'custom' ? JSON.stringify(editForm.value.customTheme) : null,
                 logoText: editForm.value.logoText || null,
+                logoImageId: editForm.value.logoImageId || null,
             },
         })
 

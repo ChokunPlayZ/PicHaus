@@ -39,7 +39,9 @@ export default defineEventHandler(async (event) => {
                 : album.eventDate,
             isPublic: body.isPublic ?? album.isPublic,
             themePreset: body.themePreset !== undefined ? (body.themePreset || null) : album.themePreset,
+            customTheme: body.customTheme !== undefined ? (body.customTheme || null) : album.customTheme,
             logoText: body.logoText !== undefined ? (body.logoText || null) : album.logoText,
+            logoImageId: body.logoImageId !== undefined ? (body.logoImageId || null) : album.logoImageId,
             updatedAt: now,
         }).where(eq(albums.id, id)).returning()
 

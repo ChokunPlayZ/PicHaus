@@ -4,13 +4,17 @@
             class="hidden lg:flex fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] border-r border-white/20 z-50 flex-col">
             <div class="p-4 border-b border-white/10">
                 <div class="text-purple-200 font-bold text-lg leading-tight flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                        <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
-                    </svg>
-                    <span>{{ props.logoText || 'PicHaus' }}</span>
+                    <img v-if="props.logoImageUrl" :src="props.logoImageUrl" alt="Logo"
+                        class="h-8 max-w-[140px] object-contain" />
+                    <template v-else>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                            <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        <span>{{ props.logoText || 'PicHaus' }}</span>
+                    </template>
                 </div>
             </div>
 
@@ -106,13 +110,17 @@
         <div
             class="lg:hidden sticky top-0 z-50 bg-gradient-to-r from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] border-b border-white/20 px-4 h-14 flex items-center justify-between">
             <span class="text-purple-200 font-bold text-base truncate inline-flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                    <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
-                </svg>
-                <span>{{ props.logoText || 'PicHaus' }}</span>
+                <img v-if="props.logoImageUrl" :src="props.logoImageUrl" alt="Logo"
+                    class="h-7 max-w-[120px] object-contain" />
+                <template v-else>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                        <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                    <span>{{ props.logoText || 'PicHaus' }}</span>
+                </template>
             </span>
 
             <button @click="mobileOpen = true"
@@ -124,13 +132,17 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <div class="text-purple-200 font-bold text-lg inline-flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                                <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
-                            </svg>
-                            <span>{{ props.logoText || 'PicHaus' }}</span>
+                            <img v-if="props.logoImageUrl" :src="props.logoImageUrl" alt="Logo"
+                                class="h-8 max-w-[140px] object-contain" />
+                            <template v-else>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                                    <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
+                                </svg>
+                                <span>{{ props.logoText || 'PicHaus' }}</span>
+                            </template>
                         </div>
                         <div v-if="displayTitle" class="text-white/60 text-sm">{{ displayTitle }}</div>
                     </div>
@@ -241,6 +253,7 @@ const props = defineProps<{
     backTo?: string
     solid?: boolean
     logoText?: string
+    logoImageUrl?: string
 }>()
 
 const displayTitle = computed(() => {

@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
             with: {
                 album: {
                     with: { owner: { columns: { name: true } } },
-                    columns: { id: true, title: true, description: true, eventDate: true, ownerId: true, themePreset: true, logoText: true },
+                    columns: { id: true, title: true, description: true, eventDate: true, ownerId: true, themePreset: true, customTheme: true, logoText: true, logoImageId: true },
                 },
             },
         })
@@ -114,7 +114,9 @@ export default defineEventHandler(async (event) => {
                 shareType: shareLink.type,
                 showMetadata: shareLink.showMetadata,
                 themePreset: shareLink.album.themePreset,
+                customTheme: shareLink.album.customTheme,
                 logoText: shareLink.album.logoText,
+                logoImageId: shareLink.album.logoImageId,
             },
         }
     } catch (error: any) {
