@@ -40,6 +40,7 @@ A self-hosted, collaborative photo album platform built for photography clubs. P
 - **Share groups** — bundle multiple albums under one share link
 - **Instagram handles** — photographers can attach their Instagram username, shown on photos
 - **Statistics dashboard** — top cameras, lenses, aperture/ISO/shutter distributions, monthly activity timeline
+- **Passkeys & security keys** — passwordless login via WebAuthn/FIDO2 (Face ID, Touch ID, Windows Hello, YubiKey, etc.)
 - **External API** — scoped API tokens for integrating PicHaus with external sites or workflows
 - **Fully self-hosted** — Docker image, PostgreSQL, local file storage
 
@@ -57,6 +58,7 @@ A self-hosted, collaborative photo album platform built for photography clubs. P
 | Blurhash | [blurhash](https://blurha.sh) |
 | Photo layout | [@immich/justified-layout-wasm](https://github.com/immich-app/immich) |
 | Password hashing | Argon2id |
+| Passkeys / Security Keys | [@simplewebauthn/server](https://simplewebauthn.dev) + [@simplewebauthn/browser](https://simplewebauthn.dev) |
 | Runtime | [Bun](https://bun.sh) |
 
 ---
@@ -146,8 +148,13 @@ volumes:
 | `STORAGE_DIR` | No | `storage/uploads` | Absolute or relative path where uploaded files are stored |
 | `MAX_FILE_SIZE_MB` | No | `10` | Maximum upload size per file in megabytes |
 | `NODE_ENV` | No | `development` | Set to `production` in production deployments |
+| `WEBAUTHN_RP_ID` | No | `localhost` | Passkey relying-party ID — must match the domain users visit (no port, no protocol) |
+| `WEBAUTHN_RP_NAME` | No | `PicHaus` | Human-readable relying-party name shown by the browser during passkey registration |
+| `WEBAUTHN_ORIGIN` | No | `http://localhost:3000` | Exact origin in the browser address bar — must include protocol and port if non-standard |
 
 > **Security**: `AUTH_SECRET` must be a random string of at least 32 characters. In production the server will refuse to start without it.
+
+> **Passkeys in production**: Set `WEBAUTHN_RP_ID` to your bare domain (e.g. `photos.example.com`), `WEBAUTHN_ORIGIN` to `https://photos.example.com`, and `WEBAUTHN_RP_NAME` to whatever label you want users to see in their authenticator. The three values must match exactly — mismatches cause silent passkey registration or login failures.
 
 ---
 
@@ -569,10 +576,20 @@ PicHaus uses a custom HMAC-SHA256 token scheme rather than a JWT library.
 
 **Session tokens**
 
-- Created on login, valid for 7 days
+- Created on login (password or passkey), valid for 7 days
 - Stored in `localStorage` under the key `pichaus_access_token`
 - Sent as `Authorization: Bearer <token>` on every API call
 - For image asset URLs, appended as `?access_token=<token>`
+
+**Passkeys and security keys**
+
+PicHaus supports WebAuthn/FIDO2 passkeys and hardware security keys (YubiKey, etc.) as a passwordless login method via [@simplewebauthn](https://simplewebauthn.dev).
+
+- **Sign in** — the login page has a **Sign in with Passkey or Security Key** button. The browser or OS prompts the user to select a registered credential. No email or password is entered.
+- **Register a passkey** — go to **Settings** → **Passkeys & Security Keys** → click **Add**. The browser prompts to create a new credential using the platform authenticator (Face ID, Touch ID, Windows Hello) or a plugged-in hardware key. Multiple passkeys can be registered per account.
+- **Manage passkeys** — each registered passkey is listed by name and transport (Built-in, USB, NFC, Bluetooth). Individual passkeys can be removed at any time.
+- Passkey challenges expire after 5 minutes and are consumed on first use (replay-safe).
+- Credentials are stored in the `passkeys` table as `credentialId`, `publicKey` (base64url), and a replay counter.
 
 **API tokens**
 
