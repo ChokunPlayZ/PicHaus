@@ -247,4 +247,10 @@ END $$`,
             `ALTER TABLE "api_tokens"          ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`,
         ],
     },
+    {
+        name: '0007_user_avatar.sql',
+        statements: [
+            `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "avatarPath" TEXT`,
+        ],
+    },
 ]
