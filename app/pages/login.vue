@@ -1,74 +1,102 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] flex items-center justify-center p-4">
-        <div class="w-full max-w-md">
-            <!-- Logo/Header -->
+    <div class="min-h-screen flex items-center justify-center p-4" style="background: var(--bg-page);">
+        <div class="w-full max-w-sm">
+            <!-- Logo / Header -->
             <div class="text-center mb-8">
-                <h1 class="text-5xl font-bold text-white mb-2">📸 PicHaus</h1>
-                <p class="text-[var(--text-secondary)]">Welcome back</p>
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+                    style="background: var(--accent-light);">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" style="color: var(--accent);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                        <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-1);">PicHaus</h1>
+                <p class="mt-1 text-sm" style="color: var(--text-2);">Sign in to your account</p>
             </div>
 
             <!-- Login Card -->
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
-                <h2 class="text-2xl font-bold text-white mb-6">Sign In</h2>
-
+            <div class="rounded-2xl p-6" style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-md);">
                 <form @submit.prevent="handleLogin" class="space-y-4">
-                    <!-- Email Field -->
+                    <!-- Email -->
                     <div>
-                        <label for="email" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                        <label for="email" class="block text-sm font-medium mb-1.5" style="color: var(--text-1);">
                             Email
                         </label>
-                        <input id="email" v-model="form.email" type="email" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                            placeholder="your@email.com" />
+                        <input id="email" v-model="form.email" type="email" required autocomplete="email"
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="your@email.com"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.2)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
 
-                    <!-- Password Field -->
+                    <!-- Password -->
                     <div>
-                        <label for="password" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                        <label for="password" class="block text-sm font-medium mb-1.5" style="color: var(--text-1);">
                             Password
                         </label>
-                        <input id="password" v-model="form.password" type="password" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                            placeholder="Enter your password" />
+                        <input id="password" v-model="form.password" type="password" required autocomplete="current-password"
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="••••••••"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.2)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
 
-                    <!-- Error Message -->
-                    <div v-if="error" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                        <p class="text-red-200 text-sm">{{ error }}</p>
+                    <!-- Error -->
+                    <div v-if="error" class="rounded-xl px-4 py-3 text-sm"
+                        style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                        {{ error }}
                     </div>
 
-                    <!-- Submit Button -->
+                    <!-- Submit -->
                     <button type="submit" :disabled="loading"
-                        class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                        <span v-if="loading">Signing in...</span>
+                        class="w-full py-2.5 text-sm font-medium rounded-full transition"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!loading && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        <span v-if="loading" class="flex items-center justify-center gap-2">
+                            <span class="w-4 h-4 rounded-full border-2 animate-spin"
+                                style="border-color: rgba(255,255,255,0.3); border-top-color: white;"></span>
+                            Signing in…
+                        </span>
                         <span v-else>Sign In</span>
                     </button>
                 </form>
 
-                <!-- Passkey divider -->
+                <!-- Divider -->
                 <div class="flex items-center gap-3 my-5">
-                    <div class="flex-1 h-px bg-white/10"></div>
-                    <span class="text-xs text-[var(--text-muted)]">or</span>
-                    <div class="flex-1 h-px bg-white/10"></div>
+                    <div class="flex-1 h-px" style="background: var(--separator);"></div>
+                    <span class="text-xs" style="color: var(--text-3);">or</span>
+                    <div class="flex-1 h-px" style="background: var(--separator);"></div>
                 </div>
 
-                <!-- Passkey Button -->
+                <!-- Passkey -->
                 <button @click="handlePasskeyLogin" :disabled="passkeyLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium">
-                    <svg v-if="!passkeyLoading" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a4 4 0 11-2.83 6.83L8 18H5v-3l4.17-4.17A4 4 0 0115 7z" />
+                    class="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-full transition"
+                    style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                    @mouseover="!passkeyLoading && ($event.currentTarget.style.background = 'var(--surface-3)')"
+                    @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
+                    <svg v-if="!passkeyLoading" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-2);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 7a4 4 0 11-2.83 6.83L8 18H5v-3l4.17-4.17A4 4 0 0115 7z" />
                     </svg>
-                    <div v-else class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                    <span v-else class="w-4 h-4 rounded-full border-2 animate-spin"
+                        style="border-color: var(--separator); border-top-color: var(--text-2);"></span>
                     <span>{{ passkeyLoading ? 'Waiting for passkey…' : 'Sign in with Passkey or Security Key' }}</span>
                 </button>
 
-                <div v-if="passkeyError" class="mt-3 bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                    <p class="text-red-200 text-sm">{{ passkeyError }}</p>
+                <div v-if="passkeyError" class="mt-3 rounded-xl px-4 py-3 text-sm"
+                    style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                    {{ passkeyError }}
                 </div>
             </div>
 
             <!-- Footer -->
-            <p class="text-center text-[var(--text-tertiary)] text-sm mt-6">
+            <p class="text-center text-xs mt-6" style="color: var(--text-3);">
                 Collaborative photo albums for photography clubs
             </p>
         </div>
@@ -122,15 +150,12 @@ const handlePasskeyLogin = async () => {
     try {
         const { startAuthentication } = await import('@simplewebauthn/browser')
 
-        // Get challenge (discoverable credentials — no email needed)
         const optRes = await $fetch<{ success: boolean; data: { options: any; challengeId: string } }>(
             '/api/v1/auth/passkey/login-options', { method: 'POST', body: {} }
         )
 
-        // Prompt browser/OS to select a passkey or touch a hardware key
         const authResponse = await startAuthentication({ optionsJSON: optRes.data.options })
 
-        // Verify and get session token
         const verifyRes = await $fetch<{ success: boolean; data: { accessToken: string; name: string } }>(
             '/api/v1/auth/passkey/login-verify', {
                 method: 'POST',
@@ -143,7 +168,6 @@ const handlePasskeyLogin = async () => {
         await navigateTo(getRedirectTarget())
         await splashDismiss()
     } catch (err: any) {
-        // User cancelled — don't show an error
         if (err?.name === 'NotAllowedError') return
         passkeyError.value = err?.data?.statusMessage || err?.message || 'Passkey sign-in failed'
     } finally {

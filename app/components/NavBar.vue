@@ -1,14 +1,16 @@
 <template>
     <div>
+        <!-- Desktop sidebar -->
         <aside
-            class="hidden lg:flex fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] border-r border-white/20 z-50 flex-col">
-            <div class="p-4 border-b border-white/10">
-                <div class="text-purple-200 font-bold text-lg leading-tight flex items-center gap-2">
+            class="hidden lg:flex fixed inset-y-0 left-0 w-64 z-50 flex-col"
+            style="background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
+            <div class="p-4" style="border-bottom: 1px solid var(--separator);">
+                <div class="font-semibold text-base leading-tight flex items-center gap-2" style="color: var(--text-1);">
                     <img v-if="props.logoImageUrl" :src="props.logoImageUrl" alt="Logo"
                         class="h-8 max-w-[140px] object-contain" />
                     <template v-else>
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
+                            stroke="currentColor" style="color: var(--accent);">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                             <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
@@ -18,10 +20,10 @@
                 </div>
             </div>
 
-            <div class="p-3 space-y-1 flex-1 overflow-y-auto">
+            <div class="p-2 space-y-0.5 flex-1 overflow-y-auto">
                 <button v-for="item in navItems" :key="item.path" @click="navigateTo(item.path)"
-                    :class="sidebarButtonClass(item.path)">
-                    <span class="inline-flex items-center gap-2">
+                    :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)">
+                    <span class="inline-flex items-center gap-2.5">
                         <svg v-if="item.icon === 'albums'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -57,18 +59,19 @@
                 </button>
 
                 <template v-if="user?.role === 'ADMIN'">
-                    <button @click="navigateTo('/admin/users')" :class="sidebarButtonClass('/admin/users')">
-                        <span class="inline-flex items-center gap-2">
+                    <div class="pt-2 pb-1 px-3" style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em;">Admin</div>
+                    <button @click="navigateTo('/admin/users')" :class="sidebarButtonClass('/admin/users')" :style="sidebarButtonStyle('/admin/users')">
+                        <span class="inline-flex items-center gap-2.5">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-3z" />
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
                             </svg>
                             <span>Users</span>
                         </span>
                     </button>
-                    <button @click="navigateTo('/admin/status')" :class="sidebarButtonClass('/admin/status')">
-                        <span class="inline-flex items-center gap-2">
+                    <button @click="navigateTo('/admin/status')" :class="sidebarButtonClass('/admin/status')" :style="sidebarButtonStyle('/admin/status')">
+                        <span class="inline-flex items-center gap-2.5">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -77,8 +80,8 @@
                             <span>Server Status</span>
                         </span>
                     </button>
-                    <button @click="navigateTo('/admin/invites')" :class="sidebarButtonClass('/admin/invites')">
-                        <span class="inline-flex items-center gap-2">
+                    <button @click="navigateTo('/admin/invites')" :class="sidebarButtonClass('/admin/invites')" :style="sidebarButtonStyle('/admin/invites')">
+                        <span class="inline-flex items-center gap-2.5">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -90,31 +93,37 @@
                 </template>
             </div>
 
-            <div class="p-3 border-t border-white/10 space-y-2">
-                <button @click="navigateTo('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2'">
-                    <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-6 h-6 rounded-full bg-white/10 object-cover" />
+            <div class="p-2 space-y-1" style="border-top: 1px solid var(--separator);">
+                <button @click="navigateTo('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2.5'" :style="sidebarButtonStyle('/settings')">
+                    <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-6 h-6 rounded-full object-cover flex-shrink-0" style="border: 1px solid var(--separator);" />
                     <div v-else
-                        class="w-6 h-6 rounded-full bg-white/15 border border-white/20 text-white text-[10px] font-semibold flex items-center justify-center uppercase">
+                        class="w-6 h-6 rounded-full flex items-center justify-center uppercase text-[10px] font-semibold flex-shrink-0"
+                        style="background: var(--accent-light); color: var(--accent);">
                         {{ userInitials }}
                     </div>
-                    <span>{{ user?.name || 'Settings' }}</span>
+                    <span class="truncate">{{ user?.name || 'Settings' }}</span>
                 </button>
 
                 <button @click="handleLogout"
-                    class="w-full text-left text-red-300 hover:text-red-200 transition text-sm font-medium bg-red-500/10 hover:bg-red-500/20 px-3 py-2 rounded-lg border border-red-500/20 whitespace-nowrap">
-                    Logout
+                    class="w-full text-left text-sm font-medium px-3 py-2 rounded-lg transition"
+                    style="color: var(--error); background: var(--error-bg);"
+                    @mouseover="$event.currentTarget.style.background = 'var(--error-border)'"
+                    @mouseout="$event.currentTarget.style.background = 'var(--error-bg)'">
+                    Sign Out
                 </button>
             </div>
         </aside>
 
+        <!-- Mobile top bar -->
         <div
-            class="lg:hidden sticky top-0 z-50 bg-gradient-to-r from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] border-b border-white/20 px-4 h-14 flex items-center justify-between">
-            <span class="text-purple-200 font-bold text-base truncate inline-flex items-center gap-2">
+            class="lg:hidden sticky top-0 z-50 h-14 flex items-center justify-between px-4"
+            style="background: var(--sidebar-bg); border-bottom: 1px solid var(--sidebar-border); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
+            <span class="font-semibold text-base truncate inline-flex items-center gap-2" style="color: var(--text-1);">
                 <img v-if="props.logoImageUrl" :src="props.logoImageUrl" alt="Logo"
                     class="h-7 max-w-[120px] object-contain" />
                 <template v-else>
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
+                        stroke="currentColor" style="color: var(--accent);">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                         <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
@@ -124,35 +133,39 @@
             </span>
 
             <button @click="mobileOpen = true"
-                class="px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white/90 text-sm">Menu</button>
+                class="px-3 py-1.5 rounded-lg text-sm font-medium transition"
+                style="background: var(--surface-3); color: var(--text-1); border: 1px solid var(--separator);">
+                Menu
+            </button>
         </div>
 
-        <div v-if="mobileOpen" class="lg:hidden fixed inset-0 z-[60] bg-black/40" @click.self="mobileOpen = false">
-            <aside class="w-72 h-full bg-gradient-to-b from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] border-r border-white/20 p-4 flex flex-col">
-                <div class="flex items-center justify-between mb-4">
-                    <div>
-                        <div class="text-purple-200 font-bold text-lg inline-flex items-center gap-2">
-                            <img v-if="props.logoImageUrl" :src="props.logoImageUrl" alt="Logo"
-                                class="h-8 max-w-[140px] object-contain" />
-                            <template v-else>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                                    <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
-                                </svg>
-                                <span>{{ props.logoText || 'PicHaus' }}</span>
-                            </template>
-                        </div>
-                        <div v-if="displayTitle" class="text-white/60 text-sm">{{ displayTitle }}</div>
+        <!-- Mobile drawer -->
+        <div v-if="mobileOpen" class="lg:hidden fixed inset-0 z-[60]" style="background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);" @click.self="mobileOpen = false">
+            <aside class="w-72 h-full flex flex-col p-2"
+                style="background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
+                <div class="flex items-center justify-between mb-2 px-2 pt-2 pb-3" style="border-bottom: 1px solid var(--separator);">
+                    <div class="font-semibold text-base inline-flex items-center gap-2" style="color: var(--text-1);">
+                        <img v-if="props.logoImageUrl" :src="props.logoImageUrl" alt="Logo"
+                            class="h-8 max-w-[140px] object-contain" />
+                        <template v-else>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" style="color: var(--accent);">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                                <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
+                            </svg>
+                            <span>{{ props.logoText || 'PicHaus' }}</span>
+                        </template>
                     </div>
-                    <button @click="mobileOpen = false" class="text-white/80 hover:text-white">✕</button>
+                    <button @click="mobileOpen = false"
+                        class="w-7 h-7 rounded-full flex items-center justify-center text-sm transition"
+                        style="background: var(--surface-3); color: var(--text-2);">✕</button>
                 </div>
 
-                <div class="space-y-1 flex-1 overflow-y-auto">
+                <div class="space-y-0.5 flex-1 overflow-y-auto">
                     <button v-for="item in navItems" :key="`m-${item.path}`" @click="goMobile(item.path)"
-                        :class="sidebarButtonClass(item.path)">
-                        <span class="inline-flex items-center gap-2">
+                        :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)">
+                        <span class="inline-flex items-center gap-2.5">
                             <svg v-if="item.icon === 'albums'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -188,18 +201,19 @@
                     </button>
 
                     <template v-if="user?.role === 'ADMIN'">
-                        <button @click="goMobile('/admin/users')" :class="sidebarButtonClass('/admin/users')">
-                            <span class="inline-flex items-center gap-2">
+                        <div class="pt-2 pb-1 px-3" style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em;">Admin</div>
+                        <button @click="goMobile('/admin/users')" :class="sidebarButtonClass('/admin/users')" :style="sidebarButtonStyle('/admin/users')">
+                            <span class="inline-flex items-center gap-2.5">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-3z" />
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
                                 </svg>
                                 <span>Users</span>
                             </span>
                         </button>
-                        <button @click="goMobile('/admin/status')" :class="sidebarButtonClass('/admin/status')">
-                            <span class="inline-flex items-center gap-2">
+                        <button @click="goMobile('/admin/status')" :class="sidebarButtonClass('/admin/status')" :style="sidebarButtonStyle('/admin/status')">
+                            <span class="inline-flex items-center gap-2.5">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -208,8 +222,8 @@
                                 <span>Server Status</span>
                             </span>
                         </button>
-                        <button @click="goMobile('/admin/invites')" :class="sidebarButtonClass('/admin/invites')">
-                            <span class="inline-flex items-center gap-2">
+                        <button @click="goMobile('/admin/invites')" :class="sidebarButtonClass('/admin/invites')" :style="sidebarButtonStyle('/admin/invites')">
+                            <span class="inline-flex items-center gap-2.5">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -221,18 +235,20 @@
                     </template>
                 </div>
 
-                <div class="border-t border-white/10 pt-3 space-y-2">
-                    <button @click="goMobile('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2'">
-                        <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-6 h-6 rounded-full bg-white/10 object-cover" />
+                <div class="pt-2 space-y-1" style="border-top: 1px solid var(--separator);">
+                    <button @click="goMobile('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2.5'" :style="sidebarButtonStyle('/settings')">
+                        <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-6 h-6 rounded-full object-cover flex-shrink-0" style="border: 1px solid var(--separator);" />
                         <div v-else
-                            class="w-6 h-6 rounded-full bg-white/15 border border-white/20 text-white text-[10px] font-semibold flex items-center justify-center uppercase">
+                            class="w-6 h-6 rounded-full flex items-center justify-center uppercase text-[10px] font-semibold flex-shrink-0"
+                            style="background: var(--accent-light); color: var(--accent);">
                             {{ userInitials }}
                         </div>
-                        <span>{{ user?.name || 'Settings' }}</span>
+                        <span class="truncate">{{ user?.name || 'Settings' }}</span>
                     </button>
                     <button @click="handleLogout"
-                        class="w-full text-left text-red-300 hover:text-red-200 transition text-sm font-medium bg-red-500/10 hover:bg-red-500/20 px-3 py-2 rounded-lg border border-red-500/20">
-                        Logout
+                        class="w-full text-left text-sm font-medium px-3 py-2 rounded-lg transition"
+                        style="color: var(--error); background: var(--error-bg);">
+                        Sign Out
                     </button>
                 </div>
             </aside>
@@ -273,17 +289,20 @@ const navItems = [
     { label: 'API Keys', path: '/api-tokens', icon: 'api-keys' },
 ]
 
-const navButtonClass = (path: string) => {
+const sidebarButtonClass = (path: string) => {
     const isActive = route.path === path || (path !== '/album' && route.path.startsWith(`${path}/`))
-    return [
-        'cursor-pointer text-sm font-medium px-3 py-1.5 rounded-lg border transition whitespace-nowrap',
-        isActive
-            ? 'text-white bg-white/15 border-white/20'
-            : 'text-white/80 hover:text-white bg-transparent border-transparent hover:bg-white/10 hover:border-white/10'
-    ].join(' ')
+    const base = 'w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap'
+    return isActive
+        ? `${base} font-medium`
+        : `${base}`
 }
 
-const sidebarButtonClass = (path: string) => navButtonClass(path) + ' w-full text-left'
+const sidebarButtonStyle = (path: string) => {
+    const isActive = route.path === path || (path !== '/album' && route.path.startsWith(`${path}/`))
+    return isActive
+        ? `background: var(--accent); color: var(--accent-text);`
+        : `color: var(--text-2); background: transparent;`
+}
 
 const goMobile = async (path: string) => {
     mobileOpen.value = false
@@ -304,11 +323,11 @@ const userInitials = computed(() => {
         if (parts.length === 1) return parts[0]?.slice(0, 2) || 'U'
         return `${parts[0]?.[0] || ''}${parts[1]?.[0] || ''}` || 'U'
     }
-
     const email = (user.value?.email || '').trim()
     if (email) return email.slice(0, 2)
     return 'U'
 })
+
 onMounted(async () => {
     const win = window as Window & { __picHausSidebarNavCount?: number }
     win.__picHausSidebarNavCount = (win.__picHausSidebarNavCount || 0) + 1
@@ -357,6 +376,20 @@ const handleLogout = async () => {
 </script>
 
 <style scoped>
+/* Apply active/inactive button styles dynamically since Tailwind can't do CSS var-based arbitrary values inline in :class */
+button.sidebar-active {
+    background: var(--accent);
+    color: var(--accent-text);
+}
+button.sidebar-inactive {
+    color: var(--text-2);
+    background: transparent;
+}
+button.sidebar-inactive:hover {
+    background: var(--surface-3);
+    color: var(--text-1);
+}
+
 :global(body.has-sidebar-nav) {
     padding-left: 16rem;
 }

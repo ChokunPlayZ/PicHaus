@@ -12,6 +12,7 @@ export default defineEventHandler(async (event) => {
                 instagram: user.instagram,
                 role: user.role,
                 createdAt: Number(user.createdAt),
+                avatar: user.avatarPath ? `/api/assets/avatar/${user.id}` : null,
             },
         }
     } catch (error: any) {

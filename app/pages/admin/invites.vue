@@ -1,21 +1,27 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
+    <div class="min-h-screen" style="background: var(--bg-page);">
         <NavBar :show-back="true" back-text="Back to Albums" back-to="/album" title="Invites & Resets" />
 
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <h1 class="text-3xl font-bold text-white">Invites &amp; Password Resets</h1>
+                <h1 class="text-3xl font-bold tracking-tight" style="color: var(--text-1);">Invites &amp; Password Resets</h1>
                 <div class="flex gap-2">
                     <button @click="openCreate('invite')"
-                        class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white text-sm font-semibold rounded-lg transition">
+                        class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="$event.currentTarget.style.background = 'var(--accent-hover)'"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
                         New Invite
                     </button>
                     <button @click="openCreate('password_reset')"
-                        class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-semibold rounded-lg transition">
+                        class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                        @mouseover="$event.currentTarget.style.background = 'var(--surface-3)'"
+                        @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a4 4 0 11-2.83 6.83L8 18H5v-3l4.17-4.17A4 4 0 0115 7z" />
                         </svg>
@@ -25,41 +31,48 @@
             </div>
 
             <!-- Token list -->
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 overflow-hidden">
-                <div v-if="listLoading" class="p-8 text-center text-[var(--text-muted)] animate-pulse text-sm">Loading…</div>
-                <div v-else-if="tokens.length === 0" class="p-10 text-center text-[var(--text-muted)] text-sm border-dashed">
+            <div class="rounded-2xl overflow-hidden"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                <div v-if="listLoading" class="p-8 text-center text-sm animate-pulse" style="color: var(--text-3);">Loading…</div>
+                <div v-else-if="tokens.length === 0" class="p-10 text-center text-sm" style="color: var(--text-3);">
                     No active tokens. Create an invite or password reset link above.
                 </div>
-                <ul v-else class="divide-y divide-white/10">
-                    <li v-for="t in tokens" :key="t.id" class="flex flex-wrap items-center gap-3 px-6 py-4">
+                <ul v-else>
+                    <li v-for="t in tokens" :key="t.id"
+                        class="flex flex-wrap items-center gap-3 px-6 py-4"
+                        style="border-top: 1px solid var(--separator);"
+                        @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
+                        @mouseout="$event.currentTarget.style.background = 'transparent'">
                         <!-- Type badge -->
                         <span class="shrink-0 px-2.5 py-0.5 text-xs font-semibold rounded-full"
-                            :class="t.type === 'invite' ? 'bg-purple-500/20 text-purple-300' : 'bg-amber-500/20 text-amber-300'">
+                            :style="t.type === 'invite' ? 'background: var(--accent-light); color: var(--accent);' : 'background: var(--warning-bg); color: var(--warning-text);'">
                             {{ t.type === 'invite' ? 'Invite' : 'Password Reset' }}
                         </span>
 
                         <!-- Label / target -->
                         <div class="flex-1 min-w-0">
-                            <p class="text-white text-sm font-medium truncate">
+                            <p class="text-sm font-medium truncate" style="color: var(--text-1);">
                                 {{ t.type === 'password_reset' ? (t.targetEmail ?? '—') : (t.label ?? 'No label') }}
                             </p>
-                            <p class="text-xs text-[var(--text-muted)]">
+                            <p class="text-xs mt-0.5" style="color: var(--text-3);">
                                 Expires {{ formatDate(t.expiresAt) }}
-                                <span v-if="t.expired" class="text-red-400 ml-1">(expired)</span>
+                                <span v-if="t.expired" class="ml-1" style="color: var(--error);">(expired)</span>
                             </p>
                         </div>
 
                         <!-- Actions -->
                         <div class="flex items-center gap-2 shrink-0">
                             <button @click="copyLink(t.token)"
-                                class="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/15 border border-white/10 text-white text-xs font-medium rounded-lg transition">
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition"
+                                :style="copiedId === t.id ? 'background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border);' : 'background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                 </svg>
                                 {{ copiedId === t.id ? 'Copied!' : 'Copy Link' }}
                             </button>
                             <button @click="revoke(t.id)"
-                                class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/25 border border-red-500/20 text-red-300 text-xs font-medium rounded-lg transition">
+                                class="px-3 py-1.5 rounded-full text-xs font-medium transition"
+                                style="background: var(--error-bg); color: var(--error-text); border: 1px solid var(--error-border);">
                                 Revoke
                             </button>
                         </div>
@@ -69,45 +82,57 @@
         </div>
 
         <!-- Create modal -->
-        <div v-if="modal.open" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="modal.open = false">
-            <div class="w-full max-w-md bg-gradient-to-b from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] rounded-2xl border border-white/20 p-6 space-y-4">
-                <h2 class="text-xl font-bold text-white">
+        <div v-if="modal.open"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
+            @click.self="modal.open = false">
+            <div class="w-full max-w-md rounded-2xl p-6 space-y-4"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                <h2 class="text-xl font-bold" style="color: var(--text-1);">
                     {{ modal.type === 'invite' ? 'Create Invite Link' : 'Generate Password Reset Link' }}
                 </h2>
 
                 <!-- Invite: optional label -->
                 <div v-if="modal.type === 'invite'">
-                    <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Label (optional)</label>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Label (optional)</label>
                     <input v-model="modal.label" type="text"
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                        placeholder="e.g. Photography club 2026 intake" />
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        placeholder="e.g. Photography club 2026 intake"
+                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                 </div>
 
                 <!-- Password reset: user picker -->
                 <div v-if="modal.type === 'password_reset'">
-                    <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">User</label>
-                    <div class="relative mb-2">
-                        <input v-model="userSearch" type="text" placeholder="Search by name or email…"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition" />
-                    </div>
-                    <div class="max-h-48 overflow-y-auto space-y-1">
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">User</label>
+                    <input v-model="userSearch" type="text" placeholder="Search by name or email…"
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl transition mb-2"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                    <div class="max-h-48 overflow-y-auto space-y-1 rounded-xl p-1"
+                        style="background: var(--surface-2); border: 1px solid var(--separator);">
                         <button v-for="u in filteredUsers" :key="u.id" type="button"
                             @click="modal.userId = u.id; modal.targetLabel = u.email ?? u.name ?? u.id"
                             class="w-full text-left px-3 py-2 rounded-lg text-sm transition"
-                            :class="modal.userId === u.id ? 'bg-purple-500/30 text-white border border-purple-400/40' : 'bg-white/5 text-white/80 hover:bg-white/10 border border-transparent'">
+                            :style="modal.userId === u.id ? 'background: var(--accent-light); color: var(--accent);' : 'color: var(--text-1);'"
+                            @mouseover="modal.userId !== u.id && ($event.currentTarget.style.background = 'var(--surface-3)')"
+                            @mouseout="modal.userId !== u.id && ($event.currentTarget.style.background = 'transparent')">
                             <span class="font-medium">{{ u.name ?? '—' }}</span>
-                            <span class="text-[var(--text-muted)] ml-2">{{ u.email }}</span>
+                            <span class="ml-2 text-xs" style="color: var(--text-3);">{{ u.email }}</span>
                         </button>
-                        <p v-if="filteredUsers.length === 0" class="text-[var(--text-muted)] text-xs px-3 py-2">No users match.</p>
+                        <p v-if="filteredUsers.length === 0" class="text-xs px-3 py-2" style="color: var(--text-3);">No users match.</p>
                     </div>
-                    <p v-if="modal.userId" class="mt-2 text-xs text-green-300">Selected: {{ modal.targetLabel }}</p>
+                    <p v-if="modal.userId" class="mt-2 text-xs" style="color: var(--success-text);">Selected: {{ modal.targetLabel }}</p>
                 </div>
 
                 <!-- Expiry -->
                 <div>
-                    <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Expires in</label>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Expires in</label>
                     <select v-model="modal.expiresInHours"
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
                         <option value="24">24 hours</option>
                         <option value="72">3 days</option>
                         <option value="168">7 days (default)</option>
@@ -115,17 +140,22 @@
                     </select>
                 </div>
 
-                <div v-if="modal.error" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                    <p class="text-red-200 text-sm">{{ modal.error }}</p>
+                <div v-if="modal.error" class="rounded-xl px-4 py-3 text-sm"
+                    style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                    {{ modal.error }}
                 </div>
 
                 <div class="flex gap-2 pt-1">
                     <button @click="createToken" :disabled="modal.creating"
-                        class="flex-1 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold py-3 rounded-lg transition disabled:opacity-50">
+                        class="flex-1 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!modal.creating && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
                         {{ modal.creating ? 'Generating…' : 'Generate Link' }}
                     </button>
                     <button @click="modal.open = false"
-                        class="px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        class="px-4 py-2.5 rounded-full text-sm font-medium transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
                         Cancel
                     </button>
                 </div>

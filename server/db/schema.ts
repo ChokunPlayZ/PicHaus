@@ -12,6 +12,7 @@ export const users = pgTable('users', {
     passwordHash: text('passwordHash'),
     name: text('name'),
     instagram: text('instagram'),
+    avatarPath: text('avatarPath'),
     createdAt: bigint('createdAt', { mode: 'bigint' }).notNull(),
     updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
     role: roleEnum('role').default('USER').notNull(),
