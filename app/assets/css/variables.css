@@ -1,163 +1,305 @@
 :root {
-  /* Background */
-  --bg-primary-start: #5e4d56;
-  --bg-primary-end: #3e3c5f;
-  
-  /* Buttons */
-  --btn-primary-start: #f7c7d5;
-  --btn-primary-end: #9995ee;
-  --btn-primary-hover-start: #f5b0c3;
-  --btn-primary-hover-end: #8580e0;
-  --btn-primary-active: #e59ab0;
-  
-  /* Text */
-  --text-primary: #ffffff;
-  --text-secondary: rgb(216 180 254); /* purple-200 */
-  --text-tertiary: rgb(196 181 253); /* purple-300 */
-  --text-muted: rgba(255, 255, 255, 0.6);
-  --text-subtle: rgba(255, 255, 255, 0.4);
-  --text-faint: rgba(255, 255, 255, 0.3);
-  
-  /* Glass Morphism */
-  --glass-bg-light: rgba(255, 255, 255, 0.05);
-  --glass-bg: rgba(255, 255, 255, 0.1);
-  --glass-bg-strong: rgba(255, 255, 255, 0.2);
-  --glass-border-light: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.2);
-  
-  /* Status Colors */
-  --error-bg: rgba(239, 68, 68, 0.2);
-  --error-border: rgba(239, 68, 68, 0.5);
-  --error-text: rgb(254 202 202);
-  --error-text-dark: rgb(248 113 113);
-  
-  --success-bg: rgba(34, 197, 94, 0.2);
-  --success-border: rgba(34, 197, 94, 0.5);
-  --success-text: rgb(187 247 208);
-  
-  /* Shadows */
-  --shadow-primary: rgba(247, 199, 213, 0.2);
-  --shadow-secondary: rgba(153, 149, 238, 0.2);
+  /* ── Page & Surface ─────────────────────────────────── */
+  --bg-page: #f5f5f7;
+  --surface-1: #ffffff;
+  --surface-2: #f5f5f7;
+  --surface-3: #e8e8ed;
+
+  /* ── Sidebar ────────────────────────────────────────── */
+  --sidebar-bg: rgba(246, 246, 246, 0.85);
+  --sidebar-border: rgba(0, 0, 0, 0.1);
+
+  /* ── Text ────────────────────────────────────────────── */
+  --text-1: #1d1d1f;
+  --text-2: #6e6e73;
+  --text-3: #aeaeb2;
+  --text-link: #0071e3;
+
+  /* ── Accent (Apple blue) ─────────────────────────────── */
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --accent-pressed: #006edc;
+  --accent-light: rgba(0, 113, 227, 0.1);
+  --accent-text: #ffffff;
+
+  /* ── Separators ─────────────────────────────────────── */
+  --separator: rgba(60, 60, 67, 0.12);
+  --separator-strong: rgba(60, 60, 67, 0.25);
+
+  /* ── Semantic Colors ─────────────────────────────────── */
+  --error: #ff3b30;
+  --error-bg: rgba(255, 59, 48, 0.08);
+  --error-border: rgba(255, 59, 48, 0.2);
+  --error-text: #d70015;
+
+  --success: #34c759;
+  --success-bg: rgba(52, 199, 89, 0.08);
+  --success-border: rgba(52, 199, 89, 0.2);
+  --success-text: #248a3d;
+
+  --warning: #ff9f0a;
+  --warning-bg: rgba(255, 159, 10, 0.08);
+  --warning-border: rgba(255, 159, 10, 0.2);
+  --warning-text: #b25000;
+
+  /* ── Shadows ─────────────────────────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  /* ── Radii ───────────────────────────────────────────── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 980px;
+
+  /* ── Legacy aliases (album theming + existing templates) */
+  --bg-primary-start: #f5f5f7;
+  --bg-primary-end: #f5f5f7;
+  --btn-primary-start: #0071e3;
+  --btn-primary-end: #0071e3;
+  --btn-primary-hover-start: #0077ed;
+  --btn-primary-hover-end: #0077ed;
+  --btn-primary-active: #006edc;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #aeaeb2;
+  --text-muted: rgba(60, 60, 67, 0.6);
+  --text-subtle: rgba(60, 60, 67, 0.4);
+  --text-faint: rgba(60, 60, 67, 0.2);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-bg-light: rgba(255, 255, 255, 0.6);
+  --glass-bg-strong: rgba(255, 255, 255, 0.96);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --glass-border-light: rgba(0, 0, 0, 0.06);
+  --shadow-primary: rgba(0, 113, 227, 0.15);
+  --shadow-secondary: rgba(0, 113, 227, 0.10);
 }
 
-/* Global UI standardization across existing Tailwind-heavy templates */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-page: #000000;
+    --surface-1: #1c1c1e;
+    --surface-2: #2c2c2e;
+    --surface-3: #3a3a3c;
+    --sidebar-bg: rgba(28, 28, 30, 0.85);
+    --sidebar-border: rgba(255, 255, 255, 0.1);
+    --text-1: #ffffff;
+    --text-2: rgba(235, 235, 245, 0.6);
+    --text-3: rgba(235, 235, 245, 0.3);
+    --text-link: #0a84ff;
+    --accent: #0a84ff;
+    --accent-hover: #409cff;
+    --accent-pressed: #0071e3;
+    --accent-light: rgba(10, 132, 255, 0.15);
+    --accent-text: #ffffff;
+    --separator: rgba(84, 84, 88, 0.65);
+    --separator-strong: rgba(84, 84, 88, 0.85);
+    --error: #ff453a;
+    --error-bg: rgba(255, 69, 58, 0.15);
+    --error-border: rgba(255, 69, 58, 0.3);
+    --error-text: #ff6961;
+    --success: #32d74b;
+    --success-bg: rgba(50, 215, 75, 0.15);
+    --success-border: rgba(50, 215, 75, 0.3);
+    --success-text: #32d74b;
+    --warning: #ffd60a;
+    --warning-bg: rgba(255, 214, 10, 0.15);
+    --warning-border: rgba(255, 214, 10, 0.3);
+    --warning-text: #ffd60a;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
+    --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
+    --bg-primary-start: #000000;
+    --bg-primary-end: #000000;
+    --btn-primary-start: #0a84ff;
+    --btn-primary-end: #0a84ff;
+    --btn-primary-hover-start: #409cff;
+    --btn-primary-hover-end: #409cff;
+    --btn-primary-active: #0071e3;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(235, 235, 245, 0.6);
+    --text-tertiary: rgba(235, 235, 245, 0.3);
+    --text-muted: rgba(235, 235, 245, 0.5);
+    --text-subtle: rgba(235, 235, 245, 0.3);
+    --text-faint: rgba(235, 235, 245, 0.18);
+    --glass-bg: rgba(28, 28, 30, 0.85);
+    --glass-bg-light: rgba(44, 44, 46, 0.7);
+    --glass-bg-strong: rgba(44, 44, 46, 0.96);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-border-light: rgba(255, 255, 255, 0.07);
+    --shadow-primary: rgba(10, 132, 255, 0.2);
+    --shadow-secondary: rgba(10, 132, 255, 0.12);
+  }
+}
 
-/* Glass card containers */
+/* ── Base ───────────────────────────────────────────────── */
+body {
+  background-color: var(--bg-page);
+  color: var(--text-1);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Glass card containers ──────────────────────────────── */
 [class*="bg-white/10"][class*="backdrop-blur"][class*="border-white/20"] {
-  border-radius: 1rem;
-  border-color: var(--glass-border);
-  background-color: var(--glass-bg);
+  background-color: var(--surface-1);
+  border-color: var(--separator);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: none;
 }
 
-/* Text inputs, selects and textareas using existing glass input classes */
+/* ── Text inputs, selects, textareas ────────────────────── */
 input[class*="bg-white/5"][class*="border-white/10"],
 select[class*="bg-white/5"][class*="border-white/10"],
 textarea[class*="bg-white/5"][class*="border-white/10"] {
-  border-color: var(--glass-border-light);
-  background-color: var(--glass-bg-light);
-  color: var(--text-primary);
-  border-radius: 0.75rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  background-color: var(--surface-2);
+  border-color: var(--separator);
+  color: var(--text-1);
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 input[class*="bg-white/5"][class*="border-white/10"]:focus,
 select[class*="bg-white/5"][class*="border-white/10"]:focus,
 textarea[class*="bg-white/5"][class*="border-white/10"]:focus {
-  border-color: rgba(167, 139, 250, 0.7);
-  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
   outline: none;
 }
 
-/* Primary action buttons */
-button[class*="bg-gradient-to-r"][class*="--btn-primary-start"] {
-  border-radius: 0.75rem;
-  font-weight: 600;
-  box-shadow: 0 6px 18px var(--shadow-primary);
-  transition: transform 0.15s ease, filter 0.2s ease, box-shadow 0.2s ease;
+/* ── Primary action buttons (gradient or plain) ─────────── */
+button[class*="bg-gradient-to-r"] {
+  border-radius: var(--radius-pill) !important;
+  font-weight: 400;
+  background: var(--accent) !important;
+  background-image: none !important;
+  color: var(--accent-text) !important;
+  transition: filter 0.15s ease, transform 0.1s ease;
+  box-shadow: none !important;
 }
 
-button[class*="bg-gradient-to-r"][class*="--btn-primary-start"]:hover {
-  filter: brightness(1.03);
-  box-shadow: 0 8px 20px var(--shadow-secondary);
+button[class*="bg-gradient-to-r"]:hover:not(:disabled) {
+  filter: brightness(1.08);
 }
 
-button[class*="bg-gradient-to-r"][class*="--btn-primary-start"]:active {
-  transform: translateY(1px);
+button[class*="bg-gradient-to-r"]:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
-/* Secondary ghost buttons */
+/* ── Secondary ghost buttons ────────────────────────────── */
 button[class*="bg-white/5"],
 button[class*="bg-white/10"] {
-  border-radius: 0.75rem;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  background-color: var(--surface-2) !important;
+  color: var(--text-1) !important;
+  border-color: var(--separator) !important;
+  border-radius: var(--radius-md);
+  transition: background-color 0.15s ease;
+}
+
+button[class*="bg-white/5"]:hover:not(:disabled),
+button[class*="bg-white/10"]:hover:not(:disabled) {
+  background-color: var(--surface-3) !important;
 }
 
 button:disabled {
   cursor: not-allowed;
+  opacity: 0.45;
 }
 
-/* Repeated icon-button patterns */
+/* ── Icon buttons ───────────────────────────────────────── */
 button[class*="rounded-lg"][class*="p-2"],
 button[class*="rounded-lg"][class*="p-3"] {
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
 button[class*="rounded-lg"][class*="p-2"]:active,
 button[class*="rounded-lg"][class*="p-3"]:active {
-  transform: translateY(1px);
+  transform: scale(0.95);
 }
 
-/* Grid cards / photo tiles reused in multiple pages */
+/* ── Grid cards / photo tiles ───────────────────────────── */
 [class*="cursor-pointer"][class*="overflow-hidden"][class*="bg-white/5"][class*="border-white/10"] {
-  border-color: var(--glass-border-light);
-  border-radius: 0.75rem;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: var(--surface-1) !important;
+  border-color: var(--separator) !important;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
 }
 
 [class*="cursor-pointer"][class*="overflow-hidden"][class*="bg-white/5"][class*="border-white/10"]:hover {
-  border-color: rgba(167, 139, 250, 0.5);
-  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.22);
+  border-color: var(--separator-strong) !important;
+  box-shadow: var(--shadow-md);
 }
 
-/* Generic glass list rows and grouped items */
+/* ── Generic glass list rows ────────────────────────────── */
 [class*="bg-white/5"][class*="rounded-lg"][class*="border-white/10"] {
-  border-color: var(--glass-border-light);
-  border-radius: 0.75rem;
+  background-color: var(--surface-2) !important;
+  border-color: var(--separator) !important;
+  border-radius: var(--radius-md);
 }
 
-/* Floating bulk action bars and quick action trays */
+/* ── Floating bulk action bars ──────────────────────────── */
 [class*="fixed"][class*="backdrop-blur-xl"][class*="border-white/20"][class*="rounded-2xl"] {
-  border-color: var(--glass-border);
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.35);
+  background-color: var(--surface-1) !important;
+  border-color: var(--separator) !important;
+  box-shadow: var(--shadow-xl);
+  backdrop-filter: blur(20px) saturate(180%);
 }
 
-/* Context menus reused in album/list pages */
+/* ── Context menus ──────────────────────────────────────── */
 [class*="fixed"][class*="z-50"][class*="shadow-xl"][class*="border-white/20"] {
-  border-color: var(--glass-border);
-  background-color: rgba(30, 27, 45, 0.88);
+  background-color: var(--surface-1) !important;
+  border-color: var(--separator) !important;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
 }
 
-/* Modal wrappers and modal panels */
+/* ── Modal backdrop ─────────────────────────────────────── */
 [class*="fixed inset-0 bg-black/50"][class*="backdrop-blur-sm"] {
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.4) !important;
 }
 
+/* ── Modal panels ───────────────────────────────────────── */
 [class*="max-w-md"][class*="backdrop-blur-lg"][class*="border-white/20"],
 [class*="max-w-sm"][class*="backdrop-blur-lg"][class*="border-white/20"],
 [class*="max-w-2xl"][class*="backdrop-blur-lg"][class*="border-white/20"] {
-  border-color: var(--glass-border);
-  box-shadow: 0 20px 42px rgba(15, 23, 42, 0.42);
+  background-color: var(--surface-1) !important;
+  border-color: var(--separator) !important;
+  box-shadow: var(--shadow-xl);
+  backdrop-filter: none;
 }
 
-/* Progress tracks reused in uploader and viewers */
+/* ── Progress tracks ────────────────────────────────────── */
 [class*="bg-white/10"][class*="rounded-full"][class*="h-3"],
 [class*="bg-white/10"][class*="rounded-full"][class*="h-4"] {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: var(--surface-3) !important;
 }
 
-/* Consistent alert styles */
-[class*="bg-red-500/20"][class*="border-red-500/50"],
-[class*="bg-green-500/20"][class*="border-green-500/50"],
+/* ── Alert styles ───────────────────────────────────────── */
+[class*="bg-red-500/20"][class*="border-red-500/50"] {
+  background-color: var(--error-bg) !important;
+  border-color: var(--error-border) !important;
+  border-radius: var(--radius-md);
+  color: var(--error-text) !important;
+}
+
+[class*="bg-green-500/20"][class*="border-green-500/50"] {
+  background-color: var(--success-bg) !important;
+  border-color: var(--success-border) !important;
+  border-radius: var(--radius-md);
+  color: var(--success-text) !important;
+}
+
 [class*="bg-yellow-500/20"][class*="border-yellow-500/50"] {
-  border-radius: 0.75rem;
+  background-color: var(--warning-bg) !important;
+  border-color: var(--warning-border) !important;
+  border-radius: var(--radius-md);
+  color: var(--warning-text) !important;
 }

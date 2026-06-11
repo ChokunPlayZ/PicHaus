@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
+    <div class="min-h-screen" style="background: var(--bg-page);">
         <!-- Navigation Bar -->
         <!-- Navigation Bar -->
         <NavBar v-if="album && (album.permissions.isOwner || album.permissions.canEdit)" :show-back="true"
@@ -8,7 +8,10 @@
 
         <!-- Loading State -->
         <div v-if="loading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-            <div class="animate-pulse text-purple-300 text-xl">Loading album...</div>
+            <div class="flex flex-col items-center gap-3">
+                <div class="w-8 h-8 rounded-full border-2 animate-spin" style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                <p class="text-sm" style="color: var(--text-3);">Loading album…</p>
+            </div>
         </div>
 
         <!-- Error State -->
@@ -23,33 +26,38 @@
             <!-- Header -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h1 class="text-4xl font-bold text-white mb-2">{{ album.name }}</h1>
-                    <div class="text-purple-200">
-                        <span v-if="album.eventDate">{{ formatDate(album.eventDate) }}</span>
-                        <div v-if="album.description" class="text-white/60 whitespace-pre-line mt-2">{{
+                    <h1 class="text-3xl font-bold tracking-tight mb-1" style="color: var(--text-1);">{{ album.name }}</h1>
+                    <div>
+                        <span v-if="album.eventDate" class="text-sm" style="color: var(--text-2);">{{ formatDate(album.eventDate) }}</span>
+                        <div v-if="album.description" class="text-sm whitespace-pre-line mt-1" style="color: var(--text-2);">{{
                             album.description }}</div>
                         <div v-if="album.tags && album.tags.length > 0" class="flex flex-wrap gap-1 mt-2">
                             <span v-for="tag in album.tags" :key="`tag-${tag}`"
-                                class="px-2 py-0.5 rounded-full bg-white/10 text-white/80 text-xs border border-white/10">
+                                class="px-2 py-0.5 rounded-full text-xs"
+                                style="background: var(--surface-3); color: var(--text-2);">
                                 #{{ tag }}
                             </span>
                         </div>
-                        <div class="flex items-center gap-2 mt-2">
-                            <span class="text-white/40">by</span>
+                        <div class="flex items-center gap-1.5 mt-2">
+                            <span class="text-xs" style="color: var(--text-3);">by</span>
                             <button @click="showPhotographersModal = true"
-                                class="text-white/80 hover:text-white transition underline decoration-dotted">
+                                class="text-xs transition underline decoration-dotted" style="color: var(--text-link);">
                                 {{ getPhotographersDisplay }}
                             </button>
                         </div>
                         <span v-if="album.isPublic"
-                            class="inline-block mt-2 px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 text-xs border border-green-500/30">Public</span>
+                            class="inline-block mt-2 px-2 py-0.5 rounded-full text-xs"
+                            style="background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border);">Public</span>
                     </div>
                 </div>
 
                 <div class="flex flex-wrap gap-3 w-full md:w-auto">
                     <!-- Share Button -->
                     <button v-if="album.permissions.isOwner" @click="openShareModal"
-                        class="flex-1 md:flex-none px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center gap-2">
+                        class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="$event.currentTarget.style.background = 'var(--accent-hover)'"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
                         <span>Share</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
@@ -61,7 +69,8 @@
                     <!-- Download All Button -->
                     <button v-if="album.permissions.isOwner || album.permissions.canEdit" @click="downloadAll"
                         :disabled="downloading"
-                        class="flex-1 md:flex-none px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center gap-2 disabled:opacity-50">
+                        class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
                         <span v-if="downloading">
                             {{ downloadProgress.current }}/{{ downloadProgress.total }}
                         </span>
@@ -75,11 +84,13 @@
 
                     <template v-if="album.permissions.canEdit">
                         <button @click="showEditModal = true"
-                            class="flex-1 md:flex-none px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition whitespace-nowrap">
+                            class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap"
+                            style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
                             Edit Album
                         </button>
                         <button @click="confirmDelete"
-                            class="flex-1 md:flex-none px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition whitespace-nowrap">
+                            class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap"
+                            style="background: var(--error-bg); color: var(--error-text);">
                             Delete
                         </button>
                     </template>
@@ -89,40 +100,45 @@
             <!-- Upload Section -->
             <div v-if="album.permissions.canEdit" class="mb-8">
                 <div @click="triggerFileInput" @dragover.prevent @drop.prevent="handleDrop"
-                    class="border-2 border-dashed border-white/20 rounded-xl p-4 sm:p-8 text-center hover:border-purple-500/50 hover:bg-white/5 transition cursor-pointer group">
+                    class="rounded-2xl p-8 text-center transition cursor-pointer group"
+                    style="border: 2px dashed var(--separator); background: var(--surface-1);"
+                    @mouseover="$event.currentTarget.style.borderColor = 'var(--accent)'"
+                    @mouseout="$event.currentTarget.style.borderColor = 'var(--separator)'">
                     <input type="file" ref="fileInput" multiple accept="image/*" class="hidden"
                         @change="handleFileSelect" />
-                    <div
-                        class="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-400" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    <div class="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center group-hover:scale-110 transition"
+                        style="background: var(--accent-light);">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" style="color: var(--accent);">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-2">Upload Photos</h3>
-                    <p class="text-white/60">Drag & drop photos here or click to browse</p>
+                    <h3 class="text-base font-semibold mb-1" style="color: var(--text-1);">Upload Photos</h3>
+                    <p class="text-sm" style="color: var(--text-3);">Drag & drop or click to browse</p>
                 </div>
 
                 <!-- Upload Progress Modal/Panel -->
                 <div v-if="showUploadModal"
-                    class="mt-4 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 overflow-hidden">
-                    <div class="p-4 border-b border-white/10 flex justify-between items-center">
-                        <h3 class="text-white font-medium">Upload Queue</h3>
-                        <div class="flex items-center gap-4">
-                            <!-- Concurrency Setting -->
-                            <div class="flex items-center gap-2 text-xs text-white/60 bg-white/5 px-2 py-1 rounded">
+                    class="mt-4 rounded-xl overflow-hidden"
+                    style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                    <div class="p-4 flex justify-between items-center" style="border-bottom: 1px solid var(--separator);">
+                        <h3 class="text-sm font-semibold" style="color: var(--text-1);">Upload Queue</h3>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg" style="background: var(--surface-2); color: var(--text-2);">
                                 <span>Concurrent:</span>
                                 <input type="number" v-model.number="maxConcurrency" min="1" max="5"
-                                    class="w-8 bg-transparent text-center text-white border-b border-white/20 focus:border-purple-500 focus:outline-none" />
+                                    class="w-7 bg-transparent text-center focus:outline-none" style="color: var(--text-1);" />
                             </div>
                             <button v-if="uploadQueue.some(i => i.status === 'failed')" @click="retryFailed"
-                                class="text-xs bg-red-500/20 text-red-300 hover:bg-red-500/30 px-2 py-1 rounded transition">Retry
-                                Failed</button>
+                                class="text-xs px-2 py-1 rounded-lg transition"
+                                style="background: var(--error-bg); color: var(--error-text);">Retry Failed</button>
                             <button @click="clearCompleted"
-                                class="text-xs bg-white/5 text-white/60 hover:text-white px-2 py-1 rounded transition">Clear
-                                Completed</button>
-                            <button @click="showUploadModal = false" class="text-white/40 hover:text-white">
+                                class="text-xs px-2 py-1 rounded-lg transition"
+                                style="background: var(--surface-3); color: var(--text-2);">Clear Done</button>
+                            <button @click="showUploadModal = false" style="color: var(--text-3);"
+                                @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
+                                @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -133,45 +149,40 @@
                     </div>
 
                     <!-- Overall Progress Bar -->
-                    <div class="px-4 py-3 border-b border-white/10">
-                        <div class="flex items-center justify-between text-sm mb-2">
-                            <span class="text-white/60">Overall Progress</span>
-                            <span class="text-white font-medium">{{ uploadProgress.completed }}/{{ uploadProgress.total
-                                }} ({{
-                                    uploadProgress.percentage }}%)</span>
+                    <div class="px-4 py-3" style="border-bottom: 1px solid var(--separator);">
+                        <div class="flex items-center justify-between text-xs mb-2">
+                            <span style="color: var(--text-2);">Overall Progress</span>
+                            <span class="font-medium" style="color: var(--text-1);">{{ uploadProgress.completed }}/{{ uploadProgress.total }} ({{ uploadProgress.percentage }}%)</span>
                         </div>
-                        <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                            <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300 ease-out"
+                        <div class="w-full h-1.5 rounded-full overflow-hidden" style="background: var(--surface-3);">
+                            <div class="h-full rounded-full transition-all duration-300 ease-out"
+                                style="background: var(--accent);"
                                 :style="{ width: `${uploadProgress.percentage}%` }"></div>
                         </div>
                     </div>
 
                     <div class="max-h-60 overflow-y-auto p-2 space-y-1">
                         <div v-for="item in uploadQueue" :key="item.id"
-                            class="flex items-center gap-3 p-2 rounded bg-white/5 border border-white/5">
-                            <!-- Status Icon -->
-                            <div class="shrink-0 w-6 flex justify-center">
-                                <span
-                                    v-if="item.status === 'hashing' || item.status === 'checking' || item.status === 'uploading'"
-                                    class="animate-spin text-purple-400">⏳</span>
-                                <span v-else-if="item.status === 'completed'" class="text-green-400">✓</span>
-                                <span v-else-if="item.status === 'skipped'" class="text-yellow-400">↷</span>
-                                <span v-else-if="item.status === 'failed'" class="text-red-400">✕</span>
-                                <span v-else class="text-white/20">•</span>
+                            class="flex items-center gap-3 p-2 rounded-lg"
+                            style="background: var(--surface-2);">
+                            <div class="shrink-0 w-5 flex justify-center text-sm">
+                                <span v-if="item.status === 'hashing' || item.status === 'checking' || item.status === 'uploading'"
+                                    class="w-4 h-4 rounded-full border-2 animate-spin block"
+                                    style="border-color: var(--separator); border-top-color: var(--accent);"></span>
+                                <span v-else-if="item.status === 'completed'" style="color: var(--success);">✓</span>
+                                <span v-else-if="item.status === 'skipped'" style="color: var(--warning);">↷</span>
+                                <span v-else-if="item.status === 'failed'" style="color: var(--error);">✕</span>
+                                <span v-else style="color: var(--text-3);">•</span>
                             </div>
-
-                            <!-- File Info -->
                             <div class="flex-1 min-w-0">
-                                <div class="text-sm text-white truncate">{{ item.file.name }}</div>
-                                <div class="text-xs text-white/40 flex items-center gap-2">
+                                <div class="text-sm truncate" style="color: var(--text-1);">{{ item.file.name }}</div>
+                                <div class="text-xs flex items-center gap-2" style="color: var(--text-3);">
                                     <span class="capitalize">{{ item.status }}</span>
-                                    <span v-if="item.error" class="text-red-300">{{ item.error }}</span>
-                                    <span v-if="item.status === 'uploading'" class="text-purple-300">{{ item.progress
-                                    }}%</span>
+                                    <span v-if="item.error" style="color: var(--error-text);">{{ item.error }}</span>
+                                    <span v-if="item.status === 'uploading'" style="color: var(--accent);">{{ item.progress }}%</span>
                                 </div>
-                                <div v-if="item.status === 'uploading'"
-                                    class="mt-1 h-1 bg-white/10 rounded-full overflow-hidden">
-                                    <div class="h-full bg-purple-500 transition-all duration-300 ease-out"
+                                <div v-if="item.status === 'uploading'" class="mt-1 h-1 rounded-full overflow-hidden" style="background: var(--surface-3);">
+                                    <div class="h-full rounded-full transition-all duration-300" style="background: var(--accent);"
                                         :style="{ width: `${item.progress}%` }"></div>
                                 </div>
                             </div>
@@ -181,49 +192,58 @@
             </div>
 
             <!-- Filters Section -->
-            <div class="mb-6 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-4">
-                <div class="flex flex-wrap items-center gap-4">
-                    <span class="text-white font-medium">Filters:</span>
+            <div class="mb-6 rounded-xl p-3" style="background: var(--surface-1); border: 1px solid var(--separator);">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-semibold mr-1" style="color: var(--text-3);">Filter:</span>
 
-                    <!-- Camera Filter -->
                     <select v-model="filters.camera" @change="applyFilters"
-                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        class="px-3 py-2 text-sm rounded-xl"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
                         <option value="">All Cameras</option>
                         <option v-for="camera in availableCameras" :key="camera" :value="camera">{{ camera }}</option>
                     </select>
 
-                    <!-- Lens Filter -->
                     <select v-model="filters.lens" @change="applyFilters"
-                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        class="px-3 py-2 text-sm rounded-xl"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
                         <option value="">All Lenses</option>
                         <option v-for="lens in availableLenses" :key="lens" :value="lens">{{ lens }}</option>
                     </select>
 
-                    <!-- Photographer Filter -->
                     <select v-model="filters.photographer" @change="applyFilters"
-                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        class="px-3 py-2 text-sm rounded-xl"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
                         <option value="">All Photographers</option>
                         <option v-for="uploader in availableUploaders" :key="uploader.id" :value="uploader.id">
                             {{ uploader.name || uploader.email }}
                         </option>
                     </select>
 
-                    <!-- Clear Filters -->
                     <button v-if="filters.camera || filters.lens || filters.photographer" @click="clearFilters"
-                        class="px-3 py-2 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-lg transition text-sm">
+                        class="px-3 py-2 rounded-xl text-sm transition"
+                        style="background: var(--surface-3); color: var(--text-2);">
                         Clear Filters
                     </button>
                 </div>
             </div>
 
             <!-- Empty State -->
-            <div v-if="photos.length === 0 && !uploading"
-                class="text-center py-12 bg-white/5 rounded-xl border border-white/10">
-                <div class="text-6xl mb-4">📷</div>
-                <h3 class="text-xl font-bold text-white mb-2">No photos yet</h3>
-                <p class="text-purple-200 mb-4">Upload photos to get started</p>
+            <div v-if="photos.length === 0 && !uploading" class="text-center py-16 rounded-2xl"
+                style="background: var(--surface-1); border: 1px solid var(--separator);">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style="background: var(--surface-3);">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                        <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold mb-1" style="color: var(--text-1);">No photos yet</h3>
+                <p class="text-sm mb-5" style="color: var(--text-2);">Upload photos or share this album to collect photos</p>
                 <button v-if="album.permissions.isOwner" @click="openShareModal"
-                    class="px-6 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition">
+                    class="px-5 py-2.5 rounded-full text-sm font-medium transition"
+                    style="background: var(--accent); color: var(--accent-text);"
+                    @mouseover="$event.currentTarget.style.background = 'var(--accent-hover)'"
+                    @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
                     Share Album
                 </button>
             </div>
@@ -233,9 +253,10 @@
                 :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
                 <div v-for="(photo, index) in photos" :key="photo.id" @click.stop="handlePhotoTileClick(index, $event)"
                     @contextmenu.prevent="handleContextMenu($event, photo)"
-                    class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 transition-transform hover:-translate-y-1 group"
-                    :class="{ 'ring-4 ring-purple-500 ring-offset-2 ring-offset-black/50': selectedPhotoIds.has(photo.id) }"
+                    class="absolute cursor-pointer overflow-hidden rounded-lg transition group"
                     :style="{
+                        outline: selectedPhotoIds.has(photo.id) ? '3px solid var(--accent)' : 'none',
+                        outlineOffset: selectedPhotoIds.has(photo.id) ? '2px' : '0',
                         top: `${picturesLayout.getPosition(index).top}px`,
                         left: `${picturesLayout.getPosition(index).left}px`,
                         width: `${picturesLayout.getPosition(index).width}px`,
@@ -248,7 +269,8 @@
 
                     <!-- Selection Indicator -->
                     <div v-if="selectedPhotoIds.has(photo.id)"
-                        class="absolute top-2 right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                        class="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
+                        style="background: var(--accent);">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20"
                             fill="currentColor">
                             <path fill-rule="evenodd"
@@ -261,21 +283,19 @@
 
             <!-- Selection Action Bar -->
             <div v-if="selectedPhotoIds.size > 0"
-                class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl px-6 py-3 flex items-center gap-4 z-40">
-                <div class="text-white font-medium border-r border-white/20 pr-4">
+                class="fixed bottom-8 left-1/2 -translate-x-1/2 rounded-full px-5 py-3 flex items-center gap-4 z-40"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                <div class="text-sm font-medium pr-4" style="color: var(--text-1); border-right: 1px solid var(--separator);">
                     {{ selectedPhotoIds.size }} selected
                 </div>
 
-                <button @click="clearSelection" class="text-white/60 hover:text-white transition text-sm">
-                    Clear
-                </button>
+                <button @click="clearSelection" class="text-sm transition" style="color: var(--text-2);">Clear</button>
 
-                <div class="h-6 w-px bg-white/20"></div>
+                <div class="h-4 w-px" style="background: var(--separator);"></div>
 
                 <button @click="downloadSelected" :disabled="downloading"
-                    class="flex items-center gap-2 text-white hover:text-purple-300 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
+                    class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--text-1);">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
@@ -285,59 +305,62 @@
 
                 <template v-if="album?.permissions.canEdit">
                     <button v-if="selectedPhotoIds.size === 1" @click="openEditPhotoModal"
-                        class="flex items-center gap-2 text-white hover:text-purple-300 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
+                        class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--text-1);">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
-                        <span>Edit Info</span>
+                        Edit Info
                     </button>
 
                     <button @click="deleteSelected"
-                        class="flex items-center gap-2 text-red-400 hover:text-red-300 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
+                        class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--error-text);">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        <span>Delete</span>
+                        Delete
                     </button>
                 </template>
             </div>
 
             <!-- Infinite Scroll Sentinel -->
             <div ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
-                <div v-if="loadingPhotos" class="animate-pulse text-purple-300">Loading more photos...</div>
+                <div v-if="loadingPhotos" class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded-full border-2 animate-spin" style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                    <span class="text-xs" style="color: var(--text-3);">Loading more…</span>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Photographers Modal -->
     <div v-if="showPhotographersModal"
-        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        class="fixed inset-0 flex items-center justify-center p-4 z-50"
+        style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
         @click.self="showPhotographersModal = false">
-        <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-md w-full">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-2xl font-bold text-white">Photographers</h3>
-                <button @click="showPhotographersModal = false" class="text-white/60 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
+        <div class="rounded-2xl p-6 max-w-md w-full"
+            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-xl font-semibold" style="color: var(--text-1);">Photographers</h3>
+                <button @click="showPhotographersModal = false" style="color: var(--text-3);"
+                    @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
+                    @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
 
-            <div class="space-y-3">
+            <div class="space-y-2">
                 <div v-for="photographer in allPhotographers" :key="photographer.id"
-                    class="bg-white/5 rounded-lg p-3 border border-white/10">
+                    class="rounded-xl p-3" style="background: var(--surface-2); border: 1px solid var(--separator);">
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex-1">
-                            <p class="text-white font-medium">{{ photographer.name }}</p>
-                            <p v-if="photographer.email" class="text-purple-300 text-sm">{{ photographer.email }}</p>
+                            <p class="text-sm font-medium" style="color: var(--text-1);">{{ photographer.name }}</p>
+                            <p v-if="photographer.email" class="text-xs mt-0.5" style="color: var(--text-2);">{{ photographer.email }}</p>
                             <div v-if="photographer.instagram" class="flex items-center gap-2 mt-1">
-                                <span class="text-purple-300 text-sm">@{{ photographer.instagram }}</span>
+                                <span class="text-xs" style="color: var(--text-2);">@{{ photographer.instagram }}</span>
                                 <a :href="`https://instagram.com/${photographer.instagram || ''}`" target="_blank"
                                     rel="noopener noreferrer" class="text-pink-400 hover:text-pink-300 transition">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -347,7 +370,8 @@
                                 </a>
                             </div>
                         </div>
-                        <span class="px-2 py-1 bg-purple-500/20 text-purple-200 rounded-full text-xs whitespace-nowrap">
+                        <span class="px-2 py-1 rounded-full text-xs whitespace-nowrap"
+                            style="background: var(--accent-light); color: var(--accent);">
                             {{ photographer.role }}
                         </span>
                     </div>
@@ -358,70 +382,97 @@
 
     <!-- Edit Photo Modal -->
     <div v-if="showEditPhotoModal"
-        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        class="fixed inset-0 flex items-center justify-center p-4 z-50"
+        style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
         @click.self="showEditPhotoModal = false">
-        <div
-            class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h3 class="text-2xl font-bold text-white mb-4">Edit Photo Info</h3>
+        <div class="rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
+            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+            <h3 class="text-xl font-bold mb-4" style="color: var(--text-1);">Edit Photo Info</h3>
 
             <form @submit.prevent="handleUpdatePhoto" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-purple-200 mb-2">Date Taken</label>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Date Taken</label>
                     <input v-model="editPhotoForm.dateTaken" type="datetime-local"
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Camera</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Camera</label>
                         <input v-model="editPhotoForm.cameraModel" type="text"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Lens</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Lens</label>
                         <input v-model="editPhotoForm.lens" type="text"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Focal Length</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Focal Length</label>
                         <input v-model="editPhotoForm.focalLength" type="text"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Aperture</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Aperture</label>
                         <input v-model="editPhotoForm.aperture" type="text"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Shutter Speed</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Shutter Speed</label>
                         <input v-model="editPhotoForm.shutterSpeed" type="text"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">ISO</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">ISO</label>
                         <input v-model="editPhotoForm.iso" type="number"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
                 </div>
 
-                <div v-if="editPhotoError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                    <p class="text-red-200 text-sm">{{ editPhotoError }}</p>
+                <div v-if="editPhotoError" class="rounded-xl px-4 py-3 text-sm"
+                    style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                    {{ editPhotoError }}
                 </div>
 
-                <div class="flex space-x-3">
+                <div class="flex gap-3">
                     <button type="button" @click="showEditPhotoModal = false"
-                        class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
                         Cancel
                     </button>
                     <button type="submit" :disabled="updatingPhoto"
-                        class="flex-1 px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
-                        {{ updatingPhoto ? 'Updating...' : 'Update' }}
+                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!updatingPhoto && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        {{ updatingPhoto ? 'Updating…' : 'Update' }}
                     </button>
                 </div>
             </form>
@@ -430,19 +481,24 @@
 
     <!-- Crop Album Cover Modal -->
     <div v-if="showCropModal"
-        class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto"
+        class="fixed inset-0 flex items-start justify-center p-4 z-50 overflow-y-auto"
+        style="background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);"
         @click.self="cancelCrop">
-        <div class="bg-[var(--glass-bg)] backdrop-blur-lg rounded-2xl border border-[var(--glass-border)] w-full max-w-3xl my-8 overflow-hidden">
+        <div class="rounded-2xl w-full max-w-3xl my-8 overflow-hidden"
+            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
 
             <!-- Header -->
             <div class="flex items-start justify-between p-6 pb-4">
                 <div>
-                    <h3 class="text-xl font-bold text-white">Set Album Cover</h3>
-                    <p class="text-sm text-[var(--text-muted)] mt-1">
+                    <h3 class="text-xl font-bold" style="color: var(--text-1);">Set Album Cover</h3>
+                    <p class="text-sm mt-1" style="color: var(--text-3);">
                         Drag inside to move &middot; drag corners to resize &middot; locked to 16:9
                     </p>
                 </div>
-                <button @click="cancelCrop" class="text-white/40 hover:text-white transition text-3xl leading-none -mt-1 ml-4">&times;</button>
+                <button @click="cancelCrop" class="text-3xl leading-none -mt-1 ml-4 transition"
+                    style="color: var(--text-3);"
+                    @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
+                    @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">&times;</button>
             </div>
 
             <div v-if="photoCropImage" class="px-6 pb-6 space-y-4">
@@ -473,16 +529,16 @@
                 <!-- Preview + info row -->
                 <div class="flex gap-4 items-start">
                     <div class="flex-1 min-w-0">
-                        <p class="text-xs text-[var(--text-muted)] mb-1.5 font-medium uppercase tracking-wide">Preview</p>
-                        <canvas ref="cropPreviewRef" class="w-full rounded-lg border border-white/10 block bg-black"
-                            style="aspect-ratio: 16/9;"></canvas>
+                        <p class="text-xs mb-1.5 font-medium uppercase tracking-wide" style="color: var(--text-3);">Preview</p>
+                        <canvas ref="cropPreviewRef" class="w-full rounded-xl block bg-black"
+                            style="aspect-ratio: 16/9; border: 1px solid var(--separator);"></canvas>
                     </div>
                     <div class="shrink-0 text-right space-y-2 pt-6">
-                        <div class="text-xs text-[var(--text-muted)] font-mono">
+                        <div class="text-xs font-mono" style="color: var(--text-3);">
                             {{ Math.round(cropArea.width) }} &times; {{ Math.round(cropArea.height) }}
                         </div>
                         <button @click="resetCrop"
-                            class="text-xs text-[var(--text-secondary)] hover:text-white transition underline block ml-auto">
+                            class="text-xs transition underline block ml-auto" style="color: var(--accent);">
                             Reset
                         </button>
                     </div>
@@ -491,71 +547,90 @@
                 <!-- Actions -->
                 <div class="flex gap-3 pt-1">
                     <button type="button" @click="cancelCrop"
-                        class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition text-sm font-medium">
+                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
                         Cancel
                     </button>
                     <button type="button" @click="confirmCrop" :disabled="croppingCover"
-                        class="flex-1 px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold rounded-xl transition disabled:opacity-50 text-sm">
+                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!croppingCover && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
                         {{ croppingCover ? 'Saving…' : 'Set as Cover' }}
                     </button>
                 </div>
             </div>
 
             <div v-else class="flex justify-center items-center h-48">
-                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                <div class="animate-spin rounded-full h-8 w-8 border-2"
+                    style="border-color: var(--separator); border-top-color: var(--accent);"></div>
             </div>
         </div>
     </div>
 
     <!-- Edit Album Modal -->
     <div v-if="showEditModal"
-        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        class="fixed inset-0 flex items-center justify-center p-4 z-50"
+        style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
         @click.self="showEditModal = false; applyTheme(album?.themePreset, album?.customTheme)">
-        <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h3 class="text-2xl font-bold text-white mb-4">Edit Album</h3>
+        <div class="rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
+            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+            <h3 class="text-xl font-bold mb-4" style="color: var(--text-1);">Edit Album</h3>
 
             <form @submit.prevent="handleUpdateAlbum" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-purple-200 mb-2">Album Name *</label>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Album Name *</label>
                     <input v-model="editForm.name" type="text" required
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-purple-200 mb-2">Description</label>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Description</label>
                     <textarea v-model="editForm.description" rows="3"
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"></textarea>
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl transition resize-none"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'"></textarea>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-purple-200 mb-2">Tags</label>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Tags</label>
                     <input v-model="editForm.tags" type="text"
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder="wedding, portrait, night" />
-                    <p class="text-xs text-white/50 mt-1">Separate tags with commas</p>
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        placeholder="wedding, portrait, night"
+                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                    <p class="text-xs mt-1" style="color: var(--text-3);">Separate tags with commas</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-purple-200 mb-2">Event Date</label>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Event Date</label>
                     <input v-model="editForm.eventDate" type="date"
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                 </div>
 
-                <div class="flex items-center">
+                <div class="flex items-center gap-2">
                     <input v-model="editForm.isPublic" type="checkbox" id="editIsPublic"
-                        class="w-4 h-4 text-purple-600 bg-white/5 border-white/10 rounded focus:ring-purple-500" />
-                    <label for="editIsPublic" class="ml-2 text-sm text-purple-200">Make album public</label>
+                        class="w-4 h-4 rounded" style="accent-color: var(--accent);" />
+                    <label for="editIsPublic" class="text-sm" style="color: var(--text-2);">Make album public</label>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-purple-200 mb-2">Color Theme</label>
+                    <label class="block text-sm font-medium mb-2" style="color: var(--text-2);">Color Theme</label>
                     <div class="grid grid-cols-4 gap-2">
                         <button v-for="(theme, key) in ALBUM_THEMES" :key="key"
                             type="button"
                             @click="editForm.themePreset = key"
                             :class="[
-                                'relative rounded-lg h-12 border-2 transition overflow-hidden',
-                                editForm.themePreset === key ? 'border-white ring-2 ring-white/40' : 'border-white/20 hover:border-white/50'
+                                'relative rounded-xl h-12 border-2 transition overflow-hidden',
+                                editForm.themePreset === key ? 'border-[var(--accent)] ring-2 ring-[var(--accent-light)]' : 'border-transparent hover:border-[var(--separator)]'
                             ]"
                             :style="{ background: `linear-gradient(135deg, ${theme.bgStart}, ${theme.bgEnd})` }"
                             :title="theme.label">
@@ -566,8 +641,8 @@
                         <button type="button"
                             @click="editForm.themePreset = 'custom'"
                             :class="[
-                                'relative rounded-lg h-12 border-2 transition overflow-hidden',
-                                editForm.themePreset === 'custom' ? 'border-white ring-2 ring-white/40' : 'border-white/20 hover:border-white/50'
+                                'relative rounded-xl h-12 border-2 transition overflow-hidden',
+                                editForm.themePreset === 'custom' ? 'border-[var(--accent)] ring-2 ring-[var(--accent-light)]' : 'border-transparent hover:border-[var(--separator)]'
                             ]"
                             :style="{ background: `linear-gradient(135deg, ${editForm.customTheme.bgStart}, ${editForm.customTheme.bgEnd})` }"
                             title="Custom">
@@ -579,63 +654,76 @@
                     <!-- Custom color pickers -->
                     <div v-if="editForm.themePreset === 'custom'" class="mt-3 grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs text-white/60 mb-1">Background Start</label>
+                            <label class="block text-xs mb-1" style="color: var(--text-3);">Background Start</label>
                             <div class="flex items-center gap-2">
                                 <input type="color" v-model="editForm.customTheme.bgStart"
-                                    class="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent" />
+                                    class="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                    style="border: 1px solid var(--separator);" />
                                 <input type="text" v-model="editForm.customTheme.bgStart"
-                                    class="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                                    class="flex-1 px-2 py-1 text-xs rounded-lg transition"
+                                    style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;" />
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs text-white/60 mb-1">Background End</label>
+                            <label class="block text-xs mb-1" style="color: var(--text-3);">Background End</label>
                             <div class="flex items-center gap-2">
                                 <input type="color" v-model="editForm.customTheme.bgEnd"
-                                    class="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent" />
+                                    class="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                    style="border: 1px solid var(--separator);" />
                                 <input type="text" v-model="editForm.customTheme.bgEnd"
-                                    class="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                                    class="flex-1 px-2 py-1 text-xs rounded-lg transition"
+                                    style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;" />
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs text-white/60 mb-1">Accent Start</label>
+                            <label class="block text-xs mb-1" style="color: var(--text-3);">Accent Start</label>
                             <div class="flex items-center gap-2">
                                 <input type="color" v-model="editForm.customTheme.btnStart"
-                                    class="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent" />
+                                    class="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                    style="border: 1px solid var(--separator);" />
                                 <input type="text" v-model="editForm.customTheme.btnStart"
-                                    class="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                                    class="flex-1 px-2 py-1 text-xs rounded-lg transition"
+                                    style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;" />
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs text-white/60 mb-1">Accent End</label>
+                            <label class="block text-xs mb-1" style="color: var(--text-3);">Accent End</label>
                             <div class="flex items-center gap-2">
                                 <input type="color" v-model="editForm.customTheme.btnEnd"
-                                    class="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent" />
+                                    class="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                    style="border: 1px solid var(--separator);" />
                                 <input type="text" v-model="editForm.customTheme.btnEnd"
-                                    class="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                                    class="flex-1 px-2 py-1 text-xs rounded-lg transition"
+                                    style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;" />
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-purple-200 mb-2">Event Branding</label>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Event Branding</label>
                     <input v-model="editForm.logoText" type="text"
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder="e.g. TNI Open Day 2026" />
-                    <p class="text-xs text-white/50 mt-1">Text shown in the header (used when no logo image is set)</p>
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        placeholder="e.g. TNI Open Day 2026"
+                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                    <p class="text-xs mt-1" style="color: var(--text-3);">Text shown in the header (used when no logo image is set)</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-purple-200 mb-2">Logo Image</label>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Logo Image</label>
                     <div class="flex items-center gap-2 mb-2">
                         <button type="button" :disabled="logoUploading"
                             @click="logoFileInput?.click()"
-                            class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition disabled:opacity-50">
-                            {{ logoUploading ? 'Uploading...' : 'Upload logo' }}
+                            class="px-3 py-1.5 text-sm rounded-full transition disabled:opacity-50"
+                            style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
+                            {{ logoUploading ? 'Uploading…' : 'Upload logo' }}
                         </button>
                         <button v-if="editForm.logoImageId" type="button"
                             @click="editForm.logoImageId = null"
-                            class="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 text-sm rounded-lg transition">
+                            class="px-3 py-1.5 text-sm rounded-full transition"
+                            style="background: var(--surface-2); color: var(--text-3); border: 1px solid var(--separator);">
                             Clear
                         </button>
                         <input ref="logoFileInput" type="file" accept="image/*" class="hidden" @change="handleLogoUpload" />
@@ -644,30 +732,36 @@
                         <button v-for="logo in availableLogos" :key="logo.id" type="button"
                             @click="editForm.logoImageId = editForm.logoImageId === logo.id ? null : logo.id"
                             :class="[
-                                'relative rounded-lg border-2 overflow-hidden bg-white/5 transition aspect-square flex items-center justify-center p-1',
-                                editForm.logoImageId === logo.id ? 'border-white ring-2 ring-white/40' : 'border-white/20 hover:border-white/50'
+                                'relative rounded-xl border-2 overflow-hidden transition aspect-square flex items-center justify-center p-1',
+                                editForm.logoImageId === logo.id ? 'border-[var(--accent)]' : 'border-transparent hover:border-[var(--separator)]'
                             ]"
+                            :style="{ background: 'var(--surface-2)' }"
                             :title="logo.originalName">
                             <img :src="logo.url" :alt="logo.originalName" class="max-h-full max-w-full object-contain" />
-                            <span v-if="editForm.logoImageId === logo.id" class="absolute top-0.5 right-0.5 text-white text-[10px] leading-none">✓</span>
+                            <span v-if="editForm.logoImageId === logo.id" class="absolute top-0.5 right-0.5 text-[10px] leading-none" style="color: var(--accent);">✓</span>
                         </button>
                     </div>
-                    <p v-else class="text-xs text-white/40">No logos uploaded yet — upload one above.</p>
-                    <p class="text-xs text-white/50 mt-1">Logo images replace the text branding in the header.</p>
+                    <p v-else class="text-xs" style="color: var(--text-3);">No logos uploaded yet — upload one above.</p>
+                    <p class="text-xs mt-1" style="color: var(--text-3);">Logo images replace the text branding in the header.</p>
                 </div>
 
-                <div v-if="editError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                    <p class="text-red-200 text-sm">{{ editError }}</p>
+                <div v-if="editError" class="rounded-xl px-4 py-3 text-sm"
+                    style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                    {{ editError }}
                 </div>
 
-                <div class="flex space-x-3">
+                <div class="flex gap-3">
                     <button type="button" @click="showEditModal = false; applyTheme(album?.themePreset, album?.customTheme)"
-                        class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
                         Cancel
                     </button>
                     <button type="submit" :disabled="updating"
-                        class="flex-1 px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
-                        {{ updating ? 'Updating...' : 'Update' }}
+                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!updating && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        {{ updating ? 'Updating…' : 'Update' }}
                     </button>
                 </div>
             </form>
@@ -676,138 +770,161 @@
 
     <!-- Share Modal -->
     <div v-if="showShareModal"
-        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        class="fixed inset-0 flex items-center justify-center p-4 z-50"
+        style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
         @click.self="showShareModal = false">
-        <div
-            class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-white">Share Album</h3>
-                <button @click="showShareModal = false" class="text-white/60 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
+                <h3 class="text-xl font-bold" style="color: var(--text-1);">Share Album</h3>
+                <button @click="showShareModal = false" class="transition"
+                    style="color: var(--text-3);"
+                    @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
+                    @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
 
             <!-- Create/Edit Link -->
-            <div class="bg-white/5 rounded-xl p-4 mb-6 border border-white/10"
-                :class="{ 'bg-purple-900/20 border-purple-500/30': isEditing }">
+            <div class="rounded-2xl p-4 mb-6"
+                :style="isEditing ? 'background: var(--accent-light); border: 1px solid var(--accent);' : 'background: var(--surface-2); border: 1px solid var(--separator);'">
                 <div class="flex justify-between items-center mb-4">
-                    <h4 class="text-lg font-semibold text-white">{{ isEditing ? 'Edit Link' : 'Create New Link' }}</h4>
+                    <h4 class="text-base font-semibold" style="color: var(--text-1);">{{ isEditing ? 'Edit Link' : 'Create New Link' }}</h4>
                     <button v-if="isEditing" @click="cancelEditing"
-                        class="text-xs text-white/50 hover:text-white">Cancel
-                        Edit</button>
+                        class="text-xs transition" style="color: var(--text-3);"
+                        @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
+                        @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">Cancel Edit</button>
                 </div>
-                <form @submit.prevent="isEditing ? updateShareLink() : createShareLink()" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form @submit.prevent="isEditing ? updateShareLink() : createShareLink()" class="space-y-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-purple-200 mb-2">Type</label>
+                            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Type</label>
                             <select v-model="newLink.type" :disabled="isEditing"
-                                class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="$event.target.style.borderColor = 'var(--accent)'"
+                                @blur="$event.target.style.borderColor = 'var(--separator)'">
                                 <option value="view">View Only</option>
                                 <option value="upload">Allow Uploads</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-purple-200 mb-2">Label (Optional)</label>
+                            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Label (Optional)</label>
                             <input v-model="newLink.label" type="text" placeholder="e.g. Family Group"
-                                class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                                style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Password (Optional)</label>
-                        <div v-if="isEditing && newLink.password === ''" class="text-xs text-purple-300 mb-1">
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Password (Optional)</label>
+                        <div v-if="isEditing && newLink.password === ''" class="text-xs mb-1" style="color: var(--text-3);">
                             Current password will be kept. Enter new one to change, or clear checkbox to remove.
                         </div>
                         <input v-model="newLink.password" type="password"
                             :placeholder="isEditing ? 'Leave empty to keep current password' : 'Leave empty for no password'"
-                            class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
 
-                        <div v-if="isEditing && editingLinkHasPassword" class="mt-2 flex items-center">
+                        <div v-if="isEditing && editingLinkHasPassword" class="mt-2 flex items-center gap-2">
                             <input v-model="removePassword" type="checkbox" id="removePassword"
-                                class="w-4 h-4 text-red-600 bg-white/5 border-white/10 rounded focus:ring-red-500" />
-                            <label for="removePassword" class="ml-2 text-sm text-red-300">Remove Password</label>
+                                class="w-4 h-4 rounded" style="accent-color: var(--error);" />
+                            <label for="removePassword" class="text-sm" style="color: var(--error-text);">Remove Password</label>
                         </div>
                     </div>
                     <div>
-                        <div class="flex items-center mb-4">
+                        <div class="flex items-center gap-2 mb-3">
                             <input v-model="newLink.showMetadata" type="checkbox" id="showMetadata"
-                                class="w-4 h-4 text-purple-600 bg-white/5 border-white/10 rounded focus:ring-purple-500" />
-                            <label for="showMetadata" class="ml-2 text-sm text-purple-200">Show photo metadata (date,
-                                camera, etc.)</label>
+                                class="w-4 h-4 rounded" style="accent-color: var(--accent);" />
+                            <label for="showMetadata" class="text-sm" style="color: var(--text-2);">Show photo metadata (date, camera, etc.)</label>
                         </div>
                     </div>
                     <button type="submit" :disabled="creatingLink || updatingLink"
-                        class="w-full px-4 py-2 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
-                        {{ isEditing ? (updatingLink ? 'Updating...' : 'Update Link') : (creatingLink ? 'Creating...' :
-                            'Create Link') }}
+                        class="w-full px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!(creatingLink || updatingLink) && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        {{ isEditing ? (updatingLink ? 'Updating…' : 'Update Link') : (creatingLink ? 'Creating…' : 'Create Link') }}
                     </button>
                 </form>
             </div>
 
             <!-- Existing Links -->
             <div>
-                <h4 class="text-lg font-semibold text-white mb-4">Active Links</h4>
-                <div v-if="loadingLinks" class="text-center py-4 text-purple-300">Loading links...</div>
-                <div v-else-if="shareLinks.length === 0" class="text-center py-4 text-white/50">
+                <h4 class="text-base font-semibold mb-4" style="color: var(--text-1);">Active Links</h4>
+                <div v-if="loadingLinks" class="text-center py-4 text-sm" style="color: var(--text-3);">Loading links…</div>
+                <div v-else-if="shareLinks.length === 0" class="text-center py-4 text-sm" style="color: var(--text-3);">
                     No active share links.
                 </div>
                 <div v-else class="space-y-3">
                     <div v-for="link in shareLinks" :key="link.id"
-                        class="bg-white/5 rounded-lg p-4 border border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        class="rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                        style="background: var(--surface-2); border: 1px solid var(--separator);">
                         <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-medium text-white">{{ link.label || 'Untitled Link' }}</span>
-                                <span :class="{
-                                    'bg-blue-500/20 text-blue-300': link.type === 'view',
-                                    'bg-green-500/20 text-green-300': link.type === 'upload'
-                                }" class="px-2 py-0.5 rounded text-xs uppercase border border-white/10">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <span class="font-medium text-sm" style="color: var(--text-1);">{{ link.label || 'Untitled Link' }}</span>
+                                <span :style="link.type === 'view' ? 'background: var(--accent-light); color: var(--accent);' : 'background: var(--success-bg); color: var(--success-text);'"
+                                    class="px-2 py-0.5 rounded-full text-xs font-medium uppercase">
                                     {{ link.type }}
                                 </span>
-                                <span v-if="link.password" class="text-xs text-yellow-300 flex items-center gap-1">
-                                    🔒 Password
+                                <span v-if="link.password" class="text-xs px-2 py-0.5 rounded-full"
+                                    style="background: var(--warning-bg); color: var(--warning-text);">
+                                    Password
                                 </span>
-                                <span v-if="!link.showMetadata" class="text-xs text-orange-300 flex items-center gap-1">
-                                    🚫 No Metadata
+                                <span v-if="!link.showMetadata" class="text-xs px-2 py-0.5 rounded-full"
+                                    style="background: var(--surface-3); color: var(--text-3);">
+                                    No Metadata
                                 </span>
                             </div>
                             <div class="flex items-center gap-2 text-sm">
                                 <button @click="copyLink(link)"
-                                    class="truncate max-w-[200px] text-white/60 hover:text-purple-300 transition underline decoration-dotted">
+                                    class="truncate max-w-[200px] transition underline decoration-dotted text-sm"
+                                    style="color: var(--text-3);"
+                                    @mouseover="$event.currentTarget.style.color = 'var(--accent)'"
+                                    @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">
                                     {{ getShareUrl(link) }}
                                 </button>
-                                <button @click="copyLink(link)" :class="[
-                                    'px-2 py-1 rounded transition text-xs font-medium',
-                                    link.copied ? 'bg-green-500/20 text-green-300' : 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30'
-                                ]">
+                                <button @click="copyLink(link)"
+                                    class="px-2 py-1 rounded-full transition text-xs font-medium"
+                                    :style="link.copied ? 'background: var(--success-bg); color: var(--success-text);' : 'background: var(--accent-light); color: var(--accent);'">
                                     {{ link.copied ? '✓ Copied!' : 'Copy' }}
                                 </button>
                             </div>
-                            <div class="text-xs text-white/40 mt-1">
+                            <div class="text-xs mt-1" style="color: var(--text-3);">
                                 Created {{ formatDate(link.createdAt) }} • {{ link.views }} views
                             </div>
                         </div>
                         <div class="flex items-center gap-1">
                             <button @click="showQr(link)" title="Show QR code"
-                                class="p-2 text-purple-300 hover:bg-purple-500/10 rounded-lg transition">
+                                class="p-2 rounded-lg transition"
+                                style="color: var(--text-2);"
+                                @mouseover="$event.currentTarget.style.background = 'var(--surface-3)'"
+                                @mouseout="$event.currentTarget.style.background = 'transparent'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm10 0h2v2h-2v-2zm-2 2h2v2h-2v-2zm4-2h2v2h-2v-2zm0 4h2v2h-2v-2zm-4 0h2v2h-2v-2z" />
                                 </svg>
                             </button>
                             <button @click="startEditing(link)"
-                                class="p-2 text-purple-300 hover:bg-purple-500/10 rounded-lg transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
+                                class="p-2 rounded-lg transition"
+                                style="color: var(--text-2);"
+                                @mouseover="$event.currentTarget.style.background = 'var(--surface-3)'"
+                                @mouseout="$event.currentTarget.style.background = 'transparent'">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                 </svg>
                             </button>
                             <button @click="deleteLink(link.id)"
-                                class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
+                                class="p-2 rounded-lg transition"
+                                style="color: var(--error);"
+                                @mouseover="$event.currentTarget.style.background = 'var(--error-bg)'"
+                                @mouseout="$event.currentTarget.style.background = 'transparent'">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
@@ -822,20 +939,30 @@
         <!-- QR Code Modal -->
         <Teleport to="body">
             <Transition name="fade">
-                <div v-if="qrLinkId" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" @click.self="closeQr">
-                    <div class="bg-[var(--bg-primary-start)] border border-white/20 rounded-2xl shadow-2xl p-6 flex flex-col items-center gap-4 max-w-xs w-full">
+                <div v-if="qrLinkId" class="fixed inset-0 z-[60] flex items-center justify-center p-4"
+                    style="background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);"
+                    @click.self="closeQr">
+                    <div class="rounded-2xl p-6 flex flex-col items-center gap-4 max-w-xs w-full"
+                        style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                         <div class="w-full flex justify-between items-center">
-                            <span class="text-white font-semibold truncate">{{ qrLink?.label || 'Share Link' }}</span>
-                            <button @click="closeQr" class="text-white/50 hover:text-white transition">
+                            <span class="font-semibold truncate text-sm" style="color: var(--text-1);">{{ qrLink?.label || 'Share Link' }}</span>
+                            <button @click="closeQr" class="transition"
+                                style="color: var(--text-3);"
+                                @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
+                                @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
-                        <canvas ref="qrCanvasRef" class="rounded-lg" />
-                        <p class="text-white/50 text-xs text-center break-all">{{ qrLink ? getShareUrl(qrLink) : '' }}</p>
+                        <canvas ref="qrCanvasRef" class="rounded-xl"
+                            style="border: 1px solid var(--separator);" />
+                        <p class="text-xs text-center break-all" style="color: var(--text-3);">{{ qrLink ? getShareUrl(qrLink) : '' }}</p>
                         <button v-if="qrLink" @click="copyLink(qrLink); closeQr()"
-                            class="w-full py-2 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition text-sm font-medium">
+                            class="w-full py-2.5 rounded-full text-sm font-medium transition"
+                            style="background: var(--accent-light); color: var(--accent);"
+                            @mouseover="$event.currentTarget.style.background = 'var(--accent)'; $event.currentTarget.style.color = 'var(--accent-text)'"
+                            @mouseout="$event.currentTarget.style.background = 'var(--accent-light)'; $event.currentTarget.style.color = 'var(--accent)'">
                             Copy link
                         </button>
                     </div>
@@ -845,13 +972,16 @@
 
         <!-- Context Menu -->
         <div v-if="contextMenu.visible"
-            class="fixed z-50 bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg shadow-xl py-1 w-48"
+            class="fixed z-50 rounded-xl py-1 w-48"
+            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-lg);"
             :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }">
 
             <button @click="toggleSelection(contextMenu.photo!.id); closeContextMenu()"
-                class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
+                class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
+                style="color: var(--text-1); width: calc(100% - 8px);"
+                @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
+                @mouseout="$event.currentTarget.style.background = 'transparent'">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
                         v-if="selectedPhotoIds.has(contextMenu.photo!.id)" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" v-else />
@@ -860,9 +990,11 @@
             </button>
 
             <button @click="downloadPhoto(contextMenu.photo!); closeContextMenu()"
-                class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
+                class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
+                style="color: var(--text-1); width: calc(100% - 8px);"
+                @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
+                @mouseout="$event.currentTarget.style.background = 'transparent'">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
@@ -870,12 +1002,14 @@
             </button>
 
             <template v-if="album?.permissions.canEdit">
-                <div class="h-px bg-white/10 my-1"></div>
+                <div class="h-px my-1 mx-3" style="background: var(--separator);"></div>
 
                 <button @click="setAsCover(contextMenu.photo!); closeContextMenu()"
-                    class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
+                    class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
+                    style="color: var(--text-1); width: calc(100% - 8px);"
+                    @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
+                    @mouseout="$event.currentTarget.style.background = 'transparent'">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -883,9 +1017,11 @@
                 </button>
 
                 <button @click="openEditPhotoModalFromMenu(contextMenu.photo!); closeContextMenu()"
-                    class="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
+                    class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
+                    style="color: var(--text-1); width: calc(100% - 8px);"
+                    @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
+                    @mouseout="$event.currentTarget.style.background = 'transparent'">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
@@ -893,9 +1029,11 @@
                 </button>
 
                 <button @click="deletePhoto(contextMenu.photo!.id); closeContextMenu()"
-                    class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
+                    class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
+                    style="color: var(--error); width: calc(100% - 8px);"
+                    @mouseover="$event.currentTarget.style.background = 'var(--error-bg)'"
+                    @mouseout="$event.currentTarget.style.background = 'transparent'">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -918,15 +1056,21 @@
                 leave-from-class="transform translate-y-0 opacity-100"
                 leave-to-class="transform translate-y-2 opacity-0">
                 <div v-for="toast in toasts" :key="toast.id"
-                    class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border backdrop-blur-md pointer-events-auto"
-                    :class="{
-                        'bg-green-500/20 border-green-500/30 text-green-200': toast.type === 'success',
-                        'bg-red-500/20 border-red-500/30 text-red-200': toast.type === 'error',
-                        'bg-blue-500/20 border-blue-500/30 text-blue-200': toast.type === 'info'
-                    }">
-                    <span v-if="toast.type === 'success'">✓</span>
-                    <span v-else-if="toast.type === 'error'">✕</span>
-                    <span v-else>ℹ</span>
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium pointer-events-auto"
+                    :style="toast.type === 'success'
+                        ? 'background: var(--success-bg); border: 1px solid var(--success-border); color: var(--success-text); box-shadow: var(--shadow-md);'
+                        : toast.type === 'error'
+                        ? 'background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text); box-shadow: var(--shadow-md);'
+                        : 'background: var(--accent-light); border: 1px solid var(--accent); color: var(--accent); box-shadow: var(--shadow-md);'">
+                    <svg v-if="toast.type === 'success'" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <svg v-else-if="toast.type === 'error'" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     <span>{{ toast.message }}</span>
                 </div>
             </TransitionGroup>

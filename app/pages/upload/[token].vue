@@ -1,15 +1,17 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
+    <div class="min-h-screen" style="background: var(--bg-page);">
         <!-- Loading State -->
         <div v-if="loading" class="flex items-center justify-center min-h-screen">
-            <div class="animate-pulse text-purple-300 text-xl">Loading...</div>
+            <div class="w-10 h-10 rounded-full border-2 animate-spin"
+                style="border-color: var(--separator); border-top-color: var(--accent);"></div>
         </div>
 
         <!-- Error State -->
         <div v-else-if="error" class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-red-500/20 border border-red-500/50 rounded-lg p-6 max-w-md">
-                <h2 class="text-2xl font-bold text-white mb-2">Upload Link Invalid</h2>
-                <p class="text-red-200">{{ error }}</p>
+            <div class="rounded-2xl p-6 max-w-md w-full"
+                style="background: var(--error-bg); border: 1px solid var(--error-border);">
+                <h2 class="text-xl font-bold mb-2" style="color: var(--error-text);">Upload Link Invalid</h2>
+                <p class="text-sm" style="color: var(--error-text); opacity: 0.8;">{{ error }}</p>
             </div>
         </div>
 
@@ -18,47 +20,59 @@
             <div class="text-center mb-8">
                 <img v-if="albumInfo?.logoImageId" :src="`/api/assets/logo/${albumInfo.logoImageId}`" alt="Logo"
                     class="h-16 max-w-[200px] object-contain mx-auto mb-2" />
-                <h1 v-else class="text-5xl font-bold text-white mb-2">{{ albumInfo?.logoText || '📸 PicHaus' }}</h1>
-                <p class="text-purple-200">Join to upload photos</p>
+                <h1 v-else class="text-4xl font-bold mb-2" style="color: var(--text-1);">{{ albumInfo?.logoText || '📸 PicHaus' }}</h1>
+                <p class="text-sm" style="color: var(--text-2);">Join to upload photos</p>
             </div>
 
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8">
-                <h2 class="text-2xl font-bold text-white mb-2">{{ albumInfo.albumName }}</h2>
-                <p class="text-purple-200 mb-6 text-sm">Please identify yourself to contribute</p>
+            <div class="rounded-2xl p-8"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-md);">
+                <h2 class="text-xl font-bold mb-1" style="color: var(--text-1);">{{ albumInfo.albumName }}</h2>
+                <p class="text-sm mb-6" style="color: var(--text-2);">Please identify yourself to contribute</p>
 
                 <form @submit.prevent="handleGuestLogin" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Name</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Name</label>
                         <input v-model="guestForm.name" type="text" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="Your Name" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="Your Name"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
-
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Email</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Email</label>
                         <input v-model="guestForm.email" type="email" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="your@email.com" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="your@email.com"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
-
                     <div v-if="albumInfo.requiresPassword">
-                        <label class="block text-sm font-medium text-purple-200 mb-2">Album Password</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Album Password</label>
                         <input v-model="guestForm.password" type="password" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="Enter album password" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="Enter album password"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
 
-                    <div v-if="loginError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                        <p class="text-red-200 text-sm">{{ loginError }}</p>
+                    <div v-if="loginError" class="rounded-xl px-4 py-3 text-sm"
+                        style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                        {{ loginError }}
                     </div>
 
                     <button type="submit" :disabled="loggingIn"
-                        class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50">
-                        {{ loggingIn ? 'Joining...' : 'Join Album' }}
+                        class="w-full py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!loggingIn && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        {{ loggingIn ? 'Joining…' : 'Join Album' }}
                     </button>
-
                     <button type="button" @click="goToLogin"
-                        class="w-full px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        class="w-full py-2.5 rounded-full text-sm font-medium transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
                         Have an account? Sign in
                     </button>
                 </form>
@@ -71,16 +85,17 @@
             <div class="text-center mb-8">
                 <img v-if="albumInfo?.logoImageId" :src="`/api/assets/logo/${albumInfo.logoImageId}`" alt="Logo"
                     class="h-16 max-w-[200px] object-contain mx-auto mb-2" />
-                <h1 v-else class="text-5xl font-bold text-white mb-2">{{ albumInfo?.logoText || '📸 PicHaus' }}</h1>
-                <p class="text-purple-200">Upload your photos</p>
-                <p class="text-sm text-purple-300 mt-2">Logged in as {{ user?.name }}</p>
+                <h1 v-else class="text-4xl font-bold mb-2" style="color: var(--text-1);">{{ albumInfo?.logoText || '📸 PicHaus' }}</h1>
+                <p class="text-sm" style="color: var(--text-2);">Upload your photos</p>
+                <p class="text-xs mt-1" style="color: var(--text-3);">Logged in as {{ user?.name }}</p>
             </div>
 
             <!-- Album Info Card -->
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 mb-8">
-                <h2 class="text-3xl font-bold text-white mb-2">{{ albumInfo.albumName }}</h2>
-                <p v-if="albumInfo.description" class="text-purple-200 mb-4">{{ albumInfo.description }}</p>
-                <div class="flex items-center space-x-4 text-sm text-purple-300">
+            <div class="rounded-2xl p-6 mb-6"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                <h2 class="text-2xl font-bold mb-1" style="color: var(--text-1);">{{ albumInfo.albumName }}</h2>
+                <p v-if="albumInfo.description" class="text-sm mb-3" style="color: var(--text-2);">{{ albumInfo.description }}</p>
+                <div class="flex items-center gap-4 text-sm" style="color: var(--text-3);">
                     <span>by {{ albumInfo.ownerName }}</span>
                     <span v-if="albumInfo.eventDate">{{ formatDate(albumInfo.eventDate) }}</span>
                     <span>{{ albumInfo.photoCount }} photos</span>
@@ -88,57 +103,63 @@
             </div>
 
             <!-- Upload Area -->
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8">
-                <h3 class="text-2xl font-bold text-white mb-6">Upload Your Photos</h3>
+            <div class="rounded-2xl p-8"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                <h3 class="text-xl font-bold mb-6" style="color: var(--text-1);">Upload Your Photos</h3>
 
                 <!-- File Input -->
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-purple-200 mb-2">Select Photos</label>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Select Photos</label>
                     <input ref="fileInput" type="file" accept="image/*" multiple @change="handleFileSelect"
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--btn-primary-start)] file:text-white hover:file:bg-[var(--btn-primary-hover-start)] cursor-pointer" />
-                    <p class="text-purple-300 text-sm mt-2">You can select multiple photos at once</p>
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl cursor-pointer"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1);" />
+                    <p class="text-xs mt-1.5" style="color: var(--text-3);">You can select multiple photos at once</p>
                 </div>
 
                 <!-- Upload Progress -->
                 <div v-if="uploading" class="mb-6">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-white">Uploading {{ uploadProgress.current }} of {{ uploadProgress.total
-                        }}...</span>
-                        <span class="text-purple-300">{{ Math.round((uploadProgress.current / uploadProgress.total) *
-                            100) }}%</span>
+                        <span class="text-sm" style="color: var(--text-1);">Uploading {{ uploadProgress.current }} of {{ uploadProgress.total }}…</span>
+                        <span class="text-sm font-medium" style="color: var(--accent);">{{ Math.round((uploadProgress.current / uploadProgress.total) * 100) }}%</span>
                     </div>
-                    <div class="w-full bg-white/10 rounded-full h-3">
-                        <div class="bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] h-3 rounded-full transition-all duration-300"
+                    <div class="w-full rounded-full h-2" style="background: var(--surface-3);">
+                        <div class="h-2 rounded-full transition-all duration-300"
+                            style="background: var(--accent);"
                             :style="{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }"></div>
                     </div>
                 </div>
 
-                <!-- Success Message -->
-                <div v-if="uploadSuccess" class="bg-green-500/20 border border-green-500/50 rounded-lg p-4 mb-6">
-                    <p class="text-green-200">✓ Photos uploaded successfully!</p>
+                <!-- Success -->
+                <div v-if="uploadSuccess" class="rounded-xl px-4 py-3 text-sm mb-4"
+                    style="background: var(--success-bg); border: 1px solid var(--success-border); color: var(--success-text);">
+                    Photos uploaded successfully!
                 </div>
 
-                <!-- Error Message -->
-                <div v-if="uploadError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6">
-                    <p class="text-red-200">{{ uploadError }}</p>
+                <!-- Error -->
+                <div v-if="uploadError" class="rounded-xl px-4 py-3 text-sm mb-4"
+                    style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                    {{ uploadError }}
                 </div>
 
-                <!-- Warning Message -->
-                <div v-if="uploadWarning" class="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 mb-6">
-                    <p class="text-yellow-200">{{ uploadWarning }}</p>
+                <!-- Warning -->
+                <div v-if="uploadWarning" class="rounded-xl px-4 py-3 text-sm mb-4"
+                    style="background: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text);">
+                    {{ uploadWarning }}
                 </div>
 
                 <!-- Upload Button -->
                 <button v-if="selectedFiles.length > 0 && !uploading" @click="uploadPhotos"
-                    class="w-full px-6 py-4 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition text-lg">
+                    class="w-full py-3 rounded-full text-base font-semibold transition"
+                    style="background: var(--accent); color: var(--accent-text);"
+                    @mouseover="$event.currentTarget.style.background = 'var(--accent-hover)'"
+                    @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
                     Upload {{ selectedFiles.length }} Photo{{ selectedFiles.length > 1 ? 's' : '' }}
                 </button>
             </div>
 
-            <!-- Info -->
-            <div class="text-center mt-8 text-purple-300 text-sm">
+            <div class="text-center mt-8 text-sm" style="color: var(--text-3);">
                 <p>Your photos will be added to this album</p>
-                <p class="mt-2">Powered by PicHaus</p>
+                <p class="mt-1">Powered by PicHaus</p>
             </div>
         </div>
     </div>

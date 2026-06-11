@@ -1,68 +1,76 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
-        <NavBar title="📚 API Docs" :solid="true" />
+    <div class="min-h-screen" style="background: var(--bg-page);">
+        <NavBar title="API Docs" :solid="true" />
 
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-            <div class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                <h1 class="text-3xl font-bold text-white mb-2">External API Documentation</h1>
-                <p class="text-purple-200">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <div class="rounded-2xl p-6"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                <h1 class="text-2xl font-bold mb-1" style="color: var(--text-1);">External API Documentation</h1>
+                <p class="text-sm mb-4" style="color: var(--text-2);">
                     Use your API token in the Authorization header.
-                    All endpoints return JSON with a <span class="text-white">success</span> field.
+                    All endpoints return JSON with a <code style="color: var(--text-1);">success</code> field.
                 </p>
-                <div class="mt-4 bg-black/30 border border-white/10 rounded-lg p-4">
-                    <p class="text-xs text-purple-300 mb-1">Header</p>
-                    <code class="text-sm text-green-300">Authorization: Bearer &lt;your_api_token&gt;</code>
+                <div class="rounded-xl p-4"
+                    style="background: var(--surface-2); border: 1px solid var(--separator);">
+                    <p class="text-xs font-semibold mb-1.5" style="color: var(--text-3);">Header</p>
+                    <code class="text-sm font-mono" style="color: var(--accent);">Authorization: Bearer &lt;your_api_token&gt;</code>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                    <h2 class="text-xl font-bold text-white mb-3">Scopes</h2>
-                    <ul class="space-y-2 text-purple-200 text-sm">
-                        <li><span class="text-white font-semibold">albums:read</span> — read album list and album detail</li>
-                        <li><span class="text-white font-semibold">photos:read</span> — read photos and random photo endpoints</li>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="rounded-2xl p-6"
+                    style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                    <h2 class="text-base font-semibold mb-3" style="color: var(--text-1);">Scopes</h2>
+                    <ul class="space-y-2 text-sm">
+                        <li style="color: var(--text-2);"><span class="font-semibold" style="color: var(--text-1);">albums:read</span> — read album list and album detail</li>
+                        <li style="color: var(--text-2);"><span class="font-semibold" style="color: var(--text-1);">photos:read</span> — read photos and random photo endpoints</li>
                     </ul>
                 </div>
 
-                <div class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                    <h2 class="text-xl font-bold text-white mb-3">Quick Example</h2>
-                    <div class="bg-black/30 border border-white/10 rounded-lg p-4 overflow-x-auto">
-                        <code class="text-sm text-green-300 whitespace-pre">curl -H "Authorization: Bearer $TOKEN" \\
+                <div class="rounded-2xl p-6"
+                    style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                    <h2 class="text-base font-semibold mb-3" style="color: var(--text-1);">Quick Example</h2>
+                    <div class="rounded-xl p-4 overflow-x-auto"
+                        style="background: var(--surface-2); border: 1px solid var(--separator);">
+                        <code class="text-xs font-mono whitespace-pre" style="color: var(--success-text);">curl -H "Authorization: Bearer $TOKEN" \
   "${baseUrl}/api/external/albums?page=1&limit=20"</code>
                     </div>
                 </div>
             </div>
 
             <div class="space-y-4">
-                <h2 class="text-2xl font-bold text-white">Endpoints</h2>
+                <h2 class="text-xl font-bold" style="color: var(--text-1);">Endpoints</h2>
                 <div v-for="endpoint in endpoints" :key="endpoint.path"
-                    class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                    class="rounded-2xl p-6"
+                    style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
                     <div class="flex flex-wrap items-center gap-3 mb-3">
                         <span class="px-2.5 py-1 rounded-full text-xs font-semibold" :class="methodClass(endpoint.method)">
                             {{ endpoint.method }}
                         </span>
-                        <code class="text-sm text-purple-200">{{ endpoint.path }}</code>
-                        <span class="text-xs text-white/60">Scope: {{ endpoint.scope }}</span>
+                        <code class="text-sm font-mono" style="color: var(--text-1);">{{ endpoint.path }}</code>
+                        <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--surface-3); color: var(--text-3);">{{ endpoint.scope }}</span>
                     </div>
 
-                    <p class="text-white/90 mb-4">{{ endpoint.description }}</p>
+                    <p class="text-sm mb-4" style="color: var(--text-2);">{{ endpoint.description }}</p>
 
                     <div v-if="endpoint.params.length > 0" class="mb-4">
-                        <h3 class="text-sm font-semibold text-purple-200 mb-2">Query Params</h3>
+                        <h3 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: var(--text-3);">Query Params</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <div v-for="param in endpoint.params" :key="`${endpoint.path}-${param.name}`"
-                                class="bg-white/5 border border-white/10 rounded-lg p-3 text-sm">
+                                class="rounded-xl p-3 text-sm"
+                                style="background: var(--surface-2); border: 1px solid var(--separator);">
                                 <div class="flex items-center justify-between gap-2">
-                                    <span class="text-white font-medium">{{ param.name }}</span>
-                                    <span class="text-xs text-purple-300">{{ param.type }}</span>
+                                    <span class="font-medium font-mono" style="color: var(--text-1);">{{ param.name }}</span>
+                                    <span class="text-xs px-1.5 py-0.5 rounded" style="background: var(--surface-3); color: var(--text-3);">{{ param.type }}</span>
                                 </div>
-                                <p class="text-white/70 mt-1">{{ param.description }}</p>
+                                <p class="mt-1 text-xs" style="color: var(--text-2);">{{ param.description }}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-black/30 border border-white/10 rounded-lg p-4 overflow-x-auto">
-                        <code class="text-sm text-green-300 whitespace-pre">{{ endpoint.example }}</code>
+                    <div class="rounded-xl p-4 overflow-x-auto"
+                        style="background: var(--surface-2); border: 1px solid var(--separator);">
+                        <code class="text-xs font-mono whitespace-pre" style="color: var(--success-text);">{{ endpoint.example }}</code>
                     </div>
                 </div>
             </div>
@@ -168,10 +176,18 @@ const endpoints: EndpointDoc[] = [
 ]
 
 const methodClass = (method: EndpointDoc['method']) => {
-    if (method === 'GET') return 'bg-green-500/20 text-green-300 border border-green-500/30'
-    if (method === 'POST') return 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-    if (method === 'PATCH') return 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-    if (method === 'PUT') return 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-    return 'bg-red-500/20 text-red-300 border border-red-500/30'
+    if (method === 'GET') return 'method-get'
+    if (method === 'POST') return 'method-post'
+    if (method === 'PATCH') return 'method-patch'
+    if (method === 'PUT') return 'method-put'
+    return 'method-delete'
 }
 </script>
+
+<style scoped>
+.method-get { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border); }
+.method-post { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent); }
+.method-patch { background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); }
+.method-put { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent); opacity: 0.8; }
+.method-delete { background: var(--error-bg); color: var(--error-text); border: 1px solid var(--error-border); }
+</style>

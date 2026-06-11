@@ -1,96 +1,111 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
+    <div class="min-h-screen" style="background: var(--bg-page);">
         <NavBar title="API Tokens" :show-back="true" back-text="Back to Albums" back-to="/album" />
 
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Create New Token Section -->
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 mb-8">
-                <h2 class="text-2xl font-bold text-white mb-4">Create New API Token</h2>
-                <p class="text-[var(--text-secondary)] text-sm mb-6">
+            <div class="rounded-2xl p-6 mb-6"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                <h2 class="text-xl font-bold mb-1" style="color: var(--text-1);">Create New API Token</h2>
+                <p class="text-sm mb-5" style="color: var(--text-2);">
                     API tokens allow external services to access your photos and albums.
                 </p>
 
                 <form @submit.prevent="handleCreateToken" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Token Name</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Token Name</label>
                         <input v-model="newToken.name" type="text" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="e.g., My Website Integration" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="e.g., My Website Integration"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Permissions</label>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--text-2);">Permissions</label>
                         <div class="flex flex-wrap gap-3">
-                            <label class="flex items-center gap-2 text-white cursor-pointer">
+                            <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" v-model="newToken.scopes" value="photos:read"
-                                    class="w-4 h-4 rounded bg-white/10 border-white/20" />
-                                <span class="text-sm">Read Photos</span>
+                                    class="w-4 h-4 rounded" style="accent-color: var(--accent);" />
+                                <span class="text-sm" style="color: var(--text-1);">Read Photos</span>
                             </label>
-                            <label class="flex items-center gap-2 text-white cursor-pointer">
+                            <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" v-model="newToken.scopes" value="albums:read"
-                                    class="w-4 h-4 rounded bg-white/10 border-white/20" />
-                                <span class="text-sm">Read Albums</span>
+                                    class="w-4 h-4 rounded" style="accent-color: var(--accent);" />
+                                <span class="text-sm" style="color: var(--text-1);">Read Albums</span>
                             </label>
                         </div>
                     </div>
 
-                    <div v-if="createError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                        <p class="text-red-200 text-sm">{{ createError }}</p>
+                    <div v-if="createError" class="rounded-xl px-4 py-3 text-sm"
+                        style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                        {{ createError }}
                     </div>
 
                     <button type="submit" :disabled="creating"
-                        class="px-6 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold rounded-lg transition disabled:opacity-50">
-                        {{ creating ? 'Creating...' : 'Create Token' }}
+                        class="px-6 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!creating && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        {{ creating ? 'Creating…' : 'Create Token' }}
                     </button>
                 </form>
             </div>
 
             <!-- Newly Created Token Display -->
-            <div v-if="createdToken" class="bg-green-500/20 border border-green-500/50 rounded-xl p-6 mb-8">
-                <h3 class="text-xl font-bold text-white mb-2">🎉 Token Created!</h3>
-                <p class="text-green-200 text-sm mb-4">
+            <div v-if="createdToken" class="rounded-2xl p-6 mb-6"
+                style="background: var(--success-bg); border: 1px solid var(--success-border);">
+                <h3 class="text-base font-bold mb-1" style="color: var(--success-text);">Token Created!</h3>
+                <p class="text-sm mb-4" style="color: var(--success-text); opacity: 0.8;">
                     Copy this token now. You won't be able to see it again!
                 </p>
                 <div class="flex items-center gap-2">
-                    <code class="flex-1 px-4 py-3 bg-black/30 rounded-lg text-green-300 font-mono text-sm break-all">
+                    <code class="flex-1 px-4 py-3 rounded-xl font-mono text-sm break-all"
+                        style="background: var(--surface-1); color: var(--text-1); border: 1px solid var(--separator);">
                         {{ createdToken }}
                     </code>
                     <button @click="copyToken"
-                        class="px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition whitespace-nowrap">
+                        class="px-4 py-2.5 rounded-full text-sm font-medium transition whitespace-nowrap"
+                        :style="copied ? 'background: var(--success-text); color: white;' : 'background: var(--accent); color: var(--accent-text);'">
                         {{ copied ? '✓ Copied' : 'Copy' }}
                     </button>
                 </div>
             </div>
 
             <!-- Existing Tokens List -->
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6">
-                <h2 class="text-2xl font-bold text-white mb-4">Your API Tokens</h2>
+            <div class="rounded-2xl p-6"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                <h2 class="text-xl font-bold mb-4" style="color: var(--text-1);">Your API Tokens</h2>
 
-                <div v-if="loading" class="text-[var(--text-tertiary)] animate-pulse">Loading tokens...</div>
+                <div v-if="loading" class="text-sm animate-pulse" style="color: var(--text-3);">Loading tokens…</div>
 
-                <div v-else-if="tokens.length === 0" class="text-[var(--text-tertiary)]">
+                <div v-else-if="tokens.length === 0" class="text-sm" style="color: var(--text-3);">
                     You don't have any API tokens yet.
                 </div>
 
-                <div v-else class="space-y-4">
+                <div v-else class="space-y-3">
                     <div v-for="token in tokens" :key="token.id"
-                        class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                        class="flex items-center justify-between p-4 rounded-xl"
+                        style="background: var(--surface-2); border: 1px solid var(--separator);">
                         <div>
-                            <h4 class="text-white font-medium">{{ token.name }}</h4>
-                            <p class="text-[var(--text-tertiary)] text-sm font-mono">{{ token.prefix }}</p>
-                            <div class="flex gap-2 mt-1">
+                            <h4 class="font-medium text-sm" style="color: var(--text-1);">{{ token.name }}</h4>
+                            <p class="text-xs font-mono mt-0.5" style="color: var(--text-3);">{{ token.prefix }}</p>
+                            <div class="flex gap-1.5 mt-1.5">
                                 <span v-for="scope in token.scopes" :key="scope"
-                                    class="text-xs px-2 py-0.5 bg-purple-500/30 rounded text-[var(--text-secondary)]">
+                                    class="text-xs px-2 py-0.5 rounded-full"
+                                    style="background: var(--accent-light); color: var(--accent);">
                                     {{ scope }}
                                 </span>
                             </div>
-                            <p class="text-white/40 text-xs mt-1">
+                            <p class="text-xs mt-1.5" style="color: var(--text-3);">
                                 Created: {{ formatDate(token.createdAt) }}
                                 <span v-if="token.lastUsedAt"> · Last used: {{ formatDate(token.lastUsedAt) }}</span>
                             </p>
                         </div>
                         <button @click="revokeToken(token.id)"
-                            class="px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-300 rounded-lg transition text-sm">
+                            class="px-3 py-1.5 rounded-full text-xs transition"
+                            style="background: var(--error-bg); color: var(--error-text); border: 1px solid var(--error-border);">
                             Revoke
                         </button>
                     </div>

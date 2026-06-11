@@ -1,31 +1,41 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
+    <div class="min-h-screen" style="background: var(--bg-page);">
         <!-- Initial Loading/Auth State -->
         <div v-if="!isAuthenticated" class="min-h-screen flex items-center justify-center p-4">
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8 max-w-md w-full shadow-xl">
+            <div class="rounded-2xl p-8 max-w-md w-full"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="text-center mb-8">
                     <img v-if="linkData?.data?.logoImageId" :src="`/api/assets/logo/${linkData.data.logoImageId}`"
                         alt="Logo" class="h-12 max-w-[180px] object-contain mx-auto mb-2" />
-                    <h1 v-else class="text-3xl font-bold text-white mb-2">{{ linkData?.data?.logoText || '📸 PicHaus' }}</h1>
-                    <p v-if="loading" class="text-purple-200 animate-pulse">Loading...</p>
-                    <p v-else-if="error" class="text-red-300">{{ error }}</p>
-                    <p v-else class="text-purple-200">
+                    <h1 v-else class="text-3xl font-bold mb-2" style="color: var(--text-1);">{{ linkData?.data?.logoText || '📸 PicHaus' }}</h1>
+                    <div v-if="loading" class="flex justify-center">
+                        <div class="w-6 h-6 rounded-full border-2 animate-spin"
+                            style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                    </div>
+                    <p v-else-if="error" style="color: var(--error);">{{ error }}</p>
+                    <p v-else class="text-sm" style="color: var(--text-2);">
                         {{ pageTitle }}
-                        <span v-if="ownerName" class="block text-sm text-white/60 mt-1">by {{ ownerName }}</span>
+                        <span v-if="ownerName" class="block text-xs mt-1" style="color: var(--text-3);">by {{ ownerName }}</span>
                     </p>
                 </div>
 
                 <div v-if="!loading && !error && requiresPassword">
-                    <form @submit.prevent="handleAccess" class="space-y-6">
+                    <form @submit.prevent="handleAccess" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-purple-200 mb-2">Password Required</label>
+                            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Password Required</label>
                             <input v-model="password" type="password" required placeholder="Enter password"
-                                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-white/30" />
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                         </div>
 
                         <button type="submit" :disabled="accessing"
-                            class="w-full px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-[var(--shadow-secondary)]">
-                            {{ accessing ? 'Accessing...' : 'View Access' }}
+                            class="w-full py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
+                            style="background: var(--accent); color: var(--accent-text);"
+                            @mouseover="!accessing && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                            @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                            {{ accessing ? 'Accessing…' : 'View Access' }}
                         </button>
                     </form>
                 </div>
@@ -38,51 +48,42 @@
             <!-- Group View -->
             <div v-if="viewMode === 'group'">
                 <div class="text-center mb-12">
-                    <h1 class="text-4xl sm:text-5xl font-bold text-white mb-4">{{ groupTitle }}</h1>
-                    <p v-if="groupDescription" class="text-purple-200 text-lg max-w-2xl mx-auto">{{ groupDescription }}
-                    </p>
-                    <div class="mt-4 text-white/60">
-                        Collection by {{ ownerName }}
-                    </div>
+                    <h1 class="text-4xl sm:text-5xl font-bold mb-3 tracking-tight" style="color: var(--text-1);">{{ groupTitle }}</h1>
+                    <p v-if="groupDescription" class="text-base max-w-2xl mx-auto" style="color: var(--text-2);">{{ groupDescription }}</p>
+                    <div class="mt-2 text-sm" style="color: var(--text-3);">Collection by {{ ownerName }}</div>
                     <button @click="viewAllGroupPhotos"
-                        class="mt-6 px-6 py-2 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition inline-flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        class="mt-6 px-6 py-2.5 rounded-full text-sm font-semibold transition inline-flex items-center gap-2"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="$event.currentTarget.style.background = 'var(--accent-hover)'"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
                         </svg>
                         View All Pictures
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     <div v-for="album in groupAlbums" :key="album.id" @click="openAlbum(album)"
-                        class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:border-purple-400/50 transition cursor-pointer group hover:-translate-y-1">
+                        class="rounded-2xl overflow-hidden cursor-pointer group transition hover:-translate-y-1"
+                        style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);"
+                        @mouseover="$event.currentTarget.style.boxShadow = 'var(--shadow-md)'"
+                        @mouseout="$event.currentTarget.style.boxShadow = 'var(--shadow-sm)'">
 
-                        <!-- Album Thumbnail -->
-                        <div
-                            class="aspect-video relative bg-gray-900 group-hover:brightness-110 transition duration-300">
-                            <!-- Cover Photo -->
+                        <div class="aspect-video relative overflow-hidden" style="background: var(--surface-3);">
                             <img v-if="album.coverPhoto" :src="buildAssetUrl(`/api/assets/full/${album.coverPhoto.id}`)"
-                                class="w-full h-full object-cover" loading="lazy" />
-
-                            <!-- Placeholder if no photo -->
-                            <div v-else
-                                class="w-full h-full bg-gradient-to-br from-purple-900/50 to-pink-900/50 flex items-center justify-center">
-                                <span class="text-6xl grayscale opacity-50">📷</span>
+                                class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy" />
+                            <div v-else class="w-full h-full flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                </svg>
                             </div>
-
-                            <!-- Hover Overlay -->
-                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
                         </div>
 
-                        <div class="p-6">
-                            <h3 class="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition">
-                                {{ album.name }}
-                            </h3>
-                            <p v-if="album.description" class="text-purple-200 text-sm mb-4 line-clamp-2">
-                                {{ album.description }}
-                            </p>
-
-                            <div class="flex items-center justify-between text-sm text-purple-300">
+                        <div class="p-5">
+                            <h3 class="text-base font-bold mb-1 truncate" style="color: var(--text-1);">{{ album.name }}</h3>
+                            <p v-if="album.description" class="text-sm mb-3 line-clamp-2" style="color: var(--text-2);">{{ album.description }}</p>
+                            <div class="flex items-center justify-between text-xs" style="color: var(--text-3);">
                                 <span>{{ album.photoCount }} photos</span>
                                 <span v-if="album.eventDate">{{ formatDate(album.eventDate) }}</span>
                             </div>
@@ -99,7 +100,10 @@
                     <div class="text-left md:text-left">
                         <div class="mb-2">
                             <button @click="viewMode = 'group'"
-                                class="text-purple-300 hover:text-white flex items-center gap-1 text-sm bg-white/5 px-3 py-1 rounded-full transition">
+                                class="flex items-center gap-1 text-sm px-3 py-1 rounded-full transition"
+                                style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);"
+                                @mouseover="$event.currentTarget.style.background = 'var(--surface-3)'"
+                                @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -108,14 +112,17 @@
                                 Back to {{ groupTitle }}
                             </button>
                         </div>
-                        <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">All Pictures</h1>
-                        <div class="text-purple-200 text-base sm:text-base">
-                            <span v-if="groupDescription" class="text-white/60">{{ groupDescription }}</span>
+                        <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold mb-2 tracking-tight" style="color: var(--text-1);">All Pictures</h1>
+                        <div class="text-sm" style="color: var(--text-2);">
+                            <span v-if="groupDescription">{{ groupDescription }}</span>
                         </div>
                     </div>
 
                     <button @click="downloadAllGroupPhotos" :disabled="downloading"
-                        class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap">
+                        class="px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                        @mouseover="!downloading && ($event.currentTarget.style.background = 'var(--surface-3)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
                         <span>Download All</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
@@ -126,22 +133,24 @@
                 </div>
 
                 <!-- Loading Photos State -->
-                <div v-if="loadingPhotos && photos.length === 0" class="text-center py-12">
-                    <div class="animate-pulse text-purple-300 text-lg sm:text-xl">Loading photos...</div>
+                <div v-if="loadingPhotos && photos.length === 0" class="flex justify-center py-12">
+                    <div class="w-8 h-8 rounded-full border-2 animate-spin"
+                        style="border-color: var(--separator); border-top-color: var(--accent);"></div>
                 </div>
 
                 <!-- Empty State -->
-                <div v-else-if="photos.length === 0"
-                    class="text-center py-12 bg-white/5 rounded-xl border border-white/10">
+                <div v-else-if="photos.length === 0" class="text-center py-12 rounded-2xl"
+                    style="background: var(--surface-1); border: 1px solid var(--separator);">
                     <div class="text-5xl sm:text-6xl mb-4">📷</div>
-                    <h3 class="text-lg sm:text-xl font-bold text-white mb-2">No photos yet</h3>
+                    <h3 class="text-lg sm:text-xl font-bold mb-2" style="color: var(--text-1);">No photos yet</h3>
                 </div>
 
                 <!-- Photo Grid -->
                 <div v-else-if="picturesLayout" ref="containerRef" class="relative mx-auto"
                     :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
                     <div v-for="(photo, index) in photos" :key="photo.id" @click="openPhotoViewer(index)"
-                        class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 hover:border-purple-400/50 transition-all hover:-translate-y-1 active:scale-95 group"
+                        class="absolute cursor-pointer overflow-hidden rounded-xl transition-all hover:-translate-y-0.5 active:scale-95 group"
+                        style="background: var(--surface-3);"
                         :style="{
                             top: `${picturesLayout.getPosition(index).top}px`,
                             left: `${picturesLayout.getPosition(index).left}px`,
@@ -170,8 +179,8 @@
 
                 <!-- Infinite Scroll Sentinel -->
                 <div ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
-                    <div v-if="loadingMore" class="animate-pulse text-purple-300 text-sm sm:text-base">Loading more
-                        photos...</div>
+                    <div v-if="loadingMore" class="w-6 h-6 rounded-full border-2 animate-spin"
+                        style="border-color: var(--separator); border-top-color: var(--accent);"></div>
                 </div>
             </div>
 
@@ -183,7 +192,10 @@
                     <div class="text-left md:text-left">
                         <div v-if="shareType === 'group'" class="mb-2">
                             <button @click="viewMode = 'group'"
-                                class="text-purple-300 hover:text-white flex items-center gap-1 text-sm bg-white/5 px-3 py-1 rounded-full transition">
+                                class="flex items-center gap-1 text-sm px-3 py-1 rounded-full transition"
+                                style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);"
+                                @mouseover="$event.currentTarget.style.background = 'var(--surface-3)'"
+                                @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -192,15 +204,14 @@
                                 Back to {{ groupTitle }}
                             </button>
                         </div>
-                        <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">{{ albumName }}</h1>
-                        <div class="text-purple-200 text-base sm:text-base">
+                        <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold mb-2 tracking-tight" style="color: var(--text-1);">{{ albumName }}</h1>
+                        <div class="text-sm" style="color: var(--text-2);">
                             <span v-if="eventDate">{{ formatDate(eventDate) }}</span>
-                            <div v-if="description" class="text-white/60 whitespace-pre-line mt-2">{{ description }}
-                            </div>
+                            <div v-if="description" class="whitespace-pre-line mt-1" style="color: var(--text-3);">{{ description }}</div>
                             <div v-if="photographers.length > 0" class="flex items-center gap-2 mt-2">
-                                <span class="text-white/40">by</span>
+                                <span style="color: var(--text-3);">by</span>
                                 <button @click="showPhotographersModal = true"
-                                    class="text-white/80 hover:text-white transition underline decoration-dotted">
+                                    class="transition underline decoration-dotted" style="color: var(--accent);">
                                     {{ photographersDisplay }}
                                 </button>
                             </div>
@@ -208,9 +219,12 @@
                     </div>
 
                     <button @click="downloadAll" :disabled="downloading"
-                        class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap">
+                        class="px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                        @mouseover="!downloading && ($event.currentTarget.style.background = 'var(--surface-3)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
                         <span>Download All</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -219,22 +233,24 @@
                 </div>
 
                 <!-- Loading Photos State -->
-                <div v-if="loadingPhotos && photos.length === 0" class="text-center py-12">
-                    <div class="animate-pulse text-purple-300 text-lg sm:text-xl">Loading photos...</div>
+                <div v-if="loadingPhotos && photos.length === 0" class="flex justify-center py-12">
+                    <div class="w-8 h-8 rounded-full border-2 animate-spin"
+                        style="border-color: var(--separator); border-top-color: var(--accent);"></div>
                 </div>
 
                 <!-- Empty State -->
-                <div v-else-if="photos.length === 0"
-                    class="text-center py-12 bg-white/5 rounded-xl border border-white/10">
+                <div v-else-if="photos.length === 0" class="text-center py-12 rounded-2xl"
+                    style="background: var(--surface-1); border: 1px solid var(--separator);">
                     <div class="text-5xl sm:text-6xl mb-4">📷</div>
-                    <h3 class="text-lg sm:text-xl font-bold text-white mb-2">No photos yet</h3>
+                    <h3 class="text-lg sm:text-xl font-bold mb-2" style="color: var(--text-1);">No photos yet</h3>
                 </div>
 
                 <!-- Photo Grid -->
                 <div v-else-if="picturesLayout" ref="containerRef" class="relative mx-auto"
                     :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
                     <div v-for="(photo, index) in photos" :key="photo.id" @click="openPhotoViewer(index)"
-                        class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 hover:border-purple-400/50 transition-all hover:-translate-y-1 active:scale-95 group"
+                        class="absolute cursor-pointer overflow-hidden rounded-xl transition-all hover:-translate-y-0.5 active:scale-95 group"
+                        style="background: var(--surface-3);"
                         :style="{
                             top: `${picturesLayout.getPosition(index).top}px`,
                             left: `${picturesLayout.getPosition(index).left}px`,
@@ -263,49 +279,50 @@
 
                 <!-- Infinite Scroll Sentinel -->
                 <div ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
-                    <div v-if="loadingMore" class="animate-pulse text-purple-300 text-sm sm:text-base">Loading more
-                        photos...</div>
+                    <div v-if="loadingMore" class="w-6 h-6 rounded-full border-2 animate-spin"
+                        style="border-color: var(--separator); border-top-color: var(--accent);"></div>
                 </div>
             </div>
         </div>
 
         <!-- Photographers Modal -->
         <div v-if="showPhotographersModal"
-            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            class="fixed inset-0 flex items-center justify-center p-4 z-50"
+            style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
             @click.self="showPhotographersModal = false">
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-md w-full">
+            <div class="rounded-2xl p-6 max-w-md w-full"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-2xl font-bold text-white">Photographers</h3>
-                    <button @click="showPhotographersModal = false" class="text-white/60 hover:text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
+                    <h3 class="text-lg font-bold" style="color: var(--text-1);">Photographers</h3>
+                    <button @click="showPhotographersModal = false" class="p-1 rounded-lg transition"
+                        style="color: var(--text-3);"
+                        @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
+                        @mouseout="$event.currentTarget.style.background = 'transparent'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
-                <div class="space-y-3">
+                <div class="space-y-2">
                     <div v-for="photographer in photographers" :key="photographer.id"
-                        class="bg-white/5 rounded-lg p-3 border border-white/10">
+                        class="p-3 rounded-xl" style="background: var(--surface-2); border: 1px solid var(--separator);">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex-1">
-                                <p class="text-white font-medium">{{ photographer.name }}</p>
-                                <p v-if="photographer.email" class="text-purple-300 text-sm">{{ photographer.email }}
-                                </p>
+                                <p class="font-medium text-sm" style="color: var(--text-1);">{{ photographer.name }}</p>
+                                <p v-if="photographer.email" class="text-xs mt-0.5" style="color: var(--text-3);">{{ photographer.email }}</p>
                                 <div v-if="photographer.instagram" class="flex items-center gap-2 mt-1">
-                                    <span class="text-purple-300 text-sm">@{{ photographer.instagram }}</span>
+                                    <span class="text-xs" style="color: var(--text-2);">@{{ photographer.instagram }}</span>
                                     <a :href="`https://instagram.com/${photographer.instagram || ''}`" target="_blank"
-                                        rel="noopener noreferrer" class="text-pink-400 hover:text-pink-300 transition">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                                        rel="noopener noreferrer" style="color: var(--accent);">
+                                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                                         </svg>
                                     </a>
                                 </div>
                             </div>
-                            <span
-                                class="px-2 py-1 bg-purple-500/20 text-purple-200 rounded-full text-xs whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded-full text-xs whitespace-nowrap"
+                                style="background: var(--accent-light); color: var(--accent);">
                                 {{ photographer.role }}
                             </span>
                         </div>
@@ -333,7 +350,8 @@
                             Clear
                         </button>
                         <button @click="downloadFavorites" :disabled="downloading"
-                            class="px-4 py-2 rounded-lg bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] text-white font-semibold text-sm flex items-center gap-2 disabled:opacity-50 transition shadow-lg shadow-[var(--shadow-secondary)]">
+                            class="px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 disabled:opacity-50 transition"
+                            style="background: var(--accent); color: white;">
                             <svg v-if="isIOS" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
                             </svg>
@@ -349,22 +367,25 @@
 
         <!-- Download Progress Modal -->
         <div v-if="downloading"
-            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 max-w-sm w-full shadow-2xl">
-                <h3 class="text-xl font-bold text-white mb-4 text-center">Downloading Photos</h3>
+            class="fixed inset-0 flex items-center justify-center p-4 z-50"
+            style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);">
+            <div class="rounded-2xl p-6 max-w-sm w-full"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                <h3 class="text-base font-bold mb-4 text-center" style="color: var(--text-1);">Downloading Photos</h3>
 
-                <div class="mb-2 flex justify-between text-sm text-purple-200">
-                    <span>Progress</span>
-                    <span>{{ Math.round((downloadProgress.current / downloadProgress.total) * 100) }}%</span>
+                <div class="mb-2 flex justify-between text-sm">
+                    <span style="color: var(--text-2);">Progress</span>
+                    <span style="color: var(--accent); font-weight: 600;">{{ Math.round((downloadProgress.current / downloadProgress.total) * 100) }}%</span>
                 </div>
 
-                <div class="w-full bg-white/10 rounded-full h-4 mb-4 overflow-hidden">
-                    <div class="bg-gradient-to-r from-[#f9d4e0] to-[#b0ace8] h-full transition-all duration-300 ease-out"
+                <div class="w-full rounded-full h-2 mb-4 overflow-hidden" style="background: var(--surface-3);">
+                    <div class="h-full rounded-full transition-all duration-300 ease-out"
+                        style="background: var(--accent);"
                         :style="{ width: `${(downloadProgress.current / downloadProgress.total) * 100}%` }">
                     </div>
                 </div>
 
-                <p class="text-center text-white/60 text-sm">
+                <p class="text-center text-xs" style="color: var(--text-3);">
                     {{ downloadProgress.current }} of {{ downloadProgress.total }} files processed
                 </p>
             </div>

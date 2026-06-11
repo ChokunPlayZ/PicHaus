@@ -1,40 +1,51 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)]">
+    <div class="min-h-screen" style="background: var(--bg-page);">
         <NavBar title="All Photos" :showBack="true" backTo="/album" :solid="true" />
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-white mb-2">My Gallery</h1>
-                    <p class="text-[var(--text-muted)]">
+                    <h1 class="text-3xl font-bold tracking-tight mb-1" style="color: var(--text-1);">My Gallery</h1>
+                    <p class="text-sm" style="color: var(--text-2);">
                         {{ total }} photos in your library
                     </p>
                 </div>
             </div>
 
             <!-- Filters -->
-            <div class="mb-8 bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-4">
-                <div class="flex flex-wrap items-center gap-4">
-                    <span class="text-white font-medium">Filters:</span>
+            <div class="mb-8 rounded-2xl p-4"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="text-sm font-medium" style="color: var(--text-2);">Filters:</span>
 
                     <select v-model="filters.camera" @change="applyFilters"
-                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        class="px-3 py-2 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="$event.target.style.borderColor = 'var(--accent)'"
+                        @blur="$event.target.style.borderColor = 'var(--separator)'">
                         <option value="">All Cameras</option>
                         <option v-for="cam in options.cameras" :key="cam" :value="cam">{{ cam }}</option>
                     </select>
 
                     <select v-model="filters.lens" @change="applyFilters"
-                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        class="px-3 py-2 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="$event.target.style.borderColor = 'var(--accent)'"
+                        @blur="$event.target.style.borderColor = 'var(--separator)'">
                         <option value="">All Lenses</option>
                         <option v-for="l in options.lenses" :key="l" :value="l">{{ l }}</option>
                     </select>
 
-                    <input v-model="filters.dateFrom" @change="applyFilters" type="date" placeholder="Start Date"
-                        class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    <input v-model="filters.dateFrom" @change="applyFilters" type="date"
+                        class="px-3 py-2 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="$event.target.style.borderColor = 'var(--accent)'"
+                        @blur="$event.target.style.borderColor = 'var(--separator)'" />
 
                     <button v-if="hasActiveFilters" @click="clearFilters"
-                        class="px-3 py-2 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-lg transition text-sm">
+                        class="px-3 py-2 rounded-full text-sm transition"
+                        style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);">
                         Clear Filters
                     </button>
                 </div>
@@ -43,16 +54,27 @@
             <!-- Main Content -->
             <div class="pb-12 min-h-[50vh]">
                 <div v-if="loading && photos.length === 0" class="flex justify-center py-20">
-                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                    <div class="w-10 h-10 rounded-full border-2 animate-spin"
+                        style="border-color: var(--separator); border-top-color: var(--accent);"></div>
                 </div>
 
                 <div v-else-if="photos.length === 0"
-                    class="text-center py-20 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-3xl border border-[var(--glass-border-light)]">
-                    <div class="text-6xl mb-4 grayscale opacity-50">📷</div>
-                    <h3 class="text-xl font-bold text-white mb-2">No photos found</h3>
-                    <p>Try adjusting your filters or upload more photos.</p>
+                    class="text-center py-20 rounded-3xl"
+                    style="background: var(--surface-1); border: 1px solid var(--separator);">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5"
+                        style="background: var(--surface-3);">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" style="color: var(--text-3);">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                            <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2" style="color: var(--text-1);">No photos found</h3>
+                    <p class="text-sm mb-6" style="color: var(--text-2);">Try adjusting your filters or upload more photos.</p>
                     <button @click="clearFilters" v-if="hasActiveFilters"
-                        class="mt-6 px-6 py-2 bg-[var(--btn-primary-start)] text-white rounded-full hover:opacity-90 transition">
+                        class="px-6 py-2.5 rounded-full text-sm font-medium transition"
+                        style="background: var(--accent); color: var(--accent-text);">
                         Reset Filters
                     </button>
                 </div>
@@ -61,7 +83,8 @@
                     :class="{ 'opacity-50': loading }"
                     :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
                     <div v-for="(photo, index) in photos" :key="photo.id"
-                        class="absolute cursor-pointer overflow-hidden rounded-lg bg-white/5 border border-white/10 transition-transform hover:-translate-y-1 group"
+                        class="absolute cursor-pointer overflow-hidden rounded-xl transition-transform hover:-translate-y-0.5 group"
+                        style="background: var(--surface-3);"
                         :style="{
                             top: `${picturesLayout.getPosition(index).top}px`,
                             left: `${picturesLayout.getPosition(index).left}px`,
@@ -69,7 +92,7 @@
                             height: `${picturesLayout.getPosition(index).height}px`,
                         }" @click="openViewer(index)">
 
-                        <div class="absolute inset-0 bg-gray-800 animate-pulse" v-if="!photo.blurhash"></div>
+                        <div class="absolute inset-0 animate-pulse" style="background: var(--surface-3);" v-if="!photo.blurhash"></div>
                         <img v-if="photo.blurhash"
                             :src="getBlurhashUrl(photo.blurhash, photo.width!, photo.height!) || ''"
                             class="absolute inset-0 w-full h-full object-cover" />
@@ -78,8 +101,7 @@
                             class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 hover:opacity-100" />
 
                         <!-- Overlay -->
-                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300">
-                        </div>
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
 
                         <!-- Hover Info -->
                         <div
@@ -92,8 +114,7 @@
                             </div>
                             <div class="flex flex-col items-end gap-1">
                                 <span v-if="photo.aperture"
-                                    class="text-xs font-mono bg-white/20 px-1.5 py-0.5 rounded text-white backdrop-blur-md">f/{{
-                                        photo.aperture }}</span>
+                                    class="text-xs font-mono bg-black/40 px-1.5 py-0.5 rounded text-white backdrop-blur-md">f/{{ photo.aperture }}</span>
                                 <span v-if="photo.iso" class="text-[10px] text-white/60">ISO {{ photo.iso }}</span>
                             </div>
                         </div>
@@ -101,10 +122,10 @@
                 </div>
 
                 <div ref="sentinel" class="h-20 flex justify-center items-center mt-8">
-                    <div v-if="loadingMore" class="flex items-center gap-2 text-purple-300 text-sm">
-                        <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin">
-                        </div>
-                        Loading more...
+                    <div v-if="loadingMore" class="flex items-center gap-2 text-sm" style="color: var(--text-3);">
+                        <div class="w-4 h-4 border-2 rounded-full animate-spin"
+                            style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                        Loading more…
                     </div>
                 </div>
             </div>
