@@ -29,7 +29,7 @@
             <div class="flex gap-2">
                 <button @click="showInfo = !showInfo" :class="[
                     'p-4 rounded-full text-white transition backdrop-blur-sm',
-                    showInfo ? 'bg-purple-500/30 hover:bg-purple-500/40' : 'bg-white/10 hover:bg-white/20'
+                    showInfo ? 'bg-white/20 hover:bg-white/25' : 'bg-white/10 hover:bg-white/20'
                 ]">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
@@ -39,7 +39,7 @@
                 </button>
                 <!-- iOS: Download button that triggers share sheet -->
                 <button v-if="isIOS" @click="sharePhoto"
-                    class="p-4 rounded-full bg-[var(--btn-primary-start)] text-white hover:bg-[var(--btn-primary-hover-start)] active:bg-[var(--btn-primary-active)] transition backdrop-blur-sm shadow-lg shadow-[var(--shadow-primary)]">
+                    class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg" style="background: var(--accent);">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -57,7 +57,7 @@
                         </svg>
                     </button>
                     <button @click="downloadPhoto"
-                        class="p-4 rounded-full bg-[var(--btn-primary-start)] text-white hover:bg-[var(--btn-primary-hover-start)] active:bg-[var(--btn-primary-active)] transition backdrop-blur-sm shadow-lg shadow-[var(--shadow-primary)]">
+                        class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg" style="background: var(--accent);">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -67,7 +67,7 @@
                 </template>
                 <!-- Desktop/Other: Download button only -->
                 <button v-else @click="downloadPhoto"
-                    class="p-4 rounded-full bg-[var(--btn-primary-start)] text-white hover:bg-[var(--btn-primary-hover-start)] active:bg-[var(--btn-primary-active)] transition backdrop-blur-sm shadow-lg shadow-[var(--shadow-primary)]">
+                    class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg" style="background: var(--accent);">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -120,7 +120,7 @@
                     </button>
                     <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()" @touchstart.stop.prevent
                         @touchmove.stop.prevent
-                        class="p-3 rounded-full bg-[var(--btn-primary-start)] text-white hover:bg-[var(--btn-primary-hover-start)] transition shadow-lg shadow-[var(--shadow-primary)]">
+                        class="p-3 rounded-full text-white transition shadow-lg" style="background: var(--accent);">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -201,10 +201,11 @@
 
                     <!-- Uploader Info -->
                     <div class="mb-6">
-                        <h4 class="text-sm font-medium text-purple-300 mb-2">Uploaded By</h4>
+                        <h4 class="text-sm font-medium text-white/50 mb-2">Uploaded By</h4>
                         <div class="flex items-center space-x-3">
                             <div
-                                class="w-10 h-10 rounded-full bg-gradient-to-br from-[#f9d4e0] to-[#b0ace8] flex items-center justify-center text-white font-bold">
+                                class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                                style="background: var(--accent);">
                                 {{ photo.uploader?.name?.charAt(0) || '?' }}
                             </div>
                             <div class="flex-1">
@@ -213,7 +214,7 @@
                                     <a v-if="photo.uploader?.instagram"
                                         :href="getInstagramUrl(photo.uploader.instagram)" target="_blank"
                                         rel="noopener noreferrer"
-                                        class="text-purple-400 hover:text-purple-300 transition">
+                                        class="text-white/60 hover:text-white transition">
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                             <path
                                                 d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
@@ -227,7 +228,7 @@
 
                     <!-- EXIF Data -->
                     <div class="space-y-4" v-if="showMetadata">
-                        <h4 class="text-sm font-medium text-purple-300 border-b border-white/10 pb-2">Camera Info</h4>
+                        <h4 class="text-sm font-medium text-white/50 border-b border-white/10 pb-2">Camera Info</h4>
 
                         <div v-if="photo.cameraModel" class="flex justify-between md:grid md:grid-cols-2 gap-2 text-sm">
                             <span class="text-white/50">Camera</span>

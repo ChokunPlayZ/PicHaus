@@ -1,64 +1,90 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] flex items-center justify-center p-4">
-        <div class="w-full max-w-md">
-            <!-- Logo/Header -->
+    <div class="min-h-screen flex items-center justify-center p-4" style="background: var(--bg-page);">
+        <div class="w-full max-w-sm">
+            <!-- Logo / Header -->
             <div class="text-center mb-8">
-                <h1 class="text-5xl font-bold text-white mb-2">📸 PicHaus</h1>
-                <p class="text-[var(--text-secondary)]">Initial Setup</p>
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+                    style="background: var(--accent-light);">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" style="color: var(--accent);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                        <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-1);">PicHaus</h1>
+                <p class="mt-1 text-sm" style="color: var(--text-2);">Initial Setup</p>
             </div>
 
             <!-- Setup Card -->
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
-                <h2 class="text-2xl font-bold text-white mb-6">Create Admin Account</h2>
+            <div class="rounded-2xl p-6"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-md);">
+                <h2 class="text-base font-semibold mb-5" style="color: var(--text-1);">Create Admin Account</h2>
 
                 <form @submit.prevent="handleSetup" class="space-y-4">
-                    <!-- Name Field -->
+                    <!-- Name -->
                     <div>
-                        <label for="name" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                        <label for="name" class="block text-sm font-medium mb-1.5" style="color: var(--text-1);">
                             Name
                         </label>
                         <input id="name" v-model="form.name" type="text" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                            placeholder="Your name" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="Your name"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.2)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
-                    <!-- Email Field -->
+                    <!-- Email -->
                     <div>
-                        <label for="email" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                        <label for="email" class="block text-sm font-medium mb-1.5" style="color: var(--text-1);">
                             Email
                         </label>
                         <input id="email" v-model="form.email" type="email" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                            placeholder="admin@example.com" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="admin@example.com"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.2)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
-                    <!-- Password Field -->
+                    <!-- Password -->
                     <div>
-                        <label for="password" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                        <label for="password" class="block text-sm font-medium mb-1.5" style="color: var(--text-1);">
                             Password
                         </label>
                         <input id="password" v-model="form.password" type="password" required minlength="8"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                            placeholder="At least 8 characters" />
-                        <p class="text-xs text-[var(--text-tertiary)] mt-1">Minimum 8 characters</p>
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="At least 8 characters"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.2)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
+                        <p class="text-xs mt-1" style="color: var(--text-3);">Minimum 8 characters</p>
                     </div>
 
-                    <!-- Error Message -->
-                    <div v-if="error" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                        <p class="text-red-200 text-sm">{{ error }}</p>
+                    <!-- Error -->
+                    <div v-if="error" class="rounded-xl px-4 py-3 text-sm"
+                        style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                        {{ error }}
                     </div>
 
-                    <!-- Submit Button -->
+                    <!-- Submit -->
                     <button type="submit" :disabled="loading"
-                        class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                        <span v-if="loading">Setting up...</span>
+                        class="w-full py-2.5 text-sm font-medium rounded-full transition"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!loading && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
+                        <span v-if="loading" class="flex items-center justify-center gap-2">
+                            <span class="w-4 h-4 rounded-full border-2 animate-spin"
+                                style="border-color: rgba(255,255,255,0.3); border-top-color: white;"></span>
+                            Setting up…
+                        </span>
                         <span v-else>Complete Setup</span>
                     </button>
                 </form>
             </div>
 
-            <!-- Footer -->
-            <p class="text-center text-[var(--text-tertiary)] text-sm mt-6">
+            <p class="text-center text-xs mt-4" style="color: var(--text-3);">
                 This will create the first admin account for PicHaus
             </p>
         </div>
@@ -86,7 +112,6 @@ const handleSetup = async () => {
         })
 
         if (response.success) {
-            // Redirect to login after successful setup
             await navigateTo('/login')
         }
     } catch (err: any) {
@@ -96,12 +121,10 @@ const handleSetup = async () => {
     }
 }
 
-// Check if setup is already complete
 onMounted(async () => {
     try {
         const status = await $fetch<{ data: { setupComplete: boolean } }>('/api/v1/setup/status')
         if (status.data.setupComplete) {
-            // Redirect to login if setup is already done
             await navigateTo('/login')
         }
     } catch (err) {

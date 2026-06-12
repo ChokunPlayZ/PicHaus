@@ -82,6 +82,19 @@ function hexToRgba(hex: string, alpha: number): string {
     return `rgba(${r},${g},${b},${alpha})`
 }
 
+const THEMED_PROPS = [
+    '--bg-primary-start', '--bg-primary-end',
+    '--btn-primary-start', '--btn-primary-end',
+    '--btn-primary-hover-start', '--btn-primary-hover-end',
+    '--accent', '--accent-hover', '--accent-pressed', '--accent-light', '--shadow-primary',
+    '--bg-page', '--surface-1', '--surface-2', '--surface-3',
+    '--sidebar-bg', '--sidebar-border',
+    '--text-1', '--text-2', '--text-3', '--text-link',
+    '--separator', '--separator-strong',
+    '--accent-text',
+    '--shadow-sm', '--shadow-md', '--shadow-lg', '--shadow-xl',
+]
+
 export const useAlbumTheme = () => {
     const applyTheme = (
         preset: string | null | undefined,
@@ -90,6 +103,12 @@ export const useAlbumTheme = () => {
     ) => {
         if (import.meta.server) return
         const root = document.documentElement
+
+        // No theme set — remove all overrides so variables.css defaults take over
+        if (!preset) {
+            THEMED_PROPS.forEach(p => root.style.removeProperty(p))
+            return
+        }
 
         let bgStart: string, bgEnd: string, btnStart: string, btnEnd: string,
             hoverStart: string, hoverEnd: string, accentText: string
@@ -158,19 +177,7 @@ export const useAlbumTheme = () => {
 
     const resetTheme = () => {
         if (import.meta.server) return
-        const root = document.documentElement
-        ;[
-            '--bg-primary-start', '--bg-primary-end',
-            '--btn-primary-start', '--btn-primary-end',
-            '--btn-primary-hover-start', '--btn-primary-hover-end',
-            '--accent', '--accent-hover', '--accent-pressed', '--accent-light', '--shadow-primary',
-            '--bg-page', '--surface-1', '--surface-2', '--surface-3',
-            '--sidebar-bg', '--sidebar-border',
-            '--text-1', '--text-2', '--text-3', '--text-link',
-            '--separator', '--separator-strong',
-            '--accent-text',
-            '--shadow-sm', '--shadow-md', '--shadow-lg', '--shadow-xl',
-        ].forEach(p => root.style.removeProperty(p))
+        THEMED_PROPS.forEach(p => document.documentElement.style.removeProperty(p))
     }
 
     return { applyTheme, resetTheme, ALBUM_THEMES }
