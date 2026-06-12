@@ -445,6 +445,10 @@ interface Photo {
 const route = useRoute()
 const token = route.params.token as string
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const isUUID = UUID_REGEX.test(token)
+const isPublicAlbum = ref(false)
+
 // Auth State
 const loading = ref(true)
 const error = ref('')
@@ -718,11 +722,14 @@ const nextPhotoId = computed(() => {
 })
 
 // Initial Data Fetch (SSR)
-const { data: linkData, error: linkError } = await useFetch<{ success: boolean; data: any }>(`/api/v1/upload/${token}`)
+const { data: linkData, error: linkError } = await useFetch<{ success: boolean; data: any }>(
+    isUUID ? `/api/pub/album/${token}` : `/api/v1/upload/${token}`
+)
 
 // Populate state from SSR data
 if (linkData.value?.data) {
     const data = linkData.value.data
+    if (data.isPublicAlbum) isPublicAlbum.value = true
     requiresPassword.value = !!data.requiresPassword
     ownerName.value = data.ownerName || ''
 
@@ -786,7 +793,10 @@ onMounted(async () => {
     if (linkData.value?.data) {
         applyTheme(linkData.value.data.themePreset, linkData.value.data.customTheme, 'full')
     }
-    if (linkData.value?.data && !linkData.value.data.requiresPassword && !isAuthenticated.value) {
+    if (isPublicAlbum.value && !isAuthenticated.value) {
+        isAuthenticated.value = true
+        await fetchPhotos()
+    } else if (linkData.value?.data && !linkData.value.data.requiresPassword && !isAuthenticated.value) {
         await handleAccess()
     }
 })
@@ -900,7 +910,10 @@ const fetchPhotos = async () => {
         loadingPhotos.value = page.value === 1
         loadingMore.value = page.value > 1
 
-        const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/album/${albumId.value}?page=${page.value}&limit=${limit.value}`)
+        const photoApiUrl = isPublicAlbum.value
+            ? `/api/pub/album/${albumId.value}/photos?page=${page.value}&limit=${limit.value}`
+            : `/api/v1/album/${albumId.value}?page=${page.value}&limit=${limit.value}`
+        const response = await $fetch<{ success: boolean; data: any }>(photoApiUrl)
 
         // Populate photographers from album data (only once)
         if (page.value === 1 && response.data) {
@@ -955,7 +968,10 @@ const loadMorePhotos = async () => {
     loadingMore.value = true
     try {
         const nextPage = page.value + 1
-        const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/album/${albumId.value}`, {
+        const loadMoreUrl = isPublicAlbum.value
+            ? `/api/pub/album/${albumId.value}/photos`
+            : `/api/v1/album/${albumId.value}`
+        const response = await $fetch<{ success: boolean; data: any }>(loadMoreUrl, {
             params: { page: nextPage, limit: limit.value }
         })
 
