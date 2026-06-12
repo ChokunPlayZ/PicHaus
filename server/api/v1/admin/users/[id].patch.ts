@@ -12,13 +12,16 @@ export default defineEventHandler(async (event) => {
         if (currentUser.role !== 'ADMIN') throw createError({ statusCode: 403, statusMessage: 'Permission denied' })
         if (!userId) throw createError({ statusCode: 400, statusMessage: 'User ID required' })
 
+        const target = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { id: true } })
+        if (!target) throw createError({ statusCode: 404, statusMessage: 'User not found' })
+
         const updateData: Partial<typeof users.$inferInsert> = {}
 
         if (role) {
             if (!['USER', 'ADMIN'].includes(role)) throw createError({ statusCode: 400, statusMessage: 'Invalid role' })
             if (userId === currentUser.id && role !== 'ADMIN') {
-                const [{ value }] = await db.select({ value: count() }).from(users).where(eq(users.role, 'ADMIN'))
-                if (value <= 1) throw createError({ statusCode: 400, statusMessage: 'Cannot demote the last admin' })
+                const [adminCount] = await db.select({ value: count() }).from(users).where(eq(users.role, 'ADMIN'))
+                if ((adminCount?.value ?? 0) <= 1) throw createError({ statusCode: 400, statusMessage: 'Cannot demote the last admin' })
             }
             updateData.role = role
         }
@@ -35,6 +38,7 @@ export default defineEventHandler(async (event) => {
         const [updatedUser] = await db.update(users).set(updateData).where(eq(users.id, userId)).returning({
             id: users.id, name: users.name, email: users.email, instagram: users.instagram, role: users.role, createdAt: users.createdAt,
         })
+        if (!updatedUser) throw createError({ statusCode: 404, statusMessage: 'User not found' })
 
         return { success: true, data: { ...updatedUser, createdAt: Number(updatedUser.createdAt) } }
     } catch (error: any) {

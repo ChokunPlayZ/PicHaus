@@ -11,6 +11,9 @@ export default defineEventHandler(async (event) => {
         if (!userId) throw createError({ statusCode: 400, statusMessage: 'User ID required' })
         if (userId === currentUser.id) throw createError({ statusCode: 400, statusMessage: 'Cannot delete yourself' })
 
+        const target = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { id: true } })
+        if (!target) throw createError({ statusCode: 404, statusMessage: 'User not found' })
+
         await db.delete(users).where(eq(users.id, userId))
         return { success: true, message: 'User deleted successfully' }
     } catch (error: any) {
