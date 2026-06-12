@@ -16,6 +16,8 @@
 
 <script setup lang="ts">
 const { splash } = useSplash()
+const { loadSettings } = useSiteSettings()
+onMounted(() => loadSettings())
 </script>
 
 <style>

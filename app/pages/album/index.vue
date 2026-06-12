@@ -165,9 +165,16 @@
                     </div>
 
                     <!-- Thumbnail -->
-                    <div class="aspect-video relative" style="background: var(--surface-3);">
-                        <img v-if="album.coverPhoto" :src="buildAssetUrl(`/api/assets/thumb/${album.coverPhoto.id}`)"
-                            class="w-full h-full object-cover" loading="lazy" />
+                    <div class="aspect-video relative overflow-hidden" style="background: var(--surface-3);">
+                        <template v-if="album.coverPhoto">
+                            <div v-if="album.coverPhoto.blurhash" class="absolute inset-0 bg-cover bg-center transition-opacity duration-500"
+                                :style="{ backgroundImage: `url(${computeBlurhash(album.coverPhoto.blurhash)})` }" />
+                            <img :src="buildAssetUrl(`/api/assets/thumb/${album.coverPhoto.id}`)"
+                                class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+                                loading="lazy"
+                                @load="$event.target.style.opacity = '1'"
+                                style="opacity: 0;" />
+                        </template>
                         <div v-else class="w-full h-full flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -622,6 +629,9 @@
 <script setup lang="ts">
 import { clearAuthToken, buildAssetUrl } from '~/utils/auth-client'
 import { ALBUM_THEMES } from '~/composables/useAlbumTheme'
+import { blurhashToDataUrl } from '~/composables/useBlurhash'
+
+const computeBlurhash = (hash: string) => import.meta.client ? blurhashToDataUrl(hash) : ''
 
 interface Album {
     id: string

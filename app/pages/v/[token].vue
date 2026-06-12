@@ -71,8 +71,15 @@
                         @mouseout="$event.currentTarget.style.boxShadow = 'var(--shadow-sm)'">
 
                         <div class="aspect-video relative overflow-hidden" style="background: var(--surface-3);">
-                            <img v-if="album.coverPhoto" :src="buildAssetUrl(`/api/assets/full/${album.coverPhoto.id}`)"
-                                class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy" />
+                            <template v-if="album.coverPhoto">
+                                <div v-if="album.coverPhoto.blurhash" class="absolute inset-0 bg-cover bg-center"
+                                    :style="{ backgroundImage: `url(${computeBlurhash(album.coverPhoto.blurhash)})` }" />
+                                <img :src="buildAssetUrl(`/api/assets/full/${album.coverPhoto.id}`)"
+                                    class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                    loading="lazy"
+                                    @load="$event.target.style.opacity = '1'"
+                                    style="opacity: 0;" />
+                            </template>
                             <div v-else class="w-full h-full flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -407,6 +414,9 @@ import { decode } from 'blurhash'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { setAuthToken, buildAssetUrl } from '~/utils/auth-client'
+import { blurhashToDataUrl } from '~/composables/useBlurhash'
+
+const computeBlurhash = (hash: string) => import.meta.client ? blurhashToDataUrl(hash) : ''
 
 interface Photo {
     id: string
@@ -774,7 +784,7 @@ onMounted(async () => {
     }
 
     if (linkData.value?.data) {
-        applyTheme(linkData.value.data.themePreset, linkData.value.data.customTheme)
+        applyTheme(linkData.value.data.themePreset, linkData.value.data.customTheme, 'full')
     }
     if (linkData.value?.data && !linkData.value.data.requiresPassword && !isAuthenticated.value) {
         await handleAccess()
@@ -803,7 +813,7 @@ const handleAccess = async () => {
             ownerName.value = data.ownerName || ownerName.value
             groupAlbums.value = Array.isArray(data.albums) ? data.albums : groupAlbums.value
             showMetadata.value = data.showMetadata !== undefined ? data.showMetadata : showMetadata.value
-            if (data.themePreset) applyTheme(data.themePreset, data.customTheme)
+            if (data.themePreset) applyTheme(data.themePreset, data.customTheme, 'full')
             isAuthenticated.value = true
         } else {
             albumId.value = data.albumId

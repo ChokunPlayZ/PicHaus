@@ -379,7 +379,7 @@ const { applyTheme, resetTheme } = useAlbumTheme()
 onMounted(async () => {
     await checkAuth()
     await fetchAlbumInfo()
-    applyTheme(albumInfo.value?.themePreset, albumInfo.value?.customTheme)
+    applyTheme(albumInfo.value?.themePreset, albumInfo.value?.customTheme, 'full')
 })
 
 onUnmounted(() => {

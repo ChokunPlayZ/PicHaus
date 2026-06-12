@@ -1,36 +1,56 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] flex items-center justify-center p-4">
-        <div class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8 max-w-md w-full shadow-xl">
+    <div class="min-h-screen flex items-center justify-center p-4" style="background: var(--bg-page);">
+        <div class="rounded-2xl p-8 max-w-md w-full"
+            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+
             <!-- Header -->
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-white mb-2">📸 PicHaus</h1>
-                <p v-if="loading" class="text-purple-200 animate-pulse">Checking link...</p>
-                <p v-else-if="error" class="text-red-300">{{ error }}</p>
-                <div v-else>
-                    <p class="text-xl font-semibold text-white mb-2">
-                        {{ getStepTitle }}
-                    </p>
-                    <p class="text-purple-200 text-sm">
-                        to album "{{ albumName || 'Private Album' }}"
-                    </p>
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4"
+                    style="background: var(--accent-light);">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" style="color: var(--accent);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                 </div>
+                <div v-if="loading" class="flex justify-center">
+                    <div class="w-5 h-5 rounded-full border-2 animate-spin"
+                        style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                </div>
+                <template v-else-if="error">
+                    <p class="text-base font-semibold mb-1" style="color: var(--error-text);">{{ error }}</p>
+                </template>
+                <template v-else>
+                    <h1 class="text-xl font-bold mb-1" style="color: var(--text-1);">{{ getStepTitle }}</h1>
+                    <p class="text-sm" style="color: var(--text-2);">
+                        Album: <span style="color: var(--text-1);">{{ albumName || 'Private Album' }}</span>
+                        <span v-if="ownerName" class="block mt-0.5" style="color: var(--text-3);">Shared by {{ ownerName }}</span>
+                    </p>
+                </template>
             </div>
 
             <div v-if="!loading && !error">
                 <!-- Step 1: Password -->
                 <form v-if="step === 'password'" @submit.prevent="handlePasswordSubmit" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-1">Password Required</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Password Required</label>
                         <input v-model="password" type="password" required placeholder="Enter password"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-white/30" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
                     <button type="submit" :disabled="verifying"
-                        class="w-full px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-[var(--shadow-secondary)] mt-4">
-                        {{ verifying ? 'Verifying...' : 'Next' }}
+                        class="w-full py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!verifying && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        {{ verifying ? 'Verifying…' : 'Continue' }}
                     </button>
-
                     <button type="button" @click="goToLogin"
-                        class="w-full px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        class="w-full py-2.5 rounded-full text-sm font-medium transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
                         Have an account? Sign in
                     </button>
                 </form>
@@ -38,78 +58,86 @@
                 <!-- Step 2: Info -->
                 <form v-else-if="step === 'info'" @submit.prevent="handleInfoSubmit" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-1">Name</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Name</label>
                         <input v-model="form.name" type="text" required placeholder="Your Name"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-white/30" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
-
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-1">Email</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Email</label>
                         <input v-model="form.email" type="email" required placeholder="your@email.com"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-white/30" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
-
                     <div>
-                        <label class="block text-sm font-medium text-purple-200 mb-1">Instagram (Optional)</label>
-                        <input v-model="form.instagram" type="text" placeholder="@username"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-white/30" />
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Instagram <span style="color: var(--text-3);">(optional)</span></label>
+                        <div class="relative">
+                            <span class="absolute left-3.5 top-2.5 text-sm" style="color: var(--text-3);">@</span>
+                            <input v-model="form.instagram" type="text" placeholder="username"
+                                class="w-full pl-7 pr-3.5 py-2.5 text-sm rounded-xl transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                        </div>
                     </div>
-
                     <button type="submit" :disabled="accessing"
-                        class="w-full px-4 py-3 bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition disabled:opacity-50 shadow-lg shadow-[var(--shadow-secondary)] mt-6">
-                        {{ accessing ? 'Accessing...' : 'Start Uploading' }}
+                        class="w-full py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!accessing && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        {{ accessing ? 'Joining…' : 'Start Uploading' }}
                     </button>
-
                     <button type="button" @click="goToLogin"
-                        class="w-full px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition">
+                        class="w-full py-2.5 rounded-full text-sm font-medium transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
                         Have an account? Sign in
                     </button>
                 </form>
 
                 <!-- Step 3: Upload -->
-                <div v-else-if="step === 'upload'" class="space-y-6">
+                <div v-else-if="step === 'upload'" class="space-y-4">
+                    <!-- Drop zone -->
                     <div @click="triggerFileInput" @dragover.prevent @drop.prevent="handleFileSelect"
-                        class="border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:border-purple-500/50 hover:bg-white/5 transition cursor-pointer group">
-                        <input type="file" ref="fileInput" multiple accept="image/*" class="hidden"
-                            @change="handleFileSelect" />
-                        <div
-                            class="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-400" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        class="rounded-2xl p-8 text-center cursor-pointer transition group"
+                        style="border: 2px dashed var(--separator); background: var(--surface-2);"
+                        @dragenter="$event.currentTarget.style.borderColor = 'var(--accent)'; $event.currentTarget.style.background = 'var(--accent-light)'"
+                        @dragleave="$event.currentTarget.style.borderColor = 'var(--separator)'; $event.currentTarget.style.background = 'var(--surface-2)'">
+                        <input type="file" ref="fileInput" multiple accept="image/*" class="hidden" @change="handleFileSelect" />
+                        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 transition group-hover:scale-105"
+                            style="background: var(--accent-light);">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" style="color: var(--accent);">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                             </svg>
                         </div>
-                        <h3 class="text-lg font-bold text-white mb-1">Click or Drop Photos</h3>
-                        <p class="text-white/60 text-sm">to upload to this album</p>
+                        <p class="font-semibold text-sm mb-1" style="color: var(--text-1);">Click or drop photos here</p>
+                        <p class="text-xs" style="color: var(--text-3);">Upload to this album</p>
                     </div>
 
-                    <!-- File List with Progress -->
-                    <div v-if="files.length > 0" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                    <!-- File list -->
+                    <div v-if="files.length > 0" class="space-y-2 max-h-64 overflow-y-auto">
                         <div v-for="(file, index) in files" :key="index"
-                            class="bg-white/5 rounded-lg p-3 border border-white/10">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-white text-sm truncate max-w-[70%]">{{ file.file.name }}</span>
-                                <span class="text-xs" :class="{
-                                    'text-purple-300': file.status === 'uploading',
-                                    'text-green-300': file.status === 'done',
-                                    'text-red-300': file.status === 'error',
-                                    'text-white/40': file.status === 'pending'
-                                }">{{ file.status === 'error' ? (file.errorMessage || 'Error') : (file.status ===
-                                    'uploading' ? `${file.progress}%` : file.status) }}</span>
+                            class="rounded-xl p-3"
+                            style="background: var(--surface-2); border: 1px solid var(--separator);">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-sm truncate max-w-[70%]" style="color: var(--text-1);">{{ file.file.name }}</span>
+                                <span class="text-xs font-medium"
+                                    :style="file.status === 'uploading' ? 'color: var(--accent)' : file.status === 'done' ? 'color: var(--success-text)' : file.status === 'error' ? 'color: var(--error-text)' : 'color: var(--text-3)'">
+                                    {{ file.status === 'error' ? (file.errorMessage || 'Error') : file.status === 'uploading' ? `${file.progress}%` : file.status }}
+                                </span>
                             </div>
-                            <div class="w-full bg-white/10 rounded-full h-1.5">
-                                <div class="h-1.5 rounded-full transition-all duration-300" :class="{
-                                    'bg-purple-500': file.status === 'uploading',
-                                    'bg-green-500': file.status === 'done',
-                                    'bg-red-500': file.status === 'error',
-                                    'bg-white/20': file.status === 'pending'
-                                }" :style="{ width: `${file.progress}%` }">
+                            <div class="w-full rounded-full h-1.5" style="background: var(--surface-3);">
+                                <div class="h-1.5 rounded-full transition-all duration-300"
+                                    :style="`width: ${file.progress}%; background: ${file.status === 'done' ? 'var(--success)' : file.status === 'error' ? 'var(--error)' : 'var(--accent)'}`">
                                 </div>
                             </div>
-                            <div v-if="file.status === 'error' && file.errorMessage" class="mt-1 text-xs text-red-300">
-                                {{ file.errorMessage }}
-                            </div>
+                            <div v-if="file.status === 'error' && file.errorMessage" class="mt-1 text-xs"
+                                style="color: var(--error-text);">{{ file.errorMessage }}</div>
                         </div>
                     </div>
                 </div>
@@ -124,7 +152,6 @@ import { getAuthToken, setAuthToken } from '~/utils/auth-client'
 const route = useRoute()
 const token = route.params.token as string
 
-// State
 const step = ref<'password' | 'info' | 'upload'>('password')
 const loading = ref(true)
 const error = ref('')
@@ -136,14 +163,9 @@ const albumId = ref('')
 const password = ref('')
 const verifying = ref(false)
 
-const form = ref({
-    name: '',
-    email: '',
-    instagram: ''
-})
+const form = ref({ name: '', email: '', instagram: '' })
 const accessing = ref(false)
 
-// File Upload State
 interface FileUpload {
     file: File
     progress: number
@@ -153,14 +175,12 @@ interface FileUpload {
 const files = ref<FileUpload[]>([])
 const fileInput = ref<HTMLInputElement | null>(null)
 
-// Computed
 const getStepTitle = computed(() => {
     if (step.value === 'password') return 'Password Required'
-    if (step.value === 'info') return `${ownerName.value} requested info`
+    if (step.value === 'info') return 'Who are you?'
     return 'Upload Photos'
 })
 
-// Init
 onMounted(async () => {
     try {
         const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/upload/${token}`)
@@ -177,7 +197,6 @@ onMounted(async () => {
             return
         }
 
-        // Check auth
         try {
             const userRes = await $fetch<{ success: boolean; data: any }>('/api/v1/auth/me')
             if (userRes.data) {
@@ -190,7 +209,6 @@ onMounted(async () => {
                 step.value = 'info'
             }
         }
-
     } catch (err: any) {
         error.value = err.data?.statusMessage || 'Invalid or expired link'
     } finally {
@@ -198,7 +216,6 @@ onMounted(async () => {
     }
 })
 
-// Step 1: Password
 const handlePasswordSubmit = async () => {
     verifying.value = true
     try {
@@ -214,7 +231,6 @@ const handlePasswordSubmit = async () => {
     }
 }
 
-// Step 2: Info
 const handleInfoSubmit = async () => {
     accessing.value = true
     try {
@@ -228,11 +244,7 @@ const handleInfoSubmit = async () => {
                 instagram: form.value.instagram
             }
         })
-
-        if (response.data?.accessToken) {
-            setAuthToken(response.data.accessToken)
-        }
-
+        if (response.data?.accessToken) setAuthToken(response.data.accessToken)
         albumId.value = response.data.albumId
         step.value = 'upload'
     } catch (err: any) {
@@ -242,47 +254,33 @@ const handleInfoSubmit = async () => {
     }
 }
 
-const goToLogin = async () => {
-    await navigateTo(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
-}
+const goToLogin = () => navigateTo(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
 
-// Step 3: Upload
-const triggerFileInput = () => {
-    fileInput.value?.click()
-}
+const triggerFileInput = () => fileInput.value?.click()
 
 const handleFileSelect = (event: Event | DragEvent) => {
+    const el = event.currentTarget as HTMLElement
+    el.style.borderColor = 'var(--separator)'
+    el.style.background = 'var(--surface-2)'
+
     let selectedFiles: FileList | null = null
     if (event instanceof DragEvent) {
         selectedFiles = event.dataTransfer?.files || null
     } else {
-        const target = event.target as HTMLInputElement
-        selectedFiles = target.files
+        selectedFiles = (event.target as HTMLInputElement).files
     }
-
     if (!selectedFiles || selectedFiles.length === 0) return
 
-    // Add to list
     for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i]
-        if (file) {
-            files.value.unshift({
-                file,
-                progress: 0,
-                status: 'pending'
-            })
-        }
+        if (file) files.value.unshift({ file, progress: 0, status: 'pending' })
     }
-
-    // Start uploads
     processUploadQueue()
-
     if (fileInput.value) fileInput.value.value = ''
 }
 
-const processUploadQueue = async () => {
-    const pendingFiles = files.value.filter(f => f.status === 'pending')
-    pendingFiles.forEach(uploadFile)
+const processUploadQueue = () => {
+    files.value.filter(f => f.status === 'pending').forEach(uploadFile)
 }
 
 const uploadFile = (fileUpload: FileUpload) => {
@@ -291,15 +289,11 @@ const uploadFile = (fileUpload: FileUpload) => {
 
     const formData = new FormData()
     formData.append('file', fileUpload.file)
-
     const xhr = new XMLHttpRequest()
 
-    xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-            fileUpload.progress = Math.round((event.loaded / event.total) * 100)
-        }
+    xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) fileUpload.progress = Math.round((e.loaded / e.total) * 100)
     })
-
     xhr.addEventListener('load', () => {
         if (xhr.status >= 200 && xhr.status < 300) {
             fileUpload.status = 'done'
@@ -307,14 +301,13 @@ const uploadFile = (fileUpload: FileUpload) => {
         } else {
             fileUpload.status = 'error'
             try {
-                const response = JSON.parse(xhr.responseText)
-                fileUpload.errorMessage = response.statusMessage || response.message || 'Upload failed'
-            } catch (e) {
+                const res = JSON.parse(xhr.responseText)
+                fileUpload.errorMessage = res.statusMessage || res.message || 'Upload failed'
+            } catch {
                 fileUpload.errorMessage = `Upload failed (${xhr.status})`
             }
         }
     })
-
     xhr.addEventListener('error', () => {
         fileUpload.status = 'error'
         fileUpload.errorMessage = 'Network error'
@@ -322,9 +315,7 @@ const uploadFile = (fileUpload: FileUpload) => {
 
     const authToken = getAuthToken()
     xhr.open('POST', `/api/v1/album/${albumId.value}/upload`)
-    if (authToken) {
-        xhr.setRequestHeader('Authorization', `Bearer ${authToken}`)
-    }
+    if (authToken) xhr.setRequestHeader('Authorization', `Bearer ${authToken}`)
     xhr.send(formData)
 }
 </script>

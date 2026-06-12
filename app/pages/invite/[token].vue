@@ -1,101 +1,143 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-[var(--bg-primary-start)] to-[var(--bg-primary-end)] flex items-center justify-center p-4">
+    <div class="min-h-screen flex items-center justify-center p-4" style="background: var(--bg-page);">
         <div class="w-full max-w-md">
-            <div class="text-center mb-8">
-                <h1 class="text-4xl font-bold text-white mb-2">PicHaus</h1>
-            </div>
 
             <!-- Loading -->
-            <div v-if="loading" class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 text-center">
-                <p class="text-[var(--text-muted)] animate-pulse">Validating link…</p>
+            <div v-if="loading" class="rounded-2xl p-8 text-center"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                <div class="w-8 h-8 rounded-full border-2 animate-spin mx-auto"
+                    style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                <p class="mt-4 text-sm" style="color: var(--text-2);">Validating link…</p>
             </div>
 
-            <!-- Error (invalid / used / expired) -->
-            <div v-else-if="tokenError" class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 text-center space-y-3">
-                <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <!-- Error -->
+            <div v-else-if="tokenError" class="rounded-2xl p-8 text-center space-y-4"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto"
+                    style="background: var(--error-bg);">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" style="color: var(--error);">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </div>
-                <p class="text-white font-semibold">Link unavailable</p>
-                <p class="text-[var(--text-muted)] text-sm">{{ tokenError }}</p>
-                <NuxtLink to="/login" class="inline-block mt-2 text-purple-300 hover:text-purple-200 text-sm underline">
+                <div>
+                    <p class="font-semibold mb-1" style="color: var(--text-1);">Link unavailable</p>
+                    <p class="text-sm" style="color: var(--text-2);">{{ tokenError }}</p>
+                </div>
+                <NuxtLink to="/login"
+                    class="inline-block px-5 py-2 rounded-full text-sm font-medium transition"
+                    style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
                     Go to sign in
                 </NuxtLink>
             </div>
 
             <!-- Success -->
-            <div v-else-if="done" class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 text-center space-y-3">
-                <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div v-else-if="done" class="rounded-2xl p-8 text-center space-y-4"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto"
+                    style="background: var(--success-bg);">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" style="color: var(--success);">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
-                <p class="text-white font-semibold">{{ doneMessage }}</p>
-                <p class="text-[var(--text-muted)] text-sm">Redirecting to sign in…</p>
+                <div>
+                    <p class="font-semibold mb-1" style="color: var(--text-1);">{{ doneMessage }}</p>
+                    <p class="text-sm" style="color: var(--text-3);">Redirecting to sign in…</p>
+                </div>
             </div>
 
-            <!-- Password Reset form -->
-            <div v-else-if="tokenData?.type === 'password_reset'" class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-                <h2 class="text-2xl font-bold text-white mb-1">Reset Password</h2>
-                <p v-if="tokenData.targetEmail" class="text-[var(--text-muted)] text-sm mb-6">
-                    For <span class="text-white">{{ tokenData.targetEmail }}</span>
-                </p>
+            <!-- Password Reset -->
+            <div v-else-if="tokenData?.type === 'password_reset'" class="rounded-2xl p-8"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold mb-1" style="color: var(--text-1);">Reset Password</h2>
+                    <p v-if="tokenData.targetEmail" class="text-sm" style="color: var(--text-2);">
+                        For <span style="color: var(--text-1);">{{ tokenData.targetEmail }}</span>
+                    </p>
+                </div>
                 <form @submit.prevent="submit" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">New Password</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">New Password</label>
                         <input v-model="form.password" type="password" required minlength="8" autofocus
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                            placeholder="Minimum 8 characters" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="Minimum 8 characters"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Confirm Password</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Confirm Password</label>
                         <input v-model="form.confirm" type="password" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                            placeholder="Repeat password" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="Repeat password"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
-                    <div v-if="submitError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                        <p class="text-red-200 text-sm">{{ submitError }}</p>
+                    <div v-if="submitError" class="rounded-xl px-4 py-3 text-sm"
+                        style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                        {{ submitError }}
                     </div>
                     <button type="submit" :disabled="submitting"
-                        class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50">
+                        class="w-full py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!submitting && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
                         {{ submitting ? 'Saving…' : 'Set New Password' }}
                     </button>
                 </form>
             </div>
 
-            <!-- Invite (new account) form -->
-            <div v-else-if="tokenData?.type === 'invite'" class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-                <h2 class="text-2xl font-bold text-white mb-1">Create Account</h2>
-                <p v-if="tokenData.label" class="text-[var(--text-muted)] text-sm mb-6">{{ tokenData.label }}</p>
+            <!-- Invite (new account) -->
+            <div v-else-if="tokenData?.type === 'invite'" class="rounded-2xl p-8"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold mb-1" style="color: var(--text-1);">Create Account</h2>
+                    <p v-if="tokenData.label" class="text-sm" style="color: var(--text-2);">{{ tokenData.label }}</p>
+                </div>
                 <form @submit.prevent="submit" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Name</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Name</label>
                         <input v-model="form.name" type="text" required autofocus
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                            placeholder="Your name" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="Your name"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Email</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Email</label>
                         <input v-model="form.email" type="email" required
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                            placeholder="your@email.com" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="your@email.com"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Password</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Password</label>
                         <input v-model="form.password" type="password" required minlength="8"
-                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                            placeholder="Minimum 8 characters" />
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="Minimum 8 characters"
+                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
                     </div>
-                    <div v-if="submitError" class="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                        <p class="text-red-200 text-sm">{{ submitError }}</p>
+                    <div v-if="submitError" class="rounded-xl px-4 py-3 text-sm"
+                        style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                        {{ submitError }}
                     </div>
                     <button type="submit" :disabled="submitting"
-                        class="w-full bg-gradient-to-r from-[var(--btn-primary-start)] to-[var(--btn-primary-end)] hover:from-[var(--btn-primary-hover-start)] hover:to-[var(--btn-primary-hover-end)] text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50">
+                        class="w-full py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!submitting && ($event.currentTarget.style.background = 'var(--accent-hover)')"
+                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
                         {{ submitting ? 'Creating account…' : 'Create Account' }}
                     </button>
                 </form>
             </div>
+
         </div>
     </div>
 </template>
@@ -152,11 +194,7 @@ async function submit() {
             : { name: form.name, email: form.email, password: form.password }
 
         const res = await $fetch<any>(`/api/invite/${token}`, { method: 'POST', body })
-
-        if (res.data?.accessToken) {
-            setAuthToken(res.data.accessToken)
-        }
-
+        if (res.data?.accessToken) setAuthToken(res.data.accessToken)
         doneMessage.value = res.message ?? 'Done!'
         done.value = true
         setTimeout(() => navigateTo('/login'), 2000)

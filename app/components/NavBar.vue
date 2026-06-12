@@ -6,7 +6,7 @@
             style="background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
             <div class="p-4" style="border-bottom: 1px solid var(--separator);">
                 <div class="font-semibold text-base leading-tight flex items-center gap-2" style="color: var(--text-1);">
-                    <img v-if="props.logoImageUrl" :src="props.logoImageUrl" alt="Logo"
+                    <img v-if="effectiveLogoImageUrl" :src="effectiveLogoImageUrl" alt="Logo"
                         class="h-8 max-w-[140px] object-contain" />
                     <template v-else>
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
@@ -15,7 +15,7 @@
                                 d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                             <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
                         </svg>
-                        <span>{{ props.logoText || 'PicHaus' }}</span>
+                        <span>{{ effectiveLogoText }}</span>
                     </template>
                 </div>
             </div>
@@ -90,6 +90,17 @@
                             <span>Invites</span>
                         </span>
                     </button>
+                    <button @click="navigateTo('/admin/settings')" :class="sidebarButtonClass('/admin/settings')" :style="sidebarButtonStyle('/admin/settings')">
+                        <span class="inline-flex items-center gap-2.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>Site Settings</span>
+                        </span>
+                    </button>
                 </template>
             </div>
 
@@ -119,7 +130,7 @@
             class="lg:hidden sticky top-0 z-50 h-14 flex items-center justify-between px-4"
             style="background: var(--sidebar-bg); border-bottom: 1px solid var(--sidebar-border); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
             <span class="font-semibold text-base truncate inline-flex items-center gap-2" style="color: var(--text-1);">
-                <img v-if="props.logoImageUrl" :src="props.logoImageUrl" alt="Logo"
+                <img v-if="effectiveLogoImageUrl" :src="effectiveLogoImageUrl" alt="Logo"
                     class="h-7 max-w-[120px] object-contain" />
                 <template v-else>
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
@@ -128,7 +139,7 @@
                             d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                         <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
                     </svg>
-                    <span>{{ props.logoText || 'PicHaus' }}</span>
+                    <span>{{ effectiveLogoText }}</span>
                 </template>
             </span>
 
@@ -145,7 +156,7 @@
                 style="background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
                 <div class="flex items-center justify-between mb-2 px-2 pt-2 pb-3" style="border-bottom: 1px solid var(--separator);">
                     <div class="font-semibold text-base inline-flex items-center gap-2" style="color: var(--text-1);">
-                        <img v-if="props.logoImageUrl" :src="props.logoImageUrl" alt="Logo"
+                        <img v-if="effectiveLogoImageUrl" :src="effectiveLogoImageUrl" alt="Logo"
                             class="h-8 max-w-[140px] object-contain" />
                         <template v-else>
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
@@ -154,7 +165,7 @@
                                     d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                                 <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
                             </svg>
-                            <span>{{ props.logoText || 'PicHaus' }}</span>
+                            <span>{{ effectiveLogoText }}</span>
                         </template>
                     </div>
                     <button @click="mobileOpen = false"
@@ -232,6 +243,16 @@
                                 <span>Invites</span>
                             </span>
                         </button>
+                        <button @click="goMobile('/admin/settings')" :class="sidebarButtonClass('/admin/settings')" :style="sidebarButtonStyle('/admin/settings')">
+                            <span class="inline-flex items-center gap-2.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span>Site Settings</span>
+                            </span>
+                        </button>
                     </template>
                 </div>
 
@@ -271,6 +292,11 @@ const props = defineProps<{
     logoText?: string
     logoImageUrl?: string
 }>()
+
+const { settings } = useSiteSettings()
+
+const effectiveLogoImageUrl = computed(() => props.logoImageUrl ?? settings.value.logoImageUrl ?? '')
+const effectiveLogoText = computed(() => props.logoText || settings.value.siteName || 'PicHaus')
 
 const displayTitle = computed(() => {
     const value = (props.title || '').trim()

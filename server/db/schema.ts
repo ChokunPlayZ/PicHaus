@@ -150,6 +150,15 @@ export const inviteTokens = pgTable('invite_tokens', {
     createdBy: uuid('createdBy').references(() => users.id, { onDelete: 'set null' }),
 })
 
+export const siteSettings = pgTable('site_settings', {
+    id: integer('id').primaryKey().default(1),
+    siteName: text('siteName').default('PicHaus').notNull(),
+    accentColor: text('accentColor'),
+    logoImageId: uuid('logoImageId').references(() => logos.id, { onDelete: 'set null' }),
+    allowRegistration: boolean('allowRegistration').default(false).notNull(),
+    updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
+})
+
 // Prisma implicit M2M creates _AlbumToShareGroup with columns A (albumId) and B (shareGroupId)
 export const albumToShareGroups = pgTable('_AlbumToShareGroup', {
     A: uuid('A').notNull().references(() => albums.id, { onDelete: 'cascade' }),
