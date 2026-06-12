@@ -5,7 +5,20 @@
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <div class="rounded-2xl p-6"
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
-                <h1 class="text-2xl font-bold mb-1" style="color: var(--text-1);">External API Documentation</h1>
+                <div class="flex items-start justify-between gap-4 mb-1">
+                    <h1 class="text-2xl font-bold" style="color: var(--text-1);">External API Documentation</h1>
+                    <button @click="copyAsMarkdown"
+                        class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition"
+                        :style="copied ? 'background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border);' : 'background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);'">
+                        <svg v-if="!copied" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {{ copied ? 'Copied!' : 'Copy as Markdown' }}
+                    </button>
+                </div>
                 <p class="text-sm mb-4" style="color: var(--text-2);">
                     Use your API token in the Authorization header.
                     All endpoints return JSON with a <code style="color: var(--text-1);">success</code> field.
@@ -181,6 +194,56 @@ const methodClass = (method: EndpointDoc['method']) => {
     if (method === 'PATCH') return 'method-patch'
     if (method === 'PUT') return 'method-put'
     return 'method-delete'
+}
+
+const copied = ref(false)
+
+const copyAsMarkdown = async () => {
+    const lines: string[] = []
+
+    lines.push('# PicHaus External API Documentation')
+    lines.push('')
+    lines.push('Use your API token in the `Authorization` header. All endpoints return JSON with a `success` field.')
+    lines.push('')
+    lines.push('**Authentication:** `Authorization: Bearer <your_api_token>`')
+    lines.push('')
+    lines.push('## Scopes')
+    lines.push('')
+    lines.push('- **albums:read** — read album list and album detail')
+    lines.push('- **photos:read** — read photos and random photo endpoints')
+    lines.push('')
+    lines.push('## Endpoints')
+
+    for (const endpoint of endpoints) {
+        lines.push('')
+        lines.push(`### ${endpoint.method} \`${endpoint.path}\``)
+        lines.push('')
+        lines.push(`**Scope:** \`${endpoint.scope}\``)
+        lines.push('')
+        lines.push(endpoint.description)
+
+        if (endpoint.params.length > 0) {
+            lines.push('')
+            lines.push('**Query Parameters:**')
+            lines.push('')
+            lines.push('| Parameter | Type | Description |')
+            lines.push('|-----------|------|-------------|')
+            for (const param of endpoint.params) {
+                lines.push(`| \`${param.name}\` | \`${param.type}\` | ${param.description} |`)
+            }
+        }
+
+        lines.push('')
+        lines.push('**Example:**')
+        lines.push('')
+        lines.push('```sh')
+        lines.push(endpoint.example)
+        lines.push('```')
+    }
+
+    await navigator.clipboard.writeText(lines.join('\n'))
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
 }
 </script>
 
