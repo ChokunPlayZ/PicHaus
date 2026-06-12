@@ -63,8 +63,8 @@
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="Minimum 8 characters"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Confirm Password</label>
@@ -72,8 +72,8 @@
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="Repeat password"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div v-if="submitError" class="rounded-xl px-4 py-3 text-sm"
                         style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
@@ -82,8 +82,8 @@
                     <button type="submit" :disabled="submitting"
                         class="w-full py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!submitting && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="!submitting && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         {{ submitting ? 'Saving…' : 'Set New Password' }}
                     </button>
                 </form>
@@ -103,8 +103,8 @@
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="Your name"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Email</label>
@@ -112,8 +112,8 @@
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="your@email.com"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Password</label>
@@ -121,8 +121,8 @@
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="Minimum 8 characters"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div v-if="submitError" class="rounded-xl px-4 py-3 text-sm"
                         style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
@@ -131,8 +131,8 @@
                     <button type="submit" :disabled="submitting"
                         class="w-full py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!submitting && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="!submitting && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         {{ submitting ? 'Creating account…' : 'Create Account' }}
                     </button>
                 </form>

@@ -26,15 +26,15 @@
                             <input v-model="password" type="password" required placeholder="Enter password"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
                         <button type="submit" :disabled="accessing"
                             class="w-full py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
                             style="background: var(--accent); color: var(--accent-text);"
-                            @mouseover="!accessing && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                            @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                            @mouseover="!accessing && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                             {{ accessing ? 'Accessing…' : 'View Access' }}
                         </button>
                     </form>
@@ -54,8 +54,8 @@
                     <button @click="viewAllGroupPhotos"
                         class="mt-6 px-6 py-2.5 rounded-full text-sm font-semibold transition inline-flex items-center gap-2"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="$event.currentTarget.style.background = 'var(--accent-hover)'"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
                         </svg>
@@ -67,8 +67,8 @@
                     <div v-for="album in groupAlbums" :key="album.id" @click="openAlbum(album)"
                         class="rounded-2xl overflow-hidden cursor-pointer group transition hover:-translate-y-1"
                         style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);"
-                        @mouseover="$event.currentTarget.style.boxShadow = 'var(--shadow-md)'"
-                        @mouseout="$event.currentTarget.style.boxShadow = 'var(--shadow-sm)'">
+                        @mouseover="($event.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-sm)'">
 
                         <div class="aspect-video relative overflow-hidden" style="background: var(--surface-3);">
                             <template v-if="album.coverPhoto">
@@ -77,7 +77,7 @@
                                 <img :src="buildAssetUrl(`/api/assets/full/${album.coverPhoto.id}`)"
                                     class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-300"
                                     loading="lazy"
-                                    @load="$event.target.style.opacity = '1'"
+                                    @load="($event.target as HTMLElement).style.opacity = '1'"
                                     style="opacity: 0;" />
                             </template>
                             <div v-else class="w-full h-full flex items-center justify-center">
@@ -109,8 +109,8 @@
                             <button @click="viewMode = 'group'"
                                 class="flex items-center gap-1 text-sm px-3 py-1 rounded-full transition"
                                 style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);"
-                                @mouseover="$event.currentTarget.style.background = 'var(--surface-3)'"
-                                @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
+                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -128,8 +128,8 @@
                     <button @click="downloadAllGroupPhotos" :disabled="downloading"
                         class="px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
                         style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
-                        @mouseover="!downloading && ($event.currentTarget.style.background = 'var(--surface-3)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
+                        @mouseover="!downloading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                         <span>Download All</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
@@ -201,8 +201,8 @@
                             <button @click="viewMode = 'group'"
                                 class="flex items-center gap-1 text-sm px-3 py-1 rounded-full transition"
                                 style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);"
-                                @mouseover="$event.currentTarget.style.background = 'var(--surface-3)'"
-                                @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
+                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -228,8 +228,8 @@
                     <button @click="downloadAll" :disabled="downloading"
                         class="px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
                         style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
-                        @mouseover="!downloading && ($event.currentTarget.style.background = 'var(--surface-3)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
+                        @mouseover="!downloading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                         <span>Download All</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
@@ -303,8 +303,8 @@
                     <h3 class="text-lg font-bold" style="color: var(--text-1);">Photographers</h3>
                     <button @click="showPhotographersModal = false" class="p-1 rounded-lg transition"
                         style="color: var(--text-3);"
-                        @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
-                        @mouseout="$event.currentTarget.style.background = 'transparent'">
+                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>

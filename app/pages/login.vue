@@ -28,8 +28,8 @@
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="your@email.com"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.2)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.2)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
                     <!-- Password -->
@@ -41,8 +41,8 @@
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="••••••••"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.2)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.2)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
                     <!-- Error -->
@@ -55,8 +55,8 @@
                     <button type="submit" :disabled="loading"
                         class="w-full py-2.5 text-sm font-medium rounded-full transition"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!loading && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="!loading && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         <span v-if="loading" class="flex items-center justify-center gap-2">
                             <span class="w-4 h-4 rounded-full border-2 animate-spin"
                                 style="border-color: rgba(255,255,255,0.3); border-top-color: white;"></span>
@@ -77,8 +77,8 @@
                 <button @click="handlePasskeyLogin" :disabled="passkeyLoading"
                     class="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-full transition"
                     style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
-                    @mouseover="!passkeyLoading && ($event.currentTarget.style.background = 'var(--surface-3)')"
-                    @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
+                    @mouseover="!passkeyLoading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                     <svg v-if="!passkeyLoading" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-2);">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

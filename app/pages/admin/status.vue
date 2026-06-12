@@ -10,8 +10,8 @@
                 <button @click="refresh" :disabled="loading"
                     class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition disabled:opacity-50"
                     style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
-                    @mouseover="!loading && ($event.currentTarget.style.background = 'var(--surface-3)')"
-                    @mouseout="$event.currentTarget.style.background = 'var(--surface-2)'">
+                    @mouseover="!loading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" :class="{ 'animate-spin': loading }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>

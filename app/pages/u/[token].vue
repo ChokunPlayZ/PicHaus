@@ -38,14 +38,14 @@
                         <input v-model="password" type="password" required placeholder="Enter password"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <button type="submit" :disabled="verifying"
                         class="w-full py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!verifying && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="!verifying && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         {{ verifying ? 'Verifying…' : 'Continue' }}
                     </button>
                     <button type="button" @click="goToLogin"
@@ -62,16 +62,16 @@
                         <input v-model="form.name" type="text" required placeholder="Your Name"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Email</label>
                         <input v-model="form.email" type="email" required placeholder="your@email.com"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Instagram <span style="color: var(--text-3);">(optional)</span></label>
@@ -80,15 +80,15 @@
                             <input v-model="form.instagram" type="text" placeholder="username"
                                 class="w-full pl-7 pr-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
                     </div>
                     <button type="submit" :disabled="accessing"
                         class="w-full py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!accessing && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="!accessing && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         {{ accessing ? 'Joining…' : 'Start Uploading' }}
                     </button>
                     <button type="button" @click="goToLogin"
@@ -104,8 +104,8 @@
                     <div @click="triggerFileInput" @dragover.prevent @drop.prevent="handleFileSelect"
                         class="rounded-2xl p-8 text-center cursor-pointer transition group"
                         style="border: 2px dashed var(--separator); background: var(--surface-2);"
-                        @dragenter="$event.currentTarget.style.borderColor = 'var(--accent)'; $event.currentTarget.style.background = 'var(--accent-light)'"
-                        @dragleave="$event.currentTarget.style.borderColor = 'var(--separator)'; $event.currentTarget.style.background = 'var(--surface-2)'">
+                        @dragenter="($event.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'; ($event.currentTarget as HTMLElement).style.background = 'var(--accent-light)'"
+                        @dragleave="($event.currentTarget as HTMLElement).style.borderColor = 'var(--separator)'; ($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                         <input type="file" ref="fileInput" multiple accept="image/*" class="hidden" @change="handleFileSelect" />
                         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 transition group-hover:scale-105"
                             style="background: var(--accent-light);">

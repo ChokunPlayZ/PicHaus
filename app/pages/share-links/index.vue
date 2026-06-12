@@ -34,8 +34,8 @@
                 <button @click="navigateTo('/album')"
                     class="px-6 py-2.5 rounded-full text-sm font-medium transition"
                     style="background: var(--accent); color: var(--accent-text);"
-                    @mouseover="$event.currentTarget.style.background = 'var(--accent-hover)'"
-                    @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                     Go to Albums
                 </button>
             </div>
@@ -58,8 +58,8 @@
                         <tbody>
                             <tr v-for="link in links" :key="link.id" class="transition"
                                 style="border-top: 1px solid var(--separator);"
-                                @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
-                                @mouseout="$event.currentTarget.style.background = 'transparent'">
+                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-2 font-medium" style="color: var(--text-1);">
                                         <svg v-if="link.hasPassword" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
@@ -94,8 +94,8 @@
                                     <div class="flex items-center justify-end gap-1">
                                         <button @click="openEditModal(link)"
                                             class="p-1.5 rounded-lg transition" style="color: var(--accent);"
-                                            @mouseover="$event.currentTarget.style.background = 'var(--accent-light)'"
-                                            @mouseout="$event.currentTarget.style.background = 'transparent'"
+                                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-light)'"
+                                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
                                             title="Edit Link">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -104,8 +104,8 @@
                                         <button @click="copyLink(link.id, link.url)"
                                             class="p-1.5 rounded-lg transition"
                                             :style="copiedLinkId === link.id ? 'color: var(--success-text);' : 'color: var(--text-2);'"
-                                            @mouseover="$event.currentTarget.style.background = 'var(--surface-3)'"
-                                            @mouseout="$event.currentTarget.style.background = 'transparent'"
+                                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
                                             title="Copy Link">
                                             <svg v-if="copiedLinkId === link.id" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -116,8 +116,8 @@
                                         </button>
                                         <button @click="confirmDelete(link)"
                                             class="p-1.5 rounded-lg transition" style="color: var(--error);"
-                                            @mouseover="$event.currentTarget.style.background = 'var(--error-bg)'"
-                                            @mouseout="$event.currentTarget.style.background = 'transparent'"
+                                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)'"
+                                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
                                             title="Delete Link">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -157,8 +157,8 @@
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 placeholder="Public Link"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
                         <div class="flex items-center gap-2.5 p-3 rounded-xl"
@@ -174,8 +174,8 @@
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 placeholder="Set new password (leave empty to keep current)"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                             <div v-if="editForm.hasPassword" class="flex items-center gap-2 mt-2">
                                 <input v-model="editForm.removePassword" type="checkbox" id="removePass"
                                     class="w-4 h-4 rounded" style="accent-color: var(--error);" />
@@ -193,8 +193,8 @@
                             <input v-model="editForm.groupTitle" type="text"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
                         <div>
@@ -202,8 +202,8 @@
                             <textarea v-model="editForm.groupDescription" rows="2"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition resize-none"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'"></textarea>
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'"></textarea>
                         </div>
 
                         <div>
@@ -213,8 +213,8 @@
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 placeholder="wedding, portrait (comma-separated)"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
                         <!-- Theme -->
@@ -262,8 +262,8 @@
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 placeholder="e.g. Wedding Collection 2025"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
                         <div>
@@ -309,8 +309,8 @@
                         <button type="submit" :disabled="saving"
                             class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
                             style="background: var(--accent); color: var(--accent-text);"
-                            @mouseover="!saving && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                            @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                            @mouseover="!saving && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                             {{ saving ? 'Saving…' : 'Save Changes' }}
                         </button>
                     </div>

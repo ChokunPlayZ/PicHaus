@@ -22,8 +22,8 @@
                     <select v-model="filters.camera" @change="applyFilters"
                         class="px-3 py-2 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="$event.target.style.borderColor = 'var(--accent)'"
-                        @blur="$event.target.style.borderColor = 'var(--separator)'">
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'">
                         <option value="">All Cameras</option>
                         <option v-for="cam in options.cameras" :key="cam" :value="cam">{{ cam }}</option>
                     </select>
@@ -31,8 +31,8 @@
                     <select v-model="filters.lens" @change="applyFilters"
                         class="px-3 py-2 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="$event.target.style.borderColor = 'var(--accent)'"
-                        @blur="$event.target.style.borderColor = 'var(--separator)'">
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'">
                         <option value="">All Lenses</option>
                         <option v-for="l in options.lenses" :key="l" :value="l">{{ l }}</option>
                     </select>
@@ -40,8 +40,8 @@
                     <input v-model="filters.dateFrom" @change="applyFilters" type="date"
                         class="px-3 py-2 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="$event.target.style.borderColor = 'var(--accent)'"
-                        @blur="$event.target.style.borderColor = 'var(--separator)'" />
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
 
                     <button v-if="hasActiveFilters" @click="clearFilters"
                         class="px-3 py-2 rounded-full text-sm transition"

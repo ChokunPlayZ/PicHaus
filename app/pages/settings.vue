@@ -14,7 +14,7 @@
                     <div class="relative shrink-0">
                         <div class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center"
                             style="background: var(--accent-light);">
-                            <img v-if="avatarPreview || form.currentAvatar" :src="avatarPreview || form.currentAvatar"
+                            <img v-if="avatarPreview || form.currentAvatar" :src="avatarPreview || form.currentAvatar || ''"
                                 class="w-full h-full object-cover" alt="Profile picture" />
                             <span v-else class="text-2xl font-bold" style="color: var(--accent);">
                                 {{ (form.name || '?')[0]?.toUpperCase() }}
@@ -23,8 +23,8 @@
                         <button type="button"
                             class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition"
                             style="background: var(--accent); color: white; box-shadow: var(--shadow-sm);"
-                            @mouseover="$event.currentTarget.style.background = 'var(--accent-hover)'"
-                            @mouseout="$event.currentTarget.style.background = 'var(--accent)'"
+                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'"
                             @click="avatarFileInput?.click()"
                             title="Upload photo">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -53,8 +53,8 @@
                         <input v-model="form.name" type="text" required
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
                     <div>
@@ -62,8 +62,8 @@
                         <input v-model="form.email" type="email" required
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
                     <div>
@@ -74,8 +74,8 @@
                                 class="w-full pl-7 pr-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 placeholder="username"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
                     </div>
 
@@ -86,8 +86,8 @@
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="••••••••"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
                     <div v-if="error" class="rounded-xl px-4 py-3 text-sm"
@@ -103,8 +103,8 @@
                         <button type="submit" :disabled="saving"
                             class="px-6 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
                             style="background: var(--accent); color: var(--accent-text);"
-                            @mouseover="!saving && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                            @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                            @mouseover="!saving && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                             {{ saving ? 'Saving…' : 'Save Changes' }}
                         </button>
                     </div>
@@ -125,8 +125,8 @@
                     <button @click="startRegister" :disabled="pkRegistering"
                         class="shrink-0 ml-4 px-4 py-2 rounded-full text-sm font-medium transition disabled:opacity-50 flex items-center gap-2"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!pkRegistering && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="!pkRegistering && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
@@ -142,8 +142,8 @@
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="e.g. YubiKey 5, MacBook Touch ID"
-                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'"
                         @keydown.enter.prevent="confirmRegister"
                         @keydown.escape="showNamePrompt = false" />
                     <div class="flex gap-2">
@@ -294,8 +294,8 @@
                 <button @click="confirmCrop" :disabled="avatarUploading"
                     class="flex-1 py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
                     style="background: var(--accent); color: var(--accent-text);"
-                    @mouseover="!avatarUploading && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                    @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                    @mouseover="!avatarUploading && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                     {{ avatarUploading ? 'Saving…' : 'Save Photo' }}
                 </button>
             </div>
@@ -381,28 +381,28 @@ function cropDragEnd() {
 function cropTouchStart(e: TouchEvent) {
     if (e.touches.length === 1) {
         isDragging = true
-        dragLastX = e.touches[0].clientX
-        dragLastY = e.touches[0].clientY
+        dragLastX = e.touches[0]!.clientX
+        dragLastY = e.touches[0]!.clientY
     } else if (e.touches.length === 2) {
         isDragging = false
         lastPinchDist = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY,
+            e.touches[0]!.clientX - e.touches[1]!.clientX,
+            e.touches[0]!.clientY - e.touches[1]!.clientY,
         )
     }
 }
 
 function cropTouchMove(e: TouchEvent) {
     if (e.touches.length === 1 && isDragging) {
-        cropX.value += e.touches[0].clientX - dragLastX
-        cropY.value += e.touches[0].clientY - dragLastY
-        dragLastX = e.touches[0].clientX
-        dragLastY = e.touches[0].clientY
+        cropX.value += e.touches[0]!.clientX - dragLastX
+        cropY.value += e.touches[0]!.clientY - dragLastY
+        dragLastX = e.touches[0]!.clientX
+        dragLastY = e.touches[0]!.clientY
         clampCrop()
     } else if (e.touches.length === 2) {
         const dist = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY,
+            e.touches[0]!.clientX - e.touches[1]!.clientX,
+            e.touches[0]!.clientY - e.touches[1]!.clientY,
         )
         if (lastPinchDist > 0) {
             const newScale = Math.max(cropMinZoom.value, Math.min(cropMaxZoom.value, cropScale.value * (dist / lastPinchDist)))

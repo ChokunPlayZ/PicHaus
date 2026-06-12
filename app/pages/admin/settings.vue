@@ -23,8 +23,8 @@
                             <input v-model="form.siteName" type="text" placeholder="PicHaus"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                             <p class="text-xs mt-1" style="color: var(--text-3);">Appears in the navbar and browser tab title</p>
                         </div>
 
@@ -40,8 +40,8 @@
                                 <input v-model="form.accentColor" type="text" placeholder="#0071e3" maxlength="7"
                                     class="w-32 px-3 py-2 text-sm rounded-xl transition font-mono"
                                     style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                    @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                    @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                                    @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                    @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                                 <button v-if="form.accentColor" @click="form.accentColor = ''"
                                     class="px-3 py-2 rounded-xl text-xs font-medium transition"
                                     style="background: var(--surface-3); color: var(--text-2);">
@@ -113,8 +113,8 @@
                     <button @click="save" :disabled="saving"
                         class="px-6 py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!saving && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="!saving && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         {{ saving ? 'Saving…' : 'Save Settings' }}
                     </button>
                 </div>

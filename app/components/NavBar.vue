@@ -118,8 +118,8 @@
                 <button @click="handleLogout"
                     class="w-full text-left text-sm font-medium px-3 py-2 rounded-lg transition"
                     style="color: var(--error); background: var(--error-bg);"
-                    @mouseover="$event.currentTarget.style.background = 'var(--error-border)'"
-                    @mouseout="$event.currentTarget.style.background = 'var(--error-bg)'">
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--error-border)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)'">
                     Sign Out
                 </button>
             </div>

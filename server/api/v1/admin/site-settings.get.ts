@@ -1,11 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { siteSettings } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
-import { isAdmin } from '../../../utils/setup'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
-    if (!isAdmin(user)) throw createError({ statusCode: 403, statusMessage: 'Admin only' })
+    if (user.role !== 'ADMIN') throw createError({ statusCode: 403, statusMessage: 'Admin only' })
 
     const rows = await db
         .select()

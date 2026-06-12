@@ -56,8 +56,8 @@
                     <button v-if="album.permissions.isOwner" @click="openShareModal"
                         class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="$event.currentTarget.style.background = 'var(--accent-hover)'"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         <span>Share</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
@@ -102,8 +102,8 @@
                 <div @click="triggerFileInput" @dragover.prevent @drop.prevent="handleDrop"
                     class="rounded-2xl p-8 text-center transition cursor-pointer group"
                     style="border: 2px dashed var(--separator); background: var(--surface-1);"
-                    @mouseover="$event.currentTarget.style.borderColor = 'var(--accent)'"
-                    @mouseout="$event.currentTarget.style.borderColor = 'var(--separator)'">
+                    @mouseover="($event.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--separator)'">
                     <input type="file" ref="fileInput" multiple accept="image/*" class="hidden"
                         @change="handleFileSelect" />
                     <div class="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center group-hover:scale-110 transition"
@@ -137,8 +137,8 @@
                                 class="text-xs px-2 py-1 rounded-lg transition"
                                 style="background: var(--surface-3); color: var(--text-2);">Clear Done</button>
                             <button @click="showUploadModal = false" style="color: var(--text-3);"
-                                @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
-                                @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">
+                                @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -242,8 +242,8 @@
                 <button v-if="album.permissions.isOwner" @click="openShareModal"
                     class="px-5 py-2.5 rounded-full text-sm font-medium transition"
                     style="background: var(--accent); color: var(--accent-text);"
-                    @mouseover="$event.currentTarget.style.background = 'var(--accent-hover)'"
-                    @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                     Share Album
                 </button>
             </div>
@@ -344,8 +344,8 @@
             <div class="flex justify-between items-center mb-5">
                 <h3 class="text-xl font-semibold" style="color: var(--text-1);">Photographers</h3>
                 <button @click="showPhotographersModal = false" style="color: var(--text-3);"
-                    @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
-                    @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">
+                    @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -395,8 +395,8 @@
                     <input v-model="editPhotoForm.dateTaken" type="datetime-local"
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
@@ -405,16 +405,16 @@
                         <input v-model="editPhotoForm.cameraModel" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Lens</label>
                         <input v-model="editPhotoForm.lens" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                 </div>
 
@@ -424,16 +424,16 @@
                         <input v-model="editPhotoForm.focalLength" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Aperture</label>
                         <input v-model="editPhotoForm.aperture" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                 </div>
 
@@ -443,16 +443,16 @@
                         <input v-model="editPhotoForm.shutterSpeed" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">ISO</label>
                         <input v-model="editPhotoForm.iso" type="number"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                 </div>
 
@@ -470,8 +470,8 @@
                     <button type="submit" :disabled="updatingPhoto"
                         class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!updatingPhoto && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="!updatingPhoto && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         {{ updatingPhoto ? 'Updating…' : 'Update' }}
                     </button>
                 </div>
@@ -497,8 +497,8 @@
                 </div>
                 <button @click="cancelCrop" class="text-3xl leading-none -mt-1 ml-4 transition"
                     style="color: var(--text-3);"
-                    @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
-                    @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">&times;</button>
+                    @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">&times;</button>
             </div>
 
             <div v-if="photoCropImage" class="px-6 pb-6 space-y-4">
@@ -554,8 +554,8 @@
                     <button type="button" @click="confirmCrop" :disabled="croppingCover"
                         class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!croppingCover && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="!croppingCover && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         {{ croppingCover ? 'Saving…' : 'Set as Cover' }}
                     </button>
                 </div>
@@ -583,8 +583,8 @@
                     <input v-model="editForm.name" type="text" required
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
                 <div>
@@ -592,8 +592,8 @@
                     <textarea v-model="editForm.description" rows="3"
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition resize-none"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'"></textarea>
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'"></textarea>
                 </div>
 
                 <div>
@@ -602,8 +602,8 @@
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="wedding, portrait, night"
-                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     <p class="text-xs mt-1" style="color: var(--text-3);">Separate tags with commas</p>
                 </div>
 
@@ -612,8 +612,8 @@
                     <input v-model="editForm.eventDate" type="date"
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -706,8 +706,8 @@
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="e.g. TNI Open Day 2026"
-                        @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                        @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     <p class="text-xs mt-1" style="color: var(--text-3);">Text shown in the header (used when no logo image is set)</p>
                 </div>
 
@@ -759,8 +759,8 @@
                     <button type="submit" :disabled="updating"
                         class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!updating && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="!updating && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         {{ updating ? 'Updating…' : 'Update' }}
                     </button>
                 </div>
@@ -779,8 +779,8 @@
                 <h3 class="text-xl font-bold" style="color: var(--text-1);">Share Album</h3>
                 <button @click="showShareModal = false" class="transition"
                     style="color: var(--text-3);"
-                    @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
-                    @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">
+                    @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -794,8 +794,8 @@
                     <h4 class="text-base font-semibold" style="color: var(--text-1);">{{ isEditing ? 'Edit Link' : 'Create New Link' }}</h4>
                     <button v-if="isEditing" @click="cancelEditing"
                         class="text-xs transition" style="color: var(--text-3);"
-                        @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
-                        @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">Cancel Edit</button>
+                        @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">Cancel Edit</button>
                 </div>
                 <form @submit.prevent="isEditing ? updateShareLink() : createShareLink()" class="space-y-3">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -804,8 +804,8 @@
                             <select v-model="newLink.type" :disabled="isEditing"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'">
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'">
                                 <option value="view">View Only</option>
                                 <option value="upload">Allow Uploads</option>
                             </select>
@@ -815,8 +815,8 @@
                             <input v-model="newLink.label" type="text" placeholder="e.g. Family Group"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                                @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
                     </div>
                     <div>
@@ -828,8 +828,8 @@
                             :placeholder="isEditing ? 'Leave empty to keep current password' : 'Leave empty for no password'"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="$event.target.style.borderColor = 'var(--accent)'; $event.target.style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
-                            @blur="$event.target.style.borderColor = 'var(--separator)'; $event.target.style.boxShadow = 'none'" />
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
 
                         <div v-if="isEditing && editingLinkHasPassword" class="mt-2 flex items-center gap-2">
                             <input v-model="removePassword" type="checkbox" id="removePassword"
@@ -847,8 +847,8 @@
                     <button type="submit" :disabled="creatingLink || updatingLink"
                         class="w-full px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
                         style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!(creatingLink || updatingLink) && ($event.currentTarget.style.background = 'var(--accent-hover)')"
-                        @mouseout="$event.currentTarget.style.background = 'var(--accent)'">
+                        @mouseover="!(creatingLink || updatingLink) && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         {{ isEditing ? (updatingLink ? 'Updating…' : 'Update Link') : (creatingLink ? 'Creating…' : 'Create Link') }}
                     </button>
                 </form>
@@ -885,8 +885,8 @@
                                 <button @click="copyLink(link)"
                                     class="truncate max-w-[200px] transition underline decoration-dotted text-sm"
                                     style="color: var(--text-3);"
-                                    @mouseover="$event.currentTarget.style.color = 'var(--accent)'"
-                                    @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">
+                                    @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--accent)'"
+                                    @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
                                     {{ getShareUrl(link) }}
                                 </button>
                                 <button @click="copyLink(link)"
@@ -903,8 +903,8 @@
                             <button @click="showQr(link)" title="Show QR code"
                                 class="p-2 rounded-lg transition"
                                 style="color: var(--text-2);"
-                                @mouseover="$event.currentTarget.style.background = 'var(--surface-3)'"
-                                @mouseout="$event.currentTarget.style.background = 'transparent'">
+                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm10 0h2v2h-2v-2zm-2 2h2v2h-2v-2zm4-2h2v2h-2v-2zm0 4h2v2h-2v-2zm-4 0h2v2h-2v-2z" />
                                 </svg>
@@ -912,8 +912,8 @@
                             <button @click="startEditing(link)"
                                 class="p-2 rounded-lg transition"
                                 style="color: var(--text-2);"
-                                @mouseover="$event.currentTarget.style.background = 'var(--surface-3)'"
-                                @mouseout="$event.currentTarget.style.background = 'transparent'">
+                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -922,8 +922,8 @@
                             <button @click="deleteLink(link.id)"
                                 class="p-2 rounded-lg transition"
                                 style="color: var(--error);"
-                                @mouseover="$event.currentTarget.style.background = 'var(--error-bg)'"
-                                @mouseout="$event.currentTarget.style.background = 'transparent'">
+                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -948,8 +948,8 @@
                             <span class="font-semibold truncate text-sm" style="color: var(--text-1);">{{ qrLink?.label || 'Share Link' }}</span>
                             <button @click="closeQr" class="transition"
                                 style="color: var(--text-3);"
-                                @mouseover="$event.currentTarget.style.color = 'var(--text-1)'"
-                                @mouseout="$event.currentTarget.style.color = 'var(--text-3)'">
+                                @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -961,8 +961,8 @@
                         <button v-if="qrLink" @click="copyLink(qrLink); closeQr()"
                             class="w-full py-2.5 rounded-full text-sm font-medium transition"
                             style="background: var(--accent-light); color: var(--accent);"
-                            @mouseover="$event.currentTarget.style.background = 'var(--accent)'; $event.currentTarget.style.color = 'var(--accent-text)'"
-                            @mouseout="$event.currentTarget.style.background = 'var(--accent-light)'; $event.currentTarget.style.color = 'var(--accent)'">
+                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'; ($event.currentTarget as HTMLElement).style.color = 'var(--accent-text)'"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent-light)'; ($event.currentTarget as HTMLElement).style.color = 'var(--accent)'">
                             Copy link
                         </button>
                     </div>
@@ -979,8 +979,8 @@
             <button @click="toggleSelection(contextMenu.photo!.id); closeContextMenu()"
                 class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
                 style="color: var(--text-1); width: calc(100% - 8px);"
-                @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
-                @mouseout="$event.currentTarget.style.background = 'transparent'">
+                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
                         v-if="selectedPhotoIds.has(contextMenu.photo!.id)" />
@@ -992,8 +992,8 @@
             <button @click="downloadPhoto(contextMenu.photo!); closeContextMenu()"
                 class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
                 style="color: var(--text-1); width: calc(100% - 8px);"
-                @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
-                @mouseout="$event.currentTarget.style.background = 'transparent'">
+                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -1007,8 +1007,8 @@
                 <button @click="setAsCover(contextMenu.photo!); closeContextMenu()"
                     class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
                     style="color: var(--text-1); width: calc(100% - 8px);"
-                    @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
-                    @mouseout="$event.currentTarget.style.background = 'transparent'">
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -1019,8 +1019,8 @@
                 <button @click="openEditPhotoModalFromMenu(contextMenu.photo!); closeContextMenu()"
                     class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
                     style="color: var(--text-1); width: calc(100% - 8px);"
-                    @mouseover="$event.currentTarget.style.background = 'var(--surface-2)'"
-                    @mouseout="$event.currentTarget.style.background = 'transparent'">
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1031,8 +1031,8 @@
                 <button @click="deletePhoto(contextMenu.photo!.id); closeContextMenu()"
                     class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
                     style="color: var(--error); width: calc(100% - 8px);"
-                    @mouseover="$event.currentTarget.style.background = 'var(--error-bg)'"
-                    @mouseout="$event.currentTarget.style.background = 'transparent'">
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -2213,7 +2213,7 @@ const drawCropOverlay = () => {
     ctx.fillStyle = '#fff'
     ctx.shadowColor = 'rgba(0,0,0,0.55)'
     ctx.shadowBlur = 4
-    for (const [hx, hy] of [[sx, sy], [sx + sw, sy], [sx, sy + sh], [sx + sw, sy + sh]]) {
+    for (const [hx, hy] of [[sx, sy], [sx + sw, sy], [sx, sy + sh], [sx + sw, sy + sh]] as [number, number][]) {
         ctx.fillRect(hx - CROP_HANDLE / 2, hy - CROP_HANDLE / 2, CROP_HANDLE, CROP_HANDLE)
     }
     ctx.shadowBlur = 0
