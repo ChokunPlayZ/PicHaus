@@ -22,7 +22,7 @@
         </div>
 
         <!-- Album Content -->
-        <div v-else-if="album" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div v-else-if="album" class="px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
@@ -83,6 +83,17 @@
                     </button>
 
                     <template v-if="album.permissions.canEdit">
+                        <button @click="triggerFileInput"
+                            class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap flex items-center justify-center gap-1.5"
+                            style="background: var(--accent); color: var(--accent-text);"
+                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            Upload
+                        </button>
                         <button @click="showEditModal = true"
                             class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap"
                             style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
@@ -99,24 +110,8 @@
 
             <!-- Upload Section -->
             <div v-if="album.permissions.canEdit" class="mb-8">
-                <div @click="triggerFileInput" @dragover.prevent @drop.prevent="handleDrop"
-                    class="rounded-2xl p-8 text-center transition cursor-pointer group"
-                    style="border: 2px dashed var(--separator); background: var(--surface-1);"
-                    @mouseover="($event.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'"
-                    @mouseout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--separator)'">
-                    <input type="file" ref="fileInput" multiple accept="image/*" class="hidden"
-                        @change="handleFileSelect" />
-                    <div class="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center group-hover:scale-110 transition"
-                        style="background: var(--accent-light);">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor" style="color: var(--accent);">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                        </svg>
-                    </div>
-                    <h3 class="text-base font-semibold mb-1" style="color: var(--text-1);">Upload Photos</h3>
-                    <p class="text-sm" style="color: var(--text-3);">Drag & drop or click to browse</p>
-                </div>
+                <input type="file" ref="fileInput" multiple accept="image/*" class="hidden"
+                    @change="handleFileSelect" />
 
                 <!-- Upload Progress Modal/Panel -->
                 <div v-if="showUploadModal"
@@ -249,8 +244,8 @@
             </div>
 
             <!-- Photo Grid -->
-            <div v-else-if="picturesLayout" ref="containerRef" class="relative"
-                :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
+            <div v-else-if="picturesLayout" ref="containerRef" class="relative w-full"
+                :style="{ height: `${picturesLayout.containerHeight}px` }">
                 <div v-for="(photo, index) in photos" :key="photo.id" @click.stop="handlePhotoTileClick(index, $event)"
                     @contextmenu.prevent="handleContextMenu($event, photo)"
                     class="absolute cursor-pointer overflow-hidden rounded-lg transition group"
@@ -1076,6 +1071,28 @@
             </TransitionGroup>
         </div>
 
+        <!-- Full-screen Drag-to-Upload Overlay -->
+        <Teleport to="body">
+            <Transition name="fade">
+                <div v-if="isDragging"
+                    class="fixed inset-0 z-[9999] flex items-center justify-center"
+                    style="background: rgba(0,0,0,0.6);">
+                    <div class="text-center pointer-events-none">
+                        <div class="w-24 h-24 mx-auto mb-5 rounded-full flex items-center justify-center"
+                            style="background: var(--accent-light); border: 2px dashed var(--accent);">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" style="color: var(--accent);">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                        </div>
+                        <p class="text-xl font-semibold text-white">Drop photos to upload</p>
+                        <p class="text-sm mt-1 text-white/60">Release to add to this album</p>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
+
 </template>
 
 <script setup lang="ts">
@@ -1475,6 +1492,8 @@ const uploading = ref(false)
 const uploadQueue = ref<UploadItem[]>([])
 const isProcessingQueue = ref(false)
 const showUploadModal = ref(false)
+const isDragging = ref(false)
+let dragEnterCounter = 0
 
 const uploadProgress = computed(() => {
     const total = uploadQueue.value.length
@@ -1580,15 +1599,47 @@ const closeContextMenu = () => {
     contextMenu.value.visible = false
 }
 
+const onWindowDragEnter = (e: DragEvent) => {
+    if (!album.value?.permissions.canEdit) return
+    if (!e.dataTransfer?.types?.includes('Files')) return
+    dragEnterCounter++
+    isDragging.value = true
+}
+
+const onWindowDragLeave = () => {
+    dragEnterCounter--
+    if (dragEnterCounter <= 0) {
+        dragEnterCounter = 0
+        isDragging.value = false
+    }
+}
+
+const onWindowDragOver = (e: DragEvent) => e.preventDefault()
+
+const onWindowDrop = (e: DragEvent) => {
+    e.preventDefault()
+    dragEnterCounter = 0
+    isDragging.value = false
+    if (album.value?.permissions.canEdit) handleDrop(e)
+}
+
 // Close context menu on click outside
 onMounted(() => {
     window.addEventListener('click', closeContextMenu)
     window.addEventListener('keydown', handleKeydown)
+    window.addEventListener('dragenter', onWindowDragEnter)
+    window.addEventListener('dragleave', onWindowDragLeave)
+    window.addEventListener('dragover', onWindowDragOver)
+    window.addEventListener('drop', onWindowDrop)
 })
 
 onUnmounted(() => {
     window.removeEventListener('click', closeContextMenu)
     window.removeEventListener('keydown', handleKeydown)
+    window.removeEventListener('dragenter', onWindowDragEnter)
+    window.removeEventListener('dragleave', onWindowDragLeave)
+    window.removeEventListener('dragover', onWindowDragOver)
+    window.removeEventListener('drop', onWindowDrop)
     if (resizeObserver) {
         resizeObserver.disconnect()
     }
@@ -1687,7 +1738,7 @@ const closeQr = () => { qrLinkId.value = null }
 
 // Layout state
 const containerRef = ref<HTMLElement | null>(null)
-const containerWidth = ref(typeof window !== 'undefined' ? Math.min(1200, window.innerWidth - 64) : 1200)
+const containerWidth = ref(typeof window !== 'undefined' ? window.innerWidth - 32 : 1200)
 
 // Computed layout
 const picturesLayout = computed(() => {

@@ -168,16 +168,16 @@
 
             <!-- Info Sidebar (Desktop) / Bottom Sheet (Mobile) -->
             <div :class="[
-                'bg-gray-900/95 backdrop-blur-xl border-white/10 overflow-y-auto',
+                'overflow-y-auto',
                 // Mobile: Bottom sheet
                 'fixed bottom-0 left-0 right-0 rounded-t-3xl border-t md:border-l md:border-t-0',
                 'max-h-[70vh] md:max-h-none',
                 // Desktop: Side panel
                 'md:static md:w-80 md:rounded-r-xl md:rounded-t-none',
                 'z-40',
-                // Only apply transition when not actively swiping
                 !isSwiping && 'transition-transform duration-300'
-            ]" :style="mobileTransformStyle" @touchstart="handleInfoTouchStart" @touchmove="handleInfoTouchMove"
+            ]" :style="[mobileTransformStyle, { background: '#111112', borderColor: 'rgba(255,255,255,0.08)' }]"
+                @touchstart="handleInfoTouchStart" @touchmove="handleInfoTouchMove"
                 @touchend="handleInfoTouchEnd">
                 <!-- Mobile: Drag Handle -->
                 <div class="md:hidden flex justify-center pt-2 pb-4" @touchstart.stop="handleInfoTouchStart"
