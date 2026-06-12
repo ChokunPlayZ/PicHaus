@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
             eventDate: albums.eventDate,
             createdAt: albums.createdAt,
             updatedAt: albums.updatedAt,
-            photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = ${albums.id})`,
+            photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = "albums"."id")`,
         })
             .from(albums)
             .where(where)

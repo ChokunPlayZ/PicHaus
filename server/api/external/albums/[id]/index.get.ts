@@ -1,4 +1,4 @@
-import { eq, and, count, sql } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { albums } from '../../../../db/schema'
 import { requireApiToken } from '../../../../utils/api-token'
 
@@ -20,9 +20,9 @@ export default defineEventHandler(async (event) => {
         updatedAt: albums.updatedAt,
         ownerId: albums.ownerId,
         coverPhotoId: albums.coverPhotoId,
-        photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = ${albums.id})`,
-        collaboratorCount: sql<number>`(SELECT COUNT(*) FROM album_collaborators WHERE album_collaborators."albumId" = ${albums.id})`,
-        coverBlurhash: sql<string | null>`(SELECT blurhash FROM photos WHERE id = ${albums.coverPhotoId})`,
+        photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = "albums"."id")`,
+        collaboratorCount: sql<number>`(SELECT COUNT(*) FROM album_collaborators WHERE album_collaborators."albumId" = "albums"."id")`,
+        coverBlurhash: sql<string | null>`(SELECT blurhash FROM photos WHERE id = "albums"."coverPhotoId"::uuid)`,
     })
         .from(albums)
         .where(and(eq(albums.id, albumId), eq(albums.ownerId, apiToken.userId)))
