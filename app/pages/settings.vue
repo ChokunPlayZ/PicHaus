@@ -2,7 +2,7 @@
     <div class="min-h-screen" style="background: var(--bg-page);">
         <NavBar title="Settings" :show-back="true" back-text="Back to Albums" back-to="/album" />
 
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div class="px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
             <!-- Profile -->
             <div class="rounded-2xl p-6"

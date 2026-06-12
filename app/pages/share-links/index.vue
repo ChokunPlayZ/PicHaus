@@ -2,7 +2,7 @@
     <div class="min-h-screen" style="background: var(--bg-page);">
         <NavBar title="Share Links" :showBack="true" />
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="px-4 sm:px-6 lg:px-8 py-8">
             <div class="mb-8">
                 <h2 class="text-3xl font-bold tracking-tight mb-1" style="color: var(--text-1);">Share Links</h2>
                 <p class="text-sm" style="color: var(--text-2);">Manage your shared albums and groups</p>

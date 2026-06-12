@@ -7,7 +7,7 @@
             :logo-image-url="album.logoImageId ? `/api/assets/logo/${album.logoImageId}` : undefined" />
 
         <!-- Loading State -->
-        <div v-if="loading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+        <div v-if="loading" class="px-4 sm:px-6 lg:px-8 py-12 text-center">
             <div class="flex flex-col items-center gap-3">
                 <div class="w-8 h-8 rounded-full border-2 animate-spin" style="border-color: var(--separator); border-top-color: var(--accent);"></div>
                 <p class="text-sm" style="color: var(--text-3);">Loading album…</p>
@@ -15,7 +15,7 @@
         </div>
 
         <!-- Error State -->
-        <div v-else-if="error" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div v-else-if="error" class="px-4 sm:px-6 lg:px-8 py-12">
             <div class="bg-red-500/20 border border-red-500/50 rounded-lg p-4">
                 <p class="text-red-200">{{ error }}</p>
             </div>

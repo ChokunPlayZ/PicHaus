@@ -2,7 +2,7 @@
     <div class="min-h-screen" style="background: var(--bg-page);">
         <NavBar :show-back="true" back-text="Back to Albums" back-to="/album" title="Admin Dashboard" />
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="px-4 sm:px-6 lg:px-8 py-8">
             <div class="flex justify-between items-center mb-8">
                 <h1 class="text-3xl font-bold tracking-tight" style="color: var(--text-1);">User Management</h1>
 

@@ -2,7 +2,7 @@
     <div class="min-h-screen" style="background: var(--bg-page);">
         <NavBar title="API Tokens" :show-back="true" back-text="Back to Albums" back-to="/album" />
 
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="px-4 sm:px-6 lg:px-8 py-8">
             <!-- Create New Token Section -->
             <div class="rounded-2xl p-6 mb-6"
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">

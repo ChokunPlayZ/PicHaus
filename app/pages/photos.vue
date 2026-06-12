@@ -2,7 +2,7 @@
     <div class="min-h-screen" style="background: var(--bg-page);">
         <NavBar title="All Photos" :showBack="true" backTo="/album" :solid="true" />
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>

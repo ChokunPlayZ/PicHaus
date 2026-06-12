@@ -2,7 +2,7 @@
     <div class="min-h-screen" style="background: var(--bg-page);">
         <NavBar title="API Docs" :solid="true" />
 
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div class="px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <div class="rounded-2xl p-6"
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
                 <div class="flex items-start justify-between gap-4 mb-1">

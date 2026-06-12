@@ -2,7 +2,7 @@
     <div class="min-h-screen" style="background: var(--bg-page);">
         <NavBar :show-back="true" back-text="Back to Albums" back-to="/album" title="Server Status" />
 
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div class="px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
             <!-- Header row -->
             <div class="flex items-center justify-between">

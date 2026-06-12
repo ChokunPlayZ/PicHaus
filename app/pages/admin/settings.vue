@@ -2,7 +2,7 @@
     <div class="min-h-screen" style="background: var(--bg-page);">
         <NavBar :show-back="true" back-text="Back to Albums" back-to="/album" title="Site Settings" />
 
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div class="px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <h1 class="text-3xl font-bold tracking-tight" style="color: var(--text-1);">Site Settings</h1>
 
             <div v-if="loading" class="flex justify-center py-12">

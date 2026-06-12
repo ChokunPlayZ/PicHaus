@@ -2,7 +2,7 @@
   <div class="min-h-screen" style="background: var(--bg-page);">
     <NavBar title="Statistics" :showBack="true" backTo="/album" />
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="px-4 sm:px-6 lg:px-8 py-12">
       <header class="mb-10">
         <h1 class="text-3xl font-bold tracking-tight mb-1" style="color: var(--text-1);">Data Insights</h1>
         <p class="text-sm" style="color: var(--text-2);">
