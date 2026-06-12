@@ -1386,7 +1386,19 @@ const handleLogoUpload = async (e: Event) => {
 }
 
 watch(showEditModal, (open) => {
-    if (open) fetchLogos()
+    if (open) {
+        fetchLogos()
+        // Re-sync editForm theme fields from current album state so stale previews
+        // from a previous open don't persist and cause accidental wrong-theme saves.
+        if (album.value) {
+            let parsedCustomTheme = { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' }
+            if (album.value.customTheme) {
+                try { parsedCustomTheme = JSON.parse(album.value.customTheme) } catch { /* use defaults */ }
+            }
+            editForm.value.themePreset = album.value.themePreset ?? 'default'
+            editForm.value.customTheme = parsedCustomTheme
+        }
+    }
 })
 
 watch(
@@ -1783,7 +1795,10 @@ watch(containerRef, (el) => {
     }
 })
 
+let _mounted = false
+onMounted(() => { _mounted = true })
 onUnmounted(() => {
+    _mounted = false
     window.removeEventListener('keydown', handleKeydown)
     if (resizeObserver) {
         resizeObserver.disconnect()
@@ -1845,7 +1860,7 @@ const fetchAlbum = async () => {
                 logoText: album.value.logoText ?? '',
                 logoImageId: album.value.logoImageId ?? null,
             }
-            applyTheme(album.value.themePreset, album.value.customTheme)
+            if (_mounted) applyTheme(album.value.themePreset, album.value.customTheme)
         }
     } catch (err: any) {
         // If 403 and not logged in, redirect to login
