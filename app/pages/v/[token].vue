@@ -153,8 +153,8 @@
                 </div>
 
                 <!-- Photo Grid -->
-                <div v-else-if="picturesLayout" ref="containerRef" class="relative mx-auto"
-                    :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
+                <div v-else-if="picturesLayout" ref="containerRef" class="relative w-full"
+                    :style="{ height: `${picturesLayout.containerHeight}px` }">
                     <div v-for="(photo, index) in photos" :key="photo.id" @click="openPhotoViewer(index)"
                         class="absolute cursor-pointer overflow-hidden rounded-xl transition-all hover:-translate-y-0.5 active:scale-95 group"
                         style="background: var(--surface-3);"
@@ -253,8 +253,8 @@
                 </div>
 
                 <!-- Photo Grid -->
-                <div v-else-if="picturesLayout" ref="containerRef" class="relative mx-auto"
-                    :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
+                <div v-else-if="picturesLayout" ref="containerRef" class="relative w-full"
+                    :style="{ height: `${picturesLayout.containerHeight}px` }">
                     <div v-for="(photo, index) in photos" :key="photo.id" @click="openPhotoViewer(index)"
                         class="absolute cursor-pointer overflow-hidden rounded-xl transition-all hover:-translate-y-0.5 active:scale-95 group"
                         style="background: var(--surface-3);"
@@ -490,7 +490,7 @@ const sentinelRef = ref<HTMLElement | null>(null)
 
 // Layout State
 const containerRef = ref<HTMLElement | null>(null)
-const containerWidth = ref(typeof window !== 'undefined' ? Math.min(1200, window.innerWidth - 32) : 1200)
+const containerWidth = ref(typeof window !== 'undefined' ? window.innerWidth - 32 : 1200)
 
 // Download State
 const downloading = ref(false)
