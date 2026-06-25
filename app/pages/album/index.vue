@@ -659,7 +659,7 @@ const albums = ref<Album[]>([])
 const loading = ref(true)
 const error = ref('')
 
-const showCreateModal = ref(false)
+const showCreateModal = useState<boolean>('show-create-album-modal', () => false)
 const newAlbum = ref({
     name: '',
     description: '',
@@ -672,7 +672,7 @@ const createError = ref('')
 
 const isSelectionMode = ref(false)
 const selectedAlbumIds = ref<Set<string>>(new Set())
-const showShareGroupModal = ref(false)
+const showShareGroupModal = useState<boolean>('show-create-share-group-modal', () => false)
 const newShareGroup = ref({
     title: '',
     description: '',

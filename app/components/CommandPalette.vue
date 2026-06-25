@@ -95,6 +95,12 @@
                 <svg v-else-if="item.icon === 'invites'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
+                <svg v-else-if="item.icon === 'plus'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <svg v-else-if="item.icon === 'share'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 10.742L12 9.085l3.316 1.657m0 2.516L12 14.915l-3.316-1.657M14 6a2 2 0 11-4 0 2 2 0 014 0zm6 6a2 2 0 11-4 0 2 2 0 014 0zM8 18a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
                 <!-- Default item icon -->
                 <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -148,6 +154,12 @@ const albums = ref<any[]>([])
 
 const searchInput = ref<HTMLInputElement | null>(null)
 const resultsContainer = ref<HTMLElement | null>(null)
+
+const route = useRoute()
+
+// Share album creation states with album index page
+const showCreateModal = useState<boolean>('show-create-album-modal', () => false)
+const showShareGroupModal = useState<boolean>('show-create-share-group-modal', () => false)
 
 // Share user state with NavBar
 const user = useState<any>('navbar-user', () => null)
@@ -330,6 +342,34 @@ const allCommands = computed(() => {
   })
 
   // 4. Global Actions
+  items.push({
+    id: 'action-create-album',
+    label: 'Create Album',
+    subtitle: 'Create a new collaborative photo album',
+    icon: 'plus',
+    section: 'Actions',
+    action: async () => {
+      if (route.path !== '/album') {
+        await navigateTo('/album')
+      }
+      showCreateModal.value = true
+    }
+  })
+
+  items.push({
+    id: 'action-create-share-group',
+    label: 'Create Share Group',
+    subtitle: 'Group multiple albums together into a single share link',
+    icon: 'share',
+    section: 'Actions',
+    action: async () => {
+      if (route.path !== '/album') {
+        await navigateTo('/album')
+      }
+      showShareGroupModal.value = true
+    }
+  })
+
   items.push({
     id: 'action-logout',
     label: 'Sign Out',
