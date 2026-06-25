@@ -21,6 +21,24 @@
             </div>
 
             <div class="p-2 space-y-0.5 flex-1 overflow-y-auto">
+                <!-- Search Button -->
+                <button @click="isOpen = true"
+                    class="w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center justify-between mb-2 group"
+                    style="color: var(--text-2); background: var(--surface-2); border: 1px solid var(--separator);">
+                    <span class="inline-flex items-center gap-2.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 transition-colors group-hover:text-[var(--text-1)]"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <span class="group-hover:text-[var(--text-1)] transition-colors">Search...</span>
+                    </span>
+                    <kbd class="px-1.5 py-0.5 text-[9px] font-semibold border rounded transition-colors group-hover:border-[var(--text-3)]"
+                        style="background-color: var(--surface-3); border-color: var(--separator); color: var(--text-3);">
+                        ⌘K
+                    </kbd>
+                </button>
+
                 <button v-for="item in navItems" :key="item.path" @click="navigateTo(item.path)"
                     :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)">
                     <span class="inline-flex items-center gap-2.5">
@@ -174,6 +192,20 @@
                 </div>
 
                 <div class="space-y-0.5 flex-1 overflow-y-auto">
+                    <!-- Mobile Search Button -->
+                    <button @click="goMobileSearch"
+                        class="w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center justify-between mb-2"
+                        style="color: var(--text-2); background: var(--surface-2); border: 1px solid var(--separator);">
+                        <span class="inline-flex items-center gap-2.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <span>Search...</span>
+                        </span>
+                    </button>
+
                     <button v-for="item in navItems" :key="`m-${item.path}`" @click="goMobile(item.path)"
                         :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)">
                         <span class="inline-flex items-center gap-2.5">
@@ -282,6 +314,7 @@ import { clearAuthToken } from '~/utils/auth-client'
 
 const route = useRoute()
 const mobileOpen = ref(false)
+const isOpen = useState<boolean>('command-palette-open', () => false)
 
 const props = defineProps<{
     title?: string
@@ -333,6 +366,11 @@ const sidebarButtonStyle = (path: string) => {
 const goMobile = async (path: string) => {
     mobileOpen.value = false
     await navigateTo(path)
+}
+
+const goMobileSearch = () => {
+    mobileOpen.value = false
+    isOpen.value = true
 }
 
 const user = useState<any>('navbar-user', () => null)

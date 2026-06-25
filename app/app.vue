@@ -11,6 +11,7 @@
       </div>
     </Transition>
     <NuxtPage />
+    <CommandPalette />
   </div>
 </template>
 
