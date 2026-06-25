@@ -717,6 +717,7 @@ useSeoMeta({
 })
 
 const { applyTheme, resetTheme } = useAlbumTheme()
+const { settings: siteSettings, applyAccent } = useSiteSettings()
 
 // Auto-access if no password (Client-side only)
 onMounted(async () => {
@@ -935,6 +936,7 @@ const loadMorePhotos = async () => {
 onUnmounted(() => {
     if (infiniteScrollObserver) infiniteScrollObserver.disconnect()
     resetTheme()
+    applyAccent(siteSettings.value.accentColor)
 })
 
 // Infinite Scroll

@@ -1312,6 +1312,7 @@ const getPhotographersDisplay = computed(() => {
 })
 
 const { applyTheme, resetTheme, ALBUM_THEMES } = useAlbumTheme()
+const { settings: siteSettings, applyAccent } = useSiteSettings()
 
 const showEditModal = ref(false)
 const editForm = ref({
@@ -1758,6 +1759,7 @@ onUnmounted(() => {
     _mounted = false
     window.removeEventListener('keydown', handleKeydown)
     resetTheme()
+    applyAccent(siteSettings.value.accentColor)
 })
 
 // Check authentication (don't redirect if failed, just set user to null)
