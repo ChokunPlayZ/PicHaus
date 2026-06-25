@@ -81,7 +81,7 @@
                     class="pt-4 sm:pt-0 mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="text-left md:text-left">
                         <div class="mb-2">
-                            <button @click="viewMode = 'group'"
+                            <button @click="clearFavorites(); viewMode = 'group'"
                                 class="flex items-center gap-1 text-sm px-3 py-1 rounded-full transition"
                                 style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);"
                                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
@@ -156,7 +156,7 @@
                     class="pt-4 sm:pt-0 mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="text-left md:text-left">
                         <div v-if="shareType === 'group'" class="mb-2">
-                            <button @click="viewMode = 'group'"
+                            <button @click="clearFavorites(); viewMode = 'group'"
                                 class="flex items-center gap-1 text-sm px-3 py-1 rounded-full transition"
                                 style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);"
                                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
@@ -787,10 +787,11 @@ const openAlbum = async (album: any) => {
     description.value = album.description
     eventDate.value = album.eventDate
 
-    // Reset photos
+    // Reset photos and selection
     photos.value = []
     page.value = 1
     hasMore.value = false
+    clearFavorites()
 
     viewMode.value = 'album'
 
@@ -799,10 +800,11 @@ const openAlbum = async (album: any) => {
 
 // View all photos from all albums in group
 const viewAllGroupPhotos = async () => {
-    // Reset photos
+    // Reset photos and selection
     photos.value = []
     page.value = 1
     hasMore.value = false
+    clearFavorites()
 
     viewMode.value = 'all-group-photos'
 
