@@ -40,10 +40,14 @@
                 <!-- iOS: Download button that triggers share sheet -->
                 <button v-if="isIOS" @click="sharePhoto"
                     class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg" style="background: var(--accent);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    <svg v-if="!isSharing" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <svg v-else class="h-6 w-6 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                     </svg>
                 </button>
                 <!-- Android: Share + Download buttons -->
@@ -286,6 +290,32 @@
                 </div>
             </div>
         </div>
+
+        <!-- Share-ready popup (iOS slow connection) -->
+        <Transition name="share-popup">
+            <div v-if="shareTimedOut"
+                class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md"
+                style="background: rgba(30,30,30,0.92); border: 1px solid rgba(255,255,255,0.12);">
+                <template v-if="pendingShareFile">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--accent);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span class="text-sm text-white font-medium">Photo ready —</span>
+                    <button @click="retryShare"
+                        class="text-sm font-semibold px-3 py-1 rounded-xl transition active:scale-95"
+                        style="background: var(--accent); color: #fff;">
+                        Tap to share
+                    </button>
+                </template>
+                <template v-else>
+                    <svg class="h-5 w-5 flex-shrink-0 animate-spin text-white/60" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    <span class="text-sm text-white/80">Slow connection — still downloading…</span>
+                </template>
+            </div>
+        </Transition>
     </div>
 </template>
 
@@ -333,6 +363,10 @@ const emit = defineEmits(['close', 'previous', 'next', 'toggleFavorite'])
 
 const showInfo = ref(false)
 const imageLoading = ref(true)
+const isSharing = ref(false)
+const shareTimedOut = ref(false)
+const pendingShareFile = ref<File | null>(null)
+let shareTimeoutId: ReturnType<typeof setTimeout> | null = null
 const cachedImageUrls = new Map<string, string>()
 const pendingImageLoads = new Map<string, Promise<string | null>>()
 const loadedImageSrcByPhotoId = new Map<string, string>()
@@ -655,6 +689,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+    resetShareState()
     window.removeEventListener('keydown', handleKeydown)
 })
 
@@ -675,28 +710,73 @@ const getInstagramUrl = (instagram: string | null) => {
     return `https://instagram.com/${username}`
 }
 
+const resetShareState = () => {
+    isSharing.value = false
+    shareTimedOut.value = false
+    pendingShareFile.value = null
+    if (shareTimeoutId !== null) {
+        clearTimeout(shareTimeoutId)
+        shareTimeoutId = null
+    }
+}
+
 const sharePhoto = async () => {
+    if (isSharing.value) return
+    isSharing.value = true
+    shareTimedOut.value = false
+    pendingShareFile.value = null
+
+    // After 8s with no result, show the retry popup
+    shareTimeoutId = setTimeout(() => {
+        if (isSharing.value) shareTimedOut.value = true
+    }, 8000)
+
     try {
         const response = await fetch(buildAssetUrl(`/api/assets/full/${props.photo.id}`))
         const blob = await response.blob()
         const file = new File([blob], props.photo.originalName, { type: blob.type })
 
+        if (shareTimedOut.value) {
+            // Gesture window has expired — cache the file and let the popup button handle it
+            pendingShareFile.value = file
+            return
+        }
+
+        // Gesture still fresh — share directly
         if (navigator.share) {
             try {
-                await navigator.share({
-                    files: [file],
-                    title: props.photo.originalName,
-                })
+                await navigator.share({ files: [file], title: props.photo.originalName })
             } catch (shareErr: any) {
-                // If user cancelled, just return
-                if (shareErr.name === 'AbortError') {
-                    return
-                }
-                console.error('Share failed:', shareErr)
+                if (shareErr.name === 'AbortError') return
+                // Gesture may have expired mid-flight — show popup so user can retry
+                pendingShareFile.value = file
+                shareTimedOut.value = true
+                return
             }
         }
+        resetShareState()
     } catch (err) {
         console.error('Share failed:', err)
+        resetShareState()
+    } finally {
+        if (shareTimeoutId !== null) {
+            clearTimeout(shareTimeoutId)
+            shareTimeoutId = null
+        }
+        // Only clear isSharing if we're not waiting for a popup tap
+        if (!shareTimedOut.value) isSharing.value = false
+    }
+}
+
+const retryShare = async () => {
+    const file = pendingShareFile.value
+    if (!file || !navigator.share) return
+    try {
+        await navigator.share({ files: [file], title: props.photo.originalName })
+    } catch (shareErr: any) {
+        if (shareErr.name !== 'AbortError') console.error('Share failed:', shareErr)
+    } finally {
+        resetShareState()
     }
 }
 
@@ -719,3 +799,15 @@ const downloadPhoto = async () => {
     }
 }
 </script>
+
+<style scoped>
+.share-popup-enter-active,
+.share-popup-leave-active {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.share-popup-enter-from,
+.share-popup-leave-to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+}
+</style>
