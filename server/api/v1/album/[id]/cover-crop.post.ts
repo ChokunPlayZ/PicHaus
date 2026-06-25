@@ -2,7 +2,7 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { albums, albumCollaborators, photos } from '../../../../db/schema'
 import { requireAuth } from '../../../../utils/auth'
 import sharp from 'sharp'
-import { saveFile, generateBlurhash, deleteFile, calculateFileHash } from '../../../../utils/upload'
+import { saveFile, generateBlurhash, deleteFile, calculateFileHash, getAbsoluteFilePath } from '../../../../utils/upload'
 import crypto from 'crypto'
 
 export default defineEventHandler(async (event) => {
@@ -22,21 +22,54 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 403, statusMessage: 'You do not have permission to edit this album' })
         }
 
-        const formData = await readMultipartFormData(event)
-        if (!formData) throw createError({ statusCode: 400, statusMessage: 'No file uploaded' })
+        const contentType = getHeader(event, 'content-type') || ''
+        let processedBuffer: Buffer
 
-        const fileData = formData.find(item => item.name === 'file')
-        if (!fileData || !fileData.data) throw createError({ statusCode: 400, statusMessage: 'No file data' })
+        if (contentType.includes('application/json')) {
+            const body = await readBody(event)
+            const { photoId, x, y, width, height } = body
+            if (!photoId) throw createError({ statusCode: 400, statusMessage: 'Photo ID is required' })
+            if (x === undefined || y === undefined || width === undefined || height === undefined) {
+                throw createError({ statusCode: 400, statusMessage: 'Crop parameters (x, y, width, height) are required' })
+            }
 
-        const buffer = fileData.data
-        let processedBuffer = buffer
-        try {
-            processedBuffer = await sharp(buffer)
-                .resize(2560, 2560, { fit: 'inside', withoutEnlargement: true })
-                .toFormat('jpeg', { quality: 90 })
-                .toBuffer()
-        } catch {
-            throw createError({ statusCode: 400, statusMessage: 'Failed to process image' })
+            const photo = await db.query.photos.findFirst({
+                where: and(eq(photos.id, photoId), eq(photos.albumId, id)),
+            })
+            if (!photo) throw createError({ statusCode: 404, statusMessage: 'Photo not found' })
+
+            const filePath = getAbsoluteFilePath(photo.storagePath)
+            try {
+                processedBuffer = await sharp(filePath)
+                    .extract({
+                        left: Math.max(0, Math.round(x)),
+                        top: Math.max(0, Math.round(y)),
+                        width: Math.max(1, Math.round(width)),
+                        height: Math.max(1, Math.round(height)),
+                    })
+                    .resize(2560, 2560, { fit: 'inside', withoutEnlargement: true })
+                    .toFormat('jpeg', { quality: 90 })
+                    .toBuffer()
+            } catch (err: any) {
+                console.error('Server crop failed:', err)
+                throw createError({ statusCode: 400, statusMessage: 'Failed to crop image on server' })
+            }
+        } else {
+            const formData = await readMultipartFormData(event)
+            if (!formData) throw createError({ statusCode: 400, statusMessage: 'No file uploaded' })
+
+            const fileData = formData.find(item => item.name === 'file')
+            if (!fileData || !fileData.data) throw createError({ statusCode: 400, statusMessage: 'No file data' })
+
+            const buffer = fileData.data
+            try {
+                processedBuffer = await sharp(buffer)
+                    .resize(2560, 2560, { fit: 'inside', withoutEnlargement: true })
+                    .toFormat('jpeg', { quality: 90 })
+                    .toBuffer()
+            } catch {
+                throw createError({ statusCode: 400, statusMessage: 'Failed to process image' })
+            }
         }
 
         const fileHash = crypto.randomBytes(8).toString('hex')

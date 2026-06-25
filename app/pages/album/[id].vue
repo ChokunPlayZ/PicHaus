@@ -525,7 +525,7 @@
                 <div class="flex gap-4 items-start">
                     <div class="flex-1 min-w-0">
                         <p class="text-xs mb-1.5 font-medium uppercase tracking-wide" style="color: var(--text-3);">Preview</p>
-                        <canvas ref="cropPreviewRef" class="w-full rounded-xl block bg-black"
+                        <canvas ref="cropPreviewRef" width="480" height="270" class="w-full rounded-xl block bg-black"
                             style="aspect-ratio: 16/9; border: 1px solid var(--separator);"></canvas>
                     </div>
                     <div class="shrink-0 text-right space-y-2 pt-6">
@@ -1445,8 +1445,12 @@ const clampCropToImage = (x: number, y: number, width: number, height: number, W
     return { x: Math.max(0, Math.min(x, W - w)), y: Math.max(0, Math.min(y, H - h)), width: w, height: h }
 }
 
+let cachedLayout: { scale: number; left: number; top: number; width: number; height: number } | null = null
+let cachedCanvasRect: DOMRect | null = null
+
 // Returns scale and pixel offset of the image inside its object-fit:contain container
-const getCropImageLayout = () => {
+const getCropImageLayout = (force = false) => {
+    if (!force && cachedLayout) return cachedLayout
     const img = cropImageRef.value
     const canvas = cropCanvasRef.value
     if (!img || !canvas) return null
@@ -1460,11 +1464,12 @@ const getCropImageLayout = () => {
     } else {
         ih = ch; iw = ch * naturalRatio; il = (cw - iw) / 2; it = 0
     }
-    return { scale: iw / img.naturalWidth, left: il, top: it, width: iw, height: ih }
+    cachedLayout = { scale: iw / img.naturalWidth, left: il, top: it, width: iw, height: ih }
+    return cachedLayout
 }
 
 const syncCanvas = () => {
-    const layout = getCropImageLayout()
+    const layout = getCropImageLayout(true)
     const canvas = cropCanvasRef.value
     if (!layout || !canvas) return
     canvas.width = Math.round(layout.width)
@@ -1473,14 +1478,20 @@ const syncCanvas = () => {
     canvas.style.top = layout.top + 'px'
     canvas.style.width = layout.width + 'px'
     canvas.style.height = layout.height + 'px'
+    
+    // Cache the bounding rect of the canvas as well
+    cachedCanvasRect = canvas.getBoundingClientRect()
+    
     return layout
 }
 
 const cropCanvasPoint = (e: { clientX: number; clientY: number }) => {
     const canvas = cropCanvasRef.value
     if (!canvas) return { x: 0, y: 0 }
-    const r = canvas.getBoundingClientRect()
-    return { x: e.clientX - r.left, y: e.clientY - r.top }
+    if (!cachedCanvasRect) {
+        cachedCanvasRect = canvas.getBoundingClientRect()
+    }
+    return { x: e.clientX - cachedCanvasRect.left, y: e.clientY - cachedCanvasRect.top }
 }
 
 const cropHitTest = (cx: number, cy: number): CropDragMode => {
@@ -1497,6 +1508,26 @@ const cropHitTest = (cx: number, cy: number): CropDragMode => {
     if (cx > sx && cx < sx + sw && cy > sy && cy < sy + sh) return 'move'
     return 'new'
 }
+
+const handleCropWindowResize = () => {
+    cachedLayout = null
+    cachedCanvasRect = null
+    syncCanvas()
+    drawCropOverlay()
+    updateCropPreview()
+}
+
+watch(showCropModal, (val) => {
+    if (val) {
+        window.addEventListener('resize', handleCropWindowResize)
+        window.addEventListener('scroll', handleCropWindowResize, true)
+    } else {
+        window.removeEventListener('resize', handleCropWindowResize)
+        window.removeEventListener('scroll', handleCropWindowResize, true)
+        cachedLayout = null
+        cachedCanvasRect = null
+    }
+})
 
 const copied = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -1652,6 +1683,8 @@ onUnmounted(() => {
     window.removeEventListener('dragleave', onWindowDragLeave)
     window.removeEventListener('dragover', onWindowDragOver)
     window.removeEventListener('drop', onWindowDrop)
+    window.removeEventListener('resize', handleCropWindowResize)
+    window.removeEventListener('scroll', handleCropWindowResize, true)
     if (resizeObserver) {
         resizeObserver.disconnect()
     }
@@ -2290,10 +2323,22 @@ const updateCropPreview = () => {
     const img = cropImageRef.value
     if (!preview || !img || !cropArea.value.width) return
     const W = 480, H = Math.round(480 / COVER_CROP_RATIO)
-    preview.width = W; preview.height = H
+    if (preview.width !== W) preview.width = W
+    if (preview.height !== H) preview.height = H
     const ctx = preview.getContext('2d')!
     ctx.clearRect(0, 0, W, H)
     ctx.drawImage(img, cropArea.value.x, cropArea.value.y, cropArea.value.width, cropArea.value.height, 0, 0, W, H)
+}
+
+let redrawScheduled = false
+const scheduleRedraw = () => {
+    if (redrawScheduled) return
+    redrawScheduled = true
+    requestAnimationFrame(() => {
+        drawCropOverlay()
+        updateCropPreview()
+        redrawScheduled = false
+    })
 }
 
 const initializeCrop = () => {
@@ -2327,6 +2372,10 @@ const cropCursorMap: Record<CropDragMode, string> = {
 
 const handleCropMouseDown = (e: MouseEvent) => {
     e.preventDefault()
+    const canvas = cropCanvasRef.value
+    if (canvas) {
+        cachedCanvasRect = canvas.getBoundingClientRect()
+    }
     const pt = cropCanvasPoint(e)
     cropDragMode.value = cropHitTest(pt.x, pt.y)
     cropDragOrigin.value = pt
@@ -2384,8 +2433,7 @@ const handleCropMouseMove = (e: MouseEvent) => {
         cropArea.value = clampCropToImage(x, y, width, height, W, H)
     }
 
-    drawCropOverlay()
-    updateCropPreview()
+    scheduleRedraw()
 }
 
 const handleCropMouseUp = () => { cropDragMode.value = 'none' }
@@ -2404,36 +2452,31 @@ const confirmCrop = async () => {
     if (!photoCropImage.value || !cropImageRef.value) return
     croppingCover.value = true
     try {
-        const img = cropImageRef.value
-        const offscreen = document.createElement('canvas')
-        offscreen.width = Math.round(cropArea.value.width)
-        offscreen.height = Math.round(cropArea.value.height)
-        const ctx = offscreen.getContext('2d')!
-        ctx.drawImage(img, cropArea.value.x, cropArea.value.y, cropArea.value.width, cropArea.value.height, 0, 0, offscreen.width, offscreen.height)
-
-        offscreen.toBlob(async (blob) => {
-            if (!blob) { showToast('Failed to create image', 'error'); croppingCover.value = false; return }
-            try {
-                const fd = new FormData()
-                fd.append('file', blob, 'cover.jpg')
-                const res = await fetch(`/api/v1/album/${albumId}/cover-crop`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${getAuthToken()}` },
-                    body: fd,
-                })
-                if (!res.ok) throw new Error('Upload failed')
-                showCropModal.value = false
-                photoCropImage.value = null
-                showToast('Album cover updated!')
-                await fetchAlbum()
-            } catch (err: any) {
-                showToast(err.message || 'Failed to set album cover', 'error')
-            } finally {
-                croppingCover.value = false
-            }
-        }, 'image/jpeg', 0.95)
+        const res = await fetch(`/api/v1/album/${albumId}/cover-crop`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`,
+            },
+            body: JSON.stringify({
+                photoId: photoCropImage.value.id,
+                x: cropArea.value.x,
+                y: cropArea.value.y,
+                width: cropArea.value.width,
+                height: cropArea.value.height,
+            }),
+        })
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}))
+            throw new Error(data.message || 'Crop failed')
+        }
+        showCropModal.value = false
+        photoCropImage.value = null
+        showToast('Album cover updated!')
+        await fetchAlbum()
     } catch (err: any) {
         showToast(err.message || 'Failed to crop image', 'error')
+    } finally {
         croppingCover.value = false
     }
 }
