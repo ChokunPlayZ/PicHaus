@@ -2683,7 +2683,7 @@ const handlePhotoTileClick = (index: number, event: MouseEvent) => {
     if (event.button !== 0) return
     if (event.metaKey || event.ctrlKey) {
         const photo = photos.value[index]
-        if (photo) togglePhotoSelection(photo.id)
+        if (photo) toggleSelection(photo.id)
         return
     }
     openPhotoViewer(index)
