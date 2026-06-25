@@ -501,7 +501,7 @@
                 <div class="relative bg-black rounded-xl overflow-hidden select-none" style="height: 420px; touch-action: none;">
                     <img
                         ref="cropImageRef"
-                        :src="buildAssetUrl(`/api/assets/full/${photoCropImage.id}`)"
+                        :src="buildAssetUrl(`/api/assets/thumb/${photoCropImage.id}`)"
                         @load="initializeCrop"
                         class="absolute inset-0 w-full h-full block"
                         style="object-fit: contain;"
@@ -1448,7 +1448,9 @@ const getCropImageLayout = (force = false) => {
     if (!img || !canvas) return null
     const cw = img.parentElement!.offsetWidth
     const ch = img.parentElement!.offsetHeight
-    const naturalRatio = img.naturalWidth / img.naturalHeight
+    const origW = photoCropImage.value?.width || img.naturalWidth
+    const origH = photoCropImage.value?.height || img.naturalHeight
+    const naturalRatio = origW / origH
     const containerRatio = cw / ch
     let iw: number, ih: number, il: number, it: number
     if (naturalRatio > containerRatio) {
@@ -1456,7 +1458,7 @@ const getCropImageLayout = (force = false) => {
     } else {
         ih = ch; iw = ch * naturalRatio; il = (cw - iw) / 2; it = 0
     }
-    cachedLayout = { scale: iw / img.naturalWidth, left: il, top: it, width: iw, height: ih }
+    cachedLayout = { scale: iw / origW, left: il, top: it, width: iw, height: ih }
     return cachedLayout
 }
 
@@ -2321,9 +2323,11 @@ const scheduleRedraw = () => {
 
 const initializeCrop = () => {
     const img = cropImageRef.value
-    if (!img || !img.naturalWidth) return
+    if (!img) return
     syncCanvas()
-    const W = img.naturalWidth, H = img.naturalHeight
+    const W = photoCropImage.value?.width || img.naturalWidth
+    const H = photoCropImage.value?.height || img.naturalHeight
+    if (!W) return
     let width = W, height = width / COVER_CROP_RATIO
     if (height > H) { height = H; width = height * COVER_CROP_RATIO }
     cropArea.value = { x: (W - width) / 2, y: (H - height) / 2, width, height }
@@ -2333,7 +2337,9 @@ const initializeCrop = () => {
 const resetCrop = () => {
     const img = cropImageRef.value
     if (!img) return
-    const W = img.naturalWidth, H = img.naturalHeight
+    const W = photoCropImage.value?.width || img.naturalWidth
+    const H = photoCropImage.value?.height || img.naturalHeight
+    if (!W) return
     let width = W, height = width / COVER_CROP_RATIO
     if (height > H) { height = H; width = height * COVER_CROP_RATIO }
     cropArea.value = { x: (W - width) / 2, y: (H - height) / 2, width, height }
@@ -2372,7 +2378,8 @@ const handleCropMouseMove = (e: MouseEvent) => {
     if (!layout) return
     const { scale } = layout
     const img = cropImageRef.value!
-    const W = img.naturalWidth, H = img.naturalHeight
+    const W = photoCropImage.value?.width || img.naturalWidth
+    const H = photoCropImage.value?.height || img.naturalHeight
     const snap = cropDragSnapshot.value
 
     if (cropDragMode.value === 'move') {
