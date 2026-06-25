@@ -1431,6 +1431,7 @@ const cropPreviewRef = ref<HTMLCanvasElement | null>(null)
 const cropArea = ref({ x: 0, y: 0, width: 0, height: 0 })
 const croppingCover = ref(false)
 const COVER_CROP_RATIO = 16 / 9
+let offscreenCanvas: HTMLCanvasElement | null = null
 
 type CropDragMode = 'none' | 'move' | 'new' | 'resize-tl' | 'resize-tr' | 'resize-bl' | 'resize-br'
 const cropDragMode = ref<CropDragMode>('none')
@@ -1526,6 +1527,7 @@ watch(showCropModal, (val) => {
         window.removeEventListener('scroll', handleCropWindowResize, true)
         cachedLayout = null
         cachedCanvasRect = null
+        offscreenCanvas = null
     }
 })
 
@@ -2321,13 +2323,24 @@ const drawCropOverlay = () => {
 const updateCropPreview = () => {
     const preview = cropPreviewRef.value
     const img = cropImageRef.value
-    if (!preview || !img || !cropArea.value.width) return
+    if (!preview || !img || !cropArea.value.width || !offscreenCanvas) return
     const W = 480, H = Math.round(480 / COVER_CROP_RATIO)
     if (preview.width !== W) preview.width = W
     if (preview.height !== H) preview.height = H
     const ctx = preview.getContext('2d')!
     ctx.clearRect(0, 0, W, H)
-    ctx.drawImage(img, cropArea.value.x, cropArea.value.y, cropArea.value.width, cropArea.value.height, 0, 0, W, H)
+
+    const scaleX = offscreenCanvas.width / img.naturalWidth
+    const scaleY = offscreenCanvas.height / img.naturalHeight
+
+    ctx.drawImage(
+        offscreenCanvas,
+        cropArea.value.x * scaleX,
+        cropArea.value.y * scaleY,
+        cropArea.value.width * scaleX,
+        cropArea.value.height * scaleY,
+        0, 0, W, H
+    )
 }
 
 let redrawScheduled = false
@@ -2346,6 +2359,28 @@ const initializeCrop = () => {
     if (!img || !img.naturalWidth) return
     syncCanvas()
     const W = img.naturalWidth, H = img.naturalHeight
+
+    // Draw to offscreen canvas to optimize redraw rendering performance
+    offscreenCanvas = document.createElement('canvas')
+    const maxDimension = 2048
+    let offWidth = W
+    let offHeight = H
+    if (W > maxDimension || H > maxDimension) {
+        if (W > H) {
+            offWidth = maxDimension
+            offHeight = Math.round(H * (maxDimension / W))
+        } else {
+            offHeight = maxDimension
+            offWidth = Math.round(W * (maxDimension / H))
+        }
+    }
+    offscreenCanvas.width = offWidth
+    offscreenCanvas.height = offHeight
+    const offCtx = offscreenCanvas.getContext('2d')
+    if (offCtx) {
+        offCtx.drawImage(img, 0, 0, offWidth, offHeight)
+    }
+
     let width = W, height = width / COVER_CROP_RATIO
     if (height > H) { height = H; width = height * COVER_CROP_RATIO }
     cropArea.value = { x: (W - width) / 2, y: (H - height) / 2, width, height }
