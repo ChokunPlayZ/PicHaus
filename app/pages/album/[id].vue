@@ -2681,11 +2681,33 @@ const formatDate = (timestamp: number) => {
 
 const handlePhotoTileClick = (index: number, event: MouseEvent) => {
     if (event.button !== 0) return
-    if (event.metaKey || event.ctrlKey) {
-        const photo = photos.value[index]
-        if (photo) toggleSelection(photo.id)
+    const photo = photos.value[index]
+    if (!photo) return
+
+    const inSelectionMode = selectedPhotoIds.value.size > 0
+
+    if (event.shiftKey && inSelectionMode && lastSelectedId.value) {
+        const lastIndex = photos.value.findIndex(p => p.id === lastSelectedId.value)
+        if (lastIndex !== -1) {
+            const from = Math.min(lastIndex, index)
+            const to = Math.max(lastIndex, index)
+            for (let i = from; i <= to; i++) {
+                const p = photos.value[i]
+                if (p) selectedPhotoIds.value.add(p.id)
+            }
+        } else {
+            toggleSelection(photo.id)
+        }
+        lastSelectedId.value = photo.id
         return
     }
+
+    if (event.metaKey || event.ctrlKey || inSelectionMode) {
+        toggleSelection(photo.id)
+        lastSelectedId.value = photo.id
+        return
+    }
+
     openPhotoViewer(index)
 }
 
