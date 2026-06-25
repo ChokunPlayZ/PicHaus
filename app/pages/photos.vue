@@ -79,46 +79,17 @@
                     </button>
                 </div>
 
-                <div v-else-if="picturesLayout" ref="containerRef" class="relative transition-opacity duration-300"
+                <div v-else-if="picturesLayout" ref="containerRef" class="relative w-full transition-opacity duration-300"
                     :class="{ 'opacity-50': loading }"
-                    :style="{ width: `${picturesLayout.containerWidth}px`, height: `${picturesLayout.containerHeight}px` }">
-                    <div v-for="(photo, index) in photos" :key="photo.id"
-                        class="absolute cursor-pointer overflow-hidden rounded-xl transition-transform hover:-translate-y-0.5 group"
-                        style="background: var(--surface-3);"
-                        :style="{
-                            top: `${picturesLayout.getPosition(index).top}px`,
-                            left: `${picturesLayout.getPosition(index).left}px`,
-                            width: `${picturesLayout.getPosition(index).width}px`,
-                            height: `${picturesLayout.getPosition(index).height}px`,
-                        }" @click="openViewer(index)">
-
-                        <div class="absolute inset-0 animate-pulse" style="background: var(--surface-3);" v-if="!photo.blurhash"></div>
-                        <img v-if="photo.blurhash"
-                            :src="getBlurhashUrl(photo.blurhash, photo.width!, photo.height!) || ''"
-                            class="absolute inset-0 w-full h-full object-cover" />
-
-                        <img :src="buildAssetUrl(`/api/assets/thumb/${photo.id}`)" loading="lazy"
-                            class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 hover:opacity-100" />
-
-                        <!-- Overlay -->
-                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
-
-                        <!-- Hover Info -->
-                        <div
-                            class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 flex justify-between items-end">
-                            <div class="overflow-hidden">
-                                <p class="text-white font-medium text-sm truncate">{{ photo.originalName }}</p>
-                                <div class="flex items-center gap-2 text-xs text-white/70 mt-0.5">
-                                    <span v-if="photo.cameraModel">{{ photo.cameraModel }}</span>
-                                </div>
-                            </div>
-                            <div class="flex flex-col items-end gap-1">
-                                <span v-if="photo.aperture"
-                                    class="text-xs font-mono bg-black/40 px-1.5 py-0.5 rounded text-white backdrop-blur-md">f/{{ photo.aperture }}</span>
-                                <span v-if="photo.iso" class="text-[10px] text-white/60">ISO {{ photo.iso }}</span>
-                            </div>
-                        </div>
-                    </div>
+                    :style="{ height: `${picturesLayout.containerHeight}px` }">
+                    <PhotoTile
+                        v-for="(photo, index) in photos"
+                        :key="photo.id"
+                        :photo="photo"
+                        :position="picturesLayout.getPosition(index)"
+                        :show-hover-info="true"
+                        @click="openViewer(index)"
+                    />
                 </div>
 
                 <div ref="sentinel" class="h-20 flex justify-center items-center mt-8">
@@ -139,10 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { JustifiedLayout } from '@immich/justified-layout-wasm'
-import { decode } from 'blurhash'
 import { debounce } from 'lodash-es'
-import { buildAssetUrl } from '~/utils/auth-client'
 
 // Create proper interface for our photo object
 interface Photo {
@@ -177,10 +145,10 @@ const total = ref(0)
 const viewerOpen = ref(false)
 const viewerIndex = ref(0)
 
-const containerRef = ref<HTMLElement | null>(null)
 const sentinel = ref<HTMLElement | null>(null)
-let resizeObserver: ResizeObserver | null = null
 let intersectionObserver: IntersectionObserver | null = null
+
+const { containerRef, picturesLayout } = useJustifiedLayout(photos)
 
 const options = reactive({
     cameras: [] as string[],
@@ -238,8 +206,6 @@ const fetchPhotos = async (reset = false) => {
         hasMore.value = res.pagination.hasMore
         if (hasMore.value) page.value++
 
-        updateLayout()
-
     } catch (e) {
         console.error(e)
     } finally {
@@ -275,53 +241,6 @@ const clearFilters = () => {
     applyFilters()
 }
 
-// Layout Logic
-const picturesLayout = shallowRef<any>(null)
-
-const updateLayout = () => {
-    if (photos.value.length === 0) return
-
-    // Calculate container width - measure parent because we set strict width on self
-    const containerWidth = containerRef.value?.parentElement?.clientWidth || Math.min(window.innerWidth - 32, 1280 - 32)
-
-    // Check for missing dimensions
-    const validPhotos = photos.value.map(p => ({
-        width: p.width || 1920,
-        height: p.height || 1080
-    }))
-
-    const aspectRatios = new Float32Array(
-        validPhotos.map(photo => photo.width / photo.height)
-    )
-
-    // Calculate layout
-    picturesLayout.value = new JustifiedLayout(aspectRatios, {
-        rowHeight: 180,
-        rowWidth: containerWidth,
-        spacing: 12,
-        heightTolerance: 0.1
-    })
-}
-
-// Image Utilities
-const getBlurhashUrl = (hash: string, width: number, height: number) => {
-    if (!hash || !width || !height) return null
-    try {
-        const pixels = decode(hash, 32, 32)
-        const canvas = document.createElement('canvas')
-        canvas.width = 32
-        canvas.height = 32
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return null
-        const imageData = ctx.createImageData(32, 32)
-        imageData.data.set(pixels)
-        ctx.putImageData(imageData, 0, 0)
-        return canvas.toDataURL()
-    } catch (e) {
-        return null
-    }
-}
-
 const openViewer = (index: number) => {
     viewerIndex.value = index
     viewerOpen.value = true
@@ -331,20 +250,6 @@ const openViewer = (index: number) => {
 onMounted(() => {
     fetchOptions()
     fetchPhotos(true)
-
-    // Resize observer for layout
-    resizeObserver = new ResizeObserver(debounce(() => {
-        updateLayout()
-    }, 100))
-
-    // Observe a parent element that always exists to catch window resizes effectively
-    if (containerRef.value?.parentElement) {
-        resizeObserver.observe(containerRef.value.parentElement)
-    } else {
-        // Fallback
-        const app = document.querySelector('#app') || document.body
-        resizeObserver.observe(app)
-    }
 
     // Intersection observer for infinite scroll
     if (sentinel.value) {
@@ -358,7 +263,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    if (resizeObserver) resizeObserver.disconnect()
     if (intersectionObserver) intersectionObserver.disconnect()
 })
 </script>

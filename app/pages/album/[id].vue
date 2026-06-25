@@ -246,34 +246,15 @@
             <!-- Photo Grid -->
             <div v-else-if="picturesLayout" ref="containerRef" class="relative w-full"
                 :style="{ height: `${picturesLayout.containerHeight}px` }">
-                <div v-for="(photo, index) in photos" :key="photo.id" @click.stop="handlePhotoTileClick(index, $event)"
-                    @contextmenu.prevent="handleContextMenu($event, photo)"
-                    class="absolute cursor-pointer overflow-hidden rounded-lg transition group"
-                    :style="{
-                        outline: selectedPhotoIds.has(photo.id) ? '3px solid var(--accent)' : 'none',
-                        outlineOffset: selectedPhotoIds.has(photo.id) ? '2px' : '0',
-                        top: `${picturesLayout.getPosition(index).top}px`,
-                        left: `${picturesLayout.getPosition(index).left}px`,
-                        width: `${picturesLayout.getPosition(index).width}px`,
-                        height: `${picturesLayout.getPosition(index).height}px`,
-                    }">
-                    <img v-if="photo.blurhash" :src="getBlurhashUrl(photo.blurhash, photo.width, photo.height) || ''"
-                        class="absolute inset-0 w-full h-full object-cover" />
-                    <img :src="buildAssetUrl(`/api/assets/thumb/${photo.id}`)" :alt="photo.filename" loading="lazy"
-                        class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
-
-                    <!-- Selection Indicator -->
-                    <div v-if="selectedPhotoIds.has(photo.id)"
-                        class="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
-                        style="background: var(--accent);">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20"
-                            fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </div>
+                <PhotoTile
+                    v-for="(photo, index) in photos"
+                    :key="photo.id"
+                    :photo="photo"
+                    :position="picturesLayout.getPosition(index)"
+                    :selected="selectedPhotoIds.has(photo.id)"
+                    @click.stop="handlePhotoTileClick(index, $event)"
+                    @contextmenu="handleContextMenu($event, photo)"
+                />
             </div>
 
             <!-- Selection Action Bar -->
@@ -1089,8 +1070,6 @@
 </template>
 
 <script setup lang="ts">
-import { JustifiedLayout } from '@immich/justified-layout-wasm'
-import { decode } from 'blurhash'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { clearAuthToken, buildAssetUrl, getAuthToken } from '~/utils/auth-client'
@@ -1678,9 +1657,6 @@ onUnmounted(() => {
     window.removeEventListener('drop', onWindowDrop)
     window.removeEventListener('resize', handleCropWindowResize)
     window.removeEventListener('scroll', handleCropWindowResize, true)
-    if (resizeObserver) {
-        resizeObserver.disconnect()
-    }
 })
 
 // Bulk Actions
@@ -1774,61 +1750,13 @@ const showQr = async (link: ShareLink) => {
 
 const closeQr = () => { qrLinkId.value = null }
 
-// Layout state
-const containerRef = ref<HTMLElement | null>(null)
-const containerWidth = ref(typeof window !== 'undefined' ? window.innerWidth - 32 : 1200)
-
-// Computed layout
-const picturesLayout = computed(() => {
-    if (!photos.value.length) return null
-
-    // Check for missing dimensions
-    const missingDims = photos.value.filter(p => !p.width || !p.height)
-    if (missingDims.length > 0) {
-        console.warn(`Layout warning: ${missingDims.length} photos missing dimensions. Defaulting to 1:1 aspect ratio.`)
-    }
-
-    const aspectRatios = new Float32Array(
-        photos.value.map(photo => (photo.width || 1) / (photo.height || 1))
-    )
-
-    return new JustifiedLayout(aspectRatios, {
-        rowHeight: 180,
-        rowWidth: containerWidth.value,
-        spacing: 12,
-        heightTolerance: 0.1,
-    })
-})
-
-// Resize observer
-let resizeObserver: ResizeObserver | null = null
-
-watch(containerRef, (el) => {
-    if (resizeObserver) {
-        resizeObserver.disconnect()
-        resizeObserver = null
-    }
-
-    if (el) {
-        resizeObserver = new ResizeObserver(entries => {
-            for (const entry of entries) {
-                if (entry.contentRect.width > 0) {
-                    containerWidth.value = entry.contentRect.width
-                }
-            }
-        })
-        resizeObserver.observe(el)
-    }
-})
+const { containerRef, picturesLayout } = useJustifiedLayout(photos)
 
 let _mounted = false
 onMounted(() => { _mounted = true })
 onUnmounted(() => {
     _mounted = false
     window.removeEventListener('keydown', handleKeydown)
-    if (resizeObserver) {
-        resizeObserver.disconnect()
-    }
     resetTheme()
 })
 
@@ -1964,26 +1892,6 @@ watch(sentinelRef, (el) => {
 })
 
 // Blurhash utility
-const getBlurhashUrl = (hash: string | null, width: number | null, height: number | null) => {
-    if (!hash || !width || !height) return null
-
-    // Use smaller dimensions for blurhash to improve performance
-    const w = 32
-    const h = Math.round(w * (height / width))
-
-    const pixels = decode(hash, w, h)
-    const canvas = document.createElement('canvas')
-    canvas.width = w
-    canvas.height = h
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
-
-    const imageData = ctx.createImageData(w, h)
-    imageData.data.set(pixels)
-    ctx.putImageData(imageData, 0, 0)
-    return canvas.toDataURL()
-}
-
 // Update album
 const handleUpdateAlbum = async () => {
     updating.value = true

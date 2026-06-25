@@ -64,38 +64,13 @@
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <div v-for="album in groupAlbums" :key="album.id" @click="openAlbum(album)"
-                        class="rounded-xl overflow-hidden cursor-pointer group transition hover:-translate-y-0.5"
-                        style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);"
-                        @mouseover="($event.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'"
-                        @mouseout="($event.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-sm)'">
-
-                        <div class="aspect-video relative overflow-hidden" style="background: var(--surface-3);">
-                            <template v-if="album.coverPhoto">
-                                <div v-if="album.coverPhoto.blurhash" class="absolute inset-0 bg-cover bg-center"
-                                    :style="{ backgroundImage: `url(${computeBlurhash(album.coverPhoto.blurhash)})` }" />
-                                <img :src="buildAssetUrl(`/api/assets/full/${album.coverPhoto.id}`)"
-                                    class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                                    loading="lazy"
-                                    @load="($event.target as HTMLElement).style.opacity = '1'"
-                                    style="opacity: 0;" />
-                            </template>
-                            <div v-else class="w-full h-full flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                </svg>
-                            </div>
-                        </div>
-
-                        <div class="p-3">
-                            <h3 class="text-sm font-semibold mb-0.5 truncate" style="color: var(--text-1);">{{ album.name }}</h3>
-                            <p v-if="album.description" class="text-xs mb-1.5 line-clamp-1" style="color: var(--text-2);">{{ album.description }}</p>
-                            <div class="flex items-center justify-between text-[10px]" style="color: var(--text-3);">
-                                <span>{{ album.photoCount }} photos</span>
-                                <span v-if="album.eventDate">{{ formatDate(album.eventDate) }}</span>
-                            </div>
-                        </div>
-                    </div>
+                    <AlbumCard
+                        v-for="album in groupAlbums"
+                        :key="album.id"
+                        :album="album"
+                        :photo-count="album.photoCount"
+                        @click="openAlbum(album)"
+                    />
                 </div>
             </div>
 
@@ -155,33 +130,16 @@
                 <!-- Photo Grid -->
                 <div v-else-if="picturesLayout" ref="containerRef" class="relative w-full"
                     :style="{ height: `${picturesLayout.containerHeight}px` }">
-                    <div v-for="(photo, index) in photos" :key="photo.id" @click="openPhotoViewer(index)"
-                        class="absolute cursor-pointer overflow-hidden rounded-xl transition-all hover:-translate-y-0.5 active:scale-95 group"
-                        style="background: var(--surface-3);"
-                        :style="{
-                            top: `${picturesLayout.getPosition(index).top}px`,
-                            left: `${picturesLayout.getPosition(index).left}px`,
-                            width: `${picturesLayout.getPosition(index).width}px`,
-                            height: `${picturesLayout.getPosition(index).height}px`,
-                        }">
-                        <img v-if="photo.blurhash"
-                            :src="getBlurhashUrl(photo.blurhash, photo.width, photo.height) || ''"
-                            class="absolute inset-0 w-full h-full object-cover" />
-                        <img :src="buildAssetUrl(`/api/assets/thumb/${photo.id}`)" :alt="photo.filename" loading="lazy"
-                            class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
-                        <button @click.stop="toggleFavorite(photo.id)"
-                            class="absolute bottom-2 right-2 z-10 p-1.5 rounded-full transition-all duration-200"
-                            :class="isFavorited(photo.id)
-                                ? 'bg-red-500/80 text-white opacity-100'
-                                : 'bg-black/40 text-white/60 opacity-100 md:opacity-0 md:group-hover:opacity-100'">
-                            <svg v-if="isFavorited(photo.id)" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
-                            </svg>
-                            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
-                            </svg>
-                        </button>
-                    </div>
+                    <PhotoTile
+                        v-for="(photo, index) in photos"
+                        :key="photo.id"
+                        :photo="photo"
+                        :position="picturesLayout.getPosition(index)"
+                        :show-favorite="true"
+                        :favorited="isFavorited(photo.id)"
+                        @click="openPhotoViewer(index)"
+                        @toggle-favorite="toggleFavorite(photo.id)"
+                    />
                 </div>
 
                 <!-- Infinite Scroll Sentinel -->
@@ -255,33 +213,16 @@
                 <!-- Photo Grid -->
                 <div v-else-if="picturesLayout" ref="containerRef" class="relative w-full"
                     :style="{ height: `${picturesLayout.containerHeight}px` }">
-                    <div v-for="(photo, index) in photos" :key="photo.id" @click="openPhotoViewer(index)"
-                        class="absolute cursor-pointer overflow-hidden rounded-xl transition-all hover:-translate-y-0.5 active:scale-95 group"
-                        style="background: var(--surface-3);"
-                        :style="{
-                            top: `${picturesLayout.getPosition(index).top}px`,
-                            left: `${picturesLayout.getPosition(index).left}px`,
-                            width: `${picturesLayout.getPosition(index).width}px`,
-                            height: `${picturesLayout.getPosition(index).height}px`,
-                        }">
-                        <img v-if="photo.blurhash"
-                            :src="getBlurhashUrl(photo.blurhash, photo.width, photo.height) || ''"
-                            class="absolute inset-0 w-full h-full object-cover" />
-                        <img :src="buildAssetUrl(`/api/assets/thumb/${photo.id}`)" :alt="photo.filename" loading="lazy"
-                            class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
-                        <button @click.stop="toggleFavorite(photo.id)"
-                            class="absolute bottom-2 right-2 z-10 p-1.5 rounded-full transition-all duration-200"
-                            :class="isFavorited(photo.id)
-                                ? 'bg-red-500/80 text-white opacity-100'
-                                : 'bg-black/40 text-white/60 opacity-100 md:opacity-0 md:group-hover:opacity-100'">
-                            <svg v-if="isFavorited(photo.id)" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
-                            </svg>
-                            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
-                            </svg>
-                        </button>
-                    </div>
+                    <PhotoTile
+                        v-for="(photo, index) in photos"
+                        :key="photo.id"
+                        :photo="photo"
+                        :position="picturesLayout.getPosition(index)"
+                        :show-favorite="true"
+                        :favorited="isFavorited(photo.id)"
+                        @click="openPhotoViewer(index)"
+                        @toggle-favorite="toggleFavorite(photo.id)"
+                    />
                 </div>
 
                 <!-- Infinite Scroll Sentinel -->
@@ -409,14 +350,9 @@
 </template>
 
 <script setup lang="ts">
-import { JustifiedLayout } from '@immich/justified-layout-wasm'
-import { decode } from 'blurhash'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { setAuthToken, buildAssetUrl } from '~/utils/auth-client'
-import { blurhashToDataUrl } from '~/composables/useBlurhash'
-
-const computeBlurhash = (hash: string) => import.meta.client ? blurhashToDataUrl(hash) : ''
 
 interface Photo {
     id: string
@@ -489,8 +425,7 @@ const hasMore = ref(false)
 const sentinelRef = ref<HTMLElement | null>(null)
 
 // Layout State
-const containerRef = ref<HTMLElement | null>(null)
-const containerWidth = ref(typeof window !== 'undefined' ? window.innerWidth - 32 : 1200)
+const { containerRef, picturesLayout } = useJustifiedLayout(photos)
 
 // Download State
 const downloading = ref(false)
@@ -996,47 +931,8 @@ const loadMorePhotos = async () => {
     }
 }
 
-// Layout Logic
-const picturesLayout = computed(() => {
-    if (!photos.value.length) return null
-
-    const aspectRatios = new Float32Array(
-        photos.value.map(photo => (photo.width || 1) / (photo.height || 1))
-    )
-
-    // Responsive row height based on screen size
-    const rowHeight = typeof window !== 'undefined' && window.innerWidth < 640 ? 120 : 180
-
-    return new JustifiedLayout(aspectRatios, {
-        rowHeight,
-        rowWidth: containerWidth.value,
-        spacing: typeof window !== 'undefined' && window.innerWidth < 640 ? 8 : 12,
-        heightTolerance: 0.1,
-    })
-})
-
-// Resize Observer
-let resizeObserver: ResizeObserver | null = null
-watch(containerRef, (el) => {
-    if (resizeObserver) {
-        resizeObserver.disconnect()
-        resizeObserver = null
-    }
-
-    if (el) {
-        resizeObserver = new ResizeObserver(entries => {
-            for (const entry of entries) {
-                if (entry.contentRect.width > 0) {
-                    containerWidth.value = entry.contentRect.width
-                }
-            }
-        })
-        resizeObserver.observe(el)
-    }
-})
 
 onUnmounted(() => {
-    if (resizeObserver) resizeObserver.disconnect()
     if (infiniteScrollObserver) infiniteScrollObserver.disconnect()
     resetTheme()
 })
@@ -1066,22 +962,6 @@ const formatDate = (timestamp: number) => {
         month: 'long',
         day: 'numeric',
     })
-}
-
-const getBlurhashUrl = (hash: string | null, width: number | null, height: number | null) => {
-    if (!hash || !width || !height) return null
-    const w = 32
-    const h = Math.round(w * (height / width))
-    const pixels = decode(hash, w, h)
-    const canvas = document.createElement('canvas')
-    canvas.width = w
-    canvas.height = h
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
-    const imageData = ctx.createImageData(w, h)
-    imageData.data.set(pixels)
-    ctx.putImageData(imageData, 0, 0)
-    return canvas.toDataURL()
 }
 
 // Viewer Actions
