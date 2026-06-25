@@ -1896,6 +1896,7 @@ const fetchAlbum = async () => {
         error.value = err.data?.statusMessage || 'Failed to load album'
     } finally {
         loading.value = false
+        loadingPhotos.value = false
     }
 }
 
@@ -2456,7 +2457,6 @@ const confirmCrop = async () => {
         showCropModal.value = false
         photoCropImage.value = null
         showToast('Album cover updated!')
-        await fetchAlbum()
     } catch (err: any) {
         showToast(err.message || 'Failed to crop image', 'error')
     } finally {
