@@ -496,24 +496,25 @@ const containerWidth = ref(typeof window !== 'undefined' ? Math.min(1200, window
 const downloading = ref(false)
 const downloadProgress = ref({ current: 0, total: 0 })
 
-// Favorites State
-const favorites = ref<Set<string>>(new Set())
+// Favorites State — reactive object so toggling one photo only re-renders that tile
+const favoritesMap = reactive<Record<string, boolean>>({})
+const favorites = computed(() => new Set(Object.keys(favoritesMap).filter(k => favoritesMap[k])))
 
-const isFavorited = (photoId: string) => favorites.value.has(photoId)
+const isFavorited = (photoId: string) => !!favoritesMap[photoId]
 
 const toggleFavorite = (photoId: string) => {
-    const s = new Set(favorites.value)
-    if (s.has(photoId)) {
-        s.delete(photoId)
+    if (favoritesMap[photoId]) {
+        delete favoritesMap[photoId]
     } else {
-        s.add(photoId)
+        favoritesMap[photoId] = true
     }
-    favorites.value = s
-    localStorage.setItem(`pichaus_favorites_${token}`, JSON.stringify([...s]))
+    nextTick(() => {
+        localStorage.setItem(`pichaus_favorites_${token}`, JSON.stringify(Object.keys(favoritesMap).filter(k => favoritesMap[k])))
+    })
 }
 
 const clearFavorites = () => {
-    favorites.value = new Set()
+    Object.keys(favoritesMap).forEach(k => delete favoritesMap[k])
     localStorage.removeItem(`pichaus_favorites_${token}`)
 }
 
@@ -787,7 +788,10 @@ onMounted(async () => {
     // Restore favorites from previous session
     const saved = localStorage.getItem(`pichaus_favorites_${token}`)
     if (saved) {
-        try { favorites.value = new Set(JSON.parse(saved)) } catch {}
+        try {
+            const ids: string[] = JSON.parse(saved)
+            ids.forEach(id => { favoritesMap[id] = true })
+        } catch {}
     }
 
     if (linkData.value?.data) {
