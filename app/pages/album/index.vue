@@ -144,9 +144,9 @@
             </div>
 
             <!-- Grid view -->
-            <div v-else-if="albumViewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div v-else-if="albumViewMode === 'grid'" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 <div v-for="album in filteredAlbums" :key="album.id"
-                    class="rounded-2xl overflow-hidden cursor-pointer group relative transition-shadow"
+                    class="rounded-xl overflow-hidden cursor-pointer group relative transition-shadow"
                     :style="selectedAlbumIds.has(album.id) ? 'background: var(--surface-1); border: 2px solid var(--accent); box-shadow: var(--shadow-md);' : 'background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);'"
                     @click="handleAlbumClick(album, $event)"
                     @contextmenu.prevent="handleAlbumRightClick(album, $event)"
@@ -176,7 +176,7 @@
                                 style="opacity: 0;" />
                         </template>
                         <div v-else class="w-full h-full flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                     d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                                 <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5" />
@@ -185,22 +185,22 @@
                     </div>
 
                     <!-- Info -->
-                    <div class="p-4">
-                        <h3 class="font-semibold text-base mb-1 truncate" style="color: var(--text-1);">
+                    <div class="p-3">
+                        <h3 class="font-semibold text-sm mb-0.5 truncate" style="color: var(--text-1);">
                             {{ album.name }}
                         </h3>
-                        <p v-if="album.description" class="text-sm mb-2 line-clamp-2" style="color: var(--text-2);">
+                        <p v-if="album.description" class="text-xs mb-1.5 line-clamp-1" style="color: var(--text-2);">
                             {{ album.description }}
                         </p>
-                        <div v-if="album.tags && album.tags.length > 0" class="flex flex-wrap gap-1 mb-2">
+                        <div v-if="album.tags && album.tags.length > 0" class="flex flex-wrap gap-1 mb-1.5">
                             <span v-for="tag in album.tags" :key="`${album.id}-${tag}`"
-                                class="px-2 py-0.5 rounded-full text-xs"
+                                class="px-1.5 py-0.5 rounded-full text-[10px]"
                                 style="background: var(--surface-3); color: var(--text-2);">
                                 #{{ tag }}
                             </span>
                         </div>
-                        <div class="flex items-center justify-between text-xs" style="color: var(--text-3);">
-                            <span>{{ album._count.photos }} photos · by {{ album.owner.name }}</span>
+                        <div class="flex items-center justify-between text-[10px]" style="color: var(--text-3);">
+                            <span>{{ album._count.photos }} photos · {{ album.owner.name }}</span>
                             <span v-if="album.eventDate">{{ formatDate(album.eventDate) }}</span>
                         </div>
                     </div>
