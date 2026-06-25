@@ -81,7 +81,7 @@
                     class="pt-4 sm:pt-0 mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="text-left md:text-left">
                         <div class="mb-2">
-                            <button @click="clearFavorites(); viewMode = 'group'"
+                            <button @click="unloadFavorites(); viewMode = 'group'"
                                 class="flex items-center gap-1 text-sm px-3 py-1 rounded-full transition"
                                 style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);"
                                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
@@ -156,7 +156,7 @@
                     class="pt-4 sm:pt-0 mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="text-left md:text-left">
                         <div v-if="shareType === 'group'" class="mb-2">
-                            <button @click="clearFavorites(); viewMode = 'group'"
+                            <button @click="unloadFavorites(); viewMode = 'group'"
                                 class="flex items-center gap-1 text-sm px-3 py-1 rounded-full transition"
                                 style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);"
                                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
@@ -435,6 +435,14 @@ const downloadProgress = ref({ current: 0, total: 0 })
 const favoritesMap = reactive<Record<string, boolean>>({})
 const favorites = computed(() => new Set(Object.keys(favoritesMap).filter(k => favoritesMap[k])))
 
+const favoritesKey = (contextId: string) => `pichaus_favorites_${token}_${contextId}`
+
+const currentFavoritesKey = computed(() => {
+    if (viewMode.value === 'album' && albumId.value) return favoritesKey(albumId.value)
+    if (viewMode.value === 'all-group-photos') return favoritesKey('all')
+    return null
+})
+
 const isFavorited = (photoId: string) => !!favoritesMap[photoId]
 
 const toggleFavorite = (photoId: string) => {
@@ -443,14 +451,39 @@ const toggleFavorite = (photoId: string) => {
     } else {
         favoritesMap[photoId] = true
     }
+    const key = currentFavoritesKey.value
+    if (!key) return
     nextTick(() => {
-        localStorage.setItem(`pichaus_favorites_${token}`, JSON.stringify(Object.keys(favoritesMap).filter(k => favoritesMap[k])))
+        const ids = Object.keys(favoritesMap).filter(k => favoritesMap[k])
+        if (ids.length > 0) {
+            localStorage.setItem(key, JSON.stringify(ids))
+        } else {
+            localStorage.removeItem(key)
+        }
     })
 }
 
-const clearFavorites = () => {
+// Clears the reactive map only — keeps localStorage so selections restore on return
+const unloadFavorites = () => {
     Object.keys(favoritesMap).forEach(k => delete favoritesMap[k])
-    localStorage.removeItem(`pichaus_favorites_${token}`)
+}
+
+// Full clear — wipes map + localStorage (for the explicit "Clear" button)
+const clearFavorites = () => {
+    const key = currentFavoritesKey.value
+    unloadFavorites()
+    if (key) localStorage.removeItem(key)
+}
+
+const loadFavoritesForContext = (contextId: string) => {
+    unloadFavorites()
+    const saved = localStorage.getItem(favoritesKey(contextId))
+    if (saved) {
+        try {
+            const ids: string[] = JSON.parse(saved)
+            ids.forEach(id => { favoritesMap[id] = true })
+        } catch {}
+    }
 }
 
 // Platform detection
@@ -721,13 +754,15 @@ const { settings: siteSettings, applyAccent } = useSiteSettings()
 
 // Auto-access if no password (Client-side only)
 onMounted(async () => {
-    // Restore favorites from previous session
-    const saved = localStorage.getItem(`pichaus_favorites_${token}`)
-    if (saved) {
-        try {
-            const ids: string[] = JSON.parse(saved)
-            ids.forEach(id => { favoritesMap[id] = true })
-        } catch {}
+    // Restore favorites for current context
+    if (currentFavoritesKey.value) {
+        const saved = localStorage.getItem(currentFavoritesKey.value)
+        if (saved) {
+            try {
+                const ids: string[] = JSON.parse(saved)
+                ids.forEach(id => { favoritesMap[id] = true })
+            } catch {}
+        }
     }
 
     if (linkData.value?.data) {
@@ -787,11 +822,11 @@ const openAlbum = async (album: any) => {
     description.value = album.description
     eventDate.value = album.eventDate
 
-    // Reset photos and selection
+    // Reset photos, restore selection for this album
     photos.value = []
     page.value = 1
     hasMore.value = false
-    clearFavorites()
+    loadFavoritesForContext(album.id)
 
     viewMode.value = 'album'
 
@@ -800,11 +835,11 @@ const openAlbum = async (album: any) => {
 
 // View all photos from all albums in group
 const viewAllGroupPhotos = async () => {
-    // Reset photos and selection
+    // Reset photos, restore selection for all-group view
     photos.value = []
     page.value = 1
     hasMore.value = false
-    clearFavorites()
+    loadFavoritesForContext('all')
 
     viewMode.value = 'all-group-photos'
 
