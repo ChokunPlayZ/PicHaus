@@ -1,0 +1,83 @@
+import { eq, or } from 'drizzle-orm'
+import { users, siteSettings } from '../../../../db/schema'
+import { createAccessToken, getUnixTimestamp } from '../../../../utils/auth'
+import { exchangeGoogleCode, getGoogleUserInfo, storePendingAuth } from '../../../../utils/google-oauth'
+
+export default defineEventHandler(async (event) => {
+    const query = getQuery(event)
+    const code = typeof query.code === 'string' ? query.code : ''
+    const state = typeof query.state === 'string' ? query.state : ''
+
+    const redirectToError = (msg: string) =>
+        sendRedirect(event, `/auth/google/complete?error=${encodeURIComponent(msg)}`, 302)
+
+    if (!code) return redirectToError('No authorization code received from Google')
+
+    try {
+        const requestUrl = getRequestURL(event)
+        const redirectUri = `${requestUrl.protocol}//${requestUrl.host}/api/v1/auth/google/callback`
+
+        const googleAccessToken = await exchangeGoogleCode(code, redirectUri)
+        const userInfo = await getGoogleUserInfo(googleAccessToken)
+
+        if (!userInfo.email_verified) return redirectToError('Google account email is not verified')
+
+        // Check domain restriction
+        const rows = await db
+            .select({ googleOAuthAllowedDomain: siteSettings.googleOAuthAllowedDomain })
+            .from(siteSettings)
+            .where(eq(siteSettings.id, 1))
+            .limit(1)
+
+        const allowedDomain = rows[0]?.googleOAuthAllowedDomain
+        if (allowedDomain) {
+            const emailDomain = userInfo.email.split('@')[1]
+            if (emailDomain !== allowedDomain) {
+                return redirectToError(`Only @${allowedDomain} accounts are allowed to sign in`)
+            }
+        }
+
+        // Find or create user by googleId or email
+        type DbUser = typeof users.$inferSelect
+        let user: DbUser | null = await db.query.users.findFirst({
+            where: or(eq(users.googleId, userInfo.sub), eq(users.email, userInfo.email)),
+        }).then(r => r ?? null)
+
+        const now = getUnixTimestamp()
+
+        if (user) {
+            if (!user.googleId) {
+                const [updated] = await db.update(users)
+                    .set({ googleId: userInfo.sub, updatedAt: now })
+                    .where(eq(users.id, user.id))
+                    .returning()
+                if (updated) user = updated
+            }
+        } else {
+            const [created] = await db.insert(users).values({
+                email: userInfo.email,
+                name: userInfo.name || userInfo.email.split('@')[0],
+                googleId: userInfo.sub,
+                createdAt: now,
+                updatedAt: now,
+            }).returning()
+            if (!created) return redirectToError('Failed to create user account')
+            user = created
+        }
+
+        if (!user) return redirectToError('Failed to resolve user account')
+
+        const accessToken = await createAccessToken(user.id)
+        const pendingKey = storePendingAuth({
+            accessToken,
+            userId: user.id,
+            name: user.name ?? userInfo.name,
+            email: user.email ?? userInfo.email,
+            state,
+        })
+
+        return sendRedirect(event, `/auth/google/complete?code=${pendingKey}`, 302)
+    } catch (err: any) {
+        return redirectToError(err.statusMessage || err.message || 'Google sign-in failed')
+    }
+})

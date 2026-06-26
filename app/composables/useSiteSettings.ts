@@ -4,6 +4,7 @@ export interface SiteSettings {
     logoImageUrl: string | null
     logoImageId: string | null
     allowRegistration: boolean
+    googleOAuthEnabled: boolean
 }
 
 const _settings = ref<SiteSettings>({
@@ -12,6 +13,7 @@ const _settings = ref<SiteSettings>({
     logoImageUrl: null,
     logoImageId: null,
     allowRegistration: false,
+    googleOAuthEnabled: false,
 })
 const _loaded = ref(false)
 

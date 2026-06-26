@@ -73,21 +73,40 @@
                     <div class="flex-1 h-px" style="background: var(--separator);"></div>
                 </div>
 
-                <!-- Passkey -->
-                <button @click="handlePasskeyLogin" :disabled="passkeyLoading"
-                    class="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-full transition"
-                    style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
-                    @mouseover="!passkeyLoading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
-                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                    <svg v-if="!passkeyLoading" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-2);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 7a4 4 0 11-2.83 6.83L8 18H5v-3l4.17-4.17A4 4 0 0115 7z" />
-                    </svg>
-                    <span v-else class="w-4 h-4 rounded-full border-2 animate-spin"
-                        style="border-color: var(--separator); border-top-color: var(--text-2);"></span>
-                    <span>{{ passkeyLoading ? 'Waiting for passkey…' : 'Sign in with Passkey or Security Key' }}</span>
-                </button>
+                <div class="space-y-2.5">
+                    <!-- Google Sign-In -->
+                    <button v-if="siteSettings.googleOAuthEnabled" @click="handleGoogleLogin" :disabled="googleLoading"
+                        class="w-full flex items-center justify-center gap-2.5 py-2.5 text-sm font-medium rounded-full transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                        @mouseover="!googleLoading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                        <span v-if="googleLoading" class="w-4 h-4 rounded-full border-2 animate-spin"
+                            style="border-color: var(--separator); border-top-color: var(--text-2);"></span>
+                        <svg v-else viewBox="0 0 24 24" class="w-4 h-4 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        </svg>
+                        <span>{{ googleLoading ? 'Redirecting…' : 'Sign in with Google' }}</span>
+                    </button>
+
+                    <!-- Passkey -->
+                    <button @click="handlePasskeyLogin" :disabled="passkeyLoading"
+                        class="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-full transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                        @mouseover="!passkeyLoading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                        <svg v-if="!passkeyLoading" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-2);">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 7a4 4 0 11-2.83 6.83L8 18H5v-3l4.17-4.17A4 4 0 0115 7z" />
+                        </svg>
+                        <span v-else class="w-4 h-4 rounded-full border-2 animate-spin"
+                            style="border-color: var(--separator); border-top-color: var(--text-2);"></span>
+                        <span>{{ passkeyLoading ? 'Waiting for passkey…' : 'Sign in with Passkey or Security Key' }}</span>
+                    </button>
+                </div>
 
                 <div v-if="passkeyError" class="mt-3 rounded-xl px-4 py-3 text-sm"
                     style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
@@ -108,6 +127,7 @@ import { setAuthToken, clearAuthToken } from '~/utils/auth-client'
 
 const route = useRoute()
 const { trigger: splashTrigger, dismiss: splashDismiss } = useSplash()
+const { settings: siteSettings, loadSettings } = useSiteSettings()
 
 const getRedirectTarget = () => {
     const redirect = route.query.redirect
@@ -122,6 +142,7 @@ const loading = ref(false)
 const error = ref('')
 const passkeyLoading = ref(false)
 const passkeyError = ref('')
+const googleLoading = ref(false)
 
 const handleLogin = async () => {
     loading.value = true
@@ -175,10 +196,24 @@ const handlePasskeyLogin = async () => {
     }
 }
 
+const handleGoogleLogin = async () => {
+    googleLoading.value = true
+    try {
+        const res = await $fetch<{ success: boolean; data: { url: string } }>('/api/v1/auth/google/initiate', {
+            query: { redirect: getRedirectTarget() },
+        })
+        window.location.href = res.data.url
+    } catch (err: any) {
+        error.value = err.data?.statusMessage || 'Google sign-in is not available'
+        googleLoading.value = false
+    }
+}
+
 onMounted(async () => {
     try {
         const status = await $fetch<{ data: { setupComplete: boolean } }>('/api/v1/setup/status')
         if (!status.data.setupComplete) { await navigateTo('/setup'); return }
+        await loadSettings()
         try {
             await $fetch('/api/v1/auth/me')
             await navigateTo(getRedirectTarget())

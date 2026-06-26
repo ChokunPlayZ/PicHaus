@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     if (user.role !== 'ADMIN') throw createError({ statusCode: 403, statusMessage: 'Admin only' })
 
     const body = await readBody(event)
-    const { siteName, accentColor, logoImageId, allowRegistration } = body
+    const { siteName, accentColor, logoImageId, allowRegistration, googleOAuthEnabled, googleOAuthAllowedDomain } = body
 
     if (siteName !== undefined && (typeof siteName !== 'string' || siteName.trim().length === 0)) {
         throw createError({ statusCode: 400, statusMessage: 'siteName must be a non-empty string' })
@@ -24,6 +24,8 @@ export default defineEventHandler(async (event) => {
     if (accentColor !== undefined) update.accentColor = accentColor || null
     if (logoImageId !== undefined) update.logoImageId = logoImageId || null
     if (allowRegistration !== undefined) update.allowRegistration = Boolean(allowRegistration)
+    if (googleOAuthEnabled !== undefined) update.googleOAuthEnabled = Boolean(googleOAuthEnabled)
+    if (googleOAuthAllowedDomain !== undefined) update.googleOAuthAllowedDomain = googleOAuthAllowedDomain?.trim() || null
 
     // Upsert: try update first, insert if no row exists
     const existing = await db.select({ id: siteSettings.id }).from(siteSettings).where(eq(siteSettings.id, 1)).limit(1)

@@ -165,10 +165,10 @@ export default defineEventHandler(async (event) => {
                         const valid = await argon2.verify(existingUser.passwordHash, body.accountPassword)
                         if (!valid) throw createError({ statusCode: 401, statusMessage: 'Incorrect password' })
                     }
-                    user = existingUser
-                    if (instagram && !user.instagram) {
-                        const [updated] = await db.update(users).set({ instagram }).where(eq(users.id, user.id)).returning()
-                        user = updated
+                    user = existingUser ?? null
+                    if (instagram && !user?.instagram) {
+                        const [updated] = await db.update(users).set({ instagram }).where(eq(users.id, user!.id)).returning()
+                        user = updated ?? null
                     }
                 } else {
                     const [created] = await db.insert(users).values({
@@ -178,7 +178,7 @@ export default defineEventHandler(async (event) => {
                         createdAt: getUnixTimestamp(),
                         updatedAt: getUnixTimestamp(),
                     }).returning()
-                    user = created
+                    user = created ?? null
                 }
             } else {
                 const [created] = await db.insert(users).values({
@@ -187,9 +187,11 @@ export default defineEventHandler(async (event) => {
                     createdAt: getUnixTimestamp(),
                     updatedAt: getUnixTimestamp(),
                 }).returning()
-                user = created
+                user = created ?? null
             }
         }
+
+        if (!user) throw createError({ statusCode: 500, statusMessage: 'Failed to resolve user' })
 
         const existingCollab = await db.query.albumCollaborators.findFirst({
             where: and(

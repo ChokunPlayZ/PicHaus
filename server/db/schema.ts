@@ -10,6 +10,7 @@ export const users = pgTable('users', {
     id: uuid('id').primaryKey().defaultRandom(),
     email: text('email').unique(),
     passwordHash: text('passwordHash'),
+    googleId: text('googleId').unique(),
     name: text('name'),
     instagram: text('instagram'),
     avatarPath: text('avatarPath'),
@@ -156,6 +157,8 @@ export const siteSettings = pgTable('site_settings', {
     accentColor: text('accentColor'),
     logoImageId: uuid('logoImageId').references(() => logos.id, { onDelete: 'set null' }),
     allowRegistration: boolean('allowRegistration').default(false).notNull(),
+    googleOAuthEnabled: boolean('googleOAuthEnabled').default(false).notNull(),
+    googleOAuthAllowedDomain: text('googleOAuthAllowedDomain'),
     updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
 })
 

@@ -76,6 +76,17 @@
                                     <div>{{ u._count.uploadedPhotos }} Photos</div>
                                 </td>
                                 <td class="px-6 py-4 text-right">
+                                    <button v-if="u.id !== user?.id" @click="impersonateUser(u)"
+                                        class="p-1.5 rounded-lg transition mr-2" style="color: var(--text-2);"
+                                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
+                                        title="Login as this user">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                    </button>
                                     <button @click="openEditModal(u)"
                                         class="p-1.5 rounded-lg transition mr-2" style="color: var(--accent);"
                                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-light)'"
@@ -190,6 +201,9 @@
 
 <script setup lang="ts">
 import { debounce } from 'lodash-es'
+import { getAuthToken, setAuthToken } from '~/utils/auth-client'
+
+const IMPERSONATE_RETURN_KEY = 'pichaus_impersonate_return_token'
 
 interface User {
     id: string
@@ -337,6 +351,23 @@ const handleEditSubmit = async () => {
         alert(err.data?.statusMessage || 'Failed to update user')
     } finally {
         saving.value = false
+    }
+}
+
+const impersonateUser = async (targetUser: User) => {
+    if (!confirm(`Login as ${targetUser.name || targetUser.email || 'this user'}? Your admin session will be saved and you can restore it from the login page.`)) return
+
+    try {
+        const res = await $fetch<{ success: boolean; data: { accessToken: string; name: string } }>(
+            `/api/v1/admin/users/${targetUser.id}/impersonate`, { method: 'POST' }
+        )
+        // Save current admin token so the user can return
+        const currentToken = getAuthToken()
+        if (currentToken) localStorage.setItem(IMPERSONATE_RETURN_KEY, currentToken)
+        setAuthToken(res.data.accessToken)
+        await navigateTo('/album')
+    } catch (err: any) {
+        alert(err.data?.statusMessage || 'Failed to impersonate user')
     }
 }
 </script>

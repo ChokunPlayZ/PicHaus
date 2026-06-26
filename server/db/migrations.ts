@@ -254,6 +254,15 @@ END $$`,
         ],
     },
     {
+        name: '0009_google_oauth.sql',
+        statements: [
+            `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "googleId" TEXT`,
+            `CREATE UNIQUE INDEX IF NOT EXISTS "users_googleId_key" ON "users"("googleId") WHERE "googleId" IS NOT NULL`,
+            `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "googleOAuthEnabled" BOOLEAN NOT NULL DEFAULT false`,
+            `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "googleOAuthAllowedDomain" TEXT`,
+        ],
+    },
+    {
         name: '0008_site_settings.sql',
         statements: [
             `CREATE TABLE IF NOT EXISTS "site_settings" (

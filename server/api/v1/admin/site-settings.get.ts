@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
         .where(eq(siteSettings.id, 1))
         .limit(1)
 
-    const row = rows[0] ?? { siteName: 'PicHaus', accentColor: null, logoImageId: null, allowRegistration: false }
+    const row = rows[0] ?? { siteName: 'PicHaus', accentColor: null, logoImageId: null, allowRegistration: false, googleOAuthEnabled: false, googleOAuthAllowedDomain: null }
 
     return {
         success: true,
@@ -22,6 +22,9 @@ export default defineEventHandler(async (event) => {
             logoImageId: row.logoImageId,
             logoImageUrl: row.logoImageId ? `/api/assets/logo/${row.logoImageId}` : null,
             allowRegistration: row.allowRegistration,
+            googleOAuthEnabled: row.googleOAuthEnabled,
+            googleOAuthAllowedDomain: row.googleOAuthAllowedDomain ?? '',
+            googleClientIdConfigured: !!process.env.GOOGLE_CLIENT_ID,
         },
     }
 })
