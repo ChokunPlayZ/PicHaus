@@ -248,7 +248,7 @@ onMounted(async () => {
 const fetchUsers = async () => {
     loading.value = true
     try {
-        const { data } = await useFetch<{ success: boolean; data: User[]; pagination: any }>('/api/v1/admin/users', {
+        const res = await $fetch<{ success: boolean; data: User[]; pagination: any }>('/api/v1/admin/users', {
             params: {
                 page: pagination.value.page,
                 limit: pagination.value.limit,
@@ -256,9 +256,9 @@ const fetchUsers = async () => {
             }
         })
 
-        if (data.value?.success) {
-            users.value = data.value.data
-            pagination.value = data.value.pagination
+        if (res.success) {
+            users.value = res.data
+            pagination.value = res.pagination
         }
     } catch (err) {
         console.error('Failed to fetch users', err)
