@@ -35,14 +35,21 @@ import { setAuthToken } from '~/utils/auth-client'
 
 const IMPERSONATE_RETURN_KEY = 'pichaus_impersonate_return_token'
 
+const route = useRoute()
 const { splash } = useSplash()
 const { loadSettings } = useSiteSettings()
 const isImpersonating = ref(false)
 
+const syncImpersonating = () => {
+    isImpersonating.value = !!localStorage.getItem(IMPERSONATE_RETURN_KEY)
+}
+
 onMounted(() => {
     loadSettings()
-    isImpersonating.value = !!localStorage.getItem(IMPERSONATE_RETURN_KEY)
+    syncImpersonating()
 })
+
+watch(() => route.fullPath, syncImpersonating)
 
 const returnToAdmin = () => {
     const adminToken = localStorage.getItem(IMPERSONATE_RETURN_KEY)
