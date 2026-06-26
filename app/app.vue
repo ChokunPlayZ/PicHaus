@@ -11,13 +11,19 @@
       </div>
     </Transition>
 
-    <!-- Impersonation banner -->
-    <div v-if="isImpersonating"
-      class="fixed top-0 left-0 right-0 z-[9998] flex items-center justify-between px-4 py-2 text-xs font-medium"
-      style="background: #d97706; color: white;">
-      <span>Impersonation active — viewing as another user</span>
-      <button @click="returnToAdmin" class="underline ml-4 opacity-90 hover:opacity-100">Return to Admin</button>
-    </div>
+    <!-- Impersonation banner: top on desktop, bottom on mobile (avoids status bar + sticky nav) -->
+    <template v-if="isImpersonating">
+      <div class="hidden lg:flex fixed top-0 left-0 right-0 z-[9998] items-center justify-between px-4 py-2 text-xs font-medium"
+        style="background: #d97706; color: white;">
+        <span>Impersonating as another user</span>
+        <button @click="returnToAdmin" class="underline ml-4 opacity-90 hover:opacity-100">Return to Admin</button>
+      </div>
+      <div class="lg:hidden fixed bottom-0 left-0 right-0 z-[9998] flex items-center justify-between px-4 text-xs font-medium"
+        style="background: #d97706; color: white; padding-top: 10px; padding-bottom: max(env(safe-area-inset-bottom, 0px), 10px);">
+        <span class="truncate mr-3">Impersonating as another user</span>
+        <button @click="returnToAdmin" class="flex-shrink-0 underline opacity-90 hover:opacity-100">Return to Admin</button>
+      </div>
+    </template>
 
     <NuxtPage />
     <CommandPalette />
