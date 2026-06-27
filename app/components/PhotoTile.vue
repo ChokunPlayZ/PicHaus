@@ -5,10 +5,10 @@
         :style="{
             outline: selected ? '3px solid var(--accent)' : 'none',
             outlineOffset: selected ? '2px' : '0',
-            top: `${position.top}px`,
-            left: `${position.left}px`,
-            width: `${position.width}px`,
-            height: `${position.height}px`,
+            top: position.top !== undefined ? `${position.top}px` : undefined,
+            left: position.left !== undefined ? `${position.left}px` : undefined,
+            width: position.width !== undefined ? `${position.width}px` : undefined,
+            height: position.height !== undefined ? `${position.height}px` : undefined,
         }"
         @click="$emit('click', $event)"
         @contextmenu.prevent="$emit('contextmenu', $event)"
@@ -90,10 +90,10 @@ interface Photo {
 }
 
 interface Position {
-    top: number
-    left: number
-    width: number
-    height: number
+    top?: number
+    left?: number
+    width?: number
+    height?: number
 }
 
 const props = defineProps<{

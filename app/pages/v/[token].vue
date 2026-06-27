@@ -319,23 +319,44 @@
             style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);">
             <div class="rounded-2xl p-6 max-w-sm w-full"
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
-                <h3 class="text-base font-bold mb-4 text-center" style="color: var(--text-1);">Downloading Photos</h3>
+                <h3 class="text-base font-bold mb-4 text-center" style="color: var(--text-1);">
+                    {{ pendingShareFiles ? 'Photos Ready' : 'Downloading Photos' }}
+                </h3>
 
-                <div class="mb-2 flex justify-between text-sm">
-                    <span style="color: var(--text-2);">Progress</span>
-                    <span style="color: var(--accent); font-weight: 600;">{{ Math.round((downloadProgress.current / downloadProgress.total) * 100) }}%</span>
-                </div>
-
-                <div class="w-full rounded-full h-2 mb-4 overflow-hidden" style="background: var(--surface-3);">
-                    <div class="h-full rounded-full transition-all duration-300 ease-out"
-                        style="background: var(--accent);"
-                        :style="{ width: `${(downloadProgress.current / downloadProgress.total) * 100}%` }">
+                <template v-if="pendingShareFiles">
+                    <p class="text-sm text-center mb-6" style="color: var(--text-2);">
+                        Your photos are ready to share.
+                    </p>
+                    <div class="flex flex-col gap-2">
+                        <button @click="shareFavorites"
+                            class="w-full py-3 rounded-xl text-sm font-semibold transition active:scale-95 text-white"
+                            style="background: var(--accent);">
+                            Share Now
+                        </button>
+                        <button @click="cancelShare"
+                            class="w-full py-3 rounded-xl text-sm font-semibold transition hover:bg-white/5"
+                            style="color: var(--text-2);">
+                            Cancel
+                        </button>
                     </div>
-                </div>
+                </template>
+                <template v-else>
+                    <div class="mb-2 flex justify-between text-sm">
+                        <span style="color: var(--text-2);">Progress</span>
+                        <span style="color: var(--accent); font-weight: 600;">{{ Math.round((downloadProgress.current / downloadProgress.total) * 100) }}%</span>
+                    </div>
 
-                <p class="text-center text-xs" style="color: var(--text-3);">
-                    {{ downloadProgress.current }} of {{ downloadProgress.total }} files processed
-                </p>
+                    <div class="w-full rounded-full h-2 mb-4 overflow-hidden" style="background: var(--surface-3);">
+                        <div class="h-full rounded-full transition-all duration-300 ease-out"
+                            style="background: var(--accent);"
+                            :style="{ width: `${(downloadProgress.current / downloadProgress.total) * 100}%` }">
+                        </div>
+                    </div>
+
+                    <p class="text-center text-xs" style="color: var(--text-3);">
+                        {{ downloadProgress.current }} of {{ downloadProgress.total }} files processed
+                    </p>
+                </template>
             </div>
         </div>
 
@@ -431,6 +452,29 @@ const { containerRef, picturesLayout } = useJustifiedLayout(photos)
 // Download State
 const downloading = ref(false)
 const downloadProgress = ref({ current: 0, total: 0 })
+const pendingShareFiles = ref<File[] | null>(null)
+
+const shareFavorites = async () => {
+    if (!pendingShareFiles.value || !navigator.share) return
+    try {
+        await navigator.share({ files: pendingShareFiles.value })
+    } catch (err: any) {
+        if (err.name !== 'AbortError') {
+            console.error('Share favorites error:', err)
+            dialog.toast('Failed to share photos')
+        }
+    } finally {
+        downloading.value = false
+        pendingShareFiles.value = null
+        downloadProgress.value = { current: 0, total: 0 }
+    }
+}
+
+const cancelShare = () => {
+    downloading.value = false
+    pendingShareFiles.value = null
+    downloadProgress.value = { current: 0, total: 0 }
+}
 
 // Favorites State — reactive object so toggling one photo only re-renders that tile
 const favoritesMap = reactive<Record<string, boolean>>({})
@@ -630,7 +674,9 @@ const downloadFavorites = async () => {
 
     downloading.value = true
     downloadProgress.value = { current: 0, total: photosToDownload.length }
+    pendingShareFiles.value = null
 
+    let skipCleanup = false
     try {
         const files: { blob: Blob; name: string }[] = []
         for (const photo of photosToDownload) {
@@ -650,7 +696,8 @@ const downloadFavorites = async () => {
         if (isIOS.value && navigator.canShare) {
             const shareFiles = files.map(f => new File([f.blob], f.name, { type: f.blob.type }))
             if (navigator.canShare({ files: shareFiles })) {
-                await navigator.share({ files: shareFiles })
+                pendingShareFiles.value = shareFiles
+                skipCleanup = true
                 return
             }
         }
@@ -667,8 +714,10 @@ const downloadFavorites = async () => {
             dialog.toast('Failed to download photos')
         }
     } finally {
-        downloading.value = false
-        downloadProgress.value = { current: 0, total: 0 }
+        if (!skipCleanup) {
+            downloading.value = false
+            downloadProgress.value = { current: 0, total: 0 }
+        }
     }
 }
 

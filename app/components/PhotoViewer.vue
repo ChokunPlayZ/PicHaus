@@ -726,10 +726,10 @@ const sharePhoto = async () => {
     shareTimedOut.value = false
     pendingShareFile.value = null
 
-    // After 8s with no result, show the retry popup
+    // After 1.5s with no result, show the retry popup
     shareTimeoutId = setTimeout(() => {
         if (isSharing.value) shareTimedOut.value = true
-    }, 8000)
+    }, 1500)
 
     try {
         const response = await fetch(buildAssetUrl(`/api/assets/full/${props.photo.id}`))
@@ -744,10 +744,17 @@ const sharePhoto = async () => {
 
         // Gesture still fresh — share directly
         if (navigator.share) {
+            const shareStart = Date.now()
             try {
                 await navigator.share({ files: [file], title: props.photo.originalName })
             } catch (shareErr: any) {
-                if (shareErr.name === 'AbortError') return
+                const duration = Date.now() - shareStart
+                // If it's a real AbortError (user cancelled), duration will be longer (human reaction time).
+                // If the browser blocked it immediately, duration will be very short (< 250ms).
+                if (shareErr.name === 'AbortError' && duration > 250) {
+                    resetShareState()
+                    return
+                }
                 // Gesture may have expired mid-flight — show popup so user can retry
                 pendingShareFile.value = file
                 shareTimedOut.value = true
