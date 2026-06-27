@@ -4,7 +4,7 @@ import { buildGoogleAuthUrl } from '../../../../utils/google-oauth'
 
 export default defineEventHandler(async (event) => {
     const rows = await db
-        .select({ googleOAuthEnabled: siteSettings.googleOAuthEnabled })
+        .select({ googleOAuthEnabled: siteSettings.googleOAuthEnabled, googleOAuthAllowedDomain: siteSettings.googleOAuthAllowedDomain })
         .from(siteSettings)
         .where(eq(siteSettings.id, 1))
         .limit(1)
@@ -25,6 +25,7 @@ export default defineEventHandler(async (event) => {
     const requestUrl = getRequestURL(event)
     const redirectUri = `${requestUrl.protocol}//${requestUrl.host}/api/v1/auth/google/callback`
 
-    const authUrl = buildGoogleAuthUrl(redirectUri, state)
+    const allowedDomain = rows[0]?.googleOAuthAllowedDomain || undefined
+    const authUrl = buildGoogleAuthUrl(redirectUri, state, allowedDomain)
     return { success: true, data: { url: authUrl } }
 })

@@ -31,8 +31,10 @@ export default defineEventHandler(async (event) => {
 
         const allowedDomain = rows[0]?.googleOAuthAllowedDomain
         if (allowedDomain) {
-            const emailDomain = userInfo.email.split('@')[1]
-            if (emailDomain !== allowedDomain) {
+            // Validate the hd claim from Google's token — the authoritative hosted-domain
+            // field for Workspace accounts; cannot be spoofed by a matching email address
+            // on a personal Gmail account.
+            if (userInfo.hd !== allowedDomain) {
                 return redirectToError(`Only @${allowedDomain} accounts are allowed to sign in`)
             }
         }

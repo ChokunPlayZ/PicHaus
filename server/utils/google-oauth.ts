@@ -25,7 +25,7 @@ interface PendingAuth {
 
 const _pending = new Map<string, PendingAuth>()
 
-export function buildGoogleAuthUrl(redirectUri: string, state: string): string {
+export function buildGoogleAuthUrl(redirectUri: string, state: string, hd?: string): string {
     const clientId = process.env.GOOGLE_CLIENT_ID
     if (!clientId) throw createError({ statusCode: 500, statusMessage: 'GOOGLE_CLIENT_ID is not configured' })
     const params = new URLSearchParams({
@@ -37,6 +37,7 @@ export function buildGoogleAuthUrl(redirectUri: string, state: string): string {
         access_type: 'online',
         prompt: 'select_account',
     })
+    if (hd) params.set('hd', hd)
     return `${GOOGLE_AUTH_URL}?${params.toString()}`
 }
 
