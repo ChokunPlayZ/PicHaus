@@ -12,6 +12,8 @@ import {
     deleteFile,
     validateImageFile,
     generateUniqueFilename,
+    shouldAutoCompress,
+    compressImage,
 } from '../../../../utils/upload'
 
 export default defineEventHandler(async (event) => {
@@ -62,6 +64,7 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, statusMessage: 'Invalid image file' })
         }
 
+        // Hash original file for deduplication (before any compression)
         const fileHash = calculateFileHash(fileData.data)
 
         const duplicate = await db.query.photos.findFirst({
@@ -70,15 +73,27 @@ export default defineEventHandler(async (event) => {
         if (duplicate) throw createError({ statusCode: 409, statusMessage: 'This photo already exists in the album' })
 
         const exifData = await extractExifData(fileData.data)
-        const thumbnailBuffer = await generateThumbnail(fileData.data)
-        const blurhash = await generateBlurhash(fileData.data)
+
+        // Compress fresh-off-camera or oversized images before storing
+        let fileBuffer = fileData.data
+        let storedWidth = exifData.width ?? 0
+        let storedHeight = exifData.height ?? 0
+        if (shouldAutoCompress(fileBuffer, exifData.software, storedWidth, storedHeight)) {
+            fileBuffer = await compressImage(fileBuffer, trustedMimeType.split('/')[1] ?? 'jpeg')
+            const compressedMeta = await sharp(fileBuffer).metadata()
+            storedWidth = compressedMeta.width ?? storedWidth
+            storedHeight = compressedMeta.height ?? storedHeight
+        }
+
+        const thumbnailBuffer = await generateThumbnail(fileBuffer)
+        const blurhash = await generateBlurhash(fileBuffer)
 
         const originalFilename = fileData.filename || 'photo.jpg'
         const filename = generateUniqueFilename(originalFilename, fileHash)
         const thumbnailFilename = generateUniqueFilename(originalFilename, fileHash, true)
         const photoId = crypto.randomUUID()
 
-        storagePath = await saveFile(fileData.data, filename, 'photos')
+        storagePath = await saveFile(fileBuffer, filename, 'photos')
         thumbnailStoragePath = await saveFile(thumbnailBuffer, thumbnailFilename, 'thumbnails')
 
         const now = getUnixTimestamp()
@@ -90,7 +105,7 @@ export default defineEventHandler(async (event) => {
             storagePath,
             thumbnailStoragePath,
             blurhash,
-            size: fileData.data.length,
+            size: fileBuffer.length,
             mimeType: trustedMimeType,
             fileHash,
             albumId,
@@ -102,8 +117,8 @@ export default defineEventHandler(async (event) => {
             aperture: exifData.aperture || null,
             shutterSpeed: exifData.shutterSpeed || null,
             dateTaken: exifData.dateTaken ? BigInt(exifData.dateTaken) : null,
-            width: exifData.width || 0,
-            height: exifData.height || 0,
+            width: storedWidth,
+            height: storedHeight,
             createdAt: now,
             updatedAt: now,
         }).returning()

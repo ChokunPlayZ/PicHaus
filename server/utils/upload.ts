@@ -49,6 +49,50 @@ export async function generateBlurhash(buffer: Buffer): Promise<string> {
     )
 }
 
+const EDITING_SOFTWARE_RE = /lightroom|photoshop|capture\s*one|darktable|rawtherapee|luminar|on1|acdsee|gimp|pixelmator|affinity|snapseed|vsco|silkypix|dxo|imagemagick|topaz|helicon/i
+
+/**
+ * Detect if an image appears to be fresh off the camera (not post-processed in editing software)
+ * and/or is unnecessarily large. Returns true when the image should be auto-compressed.
+ */
+export function shouldAutoCompress(
+    buffer: Buffer,
+    exifSoftware: string | undefined,
+    width: number,
+    height: number,
+): boolean {
+    const fileSizeMB = buffer.length / (1024 * 1024)
+    const megapixels = (width * height) / 1_000_000
+
+    // Very large files always get compressed regardless of origin
+    if (fileSizeMB > 15) return true
+
+    // If editing software is detected, respect the export as-is
+    if (exifSoftware && EDITING_SOFTWARE_RE.test(exifSoftware)) return false
+
+    // Fresh off camera (no editing software) and notably large → compress
+    return fileSizeMB > 4 || megapixels > 15
+}
+
+/**
+ * Compress an image to a web-friendly size. Returns the compressed buffer.
+ */
+export async function compressImage(buffer: Buffer, format: string): Promise<Buffer> {
+    const MAX_DIMENSION = 4000
+    let pipeline = sharp(buffer).resize(MAX_DIMENSION, MAX_DIMENSION, {
+        fit: 'inside',
+        withoutEnlargement: true,
+    })
+
+    if (format === 'png') {
+        pipeline = pipeline.png({ quality: 88, compressionLevel: 8 })
+    } else {
+        pipeline = pipeline.jpeg({ quality: 88, progressive: true })
+    }
+
+    return pipeline.toBuffer()
+}
+
 /**
  * Extract EXIF data and dimensions from image buffer
  */
@@ -62,13 +106,14 @@ export async function extractExifData(buffer: Buffer): Promise<{
     aperture?: string
     shutterSpeed?: string
     dateTaken?: number
+    software?: string
 }> {
     try {
         // Get dimensions from sharp
         const metadata = await sharp(buffer).metadata()
 
         const exif = await exifr.parse(buffer, {
-            pick: ['Make', 'Model', 'LensModel', 'FocalLength', 'ISO', 'FNumber', 'ExposureTime', 'DateTimeOriginal'],
+            pick: ['Make', 'Model', 'LensModel', 'FocalLength', 'ISO', 'FNumber', 'ExposureTime', 'DateTimeOriginal', 'Software'],
         })
 
         const result: any = {
@@ -84,6 +129,7 @@ export async function extractExifData(buffer: Buffer): Promise<{
             result.aperture = exif.FNumber ? `f/${Number(exif.FNumber).toFixed(1)}` : undefined
             result.shutterSpeed = exif.ExposureTime ? `1/${Math.round(1 / exif.ExposureTime)}s` : undefined
             result.dateTaken = exif.DateTimeOriginal ? Math.floor(new Date(exif.DateTimeOriginal).getTime() / 1000) : undefined
+            result.software = exif.Software || undefined
         }
 
         return result
