@@ -113,6 +113,7 @@ export const shareLinks = pgTable('share_links', {
     createdAt: bigint('createdAt', { mode: 'bigint' }).notNull(),
     expiresAt: bigint('expiresAt', { mode: 'bigint' }),
     showMetadata: boolean('showMetadata').default(true).notNull(),
+    uploadMessage: text('uploadMessage'),
     albumId: uuid('albumId').references(() => albums.id, { onDelete: 'cascade' }),
     shareGroupId: uuid('shareGroupId').references(() => shareGroups.id, { onDelete: 'cascade' }),
 })
