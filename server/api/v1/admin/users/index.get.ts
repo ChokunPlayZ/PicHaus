@@ -1,4 +1,4 @@
-import { eq, ilike, or, desc, count, sql } from 'drizzle-orm'
+import { eq, ilike, or, desc, count, inArray } from 'drizzle-orm'
 import { users, albums, photos } from '../../../../db/schema'
 import { requireAuth } from '../../../../utils/auth'
 
@@ -24,8 +24,6 @@ export default defineEventHandler(async (event) => {
                 email: users.email,
                 role: users.role,
                 createdAt: users.createdAt,
-                albumCount: sql<number>`(SELECT COUNT(*) FROM albums WHERE albums."ownerId" = ${users.id})`,
-                photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."uploaderId" = ${users.id})`,
             })
                 .from(users)
                 .where(where)
@@ -35,6 +33,24 @@ export default defineEventHandler(async (event) => {
             db.select({ total: count() }).from(users).where(where),
         ])
 
+        const userIds = rows.map(u => u.id)
+
+        const [albumCounts, photoCounts] = userIds.length > 0
+            ? await Promise.all([
+                db.select({ ownerId: albums.ownerId, cnt: count() })
+                    .from(albums)
+                    .where(inArray(albums.ownerId, userIds))
+                    .groupBy(albums.ownerId),
+                db.select({ uploaderId: photos.uploaderId, cnt: count() })
+                    .from(photos)
+                    .where(inArray(photos.uploaderId, userIds))
+                    .groupBy(photos.uploaderId),
+            ])
+            : [[], []]
+
+        const albumCountMap = new Map(albumCounts.map(r => [r.ownerId, Number(r.cnt)]))
+        const photoCountMap = new Map(photoCounts.map(r => [r.uploaderId, Number(r.cnt)]))
+
         return {
             success: true,
             data: rows.map(u => ({
@@ -43,7 +59,10 @@ export default defineEventHandler(async (event) => {
                 email: u.email,
                 role: u.role,
                 createdAt: Number(u.createdAt),
-                _count: { ownedAlbums: Number(u.albumCount), uploadedPhotos: Number(u.photoCount) },
+                _count: {
+                    ownedAlbums: albumCountMap.get(u.id) ?? 0,
+                    uploadedPhotos: photoCountMap.get(u.id) ?? 0,
+                },
             })),
             pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
         }
