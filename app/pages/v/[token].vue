@@ -667,14 +667,60 @@ const downloadFavorites = async () => {
     if (downloading.value || favorites.value.size === 0) return
 
     const favIds = [...favorites.value]
-    const photosToDownload = photos.value.filter(p => favIds.includes(p.id))
-    if (photosToDownload.length === 0) return
+    let photosToDownload = photos.value.filter(p => favIds.includes(p.id))
 
     const folderName = (viewMode.value === 'album' ? albumName.value : groupTitle.value) || 'photos'
 
     downloading.value = true
-    downloadProgress.value = { current: 0, total: photosToDownload.length }
+    downloadProgress.value = { current: 0, total: favIds.length }
     pendingShareFiles.value = null
+
+    // Check if we need to fetch missing photos (e.g. after a page reload/lazy loading)
+    const allFavsLoaded = favIds.every(id => photos.value.some(p => p.id === id))
+    if (!allFavsLoaded) {
+        try {
+            let allAlbumPhotos: any[] = []
+            if (viewMode.value === 'album' && albumId.value) {
+                const response = await $fetch<{ success: boolean; data: any[] }>(`/api/v1/album/${albumId.value}/download-info`)
+                if (response.success && Array.isArray(response.data)) {
+                    allAlbumPhotos = response.data
+                }
+            } else if ((viewMode.value === 'all-group-photos' || viewMode.value === 'group') && groupAlbums.value.length > 0) {
+                for (const album of groupAlbums.value) {
+                    try {
+                        const response = await $fetch<{ success: boolean; data: any[] }>(`/api/v1/album/${album.id}/download-info`)
+                        if (response.success && Array.isArray(response.data)) {
+                            allAlbumPhotos.push(...response.data)
+                        }
+                    } catch (err) {
+                        console.error(`Failed to get download info for album ${album.id}:`, err)
+                    }
+                }
+            }
+            if (allAlbumPhotos.length > 0) {
+                // Deduplicate photos by ID to be safe
+                const seenIds = new Set<string>()
+                const uniquePhotos: any[] = []
+                for (const photo of allAlbumPhotos) {
+                    if (!seenIds.has(photo.id)) {
+                        seenIds.add(photo.id)
+                        uniquePhotos.push(photo)
+                    }
+                }
+                photosToDownload = uniquePhotos.filter(p => favIds.includes(p.id))
+            }
+        } catch (err) {
+            console.error('Failed to fetch full photo list for download:', err)
+        }
+    }
+
+    if (photosToDownload.length === 0) {
+        downloading.value = false
+        downloadProgress.value = { current: 0, total: 0 }
+        return
+    }
+
+    downloadProgress.value.total = photosToDownload.length
 
     let skipCleanup = false
     try {
