@@ -116,6 +116,8 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useDialog()
+
 interface ApiToken {
     id: string
     name: string
@@ -200,13 +202,13 @@ const copyToken = async () => {
 
 // Revoke token
 const revokeToken = async (id: string) => {
-    if (!confirm('Are you sure you want to revoke this token? This action cannot be undone.')) return
+    if (!await dialog.confirm('Are you sure you want to revoke this token? This action cannot be undone.', { danger: true })) return
 
     try {
         await $fetch(`/api/v1/api-tokens/${id}`, { method: 'DELETE' })
         tokens.value = tokens.value.filter(t => t.id !== id)
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to revoke token')
+        dialog.toast(err.data?.statusMessage || 'Failed to revoke token')
     }
 }
 

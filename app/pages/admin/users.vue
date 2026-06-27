@@ -200,6 +200,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useDialog()
 import { debounce } from 'lodash-es'
 import { getAuthToken, setAuthToken } from '~/utils/auth-client'
 
@@ -279,7 +280,7 @@ const changePage = (page: number) => {
 
 const updateRole = async (targetUser: User, event: Event) => {
     const newRole = (event.target as HTMLSelectElement).value
-    if (!confirm(`Change ${targetUser.name}'s role to ${newRole}?`)) {
+    if (!await dialog.confirm(`Change ${targetUser.name}'s role to ${newRole}?`)) {
         // Reset select value if cancelled (tricky with v-model, better to force update or reload)
         fetchUsers()
         return
@@ -292,13 +293,13 @@ const updateRole = async (targetUser: User, event: Event) => {
         })
         targetUser.role = newRole as 'USER' | 'ADMIN'
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to update role')
+        dialog.toast(err.data?.statusMessage || 'Failed to update role')
         fetchUsers() // Revert UI
     }
 }
 
 const deleteUser = async (targetUser: User) => {
-    if (!confirm(`Are you sure you want to delete ${targetUser.name}? This will delete all their albums and photos.`)) return
+    if (!await dialog.confirm(`Are you sure you want to delete ${targetUser.name}? This will delete all their albums and photos.`, { danger: true })) return
 
     try {
         await $fetch(`/api/v1/admin/users/${targetUser.id}`, {
@@ -306,7 +307,7 @@ const deleteUser = async (targetUser: User) => {
         })
         fetchUsers()
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to delete user')
+        dialog.toast(err.data?.statusMessage || 'Failed to delete user')
     }
 }
 
@@ -348,14 +349,14 @@ const handleEditSubmit = async () => {
         showEditModal.value = false
         fetchUsers()
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to update user')
+        dialog.toast(err.data?.statusMessage || 'Failed to update user')
     } finally {
         saving.value = false
     }
 }
 
 const impersonateUser = async (targetUser: User) => {
-    if (!confirm(`Login as ${targetUser.name || targetUser.email || 'this user'}? Your admin session will be saved and you can restore it from the login page.`)) return
+    if (!await dialog.confirm(`Login as ${targetUser.name || targetUser.email || 'this user'}? Your admin session will be saved and you can restore it from the login page.`)) return
 
     try {
         const res = await $fetch<{ success: boolean; data: { accessToken: string; name: string } }>(
@@ -367,7 +368,7 @@ const impersonateUser = async (targetUser: User) => {
         setAuthToken(res.data.accessToken)
         await navigateTo('/album')
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to impersonate user')
+        dialog.toast(err.data?.statusMessage || 'Failed to impersonate user')
     }
 }
 </script>

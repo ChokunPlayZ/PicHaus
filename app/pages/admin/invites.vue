@@ -165,6 +165,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useDialog()
 definePageMeta({ middleware: 'auth' })
 
 interface Token {
@@ -276,7 +277,7 @@ async function copyLink(token: string) {
 }
 
 async function revoke(id: string) {
-    if (!confirm('Revoke this link? It will no longer be usable.')) return
+    if (!await dialog.confirm('Revoke this link? It will no longer be usable.', { danger: true })) return
     await $fetch(`/api/v1/admin/invites/${id}`, { method: 'DELETE' })
     await loadTokens()
 }

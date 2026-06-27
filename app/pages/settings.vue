@@ -304,6 +304,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useDialog()
 const form = ref({ name: '', email: '', instagram: '', password: '', currentAvatar: '' as string | null })
 const saving = ref(false)
 const error = ref('')
@@ -627,7 +628,7 @@ const confirmRegister = async () => {
 }
 
 const removePasskey = async (id: string) => {
-    if (!confirm('Remove this passkey? You won\'t be able to use it to sign in anymore.')) return
+    if (!await dialog.confirm("Remove this passkey? You won't be able to use it to sign in anymore.", { danger: true })) return
     try {
         await $fetch(`/api/v1/auth/passkey/${id}`, { method: 'DELETE' })
         passkeys.value = passkeys.value.filter(p => p.id !== id)

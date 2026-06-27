@@ -314,6 +314,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useDialog()
 import { getAuthToken, setAuthToken } from '~/utils/auth-client'
 
 const { settings: siteSettings, loadSettings } = useSiteSettings()
@@ -432,14 +433,14 @@ const handlePasswordSubmit = async () => {
             if (authToken) {
                 const joined = await autoJoinAsLoggedIn(authToken, uploadPassword.value)
                 if (!joined) {
-                    alert('Failed to join album. Please try signing in again.')
+                    dialog.toast('Failed to join album. Please try signing in again.')
                 }
             }
         } else {
             step.value = 'identity'
         }
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Invalid password')
+        dialog.toast(err.data?.statusMessage || 'Invalid password')
     } finally {
         verifying.value = false
     }
@@ -457,7 +458,7 @@ const handleGoogleLogin = async () => {
         await navigateTo(res.data.url, { external: true })
     } catch (err: any) {
         googleLoading.value = false
-        alert(err.data?.statusMessage || 'Failed to initiate Google sign-in')
+        dialog.toast(err.data?.statusMessage || 'Failed to initiate Google sign-in')
     }
 }
 

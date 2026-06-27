@@ -1016,34 +1016,6 @@
             :has-next="selectedPhotoIndex! < (photos.length || 0) - 1 || hasMore" :previous-photo-id="previousPhotoId"
             :next-photo-id="nextPhotoId" @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto" />
 
-        <!-- Toast Notifications -->
-        <div class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none">
-            <TransitionGroup enter-active-class="transition duration-300 ease-out"
-                enter-from-class="transform translate-y-2 opacity-0"
-                enter-to-class="transform translate-y-0 opacity-100"
-                leave-active-class="transition duration-200 ease-in"
-                leave-from-class="transform translate-y-0 opacity-100"
-                leave-to-class="transform translate-y-2 opacity-0">
-                <div v-for="toast in toasts" :key="toast.id"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium pointer-events-auto"
-                    :style="toast.type === 'success'
-                        ? 'background: var(--success-bg); border: 1px solid var(--success-border); color: var(--success-text); box-shadow: var(--shadow-md);'
-                        : toast.type === 'error'
-                        ? 'background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text); box-shadow: var(--shadow-md);'
-                        : 'background: var(--accent-light); border: 1px solid var(--accent); color: var(--accent); box-shadow: var(--shadow-md);'">
-                    <svg v-if="toast.type === 'success'" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <svg v-else-if="toast.type === 'error'" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{{ toast.message }}</span>
-                </div>
-            </TransitionGroup>
-        </div>
 
         <!-- Full-screen Drag-to-Upload Overlay -->
         <Teleport to="body">
@@ -1073,6 +1045,7 @@
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { clearAuthToken, buildAssetUrl, getAuthToken } from '~/utils/auth-client'
+const { confirm: dialogConfirm, toast } = useDialog()
 import { calculateSHA256 } from '~/utils/hash'
 
 interface User {
@@ -1194,21 +1167,6 @@ const filters = ref({
     photographer: ''
 })
 
-// Toasts
-interface Toast {
-    id: string
-    message: string
-    type: 'success' | 'error' | 'info'
-}
-const toasts = ref<Toast[]>([])
-
-const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
-    const id = Math.random().toString(36).substring(7)
-    toasts.value.push({ id, message, type })
-    setTimeout(() => {
-        toasts.value = toasts.value.filter(t => t.id !== id)
-    }, 3000)
-}
 
 // Computed: Get unique cameras from all photos
 const availableCameras = computed(() => {
@@ -1686,7 +1644,7 @@ const downloadSelected = async () => {
         saveAs(content, `${album.value?.name || 'album'}-selected.zip`)
     } catch (err) {
         console.error('Download selected error:', err)
-        alert('Failed to download selected photos')
+        toast('Failed to download selected photos', 'error')
     } finally {
         downloading.value = false
         downloadProgress.value = { current: 0, total: 0 }
@@ -1694,7 +1652,7 @@ const downloadSelected = async () => {
 }
 
 const deleteSelected = async () => {
-    if (!confirm(`Are you sure you want to delete ${selectedPhotoIds.value.size} photos?`)) return
+    if (!await dialogConfirm(`Are you sure you want to delete ${selectedPhotoIds.value.size} photos?`, { danger: true })) return
 
     try {
         const ids = Array.from(selectedPhotoIds.value)
@@ -1710,7 +1668,7 @@ const deleteSelected = async () => {
         // Refresh album to update counts
         await fetchAlbum()
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to delete photos')
+        toast(err.data?.statusMessage || 'Failed to delete photos', 'error')
     }
 }
 useSeoMeta({
@@ -1932,7 +1890,7 @@ const handleUpdateAlbum = async () => {
 
 // Delete album
 const confirmDelete = async () => {
-    if (!confirm('Are you sure you want to delete this album? This action cannot be undone.')) {
+    if (!await dialogConfirm('Are you sure you want to delete this album? This action cannot be undone.', { danger: true })) {
         return
     }
 
@@ -1940,7 +1898,7 @@ const confirmDelete = async () => {
         await $fetch(`/api/v1/album/${albumId}`, { method: 'DELETE' })
         await navigateTo('/album')
     } catch (err: any) {
-        showToast(err.data?.statusMessage || 'Failed to delete album', 'error')
+        toast(err.data?.statusMessage || 'Failed to delete album', 'error')
     }
 }
 
@@ -2030,11 +1988,11 @@ const createShareLink = async () => {
         })
         newLink.value = { type: 'view', label: '', password: '', showMetadata: true }
         await fetchShareLinks()
-        showToast('Link created')
+        toast('Link created')
         const created = shareLinks.value.find(l => l.id === response.data?.id)
         if (created) showQr(created)
     } catch (err: any) {
-        showToast(err.data?.statusMessage || 'Failed to create link', 'error')
+        toast(err.data?.statusMessage || 'Failed to create link', 'error')
     } finally {
         creatingLink.value = false
     }
@@ -2080,11 +2038,11 @@ const updateShareLink = async () => {
             body
         })
 
-        showToast('Link updated')
+        toast('Link updated')
         cancelEditing()
         await fetchShareLinks()
     } catch (err: any) {
-        showToast(err.data?.statusMessage || 'Failed to update link', 'error')
+        toast(err.data?.statusMessage || 'Failed to update link', 'error')
     } finally {
         updatingLink.value = false
     }
@@ -2092,13 +2050,13 @@ const updateShareLink = async () => {
 
 
 const deleteLink = async (id: string) => {
-    if (!confirm('Delete this link? Users will no longer be able to access it.')) return
+    if (!await dialogConfirm('Delete this link? Users will no longer be able to access it.', { danger: true })) return
     try {
         await $fetch(`/api/v1/share-links/${id}`, { method: 'DELETE' })
         await fetchShareLinks()
-        showToast('Link deleted')
+        toast('Link deleted')
     } catch (err: any) {
-        showToast(err.data?.statusMessage || 'Failed to delete link', 'error')
+        toast(err.data?.statusMessage || 'Failed to delete link', 'error')
     }
 }
 
@@ -2140,7 +2098,7 @@ const copyLink = async (link: ShareLink) => {
         setTimeout(() => link.copied = false, 2000)
     } catch (err) {
         console.error('Failed to copy link:', err)
-        showToast('Failed to copy link', 'error')
+        toast('Failed to copy link', 'error')
     }
 }
 
@@ -2157,12 +2115,12 @@ const downloadPhoto = async (photo: Photo) => {
         saveAs(blob, photo.originalName)
     } catch (err) {
         console.error('Failed to download photo', err)
-        showToast('Failed to download photo', 'error')
+        toast('Failed to download photo', 'error')
     }
 }
 
 const deletePhoto = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this photo?')) return
+    if (!await dialogConfirm('Are you sure you want to delete this photo?', { danger: true })) return
     try {
         await $fetch(`/api/v1/album/${albumId}/photos/batch-delete`, {
             method: 'POST',
@@ -2171,9 +2129,9 @@ const deletePhoto = async (id: string) => {
         photos.value = photos.value.filter(p => p.id !== id)
         selectedPhotoIds.value.delete(id)
         await fetchAlbum()
-        showToast('Photo deleted')
+        toast('Photo deleted')
     } catch (err: any) {
-        showToast(err.data?.statusMessage || 'Failed to delete photo', 'error')
+        toast(err.data?.statusMessage || 'Failed to delete photo', 'error')
     }
 }
 
@@ -2366,9 +2324,9 @@ const confirmCrop = async () => {
         }
         showCropModal.value = false
         photoCropImage.value = null
-        showToast('Album cover updated!')
+        toast('Album cover updated!')
     } catch (err: any) {
-        showToast(err.message || 'Failed to crop image', 'error')
+        toast(err.message || 'Failed to crop image', 'error')
     } finally {
         croppingCover.value = false
     }
@@ -2406,7 +2364,7 @@ const downloadAll = async () => {
         const photosToDownload = response.data
 
         if (photosToDownload.length === 0) {
-            showToast('No photos to download', 'info')
+            toast('No photos to download', 'info')
             return
         }
 
@@ -2437,7 +2395,7 @@ const downloadAll = async () => {
         saveAs(content, `${album.value?.name || 'album'}.zip`)
     } catch (err) {
         console.error('Download all error:', err)
-        showToast('Failed to download photos', 'error')
+        toast('Failed to download photos', 'error')
     } finally {
         downloading.value = false
         downloadProgress.value = { current: 0, total: 0 }

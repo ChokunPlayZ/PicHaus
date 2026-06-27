@@ -350,6 +350,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useDialog()
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { setAuthToken, buildAssetUrl } from '~/utils/auth-client'
@@ -522,7 +523,7 @@ const downloadAll = async () => {
         const photosToDownload = response.data
 
         if (photosToDownload.length === 0) {
-            alert('No photos to download')
+            dialog.toast('No photos to download', 'warning')
             return
         }
 
@@ -550,7 +551,7 @@ const downloadAll = async () => {
         saveAs(content, `${albumName.value || 'album'}.zip`)
     } catch (err) {
         console.error('Download all error:', err)
-        alert('Failed to download photos')
+        dialog.toast('Failed to download photos')
     } finally {
         downloading.value = false
         downloadProgress.value = { current: 0, total: 0 }
@@ -579,7 +580,7 @@ const downloadAllGroupPhotos = async () => {
         }
 
         if (photosToDownload.length === 0) {
-            alert('No photos to download')
+            dialog.toast('No photos to download', 'warning')
             return
         }
 
@@ -610,7 +611,7 @@ const downloadAllGroupPhotos = async () => {
         saveAs(content, `${groupTitle.value || 'group'}-photos.zip`)
     } catch (err) {
         console.error('Download all group photos error:', err)
-        alert('Failed to download photos')
+        dialog.toast('Failed to download photos')
     } finally {
         downloading.value = false
         downloadProgress.value = { current: 0, total: 0 }
@@ -663,7 +664,7 @@ const downloadFavorites = async () => {
     } catch (err: any) {
         if (err.name !== 'AbortError') {
             console.error('Download favorites error:', err)
-            alert('Failed to download photos')
+            dialog.toast('Failed to download photos')
         }
     } finally {
         downloading.value = false
@@ -808,7 +809,7 @@ const handleAccess = async () => {
             await fetchPhotos()
         }
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to access')
+        dialog.toast(err.data?.statusMessage || 'Failed to access')
         loading.value = false
     } finally {
         accessing.value = false

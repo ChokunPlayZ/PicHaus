@@ -27,6 +27,8 @@
 
     <NuxtPage />
     <CommandPalette />
+    <AppConfirmDialog />
+    <AppToast />
   </div>
 </template>
 

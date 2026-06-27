@@ -346,6 +346,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useDialog()
 import { buildAssetUrl } from '~/utils/auth-client'
 import { ALBUM_THEMES } from '~/composables/useAlbumTheme'
 
@@ -561,7 +562,7 @@ const copyLink = async (id: string, path: string) => {
 
     } catch (err) {
         console.error('Failed to copy: ', err)
-        alert('Failed to copy link manually: ' + url)
+        dialog.toast('Failed to copy link manually: ' + url)
     }
 }
 
@@ -582,7 +583,7 @@ const handleDelete = async () => {
         showDeleteModal.value = false
         linkToDelete.value = null
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to delete link')
+        dialog.toast(err.data?.statusMessage || 'Failed to delete link')
     } finally {
         deleting.value = false
     }

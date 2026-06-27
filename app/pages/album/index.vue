@@ -578,6 +578,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useDialog()
 import { clearAuthToken } from '~/utils/auth-client'
 import { ALBUM_THEMES } from '~/composables/useAlbumTheme'
 
@@ -816,12 +817,12 @@ const toggleAlbumSelection = (albumId: string) => {
 }
 
 const deleteAlbumFromMenu = async (albumId: string) => {
-    if (!confirm('Are you sure you want to delete this album? This action cannot be undone.')) return
+    if (!await dialog.confirm('Are you sure you want to delete this album? This action cannot be undone.', { danger: true })) return
     try {
         await $fetch(`/api/v1/album/${albumId}`, { method: 'DELETE' })
         albums.value = albums.value.filter(a => a.id !== albumId)
     } catch (err: any) {
-        alert(err.data?.statusMessage || 'Failed to delete album')
+        dialog.toast(err.data?.statusMessage || 'Failed to delete album')
     }
 }
 
@@ -974,7 +975,7 @@ const copyToClipboard = async (text: string) => {
         setTimeout(() => { copied.value = false }, 2000)
     } catch (err) {
         console.error('Failed to copy', err)
-        alert('Failed to copy link manually: ' + text)
+        dialog.toast('Failed to copy link manually: ' + text)
     }
 }
 
