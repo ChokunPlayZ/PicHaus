@@ -92,6 +92,24 @@
                         <span>{{ googleLoading ? 'Redirecting…' : (siteSettings.googleButtonText || 'Sign in with Google') }}</span>
                     </button>
 
+                    <!-- Microsoft Sign-In -->
+                    <button v-if="siteSettings.microsoftOAuthEnabled" @click="handleMicrosoftLogin" :disabled="microsoftLoading"
+                        class="w-full flex items-center justify-center gap-2.5 py-2.5 text-sm font-medium rounded-full transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                        @mouseover="!microsoftLoading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                        <span v-if="microsoftLoading" class="w-4 h-4 rounded-full border-2 animate-spin"
+                            style="border-color: var(--separator); border-top-color: var(--text-2);"></span>
+                        <img v-else-if="siteSettings.microsoftButtonLogoUrl" :src="siteSettings.microsoftButtonLogoUrl" class="w-4 h-4 flex-shrink-0 object-contain" />
+                        <svg v-else viewBox="0 0 21 21" class="w-4 h-4 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                            <rect x="11" y="1" width="9" height="9" fill="#00a4ef"/>
+                            <rect x="1" y="11" width="9" height="9" fill="#7fba00"/>
+                            <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                        </svg>
+                        <span>{{ microsoftLoading ? 'Redirecting…' : (siteSettings.microsoftButtonText || 'Sign in with Microsoft') }}</span>
+                    </button>
+
                     <!-- Passkey -->
                     <button @click="handlePasskeyLogin" :disabled="passkeyLoading"
                         class="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-full transition"
@@ -144,6 +162,7 @@ const error = ref('')
 const passkeyLoading = ref(false)
 const passkeyError = ref('')
 const googleLoading = ref(false)
+const microsoftLoading = ref(false)
 
 const handleLogin = async () => {
     loading.value = true
@@ -208,6 +227,19 @@ const handleGoogleLogin = async (event?: MouseEvent) => {
     } catch (err: any) {
         error.value = err.data?.statusMessage || 'Google sign-in is not available'
         googleLoading.value = false
+    }
+}
+
+const handleMicrosoftLogin = async () => {
+    microsoftLoading.value = true
+    try {
+        const res = await $fetch<{ success: boolean; data: { url: string } }>('/api/v1/auth/microsoft/initiate', {
+            query: { redirect: getRedirectTarget() },
+        })
+        window.location.href = res.data.url
+    } catch (err: any) {
+        error.value = err.data?.statusMessage || 'Microsoft sign-in is not available'
+        microsoftLoading.value = false
     }
 }
 

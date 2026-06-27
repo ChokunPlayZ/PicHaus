@@ -271,6 +271,17 @@ END $$`,
         ],
     },
     {
+        name: '0011_microsoft_oauth.sql',
+        statements: [
+            `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "microsoftId" TEXT`,
+            `CREATE UNIQUE INDEX IF NOT EXISTS "users_microsoftId_key" ON "users"("microsoftId") WHERE "microsoftId" IS NOT NULL`,
+            `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "microsoftOAuthEnabled" BOOLEAN NOT NULL DEFAULT false`,
+            `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "microsoftOAuthTenantId" TEXT`,
+            `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "microsoftButtonText" TEXT`,
+            `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "microsoftButtonLogoId" UUID REFERENCES "logos"("id") ON DELETE SET NULL`,
+        ],
+    },
+    {
         name: '0008_site_settings.sql',
         statements: [
             `CREATE TABLE IF NOT EXISTS "site_settings" (

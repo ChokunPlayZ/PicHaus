@@ -11,6 +11,7 @@ export const users = pgTable('users', {
     email: text('email').unique(),
     passwordHash: text('passwordHash'),
     googleId: text('googleId').unique(),
+    microsoftId: text('microsoftId').unique(),
     name: text('name'),
     instagram: text('instagram'),
     avatarPath: text('avatarPath'),
@@ -163,6 +164,10 @@ export const siteSettings = pgTable('site_settings', {
     googleOAuthShiftBypassEnabled: boolean('googleOAuthShiftBypassEnabled').default(false).notNull(),
     googleButtonText: text('googleButtonText'),
     googleButtonLogoId: uuid('googleButtonLogoId').references(() => logos.id, { onDelete: 'set null' }),
+    microsoftOAuthEnabled: boolean('microsoftOAuthEnabled').default(false).notNull(),
+    microsoftOAuthTenantId: text('microsoftOAuthTenantId'),
+    microsoftButtonText: text('microsoftButtonText'),
+    microsoftButtonLogoId: uuid('microsoftButtonLogoId').references(() => logos.id, { onDelete: 'set null' }),
     updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
 })
 

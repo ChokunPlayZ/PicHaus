@@ -29,6 +29,12 @@ export default defineEventHandler(async (event) => {
             googleButtonLogoId: row.googleButtonLogoId ?? null,
             googleButtonLogoUrl: row.googleButtonLogoId ? `/api/assets/logo/${row.googleButtonLogoId}` : null,
             googleClientIdConfigured: !!process.env.GOOGLE_CLIENT_ID,
+            microsoftOAuthEnabled: row.microsoftOAuthEnabled ?? false,
+            microsoftOAuthTenantId: row.microsoftOAuthTenantId ?? '',
+            microsoftButtonText: row.microsoftButtonText ?? '',
+            microsoftButtonLogoId: row.microsoftButtonLogoId ?? null,
+            microsoftButtonLogoUrl: row.microsoftButtonLogoId ? `/api/assets/logo/${row.microsoftButtonLogoId}` : null,
+            microsoftClientIdConfigured: !!process.env.MICROSOFT_CLIENT_ID,
         },
     }
 })

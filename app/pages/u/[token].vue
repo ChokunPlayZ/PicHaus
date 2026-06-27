@@ -106,6 +106,35 @@
                         </svg>
                     </button>
 
+                    <!-- Microsoft Sign In -->
+                    <button v-if="siteSettings.microsoftOAuthEnabled" type="button" @click="handleMicrosoftLogin"
+                        :disabled="microsoftLoading"
+                        class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition disabled:opacity-60"
+                        style="background: var(--surface-2); border: 1px solid var(--separator);"
+                        @mouseover="!microsoftLoading && (($event.currentTarget as HTMLElement).style.borderColor = 'var(--accent)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--separator)'">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white border"
+                            style="border-color: var(--separator);">
+                            <img v-if="!microsoftLoading && siteSettings.microsoftButtonLogoUrl" :src="siteSettings.microsoftButtonLogoUrl" class="w-5 h-5 object-contain" />
+                            <svg v-else-if="!microsoftLoading" viewBox="0 0 21 21" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                                <rect x="11" y="1" width="9" height="9" fill="#00a4ef"/>
+                                <rect x="1" y="11" width="9" height="9" fill="#7fba00"/>
+                                <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                            </svg>
+                            <div v-else class="w-4 h-4 rounded-full border-2 animate-spin"
+                                style="border-color: #e5e7eb; border-top-color: #00a4ef;"></div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold" style="color: var(--text-1);">{{ siteSettings.microsoftButtonText || 'Sign in with Microsoft' }}</p>
+                            <p class="text-xs mt-0.5" style="color: var(--text-3);">Use your Microsoft account</p>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" style="color: var(--text-3);" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+
                     <!-- Divider -->
                     <div class="relative py-1">
                         <div class="absolute inset-0 flex items-center">
@@ -344,6 +373,7 @@ const guestError = ref('')
 const guestSubmitting = ref(false)
 
 const googleLoading = ref(false)
+const microsoftLoading = ref(false)
 
 interface FileUpload {
     file: File
@@ -463,6 +493,22 @@ const handleGoogleLogin = async (event?: MouseEvent) => {
     } catch (err: any) {
         googleLoading.value = false
         dialog.toast(err.data?.statusMessage || 'Failed to initiate Google sign-in')
+    }
+}
+
+const handleMicrosoftLogin = async () => {
+    microsoftLoading.value = true
+    try {
+        if (uploadPassword.value) {
+            sessionStorage.setItem(`upload_pw_${token}`, uploadPassword.value)
+        }
+        const res = await $fetch<{ success: boolean; data: { url: string } }>(
+            `/api/v1/auth/microsoft/initiate?${new URLSearchParams({ uploadToken: token })}`
+        )
+        await navigateTo(res.data.url, { external: true })
+    } catch (err: any) {
+        microsoftLoading.value = false
+        dialog.toast(err.data?.statusMessage || 'Failed to initiate Microsoft sign-in')
     }
 }
 

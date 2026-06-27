@@ -8,6 +8,9 @@ export interface SiteSettings {
     googleOAuthShiftBypassEnabled: boolean
     googleButtonText: string | null
     googleButtonLogoUrl: string | null
+    microsoftOAuthEnabled: boolean
+    microsoftButtonText: string | null
+    microsoftButtonLogoUrl: string | null
 }
 
 const _settings = ref<SiteSettings>({
@@ -20,6 +23,9 @@ const _settings = ref<SiteSettings>({
     googleOAuthShiftBypassEnabled: false,
     googleButtonText: null,
     googleButtonLogoUrl: null,
+    microsoftOAuthEnabled: false,
+    microsoftButtonText: null,
+    microsoftButtonLogoUrl: null,
 })
 const _loaded = ref(false)
 

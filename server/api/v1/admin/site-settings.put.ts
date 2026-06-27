@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     if (user.role !== 'ADMIN') throw createError({ statusCode: 403, statusMessage: 'Admin only' })
 
     const body = await readBody(event)
-    const { siteName, accentColor, logoImageId, allowRegistration, googleOAuthEnabled, googleOAuthAllowedDomain, googleOAuthShiftBypassEnabled, googleButtonText, googleButtonLogoId } = body
+    const { siteName, accentColor, logoImageId, allowRegistration, googleOAuthEnabled, googleOAuthAllowedDomain, googleOAuthShiftBypassEnabled, googleButtonText, googleButtonLogoId, microsoftOAuthEnabled, microsoftOAuthTenantId, microsoftButtonText, microsoftButtonLogoId } = body
 
     if (siteName !== undefined && (typeof siteName !== 'string' || siteName.trim().length === 0)) {
         throw createError({ statusCode: 400, statusMessage: 'siteName must be a non-empty string' })
@@ -29,6 +29,10 @@ export default defineEventHandler(async (event) => {
     if (googleOAuthShiftBypassEnabled !== undefined) update.googleOAuthShiftBypassEnabled = Boolean(googleOAuthShiftBypassEnabled)
     if (googleButtonText !== undefined) update.googleButtonText = googleButtonText?.trim() || null
     if (googleButtonLogoId !== undefined) update.googleButtonLogoId = googleButtonLogoId || null
+    if (microsoftOAuthEnabled !== undefined) update.microsoftOAuthEnabled = Boolean(microsoftOAuthEnabled)
+    if (microsoftOAuthTenantId !== undefined) update.microsoftOAuthTenantId = microsoftOAuthTenantId?.trim() || null
+    if (microsoftButtonText !== undefined) update.microsoftButtonText = microsoftButtonText?.trim() || null
+    if (microsoftButtonLogoId !== undefined) update.microsoftButtonLogoId = microsoftButtonLogoId || null
 
     // Upsert: try update first, insert if no row exists
     const existing = await db.select({ id: siteSettings.id }).from(siteSettings).where(eq(siteSettings.id, 1)).limit(1)

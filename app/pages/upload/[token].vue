@@ -51,8 +51,8 @@
                 <p class="text-sm mb-6" style="color: var(--text-2);">Please identify yourself to contribute</p>
 
                 <!-- Google Sign-In -->
-                <div v-if="siteSettings.googleOAuthEnabled" class="mb-5">
-                    <button @click="handleGoogleLogin" :disabled="googleLoading"
+                <div v-if="siteSettings.googleOAuthEnabled || siteSettings.microsoftOAuthEnabled" class="mb-5 space-y-2">
+                    <button v-if="siteSettings.googleOAuthEnabled" @click="handleGoogleLogin" :disabled="googleLoading"
                         class="w-full flex items-center justify-center gap-2.5 py-2.5 text-sm font-medium rounded-full transition"
                         style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
                         @mouseover="!googleLoading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
@@ -66,6 +66,22 @@
                             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                         </svg>
                         <span>{{ googleLoading ? 'Redirecting…' : 'Sign in with Google' }}</span>
+                    </button>
+                    <button v-if="siteSettings.microsoftOAuthEnabled" @click="handleMicrosoftLogin" :disabled="microsoftLoading"
+                        class="w-full flex items-center justify-center gap-2.5 py-2.5 text-sm font-medium rounded-full transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                        @mouseover="!microsoftLoading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                        <span v-if="microsoftLoading" class="w-4 h-4 rounded-full border-2 animate-spin"
+                            style="border-color: var(--separator); border-top-color: var(--text-2);"></span>
+                        <img v-else-if="siteSettings.microsoftButtonLogoUrl" :src="siteSettings.microsoftButtonLogoUrl" class="w-4 h-4 flex-shrink-0 object-contain" />
+                        <svg v-else viewBox="0 0 21 21" class="w-4 h-4 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                            <rect x="11" y="1" width="9" height="9" fill="#00a4ef"/>
+                            <rect x="1" y="11" width="9" height="9" fill="#7fba00"/>
+                            <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                        </svg>
+                        <span>{{ microsoftLoading ? 'Redirecting…' : (siteSettings.microsoftButtonText || 'Sign in with Microsoft') }}</span>
                     </button>
                     <div class="flex items-center gap-3 my-4">
                         <div class="flex-1 h-px" style="background: var(--separator);"></div>
@@ -362,6 +378,7 @@ const guestForm = ref({ name: '', email: '', password: '' })
 const loggingIn = ref(false)
 const loginError = ref('')
 const googleLoading = ref(false)
+const microsoftLoading = ref(false)
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const queue = ref<QueueItem[]>([])
@@ -572,6 +589,19 @@ const handleGoogleLogin = async () => {
     } catch (err: any) {
         loginError.value = err.data?.statusMessage || 'Google sign-in is not available'
         googleLoading.value = false
+    }
+}
+
+const handleMicrosoftLogin = async () => {
+    microsoftLoading.value = true
+    try {
+        const res = await $fetch<{ success: boolean; data: { url: string } }>('/api/v1/auth/microsoft/initiate', {
+            query: { uploadToken: token },
+        })
+        window.location.href = res.data.url
+    } catch (err: any) {
+        loginError.value = err.data?.statusMessage || 'Microsoft sign-in is not available'
+        microsoftLoading.value = false
     }
 }
 

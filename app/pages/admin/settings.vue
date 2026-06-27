@@ -182,6 +182,79 @@
                     </div>
                 </div>
 
+                <!-- Microsoft Sign-In -->
+                <div class="rounded-2xl p-6"
+                    style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                    <h2 class="text-lg font-bold mb-1" style="color: var(--text-1);">Microsoft Sign-In</h2>
+                    <p class="text-sm mb-5" style="color: var(--text-3);">
+                        Requires <code class="px-1 py-0.5 rounded text-xs" style="background: var(--surface-3);">MICROSOFT_CLIENT_ID</code> and
+                        <code class="px-1 py-0.5 rounded text-xs" style="background: var(--surface-3);">MICROSOFT_CLIENT_SECRET</code> environment variables.
+                    </p>
+
+                    <div v-if="!microsoftClientIdConfigured" class="rounded-xl px-4 py-3 text-sm mb-4"
+                        style="background: #fef3c7; border: 1px solid #fcd34d; color: #92400e;">
+                        MICROSOFT_CLIENT_ID is not set. Configure the env vars to enable Microsoft sign-in.
+                    </div>
+
+                    <div class="space-y-4">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input v-model="form.microsoftOAuthEnabled" type="checkbox" :disabled="!microsoftClientIdConfigured"
+                                class="mt-0.5 w-4 h-4 rounded" style="accent-color: var(--accent);" />
+                            <div>
+                                <p class="text-sm font-medium" style="color: var(--text-1);">Enable Microsoft Sign-In</p>
+                                <p class="text-xs mt-0.5" style="color: var(--text-3);">Show "Sign in with Microsoft" on login and upload pages</p>
+                            </div>
+                        </label>
+
+                        <div v-if="form.microsoftOAuthEnabled">
+                            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Tenant ID <span style="color: var(--text-3); font-weight: 400;">(optional)</span></label>
+                            <input v-model="form.microsoftOAuthTenantId" type="text" placeholder="e.g. tni.ac.th or xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
+                            <p class="text-xs mt-1" style="color: var(--text-3);">Leave empty to allow any Microsoft account. Set to your Entra ID tenant domain or GUID to restrict to your organization.</p>
+                        </div>
+
+                        <div v-if="form.microsoftOAuthEnabled">
+                            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Button Label <span style="color: var(--text-3); font-weight: 400;">(optional)</span></label>
+                            <input v-model="form.microsoftButtonText" type="text" placeholder="Sign in with Microsoft"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
+                        </div>
+
+                        <div v-if="form.microsoftOAuthEnabled">
+                            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Button Logo <span style="color: var(--text-3); font-weight: 400;">(optional)</span></label>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button"
+                                    :class="['px-3 py-1.5 text-xs rounded-lg border transition', !form.microsoftButtonLogoId ? 'border-[var(--accent)] bg-[var(--accent-light)]' : 'border-transparent hover:border-[var(--separator)]']"
+                                    :style="!form.microsoftButtonLogoId ? 'color: var(--accent)' : 'color: var(--text-2)'"
+                                    @click="form.microsoftButtonLogoId = null">
+                                    Default (Microsoft)
+                                </button>
+                                <button v-for="logo in logos" :key="logo.id" type="button"
+                                    :class="['px-2 py-1 rounded-lg border transition flex items-center gap-1.5', form.microsoftButtonLogoId === logo.id ? 'border-[var(--accent)]' : 'border-transparent hover:border-[var(--separator)]']"
+                                    @click="form.microsoftButtonLogoId = logo.id">
+                                    <img :src="`/api/assets/logo/${logo.id}`" class="w-5 h-5 object-contain rounded" />
+                                    <span class="text-xs" style="color: var(--text-2);">{{ logo.originalName }}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div v-if="form.microsoftOAuthEnabled" class="rounded-xl p-3 text-xs" style="background: var(--surface-2); color: var(--text-3);">
+                            <p class="font-medium mb-1" style="color: var(--text-2);">Azure / Entra ID setup:</p>
+                            <ol class="list-decimal list-inside space-y-0.5">
+                                <li>Register an app at portal.azure.com under App registrations</li>
+                                <li>Add a Web redirect URI: <code class="font-mono">https://your-domain/api/v1/auth/microsoft/callback</code></li>
+                                <li>Create a client secret under Certificates &amp; secrets</li>
+                                <li>Set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET env vars and restart the server</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Feedback -->
                 <div v-if="saveError" class="rounded-xl px-4 py-3 text-sm"
                     style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
@@ -217,6 +290,7 @@ const saveError = ref('')
 const saveSuccess = ref(false)
 const logos = ref<Logo[]>([])
 const googleClientIdConfigured = ref(false)
+const microsoftClientIdConfigured = ref(false)
 
 const form = ref({
     siteName: 'PicHaus',
@@ -228,6 +302,10 @@ const form = ref({
     googleOAuthShiftBypassEnabled: false,
     googleButtonText: '',
     googleButtonLogoId: null as string | null,
+    microsoftOAuthEnabled: false,
+    microsoftOAuthTenantId: '',
+    microsoftButtonText: '',
+    microsoftButtonLogoId: null as string | null,
 })
 
 const { refreshSettings, applyAccent } = useSiteSettings()
@@ -249,6 +327,11 @@ onMounted(async () => {
         form.value.googleButtonText = s.googleButtonText ?? ''
         form.value.googleButtonLogoId = s.googleButtonLogoId ?? null
         googleClientIdConfigured.value = s.googleClientIdConfigured ?? false
+        form.value.microsoftOAuthEnabled = s.microsoftOAuthEnabled ?? false
+        form.value.microsoftOAuthTenantId = s.microsoftOAuthTenantId ?? ''
+        form.value.microsoftButtonText = s.microsoftButtonText ?? ''
+        form.value.microsoftButtonLogoId = s.microsoftButtonLogoId ?? null
+        microsoftClientIdConfigured.value = s.microsoftClientIdConfigured ?? false
         logos.value = logosRes.data
     } catch {
         saveError.value = 'Failed to load settings'
@@ -286,6 +369,10 @@ const save = async () => {
                 googleOAuthShiftBypassEnabled: form.value.googleOAuthShiftBypassEnabled,
                 googleButtonText: form.value.googleButtonText || null,
                 googleButtonLogoId: form.value.googleButtonLogoId,
+                microsoftOAuthEnabled: form.value.microsoftOAuthEnabled,
+                microsoftOAuthTenantId: form.value.microsoftOAuthTenantId || null,
+                microsoftButtonText: form.value.microsoftButtonText || null,
+                microsoftButtonLogoId: form.value.microsoftButtonLogoId,
             },
         })
         saveSuccess.value = true
