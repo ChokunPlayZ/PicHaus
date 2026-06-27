@@ -98,6 +98,17 @@
                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
                                     </button>
+                                    <button v-if="u.id !== user?.id" @click="openMergeModal(u)"
+                                        class="p-1.5 rounded-lg transition mr-2" style="color: var(--text-2);"
+                                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
+                                        title="Merge duplicate into another account">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                        </svg>
+                                    </button>
                                     <button @click="deleteUser(u)" :disabled="u.id === user?.id"
                                         class="p-1.5 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
                                         style="color: var(--error);"
@@ -194,6 +205,119 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+        <!-- Merge Modal -->
+        <div v-if="showMergeModal"
+            class="fixed inset-0 flex items-center justify-center p-4 z-50"
+            style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
+            @click.self="closeMergeModal">
+            <div class="rounded-2xl p-6 max-w-lg w-full"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                <h3 class="text-xl font-bold mb-1" style="color: var(--text-1);">Merge Duplicate Account</h3>
+                <p class="text-sm mb-5" style="color: var(--text-3);">
+                    All photos, albums, and uploads from the duplicate will move to the target account. The duplicate will be deleted.
+                </p>
+
+                <!-- Duplicate (will be deleted) -->
+                <div class="rounded-xl p-3 mb-4" style="background: var(--error-bg); border: 1px solid var(--error);">
+                    <div class="text-xs font-semibold uppercase tracking-wide mb-1" style="color: var(--error);">Remove (duplicate)</div>
+                    <div class="flex items-center gap-3">
+                        <div class="h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+                            style="background: var(--error); color: #fff;">
+                            {{ mergeSource?.name?.[0]?.toUpperCase() || '?' }}
+                        </div>
+                        <div>
+                            <div class="font-medium text-sm" style="color: var(--text-1);">{{ mergeSource?.name || 'Unnamed' }}</div>
+                            <div class="text-xs" style="color: var(--text-3);">
+                                <span v-if="mergeSource?.email">{{ mergeSource.email }}</span>
+                                <span v-if="mergeSource?.instagram" :class="mergeSource?.email ? 'ml-2' : ''">@{{ mergeSource.instagram }}</span>
+                                <span v-if="!mergeSource?.email && !mergeSource?.instagram">No email or instagram</span>
+                            </div>
+                        </div>
+                        <div class="ml-auto text-xs" style="color: var(--text-3);">
+                            {{ mergeSource?._count.uploadedPhotos }} photos
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                </div>
+
+                <!-- Target search -->
+                <div class="mb-2">
+                    <label class="block text-xs font-semibold uppercase tracking-wide mb-1.5" style="color: var(--text-2);">Keep (target account)</label>
+                    <input v-model="mergeSearchQuery" @input="debouncedMergeSearch" type="text"
+                        placeholder="Search by name, email, or instagram…"
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
+                </div>
+
+                <!-- Search results -->
+                <div v-if="mergeSearchResults.length > 0" class="rounded-xl overflow-hidden mb-4"
+                    style="border: 1px solid var(--separator); max-height: 180px; overflow-y: auto;">
+                    <button v-for="r in mergeSearchResults" :key="r.id"
+                        @click="selectMergeTarget(r)"
+                        class="w-full flex items-center gap-3 px-3 py-2.5 text-left transition"
+                        :style="mergeTarget?.id === r.id ? 'background: var(--accent-light);' : 'background: var(--surface-2);'"
+                        @mouseover="mergeTarget?.id !== r.id && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
+                        @mouseout="mergeTarget?.id !== r.id && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)')">
+                        <div class="h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                            style="background: var(--accent-light); color: var(--accent);">
+                            {{ r.name?.[0]?.toUpperCase() || '?' }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-sm truncate" style="color: var(--text-1);">{{ r.name || 'Unnamed' }}</div>
+                            <div class="text-xs truncate" style="color: var(--text-3);">
+                                <span v-if="r.email">{{ r.email }}</span>
+                                <span v-if="r.instagram" :class="r.email ? 'ml-2' : ''">@{{ r.instagram }}</span>
+                            </div>
+                        </div>
+                        <div class="text-xs shrink-0" style="color: var(--text-3);">{{ r._count.uploadedPhotos }} photos</div>
+                    </button>
+                </div>
+
+                <!-- Selected target confirmation -->
+                <div v-if="mergeTarget" class="rounded-xl p-3 mb-5" style="background: var(--accent-light); border: 1px solid var(--accent);">
+                    <div class="text-xs font-semibold uppercase tracking-wide mb-1" style="color: var(--accent);">Keep (target)</div>
+                    <div class="flex items-center gap-3">
+                        <div class="h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+                            style="background: var(--accent); color: var(--accent-text);">
+                            {{ mergeTarget.name?.[0]?.toUpperCase() || '?' }}
+                        </div>
+                        <div>
+                            <div class="font-medium text-sm" style="color: var(--text-1);">{{ mergeTarget.name || 'Unnamed' }}</div>
+                            <div class="text-xs" style="color: var(--text-3);">
+                                <span v-if="mergeTarget.email">{{ mergeTarget.email }}</span>
+                                <span v-if="mergeTarget.instagram" :class="mergeTarget.email ? 'ml-2' : ''">@{{ mergeTarget.instagram }}</span>
+                            </div>
+                        </div>
+                        <div class="ml-auto text-xs" style="color: var(--text-3);">
+                            {{ mergeTarget._count.uploadedPhotos }} photos
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" @click="closeMergeModal"
+                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
+                        Cancel
+                    </button>
+                    <button @click="handleMergeSubmit" :disabled="!mergeTarget || merging"
+                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed"
+                        style="background: var(--error); color: #fff;"
+                        @mouseover="mergeTarget && !merging && (($event.currentTarget as HTMLElement).style.opacity = '0.85')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.opacity = '1'">
+                        {{ merging ? 'Merging…' : 'Merge &amp; Delete Duplicate' }}
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -352,6 +476,76 @@ const handleEditSubmit = async () => {
         dialog.toast(err.data?.statusMessage || 'Failed to update user')
     } finally {
         saving.value = false
+    }
+}
+
+// Merge modal
+const showMergeModal = ref(false)
+const mergeSource = ref<User | null>(null)
+const mergeTarget = ref<User | null>(null)
+const mergeSearchQuery = ref('')
+const mergeSearchResults = ref<User[]>([])
+const merging = ref(false)
+
+const openMergeModal = (targetUser: User) => {
+    mergeSource.value = targetUser
+    mergeTarget.value = null
+    mergeSearchQuery.value = ''
+    mergeSearchResults.value = []
+    showMergeModal.value = true
+}
+
+const closeMergeModal = () => {
+    showMergeModal.value = false
+    mergeSource.value = null
+    mergeTarget.value = null
+    mergeSearchQuery.value = ''
+    mergeSearchResults.value = []
+}
+
+const searchMergeTargets = async () => {
+    if (!mergeSearchQuery.value.trim()) {
+        mergeSearchResults.value = []
+        return
+    }
+    try {
+        const res = await $fetch<{ success: boolean; data: User[] }>('/api/v1/admin/users', {
+            params: { search: mergeSearchQuery.value, limit: 10 }
+        })
+        mergeSearchResults.value = res.data.filter(u => u.id !== mergeSource.value?.id)
+    } catch {
+        mergeSearchResults.value = []
+    }
+}
+
+const debouncedMergeSearch = debounce(searchMergeTargets, 300)
+
+const selectMergeTarget = (targetUser: User) => {
+    mergeTarget.value = targetUser
+    mergeSearchQuery.value = targetUser.name || targetUser.email || ''
+    mergeSearchResults.value = []
+}
+
+const handleMergeSubmit = async () => {
+    if (!mergeSource.value || !mergeTarget.value) return
+    if (!await dialog.confirm(
+        `Merge "${mergeSource.value.name || 'Unnamed'}" into "${mergeTarget.value.name || 'Unnamed'}"?\n\nAll photos and albums from the duplicate will move to the target account. This cannot be undone.`,
+        { danger: true }
+    )) return
+
+    merging.value = true
+    try {
+        await $fetch(`/api/v1/admin/users/${mergeTarget.value.id}/merge`, {
+            method: 'POST',
+            body: { deleteId: mergeSource.value.id },
+        })
+        dialog.toast(`Merged successfully`)
+        closeMergeModal()
+        fetchUsers()
+    } catch (err: any) {
+        dialog.toast(err.data?.statusMessage || 'Merge failed')
+    } finally {
+        merging.value = false
     }
 }
 

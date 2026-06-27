@@ -22,6 +22,7 @@ export default defineEventHandler(async (event) => {
                 id: users.id,
                 name: users.name,
                 email: users.email,
+                instagram: users.instagram,
                 role: users.role,
                 createdAt: users.createdAt,
             })
