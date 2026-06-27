@@ -25,6 +25,7 @@ export default defineEventHandler(async (event) => {
         label,
         password: passwordHash,
         showMetadata: body.showMetadata !== undefined ? body.showMetadata : true,
+        uploadMessage: type === 'upload' ? (body.uploadMessage || null) : null,
         albumId: albumId!,
         createdAt: getUnixTimestamp(),
     }).returning()

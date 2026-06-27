@@ -106,6 +106,7 @@ export default defineEventHandler(async (event) => {
                 requiresPassword: !!shareLink.password,
                 shareType: shareLink.type,
                 showMetadata: shareLink.showMetadata,
+                uploadMessage: shareLink.uploadMessage || null,
                 themePreset: shareLink.album.themePreset,
                 customTheme: shareLink.album.customTheme,
                 logoText: shareLink.album.logoText,

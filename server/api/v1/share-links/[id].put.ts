@@ -25,6 +25,7 @@ export default defineEventHandler(async (event) => {
     const linkUpdateData: Partial<typeof shareLinks.$inferInsert> = {}
     if (body.label !== undefined) linkUpdateData.label = body.label
     if (body.showMetadata !== undefined) linkUpdateData.showMetadata = body.showMetadata
+    if (body.uploadMessage !== undefined) linkUpdateData.uploadMessage = body.uploadMessage || null
     if (body.password) linkUpdateData.password = await argon2.hash(body.password)
     else if (body.removePassword) linkUpdateData.password = null
 

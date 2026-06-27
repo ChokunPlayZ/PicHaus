@@ -36,6 +36,7 @@ export default defineEventHandler(async (event) => {
             hasPassword: !!link.password,
             type: link.type,
             showMetadata: link.showMetadata,
+            uploadMessage: link.uploadMessage || null,
             isGroup: !!link.shareGroupId,
             groupTitle: link.shareGroup?.title,
             groupDescription: link.shareGroup?.description,
