@@ -175,7 +175,7 @@
                             <p class="font-medium mb-1" style="color: var(--text-2);">Google Cloud Console setup:</p>
                             <ol class="list-decimal list-inside space-y-0.5">
                                 <li>Create OAuth 2.0 credentials at console.cloud.google.com</li>
-                                <li>Add authorized redirect URI: <code class="font-mono">https://your-domain/api/v1/auth/google/callback</code></li>
+                                <li>Add authorized redirect URI: <code class="font-mono">{{ siteOrigin }}/api/v1/auth/google/callback</code></li>
                                 <li>Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET env vars and restart the server</li>
                             </ol>
                         </div>
@@ -247,7 +247,7 @@
                             <p class="font-medium mb-1" style="color: var(--text-2);">Azure / Entra ID setup:</p>
                             <ol class="list-decimal list-inside space-y-0.5">
                                 <li>Register an app at portal.azure.com under App registrations</li>
-                                <li>Add a Web redirect URI: <code class="font-mono">https://your-domain/api/v1/auth/microsoft/callback</code></li>
+                                <li>Add a Web redirect URI: <code class="font-mono">{{ siteOrigin }}/api/v1/auth/microsoft/callback</code></li>
                                 <li>Create a client secret under Certificates &amp; secrets</li>
                                 <li>Set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET env vars and restart the server</li>
                             </ol>
@@ -291,6 +291,7 @@ const saveSuccess = ref(false)
 const logos = ref<Logo[]>([])
 const googleClientIdConfigured = ref(false)
 const microsoftClientIdConfigured = ref(false)
+const siteOrigin = ref('https://your-domain')
 
 const form = ref({
     siteName: 'PicHaus',
@@ -311,6 +312,7 @@ const form = ref({
 const { refreshSettings, applyAccent } = useSiteSettings()
 
 onMounted(async () => {
+    siteOrigin.value = window.location.origin
     try {
         const [settingsRes, logosRes] = await Promise.all([
             $fetch<{ success: boolean; data: any }>('/api/v1/admin/site-settings'),
