@@ -320,21 +320,30 @@
             <div class="rounded-2xl p-6 max-w-sm w-full"
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <h3 class="text-base font-bold mb-4 text-center" style="color: var(--text-1);">
-                    {{ pendingShareFiles ? 'Photos Ready' : 'Downloading Photos' }}
+                    {{ pendingShareFiles ? (isSharing ? 'Sharing Photos' : 'Photos Ready') : 'Downloading Photos' }}
                 </h3>
 
                 <template v-if="pendingShareFiles">
-                    <p class="text-sm text-center mb-6" style="color: var(--text-2);">
-                        Your photos are ready to share.
-                    </p>
+                    <div class="mb-6 text-center">
+                        <p class="text-sm" :class="isSharing ? 'mb-2' : ''" style="color: var(--text-2);">
+                            Your photos are ready to share.
+                        </p>
+                        <p v-if="isSharing" class="text-xs font-semibold animate-pulse" style="color: var(--accent);">
+                            Do not close until this dialog closes.
+                        </p>
+                    </div>
                     <div class="flex flex-col gap-2">
                         <button @click="shareFavorites"
-                            class="w-full py-3 rounded-xl text-sm font-semibold transition active:scale-95 text-white"
+                            :disabled="isSharing"
+                            class="w-full py-3 rounded-xl text-sm font-semibold transition active:scale-95 text-white flex items-center justify-center gap-2 disabled:opacity-50"
                             style="background: var(--accent);">
-                            Share Now
+                            <span v-if="isSharing" class="w-4 h-4 rounded-full border-2 animate-spin"
+                                style="border-color: rgba(255,255,255,0.3); border-top-color: white;"></span>
+                            {{ isSharing ? 'Sharing...' : 'Share Now' }}
                         </button>
                         <button @click="cancelShare"
-                            class="w-full py-3 rounded-xl text-sm font-semibold transition hover:bg-white/5"
+                            :disabled="isSharing"
+                            class="w-full py-3 rounded-xl text-sm font-semibold transition hover:bg-white/5 disabled:opacity-50"
                             style="color: var(--text-2);">
                             Cancel
                         </button>
@@ -453,9 +462,11 @@ const { containerRef, picturesLayout } = useJustifiedLayout(photos)
 const downloading = ref(false)
 const downloadProgress = ref({ current: 0, total: 0 })
 const pendingShareFiles = ref<File[] | null>(null)
+const isSharing = ref(false)
 
 const shareFavorites = async () => {
     if (!pendingShareFiles.value || !navigator.share) return
+    isSharing.value = true
     try {
         await navigator.share({ files: pendingShareFiles.value })
     } catch (err: any) {
@@ -464,6 +475,7 @@ const shareFavorites = async () => {
             dialog.toast('Failed to share photos')
         }
     } finally {
+        isSharing.value = false
         downloading.value = false
         pendingShareFiles.value = null
         downloadProgress.value = { current: 0, total: 0 }
@@ -471,6 +483,7 @@ const shareFavorites = async () => {
 }
 
 const cancelShare = () => {
+    if (isSharing.value) return
     downloading.value = false
     pendingShareFiles.value = null
     downloadProgress.value = { current: 0, total: 0 }
@@ -674,6 +687,7 @@ const downloadFavorites = async () => {
     downloading.value = true
     downloadProgress.value = { current: 0, total: favIds.length }
     pendingShareFiles.value = null
+    isSharing.value = false
 
     // Check if we need to fetch missing photos (e.g. after a page reload/lazy loading)
     const allFavsLoaded = favIds.every(id => photos.value.some(p => p.id === id))
