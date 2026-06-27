@@ -144,6 +144,16 @@
                 </p>
             </div>
 
+            <!-- Announcement Banner -->
+            <div v-if="albumInfo?.uploadMessage"
+                class="rounded-2xl px-5 py-4 mb-6 flex items-start gap-3"
+                style="background: var(--warning-bg); border: 1px solid var(--warning-border);">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--warning-text);">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-sm" style="color: var(--warning-text);">{{ albumInfo.uploadMessage }}</p>
+            </div>
+
             <!-- Drop Zone (shown when no files in queue) -->
             <div v-if="queue.length === 0"
                 class="rounded-2xl border-2 border-dashed transition-all duration-200 cursor-pointer"

@@ -813,6 +813,16 @@
                             <label for="showMetadata" class="text-sm" style="color: var(--text-2);">Show photo metadata (date, camera, etc.)</label>
                         </div>
                     </div>
+                    <div v-if="newLink.type === 'upload'">
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Upload Announcement <span style="color: var(--text-3);">(optional)</span></label>
+                        <textarea v-model="newLink.uploadMessage" rows="2"
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition resize-none"
+                            style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            placeholder="e.g. Ensure images are culled, please don't dump raws"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'"></textarea>
+                        <p class="text-xs mt-1" style="color: var(--text-3);">Shown as a banner to uploaders when they open the link.</p>
+                    </div>
                     <button type="submit" :disabled="creatingLink || updatingLink"
                         class="w-full px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
                         style="background: var(--accent); color: var(--accent-text);"
@@ -1690,7 +1700,8 @@ const newLink = ref({
     type: 'view',
     label: '',
     password: '',
-    showMetadata: true
+    showMetadata: true,
+    uploadMessage: '',
 })
 
 // QR code modal
@@ -1986,7 +1997,7 @@ const createShareLink = async () => {
             method: 'POST',
             body: newLink.value
         })
-        newLink.value = { type: 'view', label: '', password: '', showMetadata: true }
+        newLink.value = { type: 'view', label: '', password: '', showMetadata: true, uploadMessage: '' }
         await fetchShareLinks()
         toast('Link created')
         const created = shareLinks.value.find(l => l.id === response.data?.id)
@@ -2003,8 +2014,9 @@ const startEditing = (link: ShareLink) => {
     newLink.value = {
         type: link.type,
         label: link.label || '',
-        password: '', // Clear password field
-        showMetadata: link.showMetadata
+        password: '',
+        showMetadata: link.showMetadata,
+        uploadMessage: (link as any).uploadMessage || '',
     }
     editingLinkHasPassword.value = link.password
     removePassword.value = false
@@ -2012,7 +2024,7 @@ const startEditing = (link: ShareLink) => {
 
 const cancelEditing = () => {
     editingLinkId.value = null
-    newLink.value = { type: 'view', label: '', password: '', showMetadata: true }
+    newLink.value = { type: 'view', label: '', password: '', showMetadata: true, uploadMessage: '' }
     removePassword.value = false
     editingLinkHasPassword.value = false
 }
@@ -2024,7 +2036,8 @@ const updateShareLink = async () => {
     try {
         const body: any = {
             label: newLink.value.label,
-            showMetadata: newLink.value.showMetadata
+            showMetadata: newLink.value.showMetadata,
+            uploadMessage: newLink.value.uploadMessage || null,
         }
 
         if (newLink.value.password) {

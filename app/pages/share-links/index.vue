@@ -168,6 +168,17 @@
                             <label for="editShowMetadata" class="text-sm" style="color: var(--text-1);">Show photo metadata (date, camera, etc.)</label>
                         </div>
 
+                        <div v-if="editForm.type === 'upload'">
+                            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Upload Announcement <span style="color: var(--text-3);">(optional)</span></label>
+                            <textarea v-model="editForm.uploadMessage" rows="2"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl transition resize-none"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                placeholder="e.g. Ensure images are culled, please don't dump raws"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'"></textarea>
+                            <p class="text-xs mt-1" style="color: var(--text-3);">Shown as a banner to uploaders when they open the link.</p>
+                        </div>
+
                         <div>
                             <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Password Protection</label>
                             <input v-model="editForm.password" type="password"
@@ -396,6 +407,8 @@ const editForm = reactive({
     hasPassword: false,
     removePassword: false,
     showMetadata: true,
+    type: '',
+    uploadMessage: '',
     isGroup: false,
     groupTitle: '',
     groupDescription: '',
@@ -454,6 +467,8 @@ const openEditModal = async (link: ShareLink) => {
         editForm.hasPassword = data.hasPassword
         editForm.removePassword = false
         editForm.showMetadata = data.showMetadata !== undefined ? data.showMetadata : true
+        editForm.type = data.type || ''
+        editForm.uploadMessage = data.uploadMessage || ''
         editForm.isGroup = data.isGroup
 
         if (data.isGroup) {
@@ -505,6 +520,7 @@ const handleUpdateLink = async () => {
             body: {
                 label: editForm.label,
                 showMetadata: editForm.showMetadata,
+                uploadMessage: editForm.uploadMessage || null,
                 password: editForm.password || undefined,
                 removePassword: editForm.removePassword,
                 isGroup: editForm.isGroup,
