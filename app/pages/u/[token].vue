@@ -78,15 +78,16 @@
                     </button>
 
                     <!-- Google Sign In -->
-                    <button v-if="siteSettings.googleOAuthEnabled" type="button" @click="handleGoogleLogin"
+                    <button v-if="siteSettings.googleOAuthEnabled" type="button" @click="handleGoogleLogin($event)"
                         :disabled="googleLoading"
                         class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition disabled:opacity-60"
                         style="background: var(--surface-2); border: 1px solid var(--separator);"
-                        @mouseover="!googleLoading && (($event.currentTarget as HTMLElement).style.borderColor = '#4285F4')"
+                        @mouseover="!googleLoading && (($event.currentTarget as HTMLElement).style.borderColor = 'var(--accent)')"
                         @mouseout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--separator)'">
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white border"
                             style="border-color: var(--separator);">
-                            <svg v-if="!googleLoading" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="w-5 h-5">
+                            <img v-if="!googleLoading && siteSettings.googleButtonLogoUrl" :src="siteSettings.googleButtonLogoUrl" class="w-5 h-5 object-contain" />
+                            <svg v-else-if="!googleLoading" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="w-5 h-5">
                                 <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.5 6.5 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.9z"/>
                                 <path fill="#FF3D00" d="M6.3 14.7l6.6 4.9C14.7 15.9 19.1 12 24 12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.5 6.5 29.6 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/>
                                 <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5.1l-6.2-5.2C29.4 35.5 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.1C9.4 37.6 16.2 44 24 44z"/>
@@ -96,7 +97,7 @@
                                 style="border-color: #e5e7eb; border-top-color: #4285F4;"></div>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold" style="color: var(--text-1);">Sign in with Google</p>
+                            <p class="text-sm font-semibold" style="color: var(--text-1);">{{ siteSettings.googleButtonText || 'Sign in with Google' }}</p>
                             <p class="text-xs mt-0.5" style="color: var(--text-3);">Use your Google account</p>
                         </div>
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24"
@@ -446,14 +447,17 @@ const handlePasswordSubmit = async () => {
     }
 }
 
-const handleGoogleLogin = async () => {
+const handleGoogleLogin = async (event?: MouseEvent) => {
     googleLoading.value = true
     try {
         if (uploadPassword.value) {
             sessionStorage.setItem(`upload_pw_${token}`, uploadPassword.value)
         }
+        const bypassDomain = siteSettings.value.googleOAuthShiftBypassEnabled && event?.shiftKey
+        const query = new URLSearchParams({ uploadToken: token })
+        if (bypassDomain) query.set('bypassDomain', 'true')
         const res = await $fetch<{ success: boolean; data: { url: string } }>(
-            `/api/v1/auth/google/initiate?uploadToken=${token}`
+            `/api/v1/auth/google/initiate?${query}`
         )
         await navigateTo(res.data.url, { external: true })
     } catch (err: any) {

@@ -159,6 +159,9 @@ export const siteSettings = pgTable('site_settings', {
     allowRegistration: boolean('allowRegistration').default(false).notNull(),
     googleOAuthEnabled: boolean('googleOAuthEnabled').default(false).notNull(),
     googleOAuthAllowedDomain: text('googleOAuthAllowedDomain'),
+    googleOAuthShiftBypassEnabled: boolean('googleOAuthShiftBypassEnabled').default(false).notNull(),
+    googleButtonText: text('googleButtonText'),
+    googleButtonLogoId: uuid('googleButtonLogoId').references(() => logos.id, { onDelete: 'set null' }),
     updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
 })
 

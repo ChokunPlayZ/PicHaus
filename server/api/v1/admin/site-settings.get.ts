@@ -24,6 +24,10 @@ export default defineEventHandler(async (event) => {
             allowRegistration: row.allowRegistration,
             googleOAuthEnabled: row.googleOAuthEnabled,
             googleOAuthAllowedDomain: row.googleOAuthAllowedDomain ?? '',
+            googleOAuthShiftBypassEnabled: row.googleOAuthShiftBypassEnabled ?? false,
+            googleButtonText: row.googleButtonText ?? '',
+            googleButtonLogoId: row.googleButtonLogoId ?? null,
+            googleButtonLogoUrl: row.googleButtonLogoId ? `/api/assets/logo/${row.googleButtonLogoId}` : null,
             googleClientIdConfigured: !!process.env.GOOGLE_CLIENT_ID,
         },
     }

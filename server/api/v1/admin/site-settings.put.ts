@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     if (user.role !== 'ADMIN') throw createError({ statusCode: 403, statusMessage: 'Admin only' })
 
     const body = await readBody(event)
-    const { siteName, accentColor, logoImageId, allowRegistration, googleOAuthEnabled, googleOAuthAllowedDomain } = body
+    const { siteName, accentColor, logoImageId, allowRegistration, googleOAuthEnabled, googleOAuthAllowedDomain, googleOAuthShiftBypassEnabled, googleButtonText, googleButtonLogoId } = body
 
     if (siteName !== undefined && (typeof siteName !== 'string' || siteName.trim().length === 0)) {
         throw createError({ statusCode: 400, statusMessage: 'siteName must be a non-empty string' })
@@ -26,6 +26,9 @@ export default defineEventHandler(async (event) => {
     if (allowRegistration !== undefined) update.allowRegistration = Boolean(allowRegistration)
     if (googleOAuthEnabled !== undefined) update.googleOAuthEnabled = Boolean(googleOAuthEnabled)
     if (googleOAuthAllowedDomain !== undefined) update.googleOAuthAllowedDomain = googleOAuthAllowedDomain?.trim() || null
+    if (googleOAuthShiftBypassEnabled !== undefined) update.googleOAuthShiftBypassEnabled = Boolean(googleOAuthShiftBypassEnabled)
+    if (googleButtonText !== undefined) update.googleButtonText = googleButtonText?.trim() || null
+    if (googleButtonLogoId !== undefined) update.googleButtonLogoId = googleButtonLogoId || null
 
     // Upsert: try update first, insert if no row exists
     const existing = await db.select({ id: siteSettings.id }).from(siteSettings).where(eq(siteSettings.id, 1)).limit(1)

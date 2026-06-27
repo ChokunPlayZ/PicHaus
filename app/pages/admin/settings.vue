@@ -133,6 +133,44 @@
                             <p class="text-xs mt-1" style="color: var(--text-3);">Leave empty to allow any Google account. Set to e.g. <code>tni.ac.th</code> to restrict to one domain.</p>
                         </div>
 
+                        <label v-if="form.googleOAuthEnabled && form.googleOAuthAllowedDomain" class="flex items-start gap-3 cursor-pointer">
+                            <input v-model="form.googleOAuthShiftBypassEnabled" type="checkbox"
+                                class="mt-0.5 w-4 h-4 rounded" style="accent-color: var(--accent);" />
+                            <div>
+                                <p class="text-sm font-medium" style="color: var(--text-1);">Allow Shift+Click to bypass domain lock</p>
+                                <p class="text-xs mt-0.5" style="color: var(--text-3);">When enabled, holding Shift while clicking the sign-in button lets any Google account sign in, regardless of the domain restriction.</p>
+                            </div>
+                        </label>
+
+                        <div v-if="form.googleOAuthEnabled">
+                            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Button Label <span style="color: var(--text-3); font-weight: 400;">(optional)</span></label>
+                            <input v-model="form.googleButtonText" type="text" placeholder="Sign in with Google"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
+                            <p class="text-xs mt-1" style="color: var(--text-3);">Shown on login and upload pages. E.g. "Login with TNI ID".</p>
+                        </div>
+
+                        <div v-if="form.googleOAuthEnabled">
+                            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Button Logo <span style="color: var(--text-3); font-weight: 400;">(optional)</span></label>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button"
+                                    :class="['px-3 py-1.5 text-xs rounded-lg border transition', !form.googleButtonLogoId ? 'border-[var(--accent)] bg-[var(--accent-light)]' : 'border-transparent hover:border-[var(--separator)]']"
+                                    :style="!form.googleButtonLogoId ? 'color: var(--accent)' : 'color: var(--text-2)'"
+                                    @click="form.googleButtonLogoId = null">
+                                    Default (Google)
+                                </button>
+                                <button v-for="logo in logos" :key="logo.id" type="button"
+                                    :class="['px-2 py-1 rounded-lg border transition flex items-center gap-1.5', form.googleButtonLogoId === logo.id ? 'border-[var(--accent)]' : 'border-transparent hover:border-[var(--separator)]']"
+                                    @click="form.googleButtonLogoId = logo.id">
+                                    <img :src="`/api/assets/logo/${logo.id}`" class="w-5 h-5 object-contain rounded" />
+                                    <span class="text-xs" style="color: var(--text-2);">{{ logo.originalName }}</span>
+                                </button>
+                            </div>
+                            <p v-if="form.googleButtonLogoId" class="text-xs mt-1" style="color: var(--text-3);">Custom logo selected. Upload more logos above.</p>
+                        </div>
+
                         <div v-if="form.googleOAuthEnabled" class="rounded-xl p-3 text-xs" style="background: var(--surface-2); color: var(--text-3);">
                             <p class="font-medium mb-1" style="color: var(--text-2);">Google Cloud Console setup:</p>
                             <ol class="list-decimal list-inside space-y-0.5">
@@ -187,6 +225,9 @@ const form = ref({
     allowRegistration: false,
     googleOAuthEnabled: false,
     googleOAuthAllowedDomain: '',
+    googleOAuthShiftBypassEnabled: false,
+    googleButtonText: '',
+    googleButtonLogoId: null as string | null,
 })
 
 const { refreshSettings, applyAccent } = useSiteSettings()
@@ -204,6 +245,9 @@ onMounted(async () => {
         form.value.allowRegistration = s.allowRegistration
         form.value.googleOAuthEnabled = s.googleOAuthEnabled ?? false
         form.value.googleOAuthAllowedDomain = s.googleOAuthAllowedDomain ?? ''
+        form.value.googleOAuthShiftBypassEnabled = s.googleOAuthShiftBypassEnabled ?? false
+        form.value.googleButtonText = s.googleButtonText ?? ''
+        form.value.googleButtonLogoId = s.googleButtonLogoId ?? null
         googleClientIdConfigured.value = s.googleClientIdConfigured ?? false
         logos.value = logosRes.data
     } catch {
@@ -239,6 +283,9 @@ const save = async () => {
                 allowRegistration: form.value.allowRegistration,
                 googleOAuthEnabled: form.value.googleOAuthEnabled,
                 googleOAuthAllowedDomain: form.value.googleOAuthAllowedDomain || null,
+                googleOAuthShiftBypassEnabled: form.value.googleOAuthShiftBypassEnabled,
+                googleButtonText: form.value.googleButtonText || null,
+                googleButtonLogoId: form.value.googleButtonLogoId,
             },
         })
         saveSuccess.value = true

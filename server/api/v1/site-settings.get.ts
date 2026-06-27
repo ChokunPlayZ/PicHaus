@@ -9,12 +9,15 @@ export default defineEventHandler(async (event) => {
             logoImageId: siteSettings.logoImageId,
             allowRegistration: siteSettings.allowRegistration,
             googleOAuthEnabled: siteSettings.googleOAuthEnabled,
+            googleOAuthShiftBypassEnabled: siteSettings.googleOAuthShiftBypassEnabled,
+            googleButtonText: siteSettings.googleButtonText,
+            googleButtonLogoId: siteSettings.googleButtonLogoId,
         })
         .from(siteSettings)
         .where(eq(siteSettings.id, 1))
         .limit(1)
 
-    const row = rows[0] ?? { siteName: 'PicHaus', accentColor: null, logoImageId: null, allowRegistration: false, googleOAuthEnabled: false }
+    const row = rows[0] ?? { siteName: 'PicHaus', accentColor: null, logoImageId: null, allowRegistration: false, googleOAuthEnabled: false, googleOAuthShiftBypassEnabled: false, googleButtonText: null, googleButtonLogoId: null }
 
     // Only expose as enabled when env vars are actually configured
     const googleOAuthEnabled = row.googleOAuthEnabled && !!process.env.GOOGLE_CLIENT_ID
@@ -28,6 +31,9 @@ export default defineEventHandler(async (event) => {
             logoImageId: row.logoImageId,
             allowRegistration: row.allowRegistration,
             googleOAuthEnabled,
+            googleOAuthShiftBypassEnabled: row.googleOAuthShiftBypassEnabled ?? false,
+            googleButtonText: row.googleButtonText ?? null,
+            googleButtonLogoUrl: row.googleButtonLogoId ? `/api/assets/logo/${row.googleButtonLogoId}` : null,
         },
     }
 })

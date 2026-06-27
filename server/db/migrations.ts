@@ -263,6 +263,14 @@ END $$`,
         ],
     },
     {
+        name: '0010_google_button_custom.sql',
+        statements: [
+            `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "googleOAuthShiftBypassEnabled" BOOLEAN NOT NULL DEFAULT false`,
+            `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "googleButtonText" TEXT`,
+            `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "googleButtonLogoId" UUID REFERENCES "logos"("id") ON DELETE SET NULL`,
+        ],
+    },
+    {
         name: '0008_site_settings.sql',
         statements: [
             `CREATE TABLE IF NOT EXISTS "site_settings" (

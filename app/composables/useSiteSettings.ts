@@ -5,6 +5,9 @@ export interface SiteSettings {
     logoImageId: string | null
     allowRegistration: boolean
     googleOAuthEnabled: boolean
+    googleOAuthShiftBypassEnabled: boolean
+    googleButtonText: string | null
+    googleButtonLogoUrl: string | null
 }
 
 const _settings = ref<SiteSettings>({
@@ -14,6 +17,9 @@ const _settings = ref<SiteSettings>({
     logoImageId: null,
     allowRegistration: false,
     googleOAuthEnabled: false,
+    googleOAuthShiftBypassEnabled: false,
+    googleButtonText: null,
+    googleButtonLogoUrl: null,
 })
 const _loaded = ref(false)
 
