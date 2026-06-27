@@ -17,6 +17,7 @@ A self-hosted, collaborative photo album platform built for photography clubs. P
    - [Photos](#photos)
    - [Share Links](#share-links)
    - [Share Groups](#share-groups)
+   - [Favorites](#favorites)
    - [Guest Upload Flow](#guest-upload-flow)
    - [Statistics](#statistics)
    - [API Tokens](#api-tokens)
@@ -39,6 +40,7 @@ A self-hosted, collaborative photo album platform built for photography clubs. P
 - **Share links** — generate `view` or `upload` links per album, with optional password and expiry
 - **Share groups** — bundle multiple albums under one share link
 - **Instagram handles** — photographers can attach their Instagram username, shown on photos
+- **Favorites** — mark photos as favorites while browsing a share link; selections persist per album context and survive page refresh
 - **Statistics dashboard** — top cameras, lenses, aperture/ISO/shutter distributions, monthly activity timeline
 - **Passkeys & security keys** — passwordless login via WebAuthn/FIDO2 (Face ID, Touch ID, Windows Hello, YubiKey, etc.)
 - **External API** — scoped API tokens for integrating PicHaus with external sites or workflows
@@ -151,10 +153,14 @@ volumes:
 | `WEBAUTHN_RP_ID` | No | `localhost` | Passkey relying-party ID — must match the domain users visit (no port, no protocol) |
 | `WEBAUTHN_RP_NAME` | No | `PicHaus` | Human-readable relying-party name shown by the browser during passkey registration |
 | `WEBAUTHN_ORIGIN` | No | `http://localhost:3000` | Exact origin in the browser address bar — must include protocol and port if non-standard |
+| `GOOGLE_CLIENT_ID` | No | — | OAuth 2.0 client ID from Google Cloud Console — enables Google Sign-In when set |
+| `GOOGLE_CLIENT_SECRET` | No | — | OAuth 2.0 client secret — required alongside `GOOGLE_CLIENT_ID` |
 
 > **Security**: `AUTH_SECRET` must be a random string of at least 32 characters. In production the server will refuse to start without it.
 
 > **Passkeys in production**: Set `WEBAUTHN_RP_ID` to your bare domain (e.g. `photos.example.com`), `WEBAUTHN_ORIGIN` to `https://photos.example.com`, and `WEBAUTHN_RP_NAME` to whatever label you want users to see in their authenticator. The three values must match exactly — mismatches cause silent passkey registration or login failures.
+
+> **Google Sign-In**: Create an OAuth 2.0 credential in [Google Cloud Console](https://console.cloud.google.com/apis/credentials), add your origin to the authorised JavaScript origins, and add `<origin>/api/v1/auth/google/callback` as an authorised redirect URI. Set both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to enable the feature — Google Sign-In is hidden from the UI when `GOOGLE_CLIENT_ID` is absent.
 
 ---
 
@@ -213,7 +219,8 @@ Open an album → click the cover area → select any photo → crop using the 1
 **Batch operations**
 
 In an album, enter selection mode (checkbox icon or long-press on mobile) to:
-- Select multiple photos with click or Shift+click for range selection
+- **Click** a photo to toggle it; **Shift+click** to range-select from the last touched photo
+- **Cmd/Ctrl+click** to toggle an individual photo without clearing the selection
 - Delete selected photos
 - Download selected photos as a ZIP
 
@@ -283,16 +290,30 @@ Group share links support the same password and expiry options as individual alb
 
 ---
 
+### Favorites
+
+While browsing a share link (`/v/<token>`), visitors can mark photos as favorites. Favorites are:
+
+- Toggled by clicking the heart/star icon on any photo
+- Persisted in `localStorage` keyed by token and album, so they survive a page refresh
+- Context-aware — switching between albums in a share group saves and restores each album's favorites separately
+- Stored locally in the browser only (not synced to the server)
+
+---
+
 ### Guest Upload Flow
 
 This is designed for photography club events: the club owner creates an **upload** share link, distributes it to photographers, and photographers upload directly without creating an account.
 
 **From the photographer's perspective**
 
-1. Open the share link URL (`/v/<token>`)
+1. Open the share link URL (`/v/<token>`) and click **Upload Photos**
 2. If password-protected, enter the password
 3. Enter a display name and optionally an email and Instagram handle
-4. Upload photos — they appear in the album immediately
+4. Drag and drop photos onto the upload zone, or click to browse — a full-page overlay activates when files are dragged over the window
+5. A per-file thumbnail queue appears showing each file's status: pending → hashing → uploading → done / duplicate / error
+6. An overall progress bar tracks the batch; a summary (N uploaded · N duplicates skipped · N failed) appears on completion
+7. Click **Add more** to queue additional files, **Clear all** to reset, or **Upload More Photos** to start a new batch
 
 **Account behaviour**
 
