@@ -606,7 +606,7 @@ PicHaus uses a custom HMAC-SHA256 token scheme rather than a JWT library.
 
 PicHaus supports WebAuthn/FIDO2 passkeys and hardware security keys (YubiKey, etc.) as a passwordless login method via [@simplewebauthn](https://simplewebauthn.dev).
 
-- **Sign in** — the login page has a **Sign in with Passkey or Security Key** button. The browser or OS prompts the user to select a registered credential. No email or password is entered.
+- **Sign in** — the login page has a **Sign in with Passkey** button. The browser or OS prompts the user to select a registered credential. No email or password is entered.
 - **Register a passkey** — go to **Settings** → **Passkeys & Security Keys** → click **Add**. The browser prompts to create a new credential using the platform authenticator (Face ID, Touch ID, Windows Hello) or a plugged-in hardware key. Multiple passkeys can be registered per account.
 - **Manage passkeys** — each registered passkey is listed by name and transport (Built-in, USB, NFC, Bluetooth). Individual passkeys can be removed at any time.
 - Passkey challenges expire after 5 minutes and are consumed on first use (replay-safe).

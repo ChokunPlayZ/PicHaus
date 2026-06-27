@@ -105,7 +105,7 @@
                         </svg>
                         <span v-else class="w-4 h-4 rounded-full border-2 animate-spin"
                             style="border-color: var(--separator); border-top-color: var(--text-2);"></span>
-                        <span>{{ passkeyLoading ? 'Waiting for passkey…' : 'Sign in with Passkey or Security Key' }}</span>
+                        <span>{{ passkeyLoading ? 'Waiting for passkey…' : 'Sign in with Passkey' }}</span>
                     </button>
                 </div>
 
