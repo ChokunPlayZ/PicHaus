@@ -39,8 +39,45 @@ const IMPERSONATE_RETURN_KEY = 'pichaus_impersonate_return_token'
 
 const route = useRoute()
 const { splash } = useSplash()
-const { loadSettings } = useSiteSettings()
+const { loadSettings, settings } = useSiteSettings()
 const isImpersonating = ref(false)
+
+const routeToTitle: Record<string, string> = {
+    '/album': 'Albums',
+    '/photos': 'All Photos',
+    '/settings': 'Settings',
+    '/statistics': 'Statistics',
+    '/api-tokens': 'API Tokens',
+    '/login': 'Sign In',
+    '/setup': 'Setup',
+    '/admin/invites': 'Invites & Resets',
+    '/admin/logos': 'Admin Dashboard',
+    '/admin/settings': 'Site Settings',
+    '/admin/status': 'Server Status',
+    '/admin/users': 'Admin Dashboard'
+}
+
+useHead({
+    titleTemplate: (titleChunk) => {
+        const siteName = settings.value?.siteName || 'PicHaus'
+        let pageTitle = titleChunk
+
+        if (!pageTitle || pageTitle === 'PicHaus' || pageTitle === siteName) {
+            const path = route.path.replace(/\/$/, '') || '/'
+            pageTitle = routeToTitle[path] || ''
+        }
+
+        if (!pageTitle) {
+            return siteName
+        }
+
+        const suffix = ` | ${siteName}`
+        if (pageTitle.endsWith(suffix)) {
+            return pageTitle
+        }
+        return `${pageTitle}${suffix}`
+    }
+})
 
 const syncImpersonating = () => {
     isImpersonating.value = !!localStorage.getItem(IMPERSONATE_RETURN_KEY)
