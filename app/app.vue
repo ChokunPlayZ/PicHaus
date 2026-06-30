@@ -58,24 +58,20 @@ const routeToTitle: Record<string, string> = {
 }
 
 useHead({
+    title: () => {
+        const path = route.path.replace(/\/$/, '') || '/'
+        return routeToTitle[path] || ''
+    },
     titleTemplate: (titleChunk) => {
         const siteName = settings.value?.siteName || 'PicHaus'
-        let pageTitle = titleChunk
-
-        if (!pageTitle || pageTitle === 'PicHaus' || pageTitle === siteName) {
-            const path = route.path.replace(/\/$/, '') || '/'
-            pageTitle = routeToTitle[path] || ''
-        }
-
-        if (!pageTitle) {
+        if (!titleChunk) {
             return siteName
         }
-
         const suffix = ` | ${siteName}`
-        if (pageTitle.endsWith(suffix)) {
-            return pageTitle
+        if (titleChunk.endsWith(suffix)) {
+            return titleChunk
         }
-        return `${pageTitle}${suffix}`
+        return `${titleChunk}${suffix}`
     }
 })
 
