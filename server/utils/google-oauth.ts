@@ -21,6 +21,7 @@ interface PendingAuth {
     email: string
     state: string
     expiresAt: number
+    isNewUser: boolean
 }
 
 const _pending = new Map<string, PendingAuth>()

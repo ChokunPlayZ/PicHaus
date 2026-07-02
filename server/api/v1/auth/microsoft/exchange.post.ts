@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
             name: pending.name,
             email: pending.email,
             state: pending.state,
+            isNewUser: pending.isNewUser,
         },
     }
 })

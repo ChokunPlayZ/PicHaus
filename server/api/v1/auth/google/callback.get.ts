@@ -49,6 +49,7 @@ export default defineEventHandler(async (event) => {
         }).then(r => r ?? null)
 
         const now = getUnixTimestamp()
+        let isNewUser = false
 
         if (user) {
             if (!user.googleId) {
@@ -59,6 +60,7 @@ export default defineEventHandler(async (event) => {
                 if (updated) user = updated
             }
         } else {
+            isNewUser = true
             const [created] = await db.insert(users).values({
                 email: userInfo.email,
                 name: userInfo.name || userInfo.email.split('@')[0],
@@ -102,6 +104,7 @@ export default defineEventHandler(async (event) => {
             name: user.name ?? userInfo.name,
             email: user.email ?? userInfo.email,
             state,
+            isNewUser,
         })
 
         return sendRedirect(event, `/auth/google/complete?code=${pendingKey}`, 302)

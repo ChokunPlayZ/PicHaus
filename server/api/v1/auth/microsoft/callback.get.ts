@@ -40,6 +40,7 @@ export default defineEventHandler(async (event) => {
         }).then(r => r ?? null)
 
         const now = getUnixTimestamp()
+        let isNewUser = false
 
         if (user) {
             if (!user.microsoftId) {
@@ -50,6 +51,7 @@ export default defineEventHandler(async (event) => {
                 if (updated) user = updated
             }
         } else {
+            isNewUser = true
             const [created] = await db.insert(users).values({
                 email,
                 name: userInfo.displayName || email.split('@')[0],
@@ -95,6 +97,7 @@ export default defineEventHandler(async (event) => {
             name: user.name ?? userInfo.displayName,
             email: user.email ?? email,
             state,
+            isNewUser,
         })
 
         return sendRedirect(event, `/auth/microsoft/complete?code=${pendingKey}`, 302)

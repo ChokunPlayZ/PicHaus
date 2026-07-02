@@ -50,23 +50,23 @@ onMounted(async () => {
     }
 
     try {
-        const res = await $fetch<{ success: boolean; data: { accessToken: string; name: string; email: string; state: string } }>(
+        const res = await $fetch<{ success: boolean; data: { accessToken: string; name: string; email: string; state: string; isNewUser?: boolean } }>(
             '/api/v1/auth/microsoft/exchange', { method: 'POST', body: { code } }
         )
 
         setAuthToken(res.data.accessToken)
         const state = decodeState(res.data.state)
+        const destination = state.uploadToken ? `/u/${state.uploadToken}` : (state.redirect && state.redirect.startsWith('/') ? state.redirect : '/album')
 
-        if (state.uploadToken) {
+        if (res.data.isNewUser) {
             splashTrigger(res.data.name)
-            await navigateTo(`/u/${state.uploadToken}`)
+            await navigateTo(`/onboarding?redirect=${encodeURIComponent(destination)}`)
             await splashDismiss()
             return
         }
 
-        const redirect = state.redirect && state.redirect.startsWith('/') ? state.redirect : '/album'
         splashTrigger(res.data.name)
-        await navigateTo(redirect)
+        await navigateTo(destination)
         await splashDismiss()
     } catch (err: any) {
         error.value = err.data?.statusMessage || err.message || 'Sign-in failed'
