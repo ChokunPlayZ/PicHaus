@@ -63,6 +63,16 @@ export default defineEventHandler(async (event) => {
         }
 
         if (Object.keys(updateData).length > 0) {
+            // Nullify unique constraint fields on the deleted user first to prevent PostgresError (duplicate key value violates unique constraint)
+            const nullifyData: Partial<typeof users.$inferInsert> = {}
+            if (updateData.email) nullifyData.email = null
+            if (updateData.googleId) nullifyData.googleId = null
+            if (updateData.microsoftId) nullifyData.microsoftId = null
+
+            if (Object.keys(nullifyData).length > 0) {
+                await tx.update(users).set(nullifyData).where(eq(users.id, deleteId))
+            }
+
             await tx.update(users).set(updateData).where(eq(users.id, keepId))
         }
 
