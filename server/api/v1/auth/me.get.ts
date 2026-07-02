@@ -8,6 +8,7 @@ export default defineEventHandler(async (event) => {
             data: {
                 id: user.id,
                 email: user.email,
+                hasPassword: !!user.passwordHash,
                 name: user.name,
                 instagram: user.instagram,
                 role: user.role,

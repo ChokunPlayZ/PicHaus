@@ -15,8 +15,8 @@ export default defineEventHandler(async (event) => {
     if (deleteId === currentUser.id) throw createError({ statusCode: 400, statusMessage: 'Cannot delete your own account via merge' })
 
     const [keepUser, deleteUser] = await Promise.all([
-        db.query.users.findFirst({ where: eq(users.id, keepId), columns: { id: true, name: true } }),
-        db.query.users.findFirst({ where: eq(users.id, deleteId), columns: { id: true, name: true } }),
+        db.query.users.findFirst({ where: eq(users.id, keepId) }),
+        db.query.users.findFirst({ where: eq(users.id, deleteId) }),
     ])
 
     if (!keepUser) throw createError({ statusCode: 404, statusMessage: 'Target user not found' })
@@ -50,6 +50,21 @@ export default defineEventHandler(async (event) => {
             tx.update(inviteTokens).set({ userId: keepId }).where(eq(inviteTokens.userId, deleteId)),
             tx.update(logos).set({ uploadedById: keepId }).where(eq(logos.uploadedById, deleteId)),
         ])
+
+        const updateData: Partial<typeof users.$inferInsert> = {}
+        if (!keepUser.email && deleteUser.email) updateData.email = deleteUser.email
+        if (!keepUser.passwordHash && deleteUser.passwordHash) updateData.passwordHash = deleteUser.passwordHash
+        if (!keepUser.googleId && deleteUser.googleId) updateData.googleId = deleteUser.googleId
+        if (!keepUser.microsoftId && deleteUser.microsoftId) updateData.microsoftId = deleteUser.microsoftId
+        if (!keepUser.instagram && deleteUser.instagram) updateData.instagram = deleteUser.instagram
+        if (!keepUser.avatarPath && deleteUser.avatarPath) updateData.avatarPath = deleteUser.avatarPath
+        if ((!keepUser.name || keepUser.name === 'Guest') && deleteUser.name && deleteUser.name !== 'Guest') {
+            updateData.name = deleteUser.name
+        }
+
+        if (Object.keys(updateData).length > 0) {
+            await tx.update(users).set(updateData).where(eq(users.id, keepId))
+        }
 
         await tx.delete(users).where(eq(users.id, deleteId))
     })
