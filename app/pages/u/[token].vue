@@ -316,6 +316,30 @@
                         <p class="text-xs" style="color: var(--text-3);">Upload to this album</p>
                     </div>
 
+                    <!-- Overall Progress Card -->
+                    <div v-if="files.length > 0" class="rounded-xl p-4 space-y-3"
+                        style="background: var(--surface-2); border: 1px solid var(--accent-light);">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="font-medium" style="color: var(--text-1);">
+                                <span v-if="uploadStats.uploading > 0 || uploadStats.pending > 0">
+                                    Uploading photos ({{ uploadStats.done }}/{{ uploadStats.total }})
+                                </span>
+                                <span v-else-if="uploadStats.error > 0">
+                                    Upload completed with errors ({{ uploadStats.done }} succeeded, {{ uploadStats.error }} failed)
+                                </span>
+                                <span v-else>
+                                    All uploads completed!
+                                </span>
+                            </span>
+                            <span class="font-semibold" style="color: var(--accent);">{{ overallProgress }}%</span>
+                        </div>
+                        <div class="w-full rounded-full h-2.5" style="background: var(--surface-3);">
+                            <div class="h-2.5 rounded-full transition-all duration-300"
+                                :style="`width: ${overallProgress}%; background: var(--accent);`">
+                            </div>
+                        </div>
+                    </div>
+
                     <div v-if="files.length > 0" class="space-y-2 max-h-64 overflow-y-auto">
                         <div v-for="(file, index) in files" :key="index"
                             class="rounded-xl p-3"
@@ -383,6 +407,51 @@ interface FileUpload {
 }
 const files = ref<FileUpload[]>([])
 const fileInput = ref<HTMLInputElement | null>(null)
+
+const overallProgress = computed(() => {
+    if (files.value.length === 0) return 0
+    let totalSize = 0
+    let uploadedSize = 0
+    files.value.forEach(f => {
+        totalSize += f.file.size
+        uploadedSize += (f.progress / 100) * f.file.size
+    })
+    return totalSize > 0 ? Math.round((uploadedSize / totalSize) * 100) : 0
+})
+
+const uploadStats = computed(() => {
+    const total = files.value.length
+    const done = files.value.filter(f => f.status === 'done').length
+    const error = files.value.filter(f => f.status === 'error').length
+    const uploading = files.value.filter(f => f.status === 'uploading').length
+    const pending = files.value.filter(f => f.status === 'pending').length
+    
+    return { total, done, error, uploading, pending }
+})
+
+const checkUploadCompletion = () => {
+    if (files.value.length === 0) return
+
+    const allFinished = files.value.every(f => f.status === 'done' || f.status === 'error')
+    if (allFinished) {
+        const anySuccess = files.value.some(f => f.status === 'done')
+        const anyError = files.value.some(f => f.status === 'error')
+        
+        if (anySuccess) {
+            if (anyError) {
+                dialog.toast('Some uploads failed, redirecting to album...')
+                setTimeout(() => {
+                    navigateTo(`/album/${albumId.value}`)
+                }, 3000)
+            } else {
+                dialog.toast('Upload complete! Redirecting...')
+                setTimeout(() => {
+                    navigateTo(`/album/${albumId.value}`)
+                }, 1000)
+            }
+        }
+    }
+}
 
 const stepTitle = computed(() => {
     if (step.value === 'password') return 'Password Required'
@@ -625,10 +694,12 @@ const uploadFile = (fileUpload: FileUpload) => {
                 fileUpload.errorMessage = `Upload failed (${xhr.status})`
             }
         }
+        checkUploadCompletion()
     })
     xhr.addEventListener('error', () => {
         fileUpload.status = 'error'
         fileUpload.errorMessage = 'Network error'
+        checkUploadCompletion()
     })
 
     const authToken = getAuthToken()
