@@ -25,10 +25,21 @@ export default defineEventHandler(async (event) => {
         }
 
         const [updatedUser] = await db.update(users).set(updateData).where(eq(users.id, currentUser.id)).returning({
-            id: users.id, name: users.name, email: users.email, instagram: users.instagram, role: users.role, createdAt: users.createdAt,
+            id: users.id, name: users.name, email: users.email, instagram: users.instagram, role: users.role, createdAt: users.createdAt, avatarPath: users.avatarPath,
         })
 
-        return { success: true, data: { ...updatedUser, createdAt: Number(updatedUser.createdAt) } }
+        if (!updatedUser) {
+            throw createError({ statusCode: 500, statusMessage: 'Failed to update profile' })
+        }
+
+        return {
+            success: true,
+            data: {
+                ...updatedUser,
+                createdAt: Number(updatedUser.createdAt),
+                avatar: updatedUser.avatarPath ? `/api/assets/avatar/${updatedUser.id}` : null,
+            }
+        }
     } catch (error: any) {
         if (error.statusCode) throw error
         throw createError({ statusCode: 500, statusMessage: 'Failed to update profile' })

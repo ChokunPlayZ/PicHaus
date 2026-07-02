@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
 
     const album = await db.query.albums.findFirst({
         where: eq(albums.id, id),
-        with: { owner: { columns: { id: true, name: true, email: true, instagram: true } } },
+        with: { owner: { columns: { id: true, name: true, email: true, instagram: true, avatarPath: true } } },
         columns: { id: true, isPublic: true },
     })
 
@@ -39,6 +39,7 @@ export default defineEventHandler(async (event) => {
             uploaderId: photos.uploaderId,
             uploaderName: users.name,
             uploaderInstagram: users.instagram,
+            uploaderAvatarPath: users.avatarPath,
         })
             .from(photos)
             .leftJoin(users, eq(photos.uploaderId, users.id))
@@ -56,7 +57,10 @@ export default defineEventHandler(async (event) => {
     return {
         success: true,
         data: {
-            owner: album.owner,
+            owner: album.owner ? {
+                ...album.owner,
+                avatar: album.owner.avatarPath ? `/api/assets/avatar/${album.owner.id}` : null,
+            } : null,
             photos: photoRows.map(p => ({
                 id: p.id,
                 filename: p.filename,
@@ -73,7 +77,12 @@ export default defineEventHandler(async (event) => {
                 aperture: p.aperture,
                 shutterSpeed: p.shutterSpeed,
                 iso: p.iso,
-                uploader: p.uploaderId ? { id: p.uploaderId, name: p.uploaderName, instagram: p.uploaderInstagram } : null,
+                uploader: p.uploaderId ? {
+                    id: p.uploaderId,
+                    name: p.uploaderName,
+                    instagram: p.uploaderInstagram,
+                    avatar: p.uploaderAvatarPath ? `/api/assets/avatar/${p.uploaderId}` : null,
+                } : null,
             })),
             pagination: {
                 page,

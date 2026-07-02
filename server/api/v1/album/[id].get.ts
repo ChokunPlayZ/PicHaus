@@ -18,8 +18,8 @@ export default defineEventHandler(async (event) => {
         const album = await db.query.albums.findFirst({
             where: eq(albums.id, id),
             with: {
-                owner: { columns: { id: true, name: true, email: true, instagram: true } },
-                collaborators: { with: { user: { columns: { id: true, name: true, email: true, instagram: true } } } },
+                owner: { columns: { id: true, name: true, email: true, instagram: true, avatarPath: true } },
+                collaborators: { with: { user: { columns: { id: true, name: true, email: true, instagram: true, avatarPath: true } } } },
                 coverPhoto: { columns: { id: true, blurhash: true } },
             },
         })
@@ -29,7 +29,16 @@ export default defineEventHandler(async (event) => {
         const isOwner = authUserId === album.ownerId
         const collaborator = album.collaborators.find(c => c.userId === authUserId)
         const isCollaborator = !!collaborator
-        const canEditAsCollaborator = !!collaborator && collaborator.role !== 'viewer'
+
+        let hasEmail = false
+        if (authUserId) {
+            const userRecord = await db.query.users.findFirst({
+                where: eq(users.id, authUserId),
+                columns: { email: true }
+            })
+            hasEmail = !!userRecord?.email
+        }
+
         let hasShareLinkAccess = false
 
         if (!album.isPublic && !isOwner && !isCollaborator) {
@@ -98,6 +107,7 @@ export default defineEventHandler(async (event) => {
                 uploaderId: photos.uploaderId,
                 uploaderName: users.name,
                 uploaderInstagram: users.instagram,
+                uploaderAvatarPath: users.avatarPath,
             })
                 .from(photos)
                 .leftJoin(users, eq(photos.uploaderId, users.id))
@@ -134,7 +144,12 @@ export default defineEventHandler(async (event) => {
             aperture: photo.aperture,
             shutterSpeed: photo.shutterSpeed,
             iso: photo.iso,
-            uploader: photo.uploaderId ? { id: photo.uploaderId, name: photo.uploaderName, instagram: photo.uploaderInstagram } : null,
+            uploader: photo.uploaderId ? {
+                id: photo.uploaderId,
+                name: photo.uploaderName,
+                instagram: photo.uploaderInstagram,
+                avatar: photo.uploaderAvatarPath ? `/api/assets/avatar/${photo.uploaderId}` : null,
+            } : null,
         }))
 
         const collaborators = album.collaborators
@@ -142,6 +157,10 @@ export default defineEventHandler(async (event) => {
             .map(collab => ({
                 ...collab,
                 createdAt: Number(collab.createdAt),
+                user: {
+                    ...collab.user,
+                    avatar: collab.user.avatarPath ? `/api/assets/avatar/${collab.user.id}` : null,
+                },
             }))
 
         let coverPhoto: { id: string; blurhash: string } | null = album.coverPhoto ?? null
@@ -162,6 +181,10 @@ export default defineEventHandler(async (event) => {
             success: true,
             data: {
                 ...album,
+                owner: album.owner ? {
+                    ...album.owner,
+                    avatar: album.owner.avatarPath ? `/api/assets/avatar/${album.owner.id}` : null,
+                } : null,
                 coverPhoto,
                 name: album.title,
                 createdAt: Number(album.createdAt),
@@ -172,8 +195,8 @@ export default defineEventHandler(async (event) => {
                 permissions: {
                     isOwner,
                     isCollaborator,
-                    canEdit: isOwner || canEditAsCollaborator,
-                    canDelete: isOwner,
+                    canEdit: isOwner && hasEmail,
+                    canDelete: isOwner && hasEmail,
                 },
                 pagination: { page, limit, total: totalPhotos, hasMore: skip + photoRows.length < totalPhotos },
             },

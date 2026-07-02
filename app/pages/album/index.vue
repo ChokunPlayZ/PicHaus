@@ -208,7 +208,7 @@
             </div>
             <button @click="clearSelection" class="text-sm transition" style="color: var(--text-2);">Clear</button>
             <div class="w-px h-4" style="background: var(--separator);"></div>
-            <button @click="openBatchEditModal"
+            <button v-if="canBatchEdit" @click="openBatchEditModal"
                 class="flex items-center gap-1.5 text-sm font-medium transition"
                 style="color: var(--text-1);">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -540,7 +540,8 @@
                 </svg>
                 Open Album
             </button>
-            <button @click="navigateTo(`/album/${albumContextMenu.album!.id}?edit=1`); closeAlbumContextMenu()"
+            <button v-if="user && user.id === albumContextMenu.album?.owner?.id && user.email"
+                @click="navigateTo(`/album/${albumContextMenu.album!.id}?edit=1`); closeAlbumContextMenu()"
                 class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg"
                 style="color: var(--text-1); margin: 0 4px; width: calc(100% - 8px);"
                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
@@ -562,7 +563,8 @@
                 Select
             </button>
             <div class="h-px my-1 mx-3" style="background: var(--separator);"></div>
-            <button @click="deleteAlbumFromMenu(albumContextMenu.album!.id); closeAlbumContextMenu()"
+            <button v-if="user && user.id === albumContextMenu.album?.owner?.id && user.email"
+                @click="deleteAlbumFromMenu(albumContextMenu.album!.id); closeAlbumContextMenu()"
                 class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg"
                 style="color: var(--error); margin: 0 4px; width: calc(100% - 8px);"
                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)'"
@@ -657,6 +659,14 @@ const visibleTags = computed(() => {
     const query = tagQuery.value.trim().toLowerCase()
     if (!query) return allTags.value
     return allTags.value.filter(tag => tag.toLowerCase().includes(query))
+})
+
+const canBatchEdit = computed(() => {
+    if (!user.value || !user.value.email) return false
+    return Array.from(selectedAlbumIds.value).every(id => {
+        const album = albums.value.find(a => a.id === id)
+        return album?.owner?.id === user.value.id
+    })
 })
 
 const filteredAlbums = computed(() => {

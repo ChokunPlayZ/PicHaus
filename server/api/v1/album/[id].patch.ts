@@ -23,8 +23,12 @@ export default defineEventHandler(async (event) => {
         if (!album) throw createError({ statusCode: 404, statusMessage: 'Album not found' })
 
         const isOwner = album.ownerId === user.id
-        if (!isOwner && album.collaborators.length === 0) {
-            throw createError({ statusCode: 403, statusMessage: 'You do not have permission to edit this album' })
+        if (!isOwner) {
+            throw createError({ statusCode: 403, statusMessage: 'Only the album owner can edit this album' })
+        }
+
+        if (!user.email) {
+            throw createError({ statusCode: 403, statusMessage: 'Guest users cannot edit albums until they have an email assigned' })
         }
 
         const body = await readBody(event)
@@ -45,7 +49,7 @@ export default defineEventHandler(async (event) => {
             updatedAt: now,
         }).where(eq(albums.id, id)).returning()
 
-        const owner = await db.query.users.findFirst({ where: eq(users.id, updatedAlbum.ownerId), columns: { id: true, name: true } })
+        const owner = await db.query.users.findFirst({ where: eq(users.id, updatedAlbum.ownerId), columns: { id: true, name: true, avatarPath: true } })
 
         return {
             success: true,
@@ -56,7 +60,10 @@ export default defineEventHandler(async (event) => {
                 createdAt: Number(updatedAlbum.createdAt),
                 updatedAt: Number(updatedAlbum.updatedAt),
                 eventDate: updatedAlbum.eventDate ? Number(updatedAlbum.eventDate) : null,
-                owner,
+                owner: owner ? {
+                    ...owner,
+                    avatar: owner.avatarPath ? `/api/assets/avatar/${owner.id}` : null,
+                } : null,
             },
         }
     } catch (error: any) {

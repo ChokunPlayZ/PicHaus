@@ -305,6 +305,7 @@
 
 <script setup lang="ts">
 const dialog = useDialog()
+const userState = useState<any>('navbar-user', () => null)
 const form = ref({ name: '', email: '', instagram: '', password: '', currentAvatar: '' as string | null })
 const saving = ref(false)
 const error = ref('')
@@ -510,6 +511,9 @@ const confirmCrop = async () => {
         form.value.currentAvatar = res.data.avatarUrl
         avatarPreview.value = res.data.avatarUrl
         avatarSuccess.value = true
+        if (userState.value) {
+            userState.value.avatar = res.data.avatarUrl
+        }
         setTimeout(() => { avatarSuccess.value = false }, 3000)
         closeCropModal()
     } catch (err: any) {
@@ -541,9 +545,15 @@ const handleSave = async () => {
     try {
         const body: any = { name: form.value.name, email: form.value.email, instagram: form.value.instagram }
         if (form.value.password) body.password = form.value.password
-        await $fetch('/api/v1/users/me', { method: 'PATCH', body })
+        const res = await $fetch<{ success: boolean; data: any }>('/api/v1/users/me', { method: 'PATCH', body })
         success.value = 'Profile updated successfully'
         form.value.password = ''
+        if (userState.value && res?.data) {
+            userState.value.name = res.data.name
+            userState.value.email = res.data.email
+            userState.value.instagram = res.data.instagram
+            userState.value.avatar = res.data.avatar
+        }
     } catch (err: any) {
         error.value = err.data?.statusMessage || 'Failed to update profile'
     } finally {

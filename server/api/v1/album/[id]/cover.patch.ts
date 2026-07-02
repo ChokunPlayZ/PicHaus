@@ -17,8 +17,11 @@ export default defineEventHandler(async (event) => {
         })
 
         if (!album) throw createError({ statusCode: 404, statusMessage: 'Album not found' })
-        if (album.ownerId !== user.id && album.collaborators.length === 0) {
-            throw createError({ statusCode: 403, statusMessage: 'You do not have permission to edit this album' })
+        if (album.ownerId !== user.id) {
+            throw createError({ statusCode: 403, statusMessage: 'Only the album owner can edit this album' })
+        }
+        if (!user.email) {
+            throw createError({ statusCode: 403, statusMessage: 'Guest users cannot edit albums until they have an email assigned' })
         }
 
         if (photoId) {

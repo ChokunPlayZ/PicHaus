@@ -33,6 +33,7 @@ export default defineEventHandler(async (event) => {
             ownerId: albums.ownerId,
             ownerName: users.name,
             ownerInstagram: users.instagram,
+            ownerAvatarPath: users.avatarPath,
             photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = ${albums.id})`,
             collaboratorCount: sql<number>`(
                 SELECT COUNT(*) FROM album_collaborators 
@@ -76,7 +77,12 @@ export default defineEventHandler(async (event) => {
                     eventDate: album.eventDate ? Number(album.eventDate) : null,
                     createdAt: Number(album.createdAt),
                     updatedAt: Number(album.updatedAt),
-                    owner: { id: album.ownerId, name: album.ownerName, instagram: album.ownerInstagram },
+                    owner: {
+                        id: album.ownerId,
+                        name: album.ownerName,
+                        instagram: album.ownerInstagram,
+                        avatar: album.ownerAvatarPath ? `/api/assets/avatar/${album.ownerId}` : null,
+                    },
                     _count: { photos: Number(album.photoCount), collaborators: Number(album.collaboratorCount) },
                     coverPhoto: coverPhoto || latestPhoto,
                 }

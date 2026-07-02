@@ -39,22 +39,22 @@ export default defineEventHandler(async (event) => {
 
         const albumRows = await db.query.albums.findMany({
             where: inArray(albums.id, albumIds),
-            with: {
-                collaborators: {
-                    where: and(eq(albumCollaborators.userId, user.id), inArray(albumCollaborators.role, ['admin', 'editor'])),
-                },
-            },
         })
 
         if (albumRows.length !== albumIds.length) {
             throw createError({ statusCode: 404, statusMessage: 'One or more albums were not found' })
         }
 
-        const editableAlbums = albumRows.filter(album => album.ownerId === user.id || album.collaborators.length > 0)
-
-        if (editableAlbums.length !== albumRows.length) {
-            throw createError({ statusCode: 403, statusMessage: 'You do not have permission to edit one or more selected albums' })
+        const isOwnerOfAll = albumRows.every(album => album.ownerId === user.id)
+        if (!isOwnerOfAll) {
+            throw createError({ statusCode: 403, statusMessage: 'Only the album owner can edit these albums' })
         }
+
+        if (!user.email) {
+            throw createError({ statusCode: 403, statusMessage: 'Guest users cannot edit albums until they have an email assigned' })
+        }
+
+        const editableAlbums = albumRows
 
         const now = getUnixTimestamp()
 

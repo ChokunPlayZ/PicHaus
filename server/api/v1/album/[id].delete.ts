@@ -17,6 +17,9 @@ export default defineEventHandler(async (event) => {
 
         if (!album) throw createError({ statusCode: 404, statusMessage: 'Album not found' })
         if (album.ownerId !== user.id) throw createError({ statusCode: 403, statusMessage: 'Only the album owner can delete this album' })
+        if (!user.email) {
+            throw createError({ statusCode: 403, statusMessage: 'Guest users cannot delete albums until they have an email assigned' })
+        }
 
         for (const photo of album.photos) {
             if (photo.storagePath) await deleteFile(photo.storagePath)

@@ -207,8 +207,11 @@
                     <div class="mb-6">
                         <h4 class="text-sm font-medium text-white/50 mb-2">Uploaded By</h4>
                         <div class="flex items-center space-x-3">
-                            <div
-                                class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                            <img v-if="photo.uploader?.avatar" :src="photo.uploader.avatar"
+                                class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                                style="border: 1px solid rgba(255,255,255,0.15);" />
+                            <div v-else
+                                class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
                                 style="background: var(--accent);">
                                 {{ photo.uploader?.name?.charAt(0) || '?' }}
                             </div>
@@ -333,6 +336,7 @@ interface Photo {
     uploader: {
         name: string | null
         instagram?: string | null
+        avatar?: string | null
     } | null
     cameraModel?: string | null
     lens?: string | null
