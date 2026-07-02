@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
             photographer ? eq(photos.uploaderId, photographer) : undefined,
         )
 
-        const [photoRows, [{ total }]] = await Promise.all([
+        const [photoRows, [{ total }], uploaders] = await Promise.all([
             db.select({
                 id: photos.id,
                 filename: photos.filename,
@@ -106,7 +106,17 @@ export default defineEventHandler(async (event) => {
                 .limit(limit)
                 .offset(skip),
             db.select({ total: sql<number>`COUNT(*)` }).from(photos).where(photoWhere),
+            db.select({ uploaderId: photos.uploaderId })
+                .from(photos)
+                .where(and(eq(photos.albumId, id), sql`${photos.uploaderId} IS NOT NULL`))
+                .groupBy(photos.uploaderId),
         ])
+
+        const uploaderIds = new Set(
+            uploaders
+                .map(u => u.uploaderId)
+                .filter((uid): uid is string => !!uid)
+        )
 
         const mappedPhotos = photoRows.map(photo => ({
             id: photo.id,
@@ -127,10 +137,12 @@ export default defineEventHandler(async (event) => {
             uploader: photo.uploaderId ? { id: photo.uploaderId, name: photo.uploaderName, instagram: photo.uploaderInstagram } : null,
         }))
 
-        const collaborators = album.collaborators.map(collab => ({
-            ...collab,
-            createdAt: Number(collab.createdAt),
-        }))
+        const collaborators = album.collaborators
+            .filter(collab => uploaderIds.has(collab.userId))
+            .map(collab => ({
+                ...collab,
+                createdAt: Number(collab.createdAt),
+            }))
 
         let coverPhoto: { id: string; blurhash: string } | null = album.coverPhoto ?? null
         if (!coverPhoto) {

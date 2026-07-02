@@ -34,7 +34,15 @@ export default defineEventHandler(async (event) => {
             ownerName: users.name,
             ownerInstagram: users.instagram,
             photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = ${albums.id})`,
-            collaboratorCount: sql<number>`(SELECT COUNT(*) FROM album_collaborators WHERE album_collaborators."albumId" = ${albums.id})`,
+            collaboratorCount: sql<number>`(
+                SELECT COUNT(*) FROM album_collaborators 
+                WHERE album_collaborators."albumId" = ${albums.id}
+                AND EXISTS (
+                    SELECT 1 FROM photos 
+                    WHERE photos."albumId" = ${albums.id} 
+                    AND photos."uploaderId" = album_collaborators."userId"
+                )
+            )`,
             latestPhotoId: sql<string | null>`(SELECT id FROM photos WHERE photos."albumId" = ${albums.id} ORDER BY "createdAt" DESC LIMIT 1)`,
             latestPhotoBlurhash: sql<string | null>`(SELECT blurhash FROM photos WHERE photos."albumId" = ${albums.id} ORDER BY "createdAt" DESC LIMIT 1)`,
         })

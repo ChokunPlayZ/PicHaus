@@ -21,7 +21,15 @@ export default defineEventHandler(async (event) => {
         ownerId: albums.ownerId,
         coverPhotoId: albums.coverPhotoId,
         photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = "albums"."id")`,
-        collaboratorCount: sql<number>`(SELECT COUNT(*) FROM album_collaborators WHERE album_collaborators."albumId" = "albums"."id")`,
+        collaboratorCount: sql<number>`(
+            SELECT COUNT(*) FROM album_collaborators 
+            WHERE album_collaborators."albumId" = "albums"."id"
+            AND EXISTS (
+                SELECT 1 FROM photos 
+                WHERE photos."albumId" = "albums"."id" 
+                AND photos."uploaderId" = album_collaborators."userId"
+            )
+        )`,
         coverBlurhash: sql<string | null>`(SELECT blurhash FROM photos WHERE id = "albums"."coverPhotoId"::uuid)`,
     })
         .from(albums)
