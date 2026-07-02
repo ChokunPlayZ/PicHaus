@@ -49,7 +49,8 @@
                                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+                                        <img v-if="u.avatar" :src="u.avatar" class="h-9 w-9 rounded-full object-cover shrink-0" style="border: 1px solid var(--separator);" />
+                                        <div v-else class="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
                                             style="background: var(--accent-light); color: var(--accent);">
                                             {{ u.name?.[0]?.toUpperCase() || '?' }}
                                         </div>
@@ -223,7 +224,8 @@
                 <div class="rounded-xl p-3 mb-4" style="background: var(--error-bg); border: 1px solid var(--error);">
                     <div class="text-xs font-semibold uppercase tracking-wide mb-1" style="color: var(--error);">Remove (duplicate)</div>
                     <div class="flex items-center gap-3">
-                        <div class="h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+                        <img v-if="mergeSource?.avatar" :src="mergeSource.avatar" class="h-8 w-8 rounded-full object-cover shrink-0" style="border: 1px solid var(--separator);" />
+                        <div v-else class="h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
                             style="background: var(--error); color: #fff;">
                             {{ mergeSource?.name?.[0]?.toUpperCase() || '?' }}
                         </div>
@@ -268,7 +270,8 @@
                         :style="mergeTarget?.id === r.id ? 'background: var(--accent-light);' : 'background: var(--surface-2);'"
                         @mouseover="mergeTarget?.id !== r.id && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
                         @mouseout="mergeTarget?.id !== r.id && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)')">
-                        <div class="h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                        <img v-if="r.avatar" :src="r.avatar" class="h-7 w-7 rounded-full object-cover shrink-0" style="border: 1px solid var(--separator);" />
+                        <div v-else class="h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
                             style="background: var(--accent-light); color: var(--accent);">
                             {{ r.name?.[0]?.toUpperCase() || '?' }}
                         </div>
@@ -287,7 +290,8 @@
                 <div v-if="mergeTarget" class="rounded-xl p-3 mb-5" style="background: var(--accent-light); border: 1px solid var(--accent);">
                     <div class="text-xs font-semibold uppercase tracking-wide mb-1" style="color: var(--accent);">Keep (target)</div>
                     <div class="flex items-center gap-3">
-                        <div class="h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+                        <img v-if="mergeTarget.avatar" :src="mergeTarget.avatar" class="h-8 w-8 rounded-full object-cover shrink-0" style="border: 1px solid var(--separator);" />
+                        <div v-else class="h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
                             style="background: var(--accent); color: var(--accent-text);">
                             {{ mergeTarget.name?.[0]?.toUpperCase() || '?' }}
                         </div>
@@ -337,6 +341,7 @@ interface User {
     instagram: string | null
     role: 'USER' | 'ADMIN'
     createdAt: number
+    avatar: string | null
     _count: {
         ownedAlbums: number
         uploadedPhotos: number

@@ -25,6 +25,7 @@ export default defineEventHandler(async (event) => {
                 instagram: users.instagram,
                 role: users.role,
                 createdAt: users.createdAt,
+                avatarPath: users.avatarPath,
             })
                 .from(users)
                 .where(where)
@@ -58,8 +59,10 @@ export default defineEventHandler(async (event) => {
                 id: u.id,
                 name: u.name,
                 email: u.email,
+                instagram: u.instagram,
                 role: u.role,
                 createdAt: Number(u.createdAt),
+                avatar: u.avatarPath ? `/api/assets/avatar/${u.id}` : null,
                 _count: {
                     ownedAlbums: albumCountMap.get(u.id) ?? 0,
                     uploadedPhotos: photoCountMap.get(u.id) ?? 0,
