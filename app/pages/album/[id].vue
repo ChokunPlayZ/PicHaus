@@ -2719,6 +2719,11 @@ onMounted(async () => {
     if (route.query.edit === '1') {
         showEditModal.value = true
     }
+    if (route.query.upload === 'true' && album.value?.permissions?.canEdit) {
+        nextTick(() => {
+            triggerFileInput()
+        })
+    }
 })
 </script>
 

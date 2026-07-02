@@ -469,13 +469,13 @@ async function autoJoinAsLoggedIn(authToken: string, pw: string): Promise<boolea
             headers: { Authorization: `Bearer ${authToken}` },
         })
         albumId.value = joinRes.data.albumId
-        step.value = 'upload'
+        navigateTo(`/album/${albumId.value}?upload=true`)
         return true
     } catch (err: any) {
         const status = err.status ?? err.data?.statusCode
         if (status === 401) return false
         // Non-auth errors (e.g. already a collaborator) — still allow upload
-        step.value = 'upload'
+        navigateTo(`/album/${albumId.value}?upload=true`)
         return true
     }
 }
@@ -610,7 +610,7 @@ const handleSignupSubmit = async () => {
             headers: { Authorization: `Bearer ${accessToken}` },
         })
         albumId.value = joinRes.data.albumId
-        step.value = 'upload'
+        navigateTo(`/album/${albumId.value}?upload=true`)
     } catch (err: any) {
         signupError.value = err.data?.statusMessage || 'Failed to create account'
     } finally {
@@ -633,7 +633,7 @@ const handleGuestSubmit = async () => {
         })
         if (response.data?.accessToken) setAuthToken(response.data.accessToken)
         albumId.value = response.data.albumId
-        step.value = 'upload'
+        navigateTo(`/album/${albumId.value}?upload=true`)
     } catch (err: any) {
         guestError.value = err.data?.statusMessage || 'Failed to continue'
     } finally {
