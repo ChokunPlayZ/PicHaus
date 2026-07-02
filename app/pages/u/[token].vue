@@ -439,12 +439,12 @@ const checkUploadCompletion = () => {
         
         if (anySuccess) {
             if (anyError) {
-                dialog.toast('Some uploads failed, redirecting to album...')
+                dialog.toast('Some uploads failed, redirecting to album...', 'warning')
                 setTimeout(() => {
                     navigateTo(`/album/${albumId.value}`)
                 }, 3000)
             } else {
-                dialog.toast('Upload complete! Redirecting...')
+                dialog.toast('Upload complete! Redirecting...', 'success')
                 setTimeout(() => {
                     navigateTo(`/album/${albumId.value}`)
                 }, 1000)

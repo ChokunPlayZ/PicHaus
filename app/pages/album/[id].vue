@@ -2012,7 +2012,7 @@ const createShareLink = async () => {
         })
         newLink.value = { type: 'view', label: '', password: '', showMetadata: true, uploadMessage: '' }
         await fetchShareLinks()
-        toast('Link created')
+        toast('Link created', 'success')
         const created = shareLinks.value.find(l => l.id === response.data?.id)
         if (created) showQr(created)
     } catch (err: any) {
@@ -2064,7 +2064,7 @@ const updateShareLink = async () => {
             body
         })
 
-        toast('Link updated')
+        toast('Link updated', 'success')
         cancelEditing()
         await fetchShareLinks()
     } catch (err: any) {
@@ -2080,7 +2080,7 @@ const deleteLink = async (id: string) => {
     try {
         await $fetch(`/api/v1/share-links/${id}`, { method: 'DELETE' })
         await fetchShareLinks()
-        toast('Link deleted')
+        toast('Link deleted', 'success')
     } catch (err: any) {
         toast(err.data?.statusMessage || 'Failed to delete link', 'error')
     }
@@ -2155,7 +2155,7 @@ const deletePhoto = async (id: string) => {
         photos.value = photos.value.filter(p => p.id !== id)
         selectedPhotoIds.value.delete(id)
         await fetchAlbum()
-        toast('Photo deleted')
+        toast('Photo deleted', 'success')
     } catch (err: any) {
         toast(err.data?.statusMessage || 'Failed to delete photo', 'error')
     }
@@ -2350,7 +2350,7 @@ const confirmCrop = async () => {
         }
         showCropModal.value = false
         photoCropImage.value = null
-        toast('Album cover updated!')
+        toast('Album cover updated!', 'success')
     } catch (err: any) {
         toast(err.message || 'Failed to crop image', 'error')
     } finally {

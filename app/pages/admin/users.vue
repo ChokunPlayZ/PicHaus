@@ -544,7 +544,7 @@ const handleMergeSubmit = async () => {
             method: 'POST',
             body: { deleteId: mergeSource.value.id },
         })
-        dialog.toast(`Merged successfully`)
+        dialog.toast(`Merged successfully`, 'success')
         closeMergeModal()
         fetchUsers()
     } catch (err: any) {
