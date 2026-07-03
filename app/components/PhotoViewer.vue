@@ -511,6 +511,10 @@ const handleTouchMove = (e: TouchEvent) => {
     // Only show swipe feedback for horizontal swipes
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
         isImageSwiping.value = true
+        // Prevent default browser behavior (like swipe-to-navigate back/forward in Safari)
+        if (e.cancelable) {
+            e.preventDefault()
+        }
         // Add resistance at boundaries
         if ((deltaX > 0 && !props.hasPrevious) || (deltaX < 0 && !props.hasNext)) {
             imageSwipeOffset.value = deltaX * 0.3 // 30% resistance at boundaries
@@ -552,12 +556,14 @@ const isSwiping = ref(false)
 const minSwipeDownDistance = 80 // minimum distance for swipe down to dismiss
 
 const handleInfoTouchStart = (e: TouchEvent) => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) return
     if (!e.touches[0]) return
     infoTouchStartY.value = e.touches[0].clientY
     isSwiping.value = true
 }
 
 const handleInfoTouchMove = (e: TouchEvent) => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) return
     if (!isSwiping.value || !e.touches[0]) return
 
     infoTouchEndY.value = e.touches[0].clientY
@@ -567,11 +573,15 @@ const handleInfoTouchMove = (e: TouchEvent) => {
     if (deltaY > 0) {
         swipeOffset.value = deltaY
         // Prevent page scroll while swiping the panel
-        e.preventDefault()
+        if (e.cancelable) {
+            e.preventDefault()
+        }
     }
 }
 
 const handleInfoTouchEnd = () => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) return
+    if (!isSwiping.value) return
     const deltaY = infoTouchEndY.value - infoTouchStartY.value
 
     // If swiping down and past threshold, dismiss the info panel
@@ -676,6 +686,13 @@ const sharePhoto = async () => {
         const response = await fetch(buildAssetUrl(`/api/assets/full/${props.photo.id}`))
         const blob = await response.blob()
         const file = new File([blob], props.photo.originalName, { type: blob.type })
+
+        // Clear the timeout as soon as the file is loaded and we are about to share.
+        // This prevents the slow connection tracker from firing while the native share sheet is open.
+        if (shareTimeoutId !== null) {
+            clearTimeout(shareTimeoutId)
+            shareTimeoutId = null
+        }
 
         if (shareTimedOut.value) {
             // Gesture window has expired — cache the file and let the popup button handle it
