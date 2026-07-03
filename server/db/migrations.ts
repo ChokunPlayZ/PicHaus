@@ -297,4 +297,10 @@ VALUES (1, 'PicHaus', EXTRACT(EPOCH FROM NOW())::bigint)
 ON CONFLICT ("id") DO NOTHING`,
         ],
     },
+    {
+        name: '0012_user_theme_preference.sql',
+        statements: [
+            `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "themePreference" TEXT`,
+        ],
+    },
 ]

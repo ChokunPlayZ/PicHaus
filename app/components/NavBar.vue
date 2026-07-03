@@ -326,15 +326,34 @@ const getIconName = (icon: string) => {
   return map[icon] || 'lucide:chevron-right'
 }
 
+const isDark = ref(false)
+
 onMounted(async () => {
     const win = window as Window & { __picHausSidebarNavCount?: number }
     win.__picHausSidebarNavCount = (win.__picHausSidebarNavCount || 0) + 1
     document.body.classList.add('has-sidebar-nav')
 
+    // Detect initial theme class
+    isDark.value = document.documentElement.classList.contains('dark')
+
     try {
         const response = await $fetch<{ success: boolean; data: any }>('/api/v1/auth/me')
         if (response?.data) {
             user.value = response.data
+            // Sync theme preference across machines
+            if (response.data.themePreference) {
+                const isPrefDark = response.data.themePreference === 'dark'
+                isDark.value = isPrefDark
+                if (isPrefDark) {
+                    document.documentElement.classList.add('dark')
+                    localStorage.setItem('theme', 'dark')
+                    document.cookie = 'theme=dark; path=/; max-age=31536000; SameSite=Lax'
+                } else {
+                    document.documentElement.classList.remove('dark')
+                    localStorage.setItem('theme', 'light')
+                    document.cookie = 'theme=light; path=/; max-age=31536000; SameSite=Lax'
+                }
+            }
         }
     } catch (e) {
         console.error('Failed to fetch user', e)
@@ -372,21 +391,29 @@ const handleLogout = async () => {
     }
 }
 
-const isDark = ref(false)
-
-onMounted(() => {
-    isDark.value = document.documentElement.classList.contains('dark')
-})
-
-const toggleTheme = () => {
+const toggleTheme = async () => {
     const nextDark = !isDark.value
     isDark.value = nextDark
+    const themeStr = nextDark ? 'dark' : 'light'
+
     if (nextDark) {
         document.documentElement.classList.add('dark')
-        localStorage.setItem('theme', 'dark')
     } else {
         document.documentElement.classList.remove('dark')
-        localStorage.setItem('theme', 'light')
+    }
+
+    localStorage.setItem('theme', themeStr)
+    document.cookie = `theme=${themeStr}; path=/; max-age=31536000; SameSite=Lax`
+
+    if (user.value) {
+        try {
+            await $fetch('/api/v1/users/me', {
+                method: 'PATCH',
+                body: { themePreference: themeStr }
+            })
+        } catch (e) {
+            console.error('Failed to save theme preference', e)
+        }
     }
 }
 </script>

@@ -18,6 +18,7 @@ export const users = pgTable('users', {
     createdAt: bigint('createdAt', { mode: 'bigint' }).notNull(),
     updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
     role: roleEnum('role').default('USER').notNull(),
+    themePreference: text('themePreference'),
 })
 
 export const logos = pgTable('logos', {

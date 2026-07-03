@@ -6,12 +6,13 @@ export default defineEventHandler(async (event) => {
     try {
         const currentUser = await requireAuth(event)
         const body = await readBody(event)
-        const { name, email, instagram, password } = body
+        const { name, email, instagram, password, themePreference } = body
 
         const updateData: Partial<typeof users.$inferInsert> = {}
 
         if (name !== undefined) updateData.name = name
         if (instagram !== undefined) updateData.instagram = instagram
+        if (themePreference !== undefined) updateData.themePreference = themePreference
 
         if (email && email !== currentUser.email) {
             const existing = await db.query.users.findFirst({ where: eq(users.email, email) })
@@ -25,7 +26,7 @@ export default defineEventHandler(async (event) => {
         }
 
         const [updatedUser] = await db.update(users).set(updateData).where(eq(users.id, currentUser.id)).returning({
-            id: users.id, name: users.name, email: users.email, instagram: users.instagram, role: users.role, createdAt: users.createdAt, avatarPath: users.avatarPath,
+            id: users.id, name: users.name, email: users.email, instagram: users.instagram, role: users.role, createdAt: users.createdAt, avatarPath: users.avatarPath, themePreference: users.themePreference,
         })
 
         if (!updatedUser) {
@@ -38,6 +39,7 @@ export default defineEventHandler(async (event) => {
                 ...updatedUser,
                 createdAt: Number(updatedUser.createdAt),
                 avatar: updatedUser.avatarPath ? `/api/assets/avatar/${updatedUser.id}` : null,
+                themePreference: updatedUser.themePreference,
             }
         }
     } catch (error: any) {

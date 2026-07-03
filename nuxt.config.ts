@@ -21,7 +21,12 @@ export default defineNuxtConfig({
         {
           children: `
             (function() {
-              const theme = localStorage.getItem('theme');
+              const getCookie = function(name) {
+                const value = "; " + document.cookie;
+                const parts = value.split("; " + name + "=");
+                if (parts.length === 2) return parts.pop().split(";").shift();
+              };
+              const theme = getCookie('theme') || localStorage.getItem('theme');
               const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
               if (theme === 'dark' || (!theme && prefersDark)) {
                 document.documentElement.classList.add('dark');

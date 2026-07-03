@@ -14,6 +14,7 @@ export default defineEventHandler(async (event) => {
                 role: user.role,
                 createdAt: Number(user.createdAt),
                 avatar: user.avatarPath ? `/api/assets/avatar/${user.id}` : null,
+                themePreference: user.themePreference,
             },
         }
     } catch (error: any) {
