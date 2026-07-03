@@ -13,22 +13,6 @@ export interface SiteSettings {
     microsoftButtonLogoUrl: string | null
 }
 
-const _settings = useState<SiteSettings>('siteSettings', () => ({
-    siteName: 'PicHaus',
-    accentColor: null,
-    logoImageUrl: null,
-    logoImageId: null,
-    allowRegistration: false,
-    googleOAuthEnabled: false,
-    googleOAuthShiftBypassEnabled: false,
-    googleButtonText: null,
-    googleButtonLogoUrl: null,
-    microsoftOAuthEnabled: false,
-    microsoftButtonText: null,
-    microsoftButtonLogoUrl: null,
-}))
-const _loaded = useState<boolean>('siteSettingsLoaded', () => false)
-
 function applyAccent(color: string | null) {
     if (import.meta.server) return
     if (!color) {
@@ -48,6 +32,22 @@ function applyAccent(color: string | null) {
 }
 
 export const useSiteSettings = () => {
+    const _settings = useState<SiteSettings>('siteSettings', () => ({
+        siteName: 'PicHaus',
+        accentColor: null,
+        logoImageUrl: null,
+        logoImageId: null,
+        allowRegistration: false,
+        googleOAuthEnabled: false,
+        googleOAuthShiftBypassEnabled: false,
+        googleButtonText: null,
+        googleButtonLogoUrl: null,
+        microsoftOAuthEnabled: false,
+        microsoftButtonText: null,
+        microsoftButtonLogoUrl: null,
+    }))
+    const _loaded = useState<boolean>('siteSettingsLoaded', () => false)
+
     const loadSettings = async () => {
         if (_loaded.value) return
         try {
