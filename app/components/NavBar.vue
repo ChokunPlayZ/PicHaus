@@ -74,6 +74,18 @@
             </div>
 
             <div class="p-2 space-y-1" style="border-top: 1px solid var(--separator);">
+                <!-- Theme Toggle -->
+                <button @click="toggleTheme"
+                    class="w-full text-left text-sm font-medium px-3 py-2 rounded-lg transition flex items-center justify-between"
+                    style="color: var(--text-2); background: transparent;"
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-2)'">
+                    <span class="inline-flex items-center gap-2.5">
+                        <Icon :name="isDark ? 'lucide:sun' : 'lucide:moon'" class="w-4 h-4" :stroke-width="2" />
+                        <span>{{ isDark ? 'Light Mode' : 'Dark Mode' }}</span>
+                    </span>
+                </button>
+
                 <button @click="navigateTo('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2.5'" :style="sidebarButtonStyle('/settings')">
                     <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-6 h-6 rounded-full object-cover flex-shrink-0" style="border: 1px solid var(--separator);" />
                     <div v-else
@@ -187,6 +199,18 @@
                 </div>
 
                 <div class="pt-2 space-y-1" style="border-top: 1px solid var(--separator);">
+                    <!-- Theme Toggle -->
+                    <button @click="toggleTheme"
+                        class="w-full text-left text-sm font-medium px-3 py-2 rounded-lg transition flex items-center justify-between"
+                        style="color: var(--text-2); background: transparent;"
+                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-2)'">
+                        <span class="inline-flex items-center gap-2.5">
+                            <Icon :name="isDark ? 'lucide:sun' : 'lucide:moon'" class="w-4 h-4" :stroke-width="2" />
+                            <span>{{ isDark ? 'Light Mode' : 'Dark Mode' }}</span>
+                        </span>
+                    </button>
+
                     <button @click="goMobile('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2.5'" :style="sidebarButtonStyle('/settings')">
                         <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-6 h-6 rounded-full object-cover flex-shrink-0" style="border: 1px solid var(--separator);" />
                         <div v-else
@@ -345,6 +369,24 @@ const handleLogout = async () => {
         window.location.href = '/login'
     } catch (err) {
         console.error('Logout failed', err)
+    }
+}
+
+const isDark = ref(false)
+
+onMounted(() => {
+    isDark.value = document.documentElement.classList.contains('dark')
+})
+
+const toggleTheme = () => {
+    const nextDark = !isDark.value
+    isDark.value = nextDark
+    if (nextDark) {
+        document.documentElement.classList.add('dark')
+        localStorage.setItem('theme', 'dark')
+    } else {
+        document.documentElement.classList.remove('dark')
+        localStorage.setItem('theme', 'light')
     }
 }
 </script>
