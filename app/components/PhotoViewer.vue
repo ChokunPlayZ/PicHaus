@@ -73,7 +73,7 @@
                 @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
 
                 <div class="hidden md:flex absolute top-4 right-4 gap-2 z-20">
-                    <button @click.stop="$emit('toggleFavorite')" @touchstart.stop.prevent @touchmove.stop.prevent
+                    <button @click.stop="$emit('toggleFavorite')" @touchstart.stop @touchmove.stop.prevent
                         class="p-3 rounded-full transition backdrop-blur-sm"
                         :class="isFavorited
                             ? 'bg-red-500/80 text-white opacity-100 hover:bg-red-500/90'
@@ -81,7 +81,7 @@
                         <Icon v-if="isFavorited" name="lucide:heart" class="h-6 w-6 fill-current" :stroke-width="2" />
                         <Icon v-else name="lucide:heart" class="h-6 w-6" :stroke-width="2" />
                     </button>
-                    <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()" @touchstart.stop.prevent
+                    <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()" @touchstart.stop
                         @touchmove.stop.prevent
                         class="p-3 rounded-full text-white transition shadow-lg" style="background: var(--accent);">
                         <Icon name="lucide:download" class="h-6 w-6" :stroke-width="2" />
@@ -741,7 +741,7 @@ const downloadPhoto = async () => {
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (err) {
         console.error('Download failed:', err)
     }
