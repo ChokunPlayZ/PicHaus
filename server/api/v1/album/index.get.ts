@@ -6,19 +6,17 @@ export default defineEventHandler(async (event) => {
     try {
         const user = await requireAuth(event)
 
-        const where = user.role === 'ADMIN'
-            ? undefined
-            : or(
-                eq(albums.ownerId, user.id),
-                exists(
-                    db.select().from(albumCollaborators).where(
-                        and(
-                            eq(albumCollaborators.albumId, albums.id),
-                            eq(albumCollaborators.userId, user.id),
-                        )
+        const where = or(
+            eq(albums.ownerId, user.id),
+            exists(
+                db.select().from(albumCollaborators).where(
+                    and(
+                        eq(albumCollaborators.albumId, albums.id),
+                        eq(albumCollaborators.userId, user.id),
                     )
                 )
             )
+        )
 
         const rows = await db.select({
             id: albums.id,
