@@ -597,6 +597,8 @@ const downloadAll = async () => {
     if (downloading.value) return
     downloading.value = true
     downloadProgress.value = { current: 0, total: 0 }
+    pendingShareFiles.value = null
+    isSharing.value = false
 
     try {
         // Fetch all photo URLs
@@ -605,20 +607,20 @@ const downloadAll = async () => {
 
         if (photosToDownload.length === 0) {
             dialog.toast('No photos to download', 'warning')
+            downloading.value = false
             return
         }
 
         downloadProgress.value.total = photosToDownload.length
 
-        const zip = new JSZip()
-        const folder = zip.folder(albumName.value || 'album')
-
+        const files: { blob: Blob; name: string }[] = []
+        
         // Download each photo
         const promises = photosToDownload.map(async (photo) => {
             try {
-                const res = await fetch(`/api/assets/full/${photo.id}`)
+                const res = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}`))
                 const blob = await res.blob()
-                folder?.file(photo.originalName, blob)
+                files.push({ blob, name: photo.originalName })
                 downloadProgress.value.current++
             } catch (err) {
                 console.error(`Failed to download ${photo.originalName}`, err)
@@ -627,15 +629,37 @@ const downloadAll = async () => {
 
         await Promise.all(promises)
 
-        // Generate zip
+        if (files.length === 0) {
+            downloading.value = false
+            return
+        }
+
+        let skipCleanup = false
+        const folderName = albumName.value || 'album'
+
+        if (isIOS.value && navigator.canShare) {
+            const shareFiles = files.map(f => new File([f.blob], f.name, { type: f.blob.type }))
+            if (navigator.canShare({ files: shareFiles })) {
+                pendingShareFiles.value = shareFiles
+                skipCleanup = true
+                return
+            }
+        }
+
+        // All other platforms: zip download
+        const zip = new JSZip()
+        const folder = zip.folder(folderName)
+        files.forEach(f => folder?.file(f.name, f.blob))
         const content = await zip.generateAsync({ type: 'blob' })
-        downloadBlob(content, `${albumName.value || 'album'}.zip`)
+        downloadBlob(content, `${folderName}.zip`)
     } catch (err) {
         console.error('Download all error:', err)
         dialog.toast('Failed to download photos')
     } finally {
-        downloading.value = false
-        downloadProgress.value = { current: 0, total: 0 }
+        if (!skipCleanup) {
+            downloading.value = false
+            downloadProgress.value = { current: 0, total: 0 }
+        }
     }
 }
 
@@ -644,6 +668,8 @@ const downloadAllGroupPhotos = async () => {
     if (downloading.value) return
     downloading.value = true
     downloadProgress.value = { current: 0, total: 0 }
+    pendingShareFiles.value = null
+    isSharing.value = false
 
     try {
         // Collect all photos to download
@@ -662,23 +688,20 @@ const downloadAllGroupPhotos = async () => {
 
         if (photosToDownload.length === 0) {
             dialog.toast('No photos to download', 'warning')
+            downloading.value = false
             return
         }
 
         downloadProgress.value.total = photosToDownload.length
 
-        const zip = new JSZip()
-        const groupFolder = zip.folder(groupTitle.value || 'group')
+        const files: { blob: Blob; name: string; albumName?: string }[] = []
 
         // Download each photo
         const promises = photosToDownload.map(async (photo) => {
             try {
-                const res = await fetch(`/api/assets/full/${photo.id}`)
+                const res = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}`))
                 const blob = await res.blob()
-                
-                // Organize by album folder
-                const albumFolder = groupFolder?.folder(photo.albumName || 'uncategorized')
-                albumFolder?.file(photo.originalName, blob)
+                files.push({ blob, name: photo.originalName, albumName: photo.albumName })
                 downloadProgress.value.current++
             } catch (err) {
                 console.error(`Failed to download ${photo.originalName}`, err)
@@ -687,15 +710,40 @@ const downloadAllGroupPhotos = async () => {
 
         await Promise.all(promises)
 
-        // Generate zip
+        if (files.length === 0) {
+            downloading.value = false
+            return
+        }
+
+        let skipCleanup = false
+        const folderName = groupTitle.value || 'group'
+
+        if (isIOS.value && navigator.canShare) {
+            const shareFiles = files.map(f => new File([f.blob], f.name, { type: f.blob.type }))
+            if (navigator.canShare({ files: shareFiles })) {
+                pendingShareFiles.value = shareFiles
+                skipCleanup = true
+                return
+            }
+        }
+
+        // All other platforms: zip download
+        const zip = new JSZip()
+        const groupFolder = zip.folder(folderName)
+        files.forEach(f => {
+            const albumFolder = groupFolder?.folder(f.albumName || 'uncategorized')
+            albumFolder?.file(f.name, f.blob)
+        })
         const content = await zip.generateAsync({ type: 'blob' })
-        downloadBlob(content, `${groupTitle.value || 'group'}-photos.zip`)
+        downloadBlob(content, `${folderName}-photos.zip`)
     } catch (err) {
         console.error('Download all group photos error:', err)
         dialog.toast('Failed to download photos')
     } finally {
-        downloading.value = false
-        downloadProgress.value = { current: 0, total: 0 }
+        if (!skipCleanup) {
+            downloading.value = false
+            downloadProgress.value = { current: 0, total: 0 }
+        }
     }
 }
 
