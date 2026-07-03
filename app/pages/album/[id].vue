@@ -51,39 +51,8 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap gap-3 w-full md:w-auto">
-                    <!-- Share Button -->
-                    <button v-if="album.permissions.isOwner" @click="openShareModal"
-                        class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2"
-                        style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
-                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                        <span>Share</span>
-                        <Icon name="lucide:share-2" class="h-5 w-5" :stroke-width="2" />
-                    </button>
-
-                    <!-- Collaborators Button -->
-                    <button v-if="album.permissions.isOwner" @click="openCollaboratorsModal"
-                        class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2"
-                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
-                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
-                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                        <span>Collaborators</span>
-                        <Icon name="lucide:users" class="h-5 w-5" :stroke-width="2" />
-                    </button>
-
-                    <!-- Download All Button -->
-                    <button v-if="album.permissions.isOwner || album.permissions.isCollaborator || album.permissions.canEdit" @click="downloadAll"
-                        :disabled="downloading"
-                        class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2"
-                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
-                        <span v-if="downloading">
-                            {{ downloadProgress.current }}/{{ downloadProgress.total }}
-                        </span>
-                        <span v-else>Download All</span>
-                        <Icon name="lucide:download" class="h-5 w-5" :stroke-width="2" />
-                    </button>
-
+                <div class="flex flex-wrap gap-2.5 w-full md:w-auto items-center">
+                    <!-- Upload (Primary Action) -->
                     <template v-if="album.permissions.canUpload">
                         <button @click="triggerFileInput"
                             class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap flex items-center justify-center gap-1.5"
@@ -94,18 +63,76 @@
                             Upload
                         </button>
                     </template>
-                    <template v-if="album.permissions.canEdit">
-                        <button @click="showEditModal = true"
-                            class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap"
-                            style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
-                            Edit Album
+
+                    <!-- Share Button -->
+                    <button v-if="album.permissions.isOwner" @click="openShareModal"
+                        class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                        <span>Share</span>
+                        <Icon name="lucide:share-2" class="h-4 w-4" :stroke-width="2" />
+                    </button>
+
+                    <!-- More Actions Dropdown -->
+                    <div class="relative inline-block text-left" v-if="album.permissions.isOwner || album.permissions.isCollaborator || album.permissions.canEdit">
+                        <button @click.stop="showMenu = !showMenu"
+                            class="px-3 py-2 rounded-full transition flex items-center justify-center gap-1"
+                            style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                            title="More Actions">
+                            <Icon name="lucide:ellipsis-vertical" class="h-5 w-5" :stroke-width="2" />
                         </button>
-                        <button @click="confirmDelete"
-                            class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap"
-                            style="background: var(--error-bg); color: var(--error-text);">
-                            Delete
-                        </button>
-                    </template>
+
+                        <div v-if="showMenu"
+                            class="absolute right-0 mt-2 w-48 rounded-xl py-1 z-50 origin-top-right"
+                            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-lg);"
+                            @click.stop>
+                            <!-- Download All -->
+                            <button @click="downloadAll(); showMenu = false"
+                                :disabled="downloading"
+                                class="w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2"
+                                style="color: var(--text-1);"
+                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
+                                <Icon name="lucide:download" class="w-4 h-4" :stroke-width="2" />
+                                <span>{{ downloading ? 'Downloading...' : 'Download All' }}</span>
+                            </button>
+
+                            <!-- Collaborators -->
+                            <button v-if="album.permissions.isOwner" @click="openCollaboratorsModal(); showMenu = false"
+                                class="w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2"
+                                style="color: var(--text-1);"
+                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
+                                <Icon name="lucide:users" class="w-4 h-4" :stroke-width="2" />
+                                <span>Collaborators</span>
+                            </button>
+
+                            <!-- Edit Album -->
+                            <button v-if="album.permissions.canEdit" @click="showEditModal = true; showMenu = false"
+                                class="w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2"
+                                style="color: var(--text-1);"
+                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
+                                <Icon name="lucide:settings" class="w-4 h-4" :stroke-width="2" />
+                                <span>Edit Album</span>
+                            </button>
+
+                            <div v-if="album.permissions.canEdit" class="h-px my-1" style="background: var(--separator);"></div>
+
+                            <!-- Delete -->
+                            <button v-if="album.permissions.canEdit" @click="confirmDelete(); showMenu = false"
+                                class="w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2"
+                                style="color: var(--error);"
+                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)'"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
+                                <Icon name="lucide:trash-2" class="w-4 h-4" :stroke-width="2" />
+                                <span>Delete Album</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1713,6 +1740,7 @@ const onWindowDrop = (e: DragEvent) => {
 // Close context menu on click outside
 onMounted(() => {
     window.addEventListener('click', closeContextMenu)
+    window.addEventListener('click', closeMenu)
     window.addEventListener('keydown', handleKeydown)
     window.addEventListener('dragenter', onWindowDragEnter)
     window.addEventListener('dragleave', onWindowDragLeave)
@@ -1722,6 +1750,7 @@ onMounted(() => {
 
 onUnmounted(() => {
     window.removeEventListener('click', closeContextMenu)
+    window.removeEventListener('click', closeMenu)
     window.removeEventListener('keydown', handleKeydown)
     window.removeEventListener('dragenter', onWindowDragEnter)
     window.removeEventListener('dragleave', onWindowDragLeave)
@@ -1801,6 +1830,12 @@ const shareLinks = ref<ShareLink[]>([])
 // Collaborators Modal State
 const showCollaboratorsModal = ref(false)
 const collaboratorsList = ref<any[]>([])
+
+// More Actions Menu State
+const showMenu = ref(false)
+const closeMenu = () => {
+    showMenu.value = false
+}
 const loadingCollaborators = ref(false)
 const addingCollaborator = ref(false)
 const newCollaboratorEmail = ref('')
