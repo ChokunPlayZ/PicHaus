@@ -13,7 +13,7 @@ export interface SiteSettings {
     microsoftButtonLogoUrl: string | null
 }
 
-const _settings = ref<SiteSettings>({
+const _settings = useState<SiteSettings>('siteSettings', () => ({
     siteName: 'PicHaus',
     accentColor: null,
     logoImageUrl: null,
@@ -26,8 +26,8 @@ const _settings = ref<SiteSettings>({
     microsoftOAuthEnabled: false,
     microsoftButtonText: null,
     microsoftButtonLogoUrl: null,
-})
-const _loaded = ref(false)
+}))
+const _loaded = useState<boolean>('siteSettingsLoaded', () => false)
 
 function applyAccent(color: string | null) {
     if (import.meta.server) return

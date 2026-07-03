@@ -1,6 +1,14 @@
 <template>
     <div class="min-h-screen flex items-center justify-center p-4" style="background: var(--bg-page);">
-        <div class="w-full max-w-sm">
+        <!-- Loader shown when checking auth (no-flash on fresh load) -->
+        <div class="login-loader-container hidden flex-col items-center justify-center">
+            <div class="w-10 h-10 rounded-full border-2 animate-spin mb-4"
+                style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+            <p class="text-xs uppercase tracking-widest" style="color: var(--text-3);">Signing in…</p>
+        </div>
+
+        <!-- Main Form Container -->
+        <div class="login-form-container w-full max-w-sm">
             <!-- Logo / Header -->
             <div class="text-center mb-8">
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
@@ -123,11 +131,50 @@
 </template>
 
 <script setup lang="ts">
-import { setAuthToken, clearAuthToken } from '~/utils/auth-client'
+import { setAuthToken, clearAuthToken, getAuthToken } from '~/utils/auth-client'
+
+definePageMeta({
+    middleware: [
+        (to) => {
+            if (process.client && getAuthToken()) {
+                const redirect = to.query.redirect
+                const target = typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/album'
+                return navigateTo(target)
+            }
+        }
+    ]
+})
+
+useHead({
+    script: [
+        {
+            children: `
+                (function() {
+                    if (typeof window !== 'undefined' && localStorage.getItem('pichaus_access_token')) {
+                        document.documentElement.classList.add('login-loading');
+                    }
+                })();
+            `,
+            type: 'text/javascript'
+        }
+    ]
+})
 
 const route = useRoute()
 const { trigger: splashTrigger, dismiss: splashDismiss } = useSplash()
 const { settings: siteSettings, loadSettings } = useSiteSettings()
+
+// Load setup status and site settings during server-side rendering (SSR)
+try {
+    const status = await $fetch<{ data: { setupComplete: boolean } }>('/api/v1/setup/status')
+    if (!status.data.setupComplete) {
+        await navigateTo('/setup')
+    } else {
+        await loadSettings()
+    }
+} catch (err) {
+    console.error('Error loading setup status/settings:', err)
+}
 
 const getRedirectTarget = () => {
     const redirect = route.query.redirect
@@ -224,19 +271,18 @@ const handleMicrosoftLogin = async () => {
     }
 }
 
-onMounted(async () => {
-    try {
-        const status = await $fetch<{ data: { setupComplete: boolean } }>('/api/v1/setup/status')
-        if (!status.data.setupComplete) { await navigateTo('/setup'); return }
-        await loadSettings()
-        try {
-            await $fetch('/api/v1/auth/me')
-            await navigateTo(getRedirectTarget())
-        } catch {
-            clearAuthToken()
-        }
-    } catch (err) {
-        console.error('Error checking status:', err)
+onMounted(() => {
+    if (process.client) {
+        document.documentElement.classList.remove('login-loading')
     }
 })
 </script>
+
+<style>
+.login-loading .login-form-container {
+    display: none !important;
+}
+.login-loading .login-loader-container {
+    display: flex !important;
+}
+</style>
