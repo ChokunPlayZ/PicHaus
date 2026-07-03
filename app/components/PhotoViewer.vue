@@ -10,11 +10,11 @@
             <!-- Left: Navigation -->
             <div class="flex gap-2">
                 <button v-if="hasPrevious" @click="$emit('previous')"
-                    class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm">
+                    class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm active:scale-90">
                     <Icon name="lucide:chevron-left" class="h-6 w-6" :stroke-width="2" />
                 </button>
                 <button v-if="hasNext" @click="$emit('next')"
-                    class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm">
+                    class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm active:scale-90">
                     <Icon name="lucide:chevron-right" class="h-6 w-6" :stroke-width="2" />
                 </button>
             </div>
@@ -22,37 +22,44 @@
             <!-- Right: Actions -->
             <div class="flex gap-2">
                 <button @click="showInfo = !showInfo" :class="[
-                    'p-4 rounded-full text-white transition backdrop-blur-sm',
+                    'p-4 rounded-full text-white transition backdrop-blur-sm active:scale-90',
                     showInfo ? 'bg-white/20 hover:bg-white/25' : 'bg-white/10 hover:bg-white/20'
                 ]">
                     <Icon name="lucide:info" class="h-6 w-6" :stroke-width="2" />
                 </button>
                 <!-- iOS: Download button that triggers share sheet -->
                 <button v-if="isIOS" @click="sharePhoto"
-                    class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg" style="background: var(--accent);">
+                    :disabled="isSharing"
+                    class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
                     <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                     <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                 </button>
                 <!-- Android: Share + Download buttons -->
                 <template v-else-if="isAndroid">
                     <button @click="sharePhoto"
-                        class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm">
-                        <Icon name="lucide:share-2" class="h-6 w-6" :stroke-width="2" />
+                        :disabled="isSharing"
+                        class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm active:scale-90 disabled:opacity-50">
+                        <Icon v-if="!isSharing" name="lucide:share-2" class="h-6 w-6" :stroke-width="2" />
+                        <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                     </button>
                     <button @click="downloadPhoto"
-                        class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg" style="background: var(--accent);">
-                        <Icon name="lucide:download" class="h-6 w-6" :stroke-width="2" />
+                        :disabled="isSharing"
+                        class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
+                        <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
+                        <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                     </button>
                 </template>
                 <!-- Desktop/Other: Download button only -->
                 <button v-else @click="downloadPhoto"
-                    class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg" style="background: var(--accent);">
-                    <Icon name="lucide:download" class="h-6 w-6" :stroke-width="2" />
+                    :disabled="isSharing"
+                    class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
+                    <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
+                    <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                 </button>
                 <!-- Heart/Favorite button -->
                 <button @click="$emit('toggleFavorite')"
                     :class="[
-                        'p-4 rounded-full text-white transition backdrop-blur-sm',
+                        'p-4 rounded-full text-white transition backdrop-blur-sm active:scale-90',
                         isFavorited
                             ? 'bg-red-500/30 text-red-300 hover:bg-red-500/40 active:bg-red-500/50'
                             : 'bg-white/10 hover:bg-white/20 active:bg-white/30'
@@ -61,7 +68,7 @@
                     <Icon v-else name="lucide:heart" class="h-6 w-6" :stroke-width="2" />
                 </button>
                 <button @click="$emit('close')"
-                    class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm">
+                    class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm active:scale-90">
                     <Icon name="lucide:x" class="h-6 w-6" :stroke-width="2" />
                 </button>
             </div>
@@ -74,7 +81,7 @@
 
                 <div class="hidden md:flex absolute top-4 right-4 gap-2 z-20">
                     <button @click.stop="$emit('toggleFavorite')" @touchstart.stop @touchmove.stop.prevent
-                        class="p-3 rounded-full transition backdrop-blur-sm"
+                        class="p-3 rounded-full transition backdrop-blur-sm active:scale-90"
                         :class="isFavorited
                             ? 'bg-red-500/80 text-white opacity-100 hover:bg-red-500/90'
                             : 'bg-black/50 text-white/70 opacity-0 group-hover:opacity-100 hover:bg-black/70'">
@@ -83,8 +90,10 @@
                     </button>
                     <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()" @touchstart.stop
                         @touchmove.stop.prevent
-                        class="p-3 rounded-full text-white transition shadow-lg" style="background: var(--accent);">
-                        <Icon name="lucide:download" class="h-6 w-6" :stroke-width="2" />
+                        :disabled="isSharing"
+                        class="p-3 rounded-full text-white transition shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
+                        <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
+                        <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                     </button>
                 </div>
 
@@ -746,6 +755,8 @@ const retryShare = async () => {
 }
 
 const downloadPhoto = async () => {
+    if (isSharing.value) return
+    isSharing.value = true
     try {
         const response = await fetch(buildAssetUrl(`/api/assets/full/${props.photo.id}`))
         const blob = await response.blob()
@@ -761,6 +772,8 @@ const downloadPhoto = async () => {
         setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (err) {
         console.error('Download failed:', err)
+    } finally {
+        isSharing.value = false
     }
 }
 </script>
