@@ -1,4 +1,4 @@
-import { eq, and, or, desc, ilike, sql, inArray } from 'drizzle-orm'
+import { eq, and, or, desc, asc, ilike, sql, inArray } from 'drizzle-orm'
 import { albums, photos, users, albumCollaborators, shareLinks, shareGroups, albumToShareGroups } from '../../../db/schema'
 import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
 
@@ -14,6 +14,17 @@ export default defineEventHandler(async (event) => {
         const page = Math.max(1, Number(query.page) || 1)
         const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 100)
         const skip = (page - 1) * limit
+
+        const sort = typeof query.sort === 'string' ? query.sort : 'dateTaken'
+        const order = typeof query.order === 'string' ? query.order : 'desc'
+
+        const orderByItems = []
+        if (sort === 'createdAt') {
+            orderByItems.push(order === 'asc' ? asc(photos.createdAt) : desc(photos.createdAt))
+        } else {
+            orderByItems.push(order === 'asc' ? asc(photos.dateTaken) : desc(photos.dateTaken))
+            orderByItems.push(order === 'asc' ? asc(photos.createdAt) : desc(photos.createdAt))
+        }
 
         const album = await db.query.albums.findFirst({
             where: eq(albums.id, id),
@@ -112,7 +123,7 @@ export default defineEventHandler(async (event) => {
                 .from(photos)
                 .leftJoin(users, eq(photos.uploaderId, users.id))
                 .where(photoWhere)
-                .orderBy(desc(photos.dateTaken), desc(photos.createdAt))
+                .orderBy(...orderByItems)
                 .limit(limit)
                 .offset(skip),
             db.select({ total: sql<number>`COUNT(*)` }).from(photos).where(photoWhere),
@@ -197,6 +208,7 @@ export default defineEventHandler(async (event) => {
                     isCollaborator,
                     canEdit: isOwner && hasEmail,
                     canDelete: isOwner && hasEmail,
+                    canUpload: isOwner || (isCollaborator && ['admin', 'editor'].includes(collaborator.role)),
                 },
                 pagination: { page, limit, total: totalPhotos, hasMore: skip + photoRows.length < totalPhotos },
             },

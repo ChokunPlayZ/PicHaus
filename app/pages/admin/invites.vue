@@ -12,9 +12,7 @@
                         style="background: var(--accent); color: var(--accent-text);"
                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
+                        <Icon name="lucide:plus" class="w-4 h-4" :stroke-width="2" />
                         New Invite
                     </button>
                     <button @click="openCreate('password_reset')"
@@ -22,9 +20,7 @@
                         style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
-                        </svg>
+                        <Icon name="lucide:key" class="w-4 h-4" :stroke-width="2" />
                         Reset Password
                     </button>
                 </div>
@@ -65,9 +61,7 @@
                             <button @click="copyLink(t.token)"
                                 class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition"
                                 :style="copiedId === t.id ? 'background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border);' : 'background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);'">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
+                                <Icon name="lucide:copy" class="w-3.5 h-3.5" :stroke-width="2" />
                                 {{ copiedId === t.id ? 'Copied!' : 'Copy Link' }}
                             </button>
                             <button @click="revoke(t.id)"

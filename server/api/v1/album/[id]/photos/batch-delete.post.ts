@@ -31,6 +31,13 @@ export default defineEventHandler(async (event) => {
             .from(photos)
             .where(and(inArray(photos.id, ids), eq(photos.albumId, albumId)))
 
+        if (!isOwner && !isAdmin) {
+            const hasUnauthorizedPhoto = photosToDelete.some(photo => photo.uploaderId !== user.id)
+            if (hasUnauthorizedPhoto) {
+                throw createError({ statusCode: 403, statusMessage: 'You can only delete your own photos' })
+            }
+        }
+
         await Promise.all(photosToDelete.map(async (photo) => {
             try {
                 if (photo.storagePath) await deleteFile(photo.storagePath)

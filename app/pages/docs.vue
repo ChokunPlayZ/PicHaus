@@ -10,12 +10,8 @@
                     <button @click="copyAsMarkdown"
                         class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition"
                         :style="copied ? 'background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border);' : 'background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);'">
-                        <svg v-if="!copied" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
+                        <Icon v-if="!copied" name="lucide:copy" class="w-3.5 h-3.5" :stroke-width="2" />
+                        <Icon v-else name="lucide:check" class="w-3.5 h-3.5" :stroke-width="2" />
                         {{ copied ? 'Copied!' : 'Copy as Markdown' }}
                     </button>
                 </div>

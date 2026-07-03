@@ -15,10 +15,7 @@
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto"
                     style="background: var(--error-bg);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" style="color: var(--error);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <Icon name="lucide:x" class="w-7 h-7" style="color: var(--error);" :stroke-width="2" />
                 </div>
                 <div>
                     <p class="font-semibold mb-1" style="color: var(--text-1);">Link unavailable</p>
@@ -36,10 +33,7 @@
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto"
                     style="background: var(--success-bg);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" style="color: var(--success);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Icon name="lucide:check" class="w-7 h-7" style="color: var(--success);" :stroke-width="2" />
                 </div>
                 <div>
                     <p class="font-semibold mb-1" style="color: var(--text-1);">{{ doneMessage }}</p>

@@ -18,9 +18,7 @@
                     <button @click="openTagGroupModal"
                         class="px-4 py-2.5 rounded-full text-sm font-medium transition flex items-center gap-1.5 flex-1 sm:flex-none justify-center"
                         style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                        </svg>
+                        <Icon name="lucide:share-2" class="w-4 h-4" :stroke-width="2" />
                         <span>Group Link</span>
                     </button>
                     <button @click="showCreateModal = true"
@@ -28,9 +26,7 @@
                         style="background: var(--accent); color: var(--accent-text);"
                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
+                        <Icon name="lucide:plus" class="w-4 h-4" :stroke-width="2" />
                         <span>New Album</span>
                     </button>
                 </div>
@@ -109,11 +105,7 @@
             <div v-else-if="albums.length === 0" class="text-center py-20">
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5"
                     style="background: var(--surface-3);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                        <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5" />
-                    </svg>
+                    <Icon name="lucide:camera" class="w-8 h-8" style="color: var(--text-3);" :stroke-width="1.5" />
                 </div>
                 <h3 class="text-xl font-semibold mb-2" style="color: var(--text-1);">No albums yet</h3>
                 <p class="text-sm mb-6" style="color: var(--text-2);">Create your first album to get started</p>
@@ -130,9 +122,7 @@
             <div v-else-if="filteredAlbums.length === 0" class="text-center py-20">
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5"
                     style="background: var(--surface-3);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+                    <Icon name="lucide:search" class="w-8 h-8" style="color: var(--text-3);" :stroke-width="1.5" />
                 </div>
                 <h3 class="text-xl font-semibold mb-2" style="color: var(--text-1);">No matching albums</h3>
                 <p class="text-sm mb-6" style="color: var(--text-2);">Try a different search or clear filters</p>
@@ -211,19 +201,13 @@
             <button v-if="canBatchEdit" @click="openBatchEditModal"
                 class="flex items-center gap-1.5 text-sm font-medium transition"
                 style="color: var(--text-1);">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
+                <Icon name="lucide:square-pen" class="h-4 w-4" :stroke-width="2" />
                 Batch Edit
             </button>
             <button @click="showShareGroupModal = true"
                 class="flex items-center gap-1.5 text-sm font-medium transition"
                 style="color: var(--accent);">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
+                <Icon name="lucide:share-2" class="h-4 w-4" :stroke-width="2" />
                 Share Group
             </button>
         </div>
@@ -429,10 +413,7 @@
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
                     style="background: var(--success-bg);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" style="color: var(--success);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Icon name="lucide:check" class="h-7 w-7" style="color: var(--success);" :stroke-width="2" />
                 </div>
                 <h3 class="text-xl font-semibold mb-1" style="color: var(--text-1);">Link Created!</h3>
                 <p class="text-sm mb-5" style="color: var(--text-2);">Your albums are now ready to share.</p>
@@ -443,13 +424,8 @@
                     <button @click="copyToClipboard(createdShareLink!)"
                         class="ml-2 flex-shrink-0 transition"
                         :style="copied ? 'color: var(--success)' : 'color: var(--text-3)'">
-                        <svg v-if="copied" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
+                        <Icon v-if="copied" name="lucide:check" class="h-5 w-5" :stroke-width="2" />
+                        <Icon v-else name="lucide:copy" class="h-5 w-5" :stroke-width="2" />
                     </button>
                 </div>
 
@@ -535,9 +511,7 @@
                 style="color: var(--text-1); margin: 0 4px; width: calc(100% - 8px);"
                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
+                <Icon name="lucide:external-link" class="h-4 w-4 shrink-0" :stroke-width="2" />
                 Open Album
             </button>
             <button v-if="user && user.id === albumContextMenu.album?.owner?.id && user.email"
@@ -546,10 +520,7 @@
                 style="color: var(--text-1); margin: 0 4px; width: calc(100% - 8px);"
                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
+                <Icon name="lucide:square-pen" class="h-4 w-4 shrink-0" :stroke-width="2" />
                 Edit Album
             </button>
             <button @click="toggleAlbumSelection(albumContextMenu.album!.id); closeAlbumContextMenu()"
@@ -557,9 +528,7 @@
                 style="color: var(--text-1); margin: 0 4px; width: calc(100% - 8px);"
                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <Icon name="lucide:circle-check" class="h-4 w-4 shrink-0" :stroke-width="2" />
                 Select
             </button>
             <div class="h-px my-1 mx-3" style="background: var(--separator);"></div>
@@ -569,10 +538,7 @@
                 style="color: var(--error); margin: 0 4px; width: calc(100% - 8px);"
                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)'"
                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+                <Icon name="lucide:trash-2" class="h-4 w-4 shrink-0" :stroke-width="2" />
                 Delete Album
             </button>
         </div>

@@ -7,12 +7,7 @@
             <div class="text-center mb-8">
                 <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4"
                     style="background: var(--accent-light);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" style="color: var(--accent);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                    <Icon name="lucide:camera" class="w-7 h-7" style="color: var(--accent);" :stroke-width="1.5" />
                 </div>
                 <div v-if="loading" class="flex justify-center">
                     <div class="w-5 h-5 rounded-full border-2 animate-spin"
@@ -61,20 +56,13 @@
                         @mouseout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--separator)'">
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                             style="background: var(--accent-light);">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" style="color: var(--accent);" stroke-width="1.75">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-                            </svg>
+                            <Icon name="lucide:log-in" class="w-5 h-5" style="color: var(--accent);" :stroke-width="1.75" />
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold" style="color: var(--text-1);">Sign In</p>
                             <p class="text-xs mt-0.5" style="color: var(--text-3);">Already have a PicHaus account</p>
                         </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" style="color: var(--text-3);" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                        <Icon name="lucide:chevron-right" class="w-4 h-4 flex-shrink-0" style="color: var(--text-3);" :stroke-width="2" />
                     </button>
 
                     <!-- Google Sign In -->
@@ -87,12 +75,7 @@
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white border"
                             style="border-color: var(--separator);">
                             <img v-if="!googleLoading && siteSettings.googleButtonLogoUrl" :src="siteSettings.googleButtonLogoUrl" class="w-5 h-5 object-contain" />
-                            <svg v-else-if="!googleLoading" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="w-5 h-5">
-                                <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.5 6.5 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.9z"/>
-                                <path fill="#FF3D00" d="M6.3 14.7l6.6 4.9C14.7 15.9 19.1 12 24 12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.5 6.5 29.6 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/>
-                                <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5.1l-6.2-5.2C29.4 35.5 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.1C9.4 37.6 16.2 44 24 44z"/>
-                                <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.2 5.2C41.7 36.2 44 31.2 44 24c0-1.3-.1-2.7-.4-3.9z"/>
-                            </svg>
+                            <Icon v-else-if="!googleLoading" name="logos:google-icon" class="w-5 h-5" />
                             <div v-else class="w-4 h-4 rounded-full border-2 animate-spin"
                                 style="border-color: #e5e7eb; border-top-color: #4285F4;"></div>
                         </div>
@@ -100,10 +83,7 @@
                             <p class="text-sm font-semibold" style="color: var(--text-1);">{{ siteSettings.googleButtonText || 'Sign in with Google' }}</p>
                             <p class="text-xs mt-0.5" style="color: var(--text-3);">Use your Google account</p>
                         </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" style="color: var(--text-3);" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                        <Icon name="lucide:chevron-right" class="w-4 h-4 flex-shrink-0" style="color: var(--text-3);" :stroke-width="2" />
                     </button>
 
                     <!-- Microsoft Sign In -->
@@ -116,12 +96,7 @@
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white border"
                             style="border-color: var(--separator);">
                             <img v-if="!microsoftLoading && siteSettings.microsoftButtonLogoUrl" :src="siteSettings.microsoftButtonLogoUrl" class="w-5 h-5 object-contain" />
-                            <svg v-else-if="!microsoftLoading" viewBox="0 0 21 21" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-                                <rect x="11" y="1" width="9" height="9" fill="#00a4ef"/>
-                                <rect x="1" y="11" width="9" height="9" fill="#7fba00"/>
-                                <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-                            </svg>
+                            <Icon v-else-if="!microsoftLoading" name="logos:microsoft-icon" class="w-5 h-5" />
                             <div v-else class="w-4 h-4 rounded-full border-2 animate-spin"
                                 style="border-color: #e5e7eb; border-top-color: #00a4ef;"></div>
                         </div>
@@ -129,10 +104,7 @@
                             <p class="text-sm font-semibold" style="color: var(--text-1);">{{ siteSettings.microsoftButtonText || 'Sign in with Microsoft' }}</p>
                             <p class="text-xs mt-0.5" style="color: var(--text-3);">Use your Microsoft account</p>
                         </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" style="color: var(--text-3);" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                        <Icon name="lucide:chevron-right" class="w-4 h-4 flex-shrink-0" style="color: var(--text-3);" :stroke-width="2" />
                     </button>
 
                     <!-- Divider -->
@@ -153,20 +125,13 @@
                         @mouseout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--separator)'">
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                             style="background: rgba(34,197,94,0.12);">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" style="color: #22c55e;" stroke-width="1.75">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                            </svg>
+                            <Icon name="lucide:user-plus" class="w-5 h-5" style="color: #22c55e;" :stroke-width="1.75" />
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold" style="color: var(--text-1);">Create Account</p>
                             <p class="text-xs mt-0.5" style="color: var(--text-3);">Sign up with email and password</p>
                         </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" style="color: var(--text-3);" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                        <Icon name="lucide:chevron-right" class="w-4 h-4 flex-shrink-0" style="color: var(--text-3);" :stroke-width="2" />
                     </button>
 
                     <!-- Continue as Guest -->
@@ -177,20 +142,13 @@
                         @mouseout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--separator)'">
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                             style="background: rgba(156,163,175,0.15);">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" style="color: var(--text-2);" stroke-width="1.75">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                            </svg>
+                            <Icon name="lucide:user" class="w-5 h-5" style="color: var(--text-2);" :stroke-width="1.75" />
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold" style="color: var(--text-1);">Continue as Guest</p>
                             <p class="text-xs mt-0.5" style="color: var(--text-3);">Name only — no account needed</p>
                         </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" style="color: var(--text-3);" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                        <Icon name="lucide:chevron-right" class="w-4 h-4 flex-shrink-0" style="color: var(--text-3);" :stroke-width="2" />
                     </button>
                 </div>
 
@@ -201,10 +159,7 @@
                         style="color: var(--text-3);"
                         @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                        </svg>
+                        <Icon name="lucide:chevron-left" class="w-3.5 h-3.5" :stroke-width="2.5" />
                         Back
                     </button>
                     <div>
@@ -257,10 +212,7 @@
                         style="color: var(--text-3);"
                         @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                        </svg>
+                        <Icon name="lucide:chevron-left" class="w-3.5 h-3.5" :stroke-width="2.5" />
                         Back
                     </button>
                     <div>
@@ -306,11 +258,7 @@
                         <input type="file" ref="fileInput" multiple accept="image/*" class="hidden" @change="handleFileSelect" />
                         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 transition group-hover:scale-105"
                             style="background: var(--accent-light);">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" style="color: var(--accent);">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                            </svg>
+                            <Icon name="lucide:upload" class="w-7 h-7" style="color: var(--accent);" :stroke-width="1.5" />
                         </div>
                         <p class="font-semibold text-sm mb-1" style="color: var(--text-1);">Click or drop photos here</p>
                         <p class="text-xs" style="color: var(--text-3);">Upload to this album</p>

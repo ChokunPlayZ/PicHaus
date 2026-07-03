@@ -7,13 +7,7 @@
                 <!-- Logo/Icon -->
                 <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4"
                     style="background: var(--accent-light);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
-                        style="color: var(--accent);">
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                    </svg>
+                    <Icon name="lucide:instagram" class="w-7 h-7" style="color: var(--accent);" :stroke-width="1.75" />
                 </div>
                 <h1 class="text-2xl font-bold mb-2" style="color: var(--text-1);">Welcome to PicHaus</h1>
                 <p class="text-sm" style="color: var(--text-2);">

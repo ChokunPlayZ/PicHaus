@@ -27,10 +27,7 @@
                             @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'"
                             @click="avatarFileInput?.click()"
                             title="Upload photo">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
+                            <Icon name="lucide:camera" class="h-3.5 w-3.5" :stroke-width="2" />
                         </button>
                         <input ref="avatarFileInput" type="file" accept="image/jpeg,image/png,image/webp"
                             class="sr-only" @change="onAvatarFileSelected" />
@@ -127,9 +124,7 @@
                         style="background: var(--accent); color: var(--accent-text);"
                         @mouseover="!pkRegistering && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
+                        <Icon name="lucide:plus" class="w-4 h-4" :stroke-width="2" />
                         <span>{{ pkRegistering ? 'Registering…' : 'Add' }}</span>
                     </button>
                 </div>
@@ -185,12 +180,8 @@
                         <div class="flex items-center gap-3 min-w-0">
                             <div class="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
                                 :style="isHardwareKey(pk) ? 'background: var(--warning-bg); color: var(--warning-text);' : 'background: var(--accent-light); color: var(--accent);'">
-                                <svg v-if="isHardwareKey(pk)" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
-                                </svg>
-                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-4 0a6 6 0 1112 0c0 3.31-2.69 6-6 6s-6-2.69-6-6z" />
-                                </svg>
+                                <Icon v-if="isHardwareKey(pk)" name="lucide:key-round" class="w-5 h-5" :stroke-width="2" />
+                                <Icon v-else name="lucide:fingerprint" class="w-5 h-5" :stroke-width="2" />
                             </div>
                             <div class="min-w-0">
                                 <p class="text-sm font-medium truncate" style="color: var(--text-1);">{{ pk.name }}</p>
@@ -274,16 +265,12 @@
 
             <!-- Zoom slider -->
             <div class="px-6 py-4 flex items-center gap-3" style="border-bottom: 1px solid var(--separator);">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
-                </svg>
+                <Icon name="lucide:zoom-out" class="w-4 h-4 shrink-0" style="color: var(--text-3);" :stroke-width="2" />
                 <input type="range" v-model.number="cropZoom" :min="cropMinZoom" :max="cropMaxZoom" step="0.01"
                     class="flex-1 h-1.5 rounded-full appearance-none cursor-pointer"
                     style="accent-color: var(--accent); background: var(--surface-3);"
                     @input="applyZoom(cropZoom)" />
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0zM11 8v6m-3-3h6" />
-                </svg>
+                <Icon name="lucide:zoom-in" class="w-5 h-5 shrink-0" style="color: var(--text-3);" :stroke-width="2" />
             </div>
 
             <div class="p-4 flex gap-2">

@@ -13,12 +13,12 @@
                         style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+                    <Icon
+                        name="lucide:search"
+                        class="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2"
+                        style="color: var(--text-3);"
+                        :stroke-width="2"
+                    />
                 </div>
             </div>
 
@@ -82,33 +82,21 @@
                                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
                                         title="Login as this user">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
+                                        <Icon name="lucide:user" class="h-4 w-4" :stroke-width="2" />
                                     </button>
                                     <button @click="openEditModal(u)"
                                         class="p-1.5 rounded-lg transition mr-2" style="color: var(--accent);"
                                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-light)'"
                                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
                                         title="Edit User">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
+                                        <Icon name="lucide:square-pen" class="h-4 w-4" :stroke-width="2" />
                                     </button>
                                     <button v-if="u.id !== user?.id" @click="openMergeModal(u)"
                                         class="p-1.5 rounded-lg transition mr-2" style="color: var(--text-2);"
                                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
                                         title="Merge duplicate into another account">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                        </svg>
+                                        <Icon name="lucide:arrow-left-right" class="h-4 w-4" :stroke-width="2" />
                                     </button>
                                     <button @click="deleteUser(u)" :disabled="u.id === user?.id"
                                         class="p-1.5 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
@@ -116,11 +104,7 @@
                                         @mouseover="u.id !== user?.id && (($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)')"
                                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
                                         title="Delete User">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
+                                        <Icon name="lucide:trash-2" class="h-4 w-4" :stroke-width="2" />
                                     </button>
                                 </td>
                             </tr>
@@ -245,9 +229,7 @@
 
                 <!-- Arrow -->
                 <div class="flex items-center justify-center mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                    </svg>
+                    <Icon name="lucide:arrow-down" class="h-5 w-5" style="color: var(--text-3);" :stroke-width="2" />
                 </div>
 
                 <!-- Target search -->

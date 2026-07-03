@@ -15,9 +15,7 @@
                 :style="selected
                     ? 'background: var(--accent); border-color: var(--accent);'
                     : 'background: rgba(255,255,255,0.9); border-color: rgba(0,0,0,0.2);'">
-                <svg v-if="selected" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+                <Icon v-if="selected" name="lucide:check" class="w-3.5 h-3.5 text-white" :stroke-width="3" />
             </div>
         </div>
 
@@ -36,12 +34,7 @@
                 />
             </template>
             <div v-else class="w-full h-full flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" style="color: var(--text-3);">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                    <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5" />
-                </svg>
+                <Icon name="lucide:camera" class="w-7 h-7" style="color: var(--text-3);" :stroke-width="1.5" />
             </div>
         </div>
 

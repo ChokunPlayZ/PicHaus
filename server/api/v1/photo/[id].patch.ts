@@ -18,9 +18,13 @@ export default defineEventHandler(async (event) => {
         if (!photo) throw createError({ statusCode: 404, statusMessage: 'Photo not found' })
 
         const isOwner = photo.album.ownerId === user.id
+        const isUploader = photo.uploaderId === user.id
         const isCollaborator = photo.album.collaborators.some(c => c.userId === user.id && c.role !== 'viewer')
         const isAdmin = user.role === 'ADMIN'
-        if (!isOwner && !isCollaborator && !isAdmin) throw createError({ statusCode: 403, statusMessage: 'Permission denied' })
+        
+        if (!isOwner && !isAdmin && (!isCollaborator || !isUploader)) {
+            throw createError({ statusCode: 403, statusMessage: 'Permission denied' })
+        }
 
         const [updatedPhoto] = await db.update(photos).set({
             dateTaken: body.dateTaken ? BigInt(body.dateTaken) : undefined,

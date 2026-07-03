@@ -12,9 +12,7 @@
                     style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
                     @mouseover="!loading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
                     @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" :class="{ 'animate-spin': loading }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
+                    <Icon name="lucide:refresh-cw" class="w-4 h-4" :class="{ 'animate-spin': loading }" :stroke-width="2" />
                     {{ loading ? 'Refreshing…' : 'Refresh' }}
                 </button>
             </div>
@@ -45,11 +43,7 @@
                             </div>
                             <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                                 :style="status.database.ok ? 'background: var(--success-bg)' : 'background: var(--error-bg)'">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                    :style="status.database.ok ? 'color: var(--success-text)' : 'color: var(--error)'">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3v2c0 1.7-3.6 3-8 3s-8-1.3-8-3V7zm0 5c0 1.7 3.6 3 8 3s8-1.3 8-3m0 0v5c0 1.7-3.6 3-8 3s-8-1.3-8-3v-5" />
-                                </svg>
+                                <Icon name="lucide:database" class="w-5 h-5" :style="status.database.ok ? 'color: var(--success-text)' : 'color: var(--error)'" :stroke-width="2" />
                             </div>
                         </div>
                     </div>
@@ -70,11 +64,7 @@
                             </div>
                             <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                                 :style="status.storage.ok ? 'background: var(--success-bg)' : 'background: var(--error-bg)'">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                    :style="status.storage.ok ? 'color: var(--success-text)' : 'color: var(--error)'">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                                </svg>
+                                <Icon name="lucide:hard-drive" class="w-5 h-5" :style="status.storage.ok ? 'color: var(--success-text)' : 'color: var(--error)'" :stroke-width="2" />
                             </div>
                         </div>
                     </div>
@@ -112,10 +102,7 @@
                             class="flex items-center justify-between gap-4 py-2.5 px-3 rounded-xl"
                             style="background: var(--surface-2); border: 1px solid var(--separator);">
                             <div class="flex items-center gap-2 min-w-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                    style="color: var(--success-text);">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
+                                <Icon name="lucide:check" class="w-4 h-4 shrink-0" style="color: var(--success-text);" :stroke-width="2" />
                                 <span class="text-sm font-mono truncate" style="color: var(--text-1);">{{ m.name }}</span>
                             </div>
                             <span class="text-xs shrink-0" style="color: var(--text-3);">{{ formatDate(m.appliedAt) }}</span>

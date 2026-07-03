@@ -56,9 +56,7 @@
                         style="background: var(--accent); color: var(--accent-text);"
                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                        <Icon name="lucide:image" class="h-4 w-4" :stroke-width="2" />
                         View All Pictures
                     </button>
                 </div>
@@ -86,11 +84,7 @@
                                 style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);"
                                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
+                                <Icon name="lucide:arrow-left" class="h-4 w-4" :stroke-width="2" />
                                 Back to {{ groupTitle }}
                             </button>
                         </div>
@@ -106,11 +100,7 @@
                         @mouseover="!downloading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                         <span>Download All</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
+                        <Icon name="lucide:download" class="h-5 w-5" :stroke-width="2" />
                     </button>
                 </div>
 
@@ -161,11 +151,7 @@
                                 style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);"
                                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
+                                <Icon name="lucide:arrow-left" class="h-4 w-4" :stroke-width="2" />
                                 Back to {{ groupTitle }}
                             </button>
                         </div>
@@ -189,11 +175,7 @@
                         @mouseover="!downloading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                         <span>Download All</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
+                        <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
                     </button>
                 </div>
 
@@ -246,9 +228,7 @@
                         style="color: var(--text-3);"
                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
                     </button>
                 </div>
 
@@ -272,9 +252,7 @@
                                         <span class="text-xs" style="color: var(--text-2);">@{{ photographer.instagram }}</span>
                                         <a :href="`https://instagram.com/${photographer.instagram || ''}`" target="_blank"
                                             rel="noopener noreferrer" style="color: var(--accent);">
-                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                                            </svg>
+                                            <Icon name="lucide:instagram" class="w-3.5 h-3.5" />
                                         </a>
                                     </div>
                                 </div>
@@ -295,9 +273,7 @@
                 class="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-black/85 backdrop-blur-xl border-t border-white/15">
                 <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
-                        </svg>
+                        <Icon name="lucide:heart" class="h-5 w-5 text-red-400 flex-shrink-0" style="fill: currentColor;" />
                         <span class="text-white font-medium text-sm sm:text-base">
                             {{ favorites.size }} {{ favorites.size === 1 ? 'photo' : 'photos' }} selected
                         </span>
@@ -310,12 +286,8 @@
                         <button @click="downloadFavorites" :disabled="downloading"
                             class="px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 disabled:opacity-50 transition"
                             style="background: var(--accent); color: white;">
-                            <svg v-if="isIOS" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
-                            </svg>
-                            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                            </svg>
+                            <Icon v-if="isIOS" name="lucide:share" class="h-4 w-4" :stroke-width="2" />
+                            <Icon v-else name="lucide:download" class="h-4 w-4" :stroke-width="2" />
                             {{ isIOS ? 'Share' : 'Download' }}{{ favorites.size > 1 ? ` (${favorites.size})` : '' }}
                         </button>
                     </div>

@@ -2,7 +2,7 @@
     <div class="min-h-screen" style="background: var(--bg-page);">
         <!-- Navigation Bar -->
         <!-- Navigation Bar -->
-        <NavBar v-if="album && (album.permissions.isOwner || album.permissions.canEdit)" :show-back="true"
+        <NavBar v-if="album && (album.permissions.isOwner || album.permissions.isCollaborator || album.permissions.canEdit)" :show-back="true"
             back-text="Back to Albums" back-to="/album" :logo-text="album.logoText || undefined"
             :logo-image-url="album.logoImageId ? `/api/assets/logo/${album.logoImageId}` : undefined" />
 
@@ -59,15 +59,21 @@
                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         <span>Share</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                        </svg>
+                        <Icon name="lucide:share-2" class="h-5 w-5" :stroke-width="2" />
+                    </button>
+
+                    <!-- Collaborators Button -->
+                    <button v-if="album.permissions.isOwner" @click="openCollaboratorsModal"
+                        class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                        <span>Collaborators</span>
+                        <Icon name="lucide:users" class="h-5 w-5" :stroke-width="2" />
                     </button>
 
                     <!-- Download All Button -->
-                    <button v-if="album.permissions.isOwner || album.permissions.canEdit" @click="downloadAll"
+                    <button v-if="album.permissions.isOwner || album.permissions.isCollaborator || album.permissions.canEdit" @click="downloadAll"
                         :disabled="downloading"
                         class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2"
                         style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
@@ -75,25 +81,20 @@
                             {{ downloadProgress.current }}/{{ downloadProgress.total }}
                         </span>
                         <span v-else>Download All</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
+                        <Icon name="lucide:download" class="h-5 w-5" :stroke-width="2" />
                     </button>
 
-                    <template v-if="album.permissions.canEdit">
+                    <template v-if="album.permissions.canUpload">
                         <button @click="triggerFileInput"
                             class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap flex items-center justify-center gap-1.5"
                             style="background: var(--accent); color: var(--accent-text);"
                             @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
                             @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                            </svg>
+                            <Icon name="lucide:upload" class="h-4 w-4" :stroke-width="2" />
                             Upload
                         </button>
+                    </template>
+                    <template v-if="album.permissions.canEdit">
                         <button @click="showEditModal = true"
                             class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap"
                             style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
@@ -109,7 +110,7 @@
             </div>
 
             <!-- Upload Section -->
-            <div v-if="album.permissions.canEdit" class="mb-8">
+            <div v-if="album.permissions.canUpload" class="mb-8">
                 <input type="file" ref="fileInput" multiple accept="image/*" class="hidden"
                     @change="handleFileSelect" />
 
@@ -134,11 +135,7 @@
                             <button @click="showUploadModal = false" style="color: var(--text-3);"
                                 @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
                                 @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
                             </button>
                         </div>
                     </div>
@@ -219,6 +216,23 @@
                         style="background: var(--surface-3); color: var(--text-2);">
                         Clear Filters
                     </button>
+
+                    <div class="h-4 w-px mx-1 hidden sm:block" style="background: var(--separator);"></div>
+                    <span class="text-xs font-semibold mr-1" style="color: var(--text-3);">Sort:</span>
+
+                    <select v-model="sortBy" @change="applyFilters"
+                        class="px-3 py-2 text-sm rounded-xl"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
+                        <option value="dateTaken">Date Taken</option>
+                        <option value="createdAt">Upload Date</option>
+                    </select>
+
+                    <select v-model="sortOrder" @change="applyFilters"
+                        class="px-3 py-2 text-sm rounded-xl"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
+                        <option value="desc">Newest First</option>
+                        <option value="asc">Oldest First</option>
+                    </select>
                 </div>
             </div>
 
@@ -226,11 +240,7 @@
             <div v-if="photos.length === 0 && !uploading" class="text-center py-16 rounded-2xl"
                 style="background: var(--surface-1); border: 1px solid var(--separator);">
                 <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style="background: var(--surface-3);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                        <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5" />
-                    </svg>
+                    <Icon name="lucide:camera" class="w-7 h-7" style="color: var(--text-3);" :stroke-width="1.5" />
                 </div>
                 <h3 class="text-lg font-semibold mb-1" style="color: var(--text-1);">No photos yet</h3>
                 <p class="text-sm mb-5" style="color: var(--text-2);">Upload photos or share this album to collect photos</p>
@@ -271,30 +281,21 @@
 
                 <button @click="downloadSelected" :disabled="downloading"
                     class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--text-1);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
+                    <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
                     <span v-if="downloading">{{ downloadProgress.current }}/{{ downloadProgress.total }}</span>
                     <span v-else>Download</span>
                 </button>
 
-                <template v-if="album?.permissions.canEdit">
+                <template v-if="canManageSelectedPhotos">
                     <button v-if="selectedPhotoIds.size === 1" @click="openEditPhotoModal"
                         class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--text-1);">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
+                        <Icon name="lucide:square-pen" class="h-4 w-4" :stroke-width="2" />
                         Edit Info
                     </button>
 
                     <button @click="deleteSelected"
                         class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--error-text);">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <Icon name="lucide:trash-2" class="h-4 w-4" :stroke-width="2" />
                         Delete
                     </button>
                 </template>
@@ -322,9 +323,7 @@
                 <button @click="showPhotographersModal = false" style="color: var(--text-3);"
                     @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
                     @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
                 </button>
             </div>
 
@@ -348,10 +347,7 @@
                                     <span class="text-xs" style="color: var(--text-2);">@{{ photographer.instagram }}</span>
                                     <a :href="`https://instagram.com/${photographer.instagram || ''}`" target="_blank"
                                         rel="noopener noreferrer" class="text-pink-400 hover:text-pink-300 transition">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                                        </svg>
+                                        <Icon name="lucide:instagram" class="w-4 h-4" />
                                     </a>
                                 </div>
                             </div>
@@ -760,9 +756,7 @@
                     style="color: var(--text-3);"
                     @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
                     @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
                 </button>
             </div>
 
@@ -894,29 +888,21 @@
                                 style="color: var(--text-2);"
                                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm10 0h2v2h-2v-2zm-2 2h2v2h-2v-2zm4-2h2v2h-2v-2zm0 4h2v2h-2v-2zm-4 0h2v2h-2v-2z" />
-                                </svg>
+                                <Icon name="lucide:qr-code" class="h-5 w-5" :stroke-width="2" />
                             </button>
                             <button @click="startEditing(link)"
                                 class="p-2 rounded-lg transition"
                                 style="color: var(--text-2);"
                                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
+                                <Icon name="lucide:square-pen" class="h-5 w-5" :stroke-width="2" />
                             </button>
                             <button @click="deleteLink(link.id)"
                                 class="p-2 rounded-lg transition"
                                 style="color: var(--error);"
                                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)'"
                                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
+                                <Icon name="lucide:trash-2" class="h-5 w-5" :stroke-width="2" />
                             </button>
                         </div>
                     </div>
@@ -939,9 +925,7 @@
                                 style="color: var(--text-3);"
                                 @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
                                 @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
                             </button>
                         </div>
                         <canvas ref="qrCanvasRef" class="rounded-xl"
@@ -959,6 +943,112 @@
             </Transition>
         </Teleport>
 
+        <!-- Collaborators Modal -->
+        <div v-if="showCollaboratorsModal"
+            class="fixed inset-0 flex items-center justify-center p-4 z-50"
+            style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
+            @click.self="showCollaboratorsModal = false">
+            <div class="rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold" style="color: var(--text-1);">Manage Collaborators</h3>
+                    <button @click="showCollaboratorsModal = false" class="transition"
+                        style="color: var(--text-3);"
+                        @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
+                        <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
+                    </button>
+                </div>
+
+                <!-- Add Collaborator -->
+                <div class="rounded-2xl p-4 mb-6" style="background: var(--surface-2); border: 1px solid var(--separator);">
+                    <h4 class="text-base font-semibold mb-4" style="color: var(--text-1);">Add Collaborator</h4>
+                    <form @submit.prevent="addCollaborator" class="space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">User Email</label>
+                                <input v-model="newCollaboratorEmail" type="email" required placeholder="user@email.com"
+                                    class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                                    style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                    @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                    @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Role</label>
+                                <select v-model="newCollaboratorRole"
+                                    class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                                    style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                    @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                                    @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'">
+                                    <option value="editor">Editor (Can upload/delete)</option>
+                                    <option value="viewer">Viewer (Read-only)</option>
+                                    <option value="admin">Admin (Full permissions)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" :disabled="addingCollaborator"
+                                class="px-5 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50 flex items-center gap-1.5"
+                                style="background: var(--accent); color: var(--accent-text);"
+                                @mouseover="!addingCollaborator && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
+                                <Icon v-if="addingCollaborator" name="lucide:loader-2" class="w-4 h-4 animate-spin" />
+                                <span>{{ addingCollaborator ? 'Adding…' : 'Add Collaborator' }}</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Existing Collaborators -->
+                <div>
+                    <h4 class="text-base font-semibold mb-4" style="color: var(--text-1);">Collaborator List</h4>
+                    <div v-if="loadingCollaborators" class="text-center py-6 text-sm" style="color: var(--text-3);">
+                        <div class="inline-flex items-center gap-2">
+                            <Icon name="lucide:loader-2" class="w-5 h-5 animate-spin" />
+                            <span>Loading collaborators…</span>
+                        </div>
+                    </div>
+                    <div v-else-if="collaboratorsList.length === 0" class="text-center py-6 text-sm" style="color: var(--text-3);">
+                        No explicit collaborators added yet.
+                    </div>
+                    <div v-else class="space-y-3">
+                        <div v-for="collab in collaboratorsList" :key="collab.id"
+                            class="rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                            style="background: var(--surface-2); border: 1px solid var(--separator);">
+                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                                <img v-if="collab.user.avatar" :src="collab.user.avatar"
+                                    class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                                    style="border: 1px solid var(--separator);" />
+                                <div v-else
+                                    class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                    style="background: var(--accent);">
+                                    {{ collab.user.name?.charAt(0) || '?' }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-semibold truncate" style="color: var(--text-1);">{{ collab.user.name || 'Unknown User' }}</p>
+                                    <p class="text-xs truncate" style="color: var(--text-3);">{{ collab.user.email }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                                <select :value="collab.role" @change="updateCollaboratorRole(collab, ($event.target as HTMLSelectElement).value)"
+                                    class="px-2 py-1.5 text-xs rounded-lg transition"
+                                    style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
+                                    <option value="editor">Editor</option>
+                                    <option value="viewer">Viewer</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                                <button @click="removeCollaborator(collab)"
+                                    class="p-2 rounded-lg transition hover:bg-red-500/10 text-red-500"
+                                    title="Remove Collaborator">
+                                    <Icon name="lucide:trash-2" class="w-4 h-4" :stroke-width="2" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Context Menu -->
         <div v-if="contextMenu.visible"
             class="fixed z-50 rounded-xl py-1 w-48"
@@ -970,11 +1060,7 @@
                 style="color: var(--text-1); width: calc(100% - 8px);"
                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
-                        v-if="selectedPhotoIds.has(contextMenu.photo!.id)" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" v-else />
-                </svg>
+                <Icon :name="selectedPhotoIds.has(contextMenu.photo!.id) ? 'lucide:check' : 'lucide:plus'" class="h-4 w-4" :stroke-width="2" />
                 {{ selectedPhotoIds.has(contextMenu.photo!.id) ? 'Deselect' : 'Select' }}
             </button>
 
@@ -983,14 +1069,11 @@
                 style="color: var(--text-1); width: calc(100% - 8px);"
                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
+                <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
                 Download
             </button>
 
-            <template v-if="album?.permissions.canEdit">
+            <template v-if="album?.permissions.canUpload">
                 <div class="h-px my-1 mx-3" style="background: var(--separator);"></div>
 
                 <button @click="setAsCover(contextMenu.photo!); closeContextMenu()"
@@ -998,36 +1081,29 @@
                     style="color: var(--text-1); width: calc(100% - 8px);"
                     @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
                     @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                    <Icon name="lucide:image" class="h-4 w-4" :stroke-width="2" />
                     Set as Album Cover
                 </button>
 
-                <button @click="openEditPhotoModalFromMenu(contextMenu.photo!); closeContextMenu()"
-                    class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
-                    style="color: var(--text-1); width: calc(100% - 8px);"
-                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
-                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit Info
-                </button>
+                <template v-if="canEditPhoto(contextMenu.photo)">
+                    <button @click="openEditPhotoModalFromMenu(contextMenu.photo!); closeContextMenu()"
+                        class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
+                        style="color: var(--text-1); width: calc(100% - 8px);"
+                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
+                        <Icon name="lucide:square-pen" class="h-4 w-4" :stroke-width="2" />
+                        Edit Info
+                    </button>
 
-                <button @click="deletePhoto(contextMenu.photo!.id); closeContextMenu()"
-                    class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
-                    style="color: var(--error); width: calc(100% - 8px);"
-                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)'"
-                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Delete
-                </button>
+                    <button @click="deletePhoto(contextMenu.photo!.id); closeContextMenu()"
+                        class="w-full text-left px-3.5 py-2 text-sm transition flex items-center gap-2.5 rounded-lg mx-1"
+                        style="color: var(--error); width: calc(100% - 8px);"
+                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
+                        <Icon name="lucide:trash-2" class="h-4 w-4" :stroke-width="2" />
+                        Delete
+                    </button>
+                </template>
             </template>
         </div>
 
@@ -1046,11 +1122,7 @@
                     <div class="text-center pointer-events-none">
                         <div class="w-24 h-24 mx-auto mb-5 rounded-full flex items-center justify-center"
                             style="background: var(--accent-light); border: 2px dashed var(--accent);">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" style="color: var(--accent);">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                            </svg>
+                            <Icon name="lucide:upload" class="h-10 w-10" style="color: var(--accent);" :stroke-width="1.5" />
                         </div>
                         <p class="text-xl font-semibold text-white">Drop photos to upload</p>
                         <p class="text-sm mt-1 text-white/60">Release to add to this album</p>
@@ -1123,6 +1195,7 @@ interface Permissions {
     isCollaborator: boolean
     canEdit: boolean
     canDelete: boolean
+    canUpload: boolean
 }
 
 interface Album {
@@ -1172,6 +1245,20 @@ const album = ref<Album | null>(null)
 const loading = ref(true)
 const error = ref('')
 
+const canEditPhoto = (photo: Photo | null) => {
+    if (!photo) return false
+    if (album.value?.permissions.isOwner) return true
+    if (user.value?.role === 'ADMIN') return true
+    if (album.value?.permissions.canUpload && photo.uploaderId === user.value?.id) return true
+    return false
+}
+
+const canManageSelectedPhotos = computed(() => {
+    if (selectedPhotoIds.value.size === 0) return false
+    const selectedPhotos = photos.value.filter(p => selectedPhotoIds.value.has(p.id))
+    return selectedPhotos.every(p => canEditPhoto(p))
+})
+
 // Pagination state
 const page = ref(1)
 const limit = ref(50)
@@ -1186,6 +1273,9 @@ const filters = ref({
     lens: '',
     photographer: ''
 })
+
+const sortBy = ref('dateTaken')
+const sortOrder = ref('desc')
 
 
 // Computed: Get unique cameras from all photos
@@ -1570,7 +1660,7 @@ const handleKeydown = (e: KeyboardEvent) => {
         clearSelection()
     }
     // Delete/Backspace to delete selected
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPhotoIds.value.size > 0 && album.value?.permissions.canEdit) {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPhotoIds.value.size > 0 && canManageSelectedPhotos.value) {
         deleteSelected()
     }
 }
@@ -1597,7 +1687,7 @@ const closeContextMenu = () => {
 }
 
 const onWindowDragEnter = (e: DragEvent) => {
-    if (!album.value?.permissions.canEdit) return
+    if (!album.value?.permissions.canUpload) return
     if (!e.dataTransfer?.types?.includes('Files')) return
     dragEnterCounter++
     isDragging.value = true
@@ -1617,7 +1707,7 @@ const onWindowDrop = (e: DragEvent) => {
     e.preventDefault()
     dragEnterCounter = 0
     isDragging.value = false
-    if (album.value?.permissions.canEdit) handleDrop(e)
+    if (album.value?.permissions.canUpload) handleDrop(e)
 }
 
 // Close context menu on click outside
@@ -1707,6 +1797,14 @@ useSeoMeta({
 // Share Modal State
 const showShareModal = ref(false)
 const shareLinks = ref<ShareLink[]>([])
+
+// Collaborators Modal State
+const showCollaboratorsModal = ref(false)
+const collaboratorsList = ref<any[]>([])
+const loadingCollaborators = ref(false)
+const addingCollaborator = ref(false)
+const newCollaboratorEmail = ref('')
+const newCollaboratorRole = ref('editor')
 const loadingLinks = ref(false)
 const creatingLink = ref(false)
 const newLink = ref({
@@ -1760,10 +1858,12 @@ const fetchAlbum = async () => {
         loading.value = page.value === 1
         loadingPhotos.value = page.value > 1
 
-        // Build query params with filters
+        // Build query params with filters and sorting
         const params = new URLSearchParams({
             page: page.value.toString(),
-            limit: limit.value.toString()
+            limit: limit.value.toString(),
+            sort: sortBy.value,
+            order: sortOrder.value
         })
 
         if (filters.value.camera) params.append('camera', filters.value.camera)
@@ -1835,8 +1935,20 @@ const loadMorePhotos = async () => {
     loadingPhotos.value = true
     try {
         const nextPage = page.value + 1
+        
+        const params: Record<string, string> = {
+            page: nextPage.toString(),
+            limit: limit.value.toString(),
+            sort: sortBy.value,
+            order: sortOrder.value
+        }
+
+        if (filters.value.camera) params.camera = filters.value.camera
+        if (filters.value.lens) params.lens = filters.value.lens
+        if (filters.value.photographer) params.photographer = filters.value.photographer
+
         const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/album/${albumId}`, {
-            params: { page: nextPage, limit: limit.value }
+            params
         })
 
         if (response.data.photos && response.data.photos.length > 0) {
@@ -1982,6 +2094,73 @@ const handleUpdatePhoto = async () => {
 const openShareModal = async () => {
     showShareModal.value = true
     await fetchShareLinks()
+}
+
+// Collaborators Logic
+const openCollaboratorsModal = async () => {
+    showCollaboratorsModal.value = true
+    await fetchCollaborators()
+}
+
+const fetchCollaborators = async () => {
+    loadingCollaborators.value = true
+    try {
+        const res = await $fetch<{ success: boolean; data: any[] }>(`/api/v1/album/${albumId}/collaborators`)
+        collaboratorsList.value = res.data
+    } catch (err: any) {
+        toast(err.data?.statusMessage || 'Failed to fetch collaborators', 'error')
+    } finally {
+        loadingCollaborators.value = false
+    }
+}
+
+const addCollaborator = async () => {
+    if (!newCollaboratorEmail.value) return
+    addingCollaborator.value = true
+    try {
+        const res = await $fetch<{ success: boolean; data: any }>(`/api/v1/album/${albumId}/collaborators`, {
+            method: 'POST',
+            body: {
+                email: newCollaboratorEmail.value,
+                role: newCollaboratorRole.value
+            }
+        })
+        collaboratorsList.value.push(res.data)
+        newCollaboratorEmail.value = ''
+        toast('Collaborator added successfully', 'success')
+        await fetchAlbum()
+    } catch (err: any) {
+        toast(err.data?.statusMessage || 'Failed to add collaborator', 'error')
+    } finally {
+        addingCollaborator.value = false
+    }
+}
+
+const updateCollaboratorRole = async (collab: any, newRole: string) => {
+    try {
+        await $fetch(`/api/v1/album/${albumId}/collaborators/${collab.userId}`, {
+            method: 'PATCH',
+            body: { role: newRole }
+        })
+        collab.role = newRole
+        toast('Collaborator role updated', 'success')
+        await fetchAlbum()
+    } catch (err: any) {
+        toast(err.data?.statusMessage || 'Failed to update role', 'error')
+    }
+}
+
+const removeCollaborator = async (collab: any) => {
+    try {
+        await $fetch(`/api/v1/album/${albumId}/collaborators/${collab.userId}`, {
+            method: 'DELETE'
+        })
+        collaboratorsList.value = collaboratorsList.value.filter(c => c.userId !== collab.userId)
+        toast('Collaborator removed', 'success')
+        await fetchAlbum()
+    } catch (err: any) {
+        toast(err.data?.statusMessage || 'Failed to remove collaborator', 'error')
+    }
 }
 
 const fetchShareLinks = async () => {
@@ -2732,7 +2911,7 @@ onMounted(async () => {
     if (route.query.edit === '1' && album.value?.permissions?.canEdit) {
         showEditModal.value = true
     }
-    if (route.query.upload === 'true' && album.value?.permissions?.canEdit) {
+    if (route.query.upload === 'true' && album.value?.permissions?.canUpload) {
         nextTick(() => {
             triggerFileInput()
         })

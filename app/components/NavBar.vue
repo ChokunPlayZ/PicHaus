@@ -9,12 +9,7 @@
                     <img v-if="effectiveLogoImageUrl" :src="effectiveLogoImageUrl" alt="Logo"
                         class="h-8 max-w-[140px] object-contain" />
                     <template v-else>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" style="color: var(--accent);">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                            <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
-                        </svg>
+                        <Icon name="lucide:camera" class="w-5 h-5 shrink-0" style="color: var(--accent);" :stroke-width="2" />
                         <span>{{ effectiveLogoText }}</span>
                     </template>
                 </div>
@@ -26,11 +21,7 @@
                     class="w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center justify-between mb-2 group"
                     style="color: var(--text-2); background: var(--surface-2); border: 1px solid var(--separator);">
                     <span class="inline-flex items-center gap-2.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 transition-colors group-hover:text-[var(--text-1)]"
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                        <Icon name="lucide:search" class="w-4 h-4 shrink-0 transition-colors group-hover:text-[var(--text-1)]" :stroke-width="2" />
                         <span class="group-hover:text-[var(--text-1)] transition-colors">Search...</span>
                     </span>
                     <kbd class="px-1.5 py-0.5 text-[9px] font-semibold border rounded transition-colors group-hover:border-[var(--text-3)]"
@@ -42,36 +33,7 @@
                 <button v-for="item in navItems" :key="item.path" @click="navigateTo(item.path)"
                     :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)">
                     <span class="inline-flex items-center gap-2.5">
-                        <svg v-if="item.icon === 'albums'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 7h5l2 2h11v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'photos'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16l4.5-4.5a2 2 0 012.8 0L16 16m-2-2l1.5-1.5a2 2 0 012.8 0L20 14m-12 6h8a2 2 0 002-2V6a2 2 0 00-2-2H8a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'statistics'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 3v18h18M8 15V9m4 6V6m4 9v-4" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'share-links'" xmlns="http://www.w3.org/2000/svg"
-                            class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10 13a5 5 0 007.07 0l1.41-1.41a5 5 0 00-7.07-7.07L10 6m4 5a5 5 0 00-7.07 0L5.52 12.4a5 5 0 107.07 7.07L14 18" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'docs'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2zm3 4h4m-4 4h4m-4 4h4" />
-                        </svg>
-                        <svg v-else-if="item.icon === 'api-keys'" xmlns="http://www.w3.org/2000/svg"
-                            class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
-                        </svg>
+                        <Icon :name="getIconName(item.icon)" class="w-4 h-4" :stroke-width="2" />
                         <span>{{ item.label }}</span>
                     </span>
                 </button>
@@ -80,52 +42,31 @@
                     <div class="pt-2 pb-1 px-3" style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em;">Admin</div>
                     <button @click="navigateTo('/admin/users')" :class="sidebarButtonClass('/admin/users')" :style="sidebarButtonStyle('/admin/users')">
                         <span class="inline-flex items-center gap-2.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
+                            <Icon name="lucide:users" class="w-4 h-4" :stroke-width="2" />
                             <span>Users</span>
                         </span>
                     </button>
                     <button @click="navigateTo('/admin/status')" :class="sidebarButtonClass('/admin/status')" :style="sidebarButtonStyle('/admin/status')">
                         <span class="inline-flex items-center gap-2.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                            <Icon name="lucide:activity" class="w-4 h-4" :stroke-width="2" />
                             <span>Server Status</span>
                         </span>
                     </button>
                     <button @click="navigateTo('/admin/invites')" :class="sidebarButtonClass('/admin/invites')" :style="sidebarButtonStyle('/admin/invites')">
                         <span class="inline-flex items-center gap-2.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
+                            <Icon name="lucide:mail" class="w-4 h-4" :stroke-width="2" />
                             <span>Invites</span>
                         </span>
                     </button>
                     <button @click="navigateTo('/admin/logos')" :class="sidebarButtonClass('/admin/logos')" :style="sidebarButtonStyle('/admin/logos')">
                         <span class="inline-flex items-center gap-2.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 16l4.5-4.5a2 2 0 012.8 0L16 16m-2-2l1.5-1.5a2 2 0 012.8 0L20 14M8 6h.01M6 4h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" />
-                            </svg>
+                            <Icon name="lucide:image" class="w-4 h-4" :stroke-width="2" />
                             <span>Logos</span>
                         </span>
                     </button>
                     <button @click="navigateTo('/admin/settings')" :class="sidebarButtonClass('/admin/settings')" :style="sidebarButtonStyle('/admin/settings')">
                         <span class="inline-flex items-center gap-2.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
+                            <Icon name="lucide:settings" class="w-4 h-4" :stroke-width="2" />
                             <span>Site Settings</span>
                         </span>
                     </button>
@@ -161,12 +102,7 @@
                 <img v-if="effectiveLogoImageUrl" :src="effectiveLogoImageUrl" alt="Logo"
                     class="h-7 max-w-[120px] object-contain" />
                 <template v-else>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" style="color: var(--accent);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                        <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
-                    </svg>
+                    <Icon name="lucide:camera" class="w-5 h-5 shrink-0" style="color: var(--accent);" :stroke-width="2" />
                     <span>{{ effectiveLogoText }}</span>
                 </template>
             </span>
@@ -187,12 +123,7 @@
                         <img v-if="effectiveLogoImageUrl" :src="effectiveLogoImageUrl" alt="Logo"
                             class="h-8 max-w-[140px] object-contain" />
                         <template v-else>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" style="color: var(--accent);">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 7a2 2 0 012-2h3l1.5-2h5L16 5h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                                <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2" />
-                            </svg>
+                            <Icon name="lucide:camera" class="w-5 h-5 shrink-0" style="color: var(--accent);" :stroke-width="2" />
                             <span>{{ effectiveLogoText }}</span>
                         </template>
                     </div>
@@ -207,11 +138,7 @@
                         class="w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center justify-between mb-2"
                         style="color: var(--text-2); background: var(--surface-2); border: 1px solid var(--separator);">
                         <span class="inline-flex items-center gap-2.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0"
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
+                            <Icon name="lucide:search" class="w-4 h-4 shrink-0" :stroke-width="2" />
                             <span>Search...</span>
                         </span>
                     </button>
@@ -219,36 +146,7 @@
                     <button v-for="item in navItems" :key="`m-${item.path}`" @click="goMobile(item.path)"
                         :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)">
                         <span class="inline-flex items-center gap-2.5">
-                            <svg v-if="item.icon === 'albums'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 7h5l2 2h11v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                            </svg>
-                            <svg v-else-if="item.icon === 'photos'" xmlns="http://www.w3.org/2000/svg"
-                                class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 16l4.5-4.5a2 2 0 012.8 0L16 16m-2-2l1.5-1.5a2 2 0 012.8 0L20 14m-12 6h8a2 2 0 002-2V6a2 2 0 00-2-2H8a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <svg v-else-if="item.icon === 'statistics'" xmlns="http://www.w3.org/2000/svg"
-                                class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 3v18h18M8 15V9m4 6V6m4 9v-4" />
-                            </svg>
-                            <svg v-else-if="item.icon === 'share-links'" xmlns="http://www.w3.org/2000/svg"
-                                class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10 13a5 5 0 007.07 0l1.41-1.41a5 5 0 00-7.07-7.07L10 6m4 5a5 5 0 00-7.07 0L5.52 12.4a5 5 0 107.07 7.07L14 18" />
-                            </svg>
-                            <svg v-else-if="item.icon === 'docs'" xmlns="http://www.w3.org/2000/svg"
-                                class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2zm3 4h4m-4 4h4m-4 4h4" />
-                            </svg>
-                            <svg v-else-if="item.icon === 'api-keys'" xmlns="http://www.w3.org/2000/svg"
-                                class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
-                            </svg>
+                            <Icon :name="getIconName(item.icon)" class="w-4 h-4" :stroke-width="2" />
                             <span>{{ item.label }}</span>
                         </span>
                     </button>
@@ -257,50 +155,31 @@
                         <div class="pt-2 pb-1 px-3" style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em;">Admin</div>
                         <button @click="goMobile('/admin/users')" :class="sidebarButtonClass('/admin/users')" :style="sidebarButtonStyle('/admin/users')">
                             <span class="inline-flex items-center gap-2.5">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                </svg>
+                                <Icon name="lucide:users" class="w-4 h-4" :stroke-width="2" />
                                 <span>Users</span>
                             </span>
                         </button>
                         <button @click="goMobile('/admin/status')" :class="sidebarButtonClass('/admin/status')" :style="sidebarButtonStyle('/admin/status')">
                             <span class="inline-flex items-center gap-2.5">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                                <Icon name="lucide:activity" class="w-4 h-4" :stroke-width="2" />
                                 <span>Server Status</span>
                             </span>
                         </button>
                         <button @click="goMobile('/admin/invites')" :class="sidebarButtonClass('/admin/invites')" :style="sidebarButtonStyle('/admin/invites')">
                             <span class="inline-flex items-center gap-2.5">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
+                                <Icon name="lucide:mail" class="w-4 h-4" :stroke-width="2" />
                                 <span>Invites</span>
                             </span>
                         </button>
                         <button @click="goMobile('/admin/logos')" :class="sidebarButtonClass('/admin/logos')" :style="sidebarButtonStyle('/admin/logos')">
                             <span class="inline-flex items-center gap-2.5">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M4 16l4.5-4.5a2 2 0 012.8 0L16 16m-2-2l1.5-1.5a2 2 0 012.8 0L20 14M8 6h.01M6 4h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" />
-                                </svg>
+                                <Icon name="lucide:image" class="w-4 h-4" :stroke-width="2" />
                                 <span>Logos</span>
                             </span>
                         </button>
                         <button @click="goMobile('/admin/settings')" :class="sidebarButtonClass('/admin/settings')" :style="sidebarButtonStyle('/admin/settings')">
                             <span class="inline-flex items-center gap-2.5">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
+                                <Icon name="lucide:settings" class="w-4 h-4" :stroke-width="2" />
                                 <span>Site Settings</span>
                             </span>
                         </button>
@@ -410,6 +289,18 @@ const userInitials = computed(() => {
     if (email) return email.slice(0, 2)
     return 'U'
 })
+
+const getIconName = (icon: string) => {
+  const map: Record<string, string> = {
+    'albums': 'lucide:folder',
+    'photos': 'lucide:image',
+    'statistics': 'lucide:bar-chart-3',
+    'share-links': 'lucide:link',
+    'docs': 'lucide:file-text',
+    'api-keys': 'lucide:key'
+  }
+  return map[icon] || 'lucide:chevron-right'
+}
 
 onMounted(async () => {
     const win = window as Window & { __picHausSidebarNavCount?: number }

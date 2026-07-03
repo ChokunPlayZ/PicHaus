@@ -11,17 +11,11 @@
             <div class="flex gap-2">
                 <button v-if="hasPrevious" @click="$emit('previous')"
                     class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <Icon name="lucide:chevron-left" class="h-6 w-6" :stroke-width="2" />
                 </button>
                 <button v-if="hasNext" @click="$emit('next')"
                     class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <Icon name="lucide:chevron-right" class="h-6 w-6" :stroke-width="2" />
                 </button>
             </div>
 
@@ -31,52 +25,29 @@
                     'p-4 rounded-full text-white transition backdrop-blur-sm',
                     showInfo ? 'bg-white/20 hover:bg-white/25' : 'bg-white/10 hover:bg-white/20'
                 ]">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <Icon name="lucide:info" class="h-6 w-6" :stroke-width="2" />
                 </button>
                 <!-- iOS: Download button that triggers share sheet -->
                 <button v-if="isIOS" @click="sharePhoto"
                     class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg" style="background: var(--accent);">
-                    <svg v-if="!isSharing" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    <svg v-else class="h-6 w-6 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>
+                    <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
+                    <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                 </button>
                 <!-- Android: Share + Download buttons -->
                 <template v-else-if="isAndroid">
                     <button @click="sharePhoto"
                         class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                        </svg>
+                        <Icon name="lucide:share-2" class="h-6 w-6" :stroke-width="2" />
                     </button>
                     <button @click="downloadPhoto"
                         class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg" style="background: var(--accent);">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
+                        <Icon name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                     </button>
                 </template>
                 <!-- Desktop/Other: Download button only -->
                 <button v-else @click="downloadPhoto"
                     class="p-4 rounded-full text-white transition backdrop-blur-sm shadow-lg" style="background: var(--accent);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
+                    <Icon name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                 </button>
                 <!-- Heart/Favorite button -->
                 <button @click="$emit('toggleFavorite')"
@@ -86,20 +57,12 @@
                             ? 'bg-red-500/30 text-red-300 hover:bg-red-500/40 active:bg-red-500/50'
                             : 'bg-white/10 hover:bg-white/20 active:bg-white/30'
                     ]">
-                    <svg v-if="isFavorited" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
-                    </svg>
-                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
-                    </svg>
+                    <Icon v-if="isFavorited" name="lucide:heart" class="h-6 w-6 fill-current" :stroke-width="2" />
+                    <Icon v-else name="lucide:heart" class="h-6 w-6" :stroke-width="2" />
                 </button>
                 <button @click="$emit('close')"
                     class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <Icon name="lucide:x" class="h-6 w-6" :stroke-width="2" />
                 </button>
             </div>
         </div>
@@ -115,39 +78,25 @@
                         :class="isFavorited
                             ? 'bg-red-500/80 text-white opacity-100 hover:bg-red-500/90'
                             : 'bg-black/50 text-white/70 opacity-0 group-hover:opacity-100 hover:bg-black/70'">
-                        <svg v-if="isFavorited" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
-                        </svg>
-                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
-                        </svg>
+                        <Icon v-if="isFavorited" name="lucide:heart" class="h-6 w-6 fill-current" :stroke-width="2" />
+                        <Icon v-else name="lucide:heart" class="h-6 w-6" :stroke-width="2" />
                     </button>
                     <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()" @touchstart.stop.prevent
                         @touchmove.stop.prevent
                         class="p-3 rounded-full text-white transition shadow-lg" style="background: var(--accent);">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
+                        <Icon name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                     </button>
                 </div>
 
                 <!-- Desktop Navigation Buttons -->
                 <button v-if="hasPrevious" @click="$emit('previous')"
                     class="hidden md:block absolute left-4 p-3 rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 transition opacity-0 group-hover:opacity-100 z-20">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <Icon name="lucide:chevron-left" class="h-6 w-6" :stroke-width="2" />
                 </button>
 
                 <button v-if="hasNext" @click="$emit('next')"
                     class="hidden md:block absolute right-4 p-3 rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 transition opacity-0 group-hover:opacity-100 z-20">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <Icon name="lucide:chevron-right" class="h-6 w-6" :stroke-width="2" />
                 </button>
 
                 <div class="relative w-full h-full flex items-center justify-center" :style="imageContainerStyle">
@@ -193,11 +142,7 @@
                     <div class="flex items-center justify-start gap-4 mb-6">
                         <button @click="$emit('close')"
                             class="hidden md:flex p-2 rounded-lg bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
                         </button>
                         <h3 class="text-left text-2xl font-bold text-white line-clamp-2">
                             Photo Details</h3>
@@ -222,10 +167,7 @@
                                         :href="getInstagramUrl(photo.uploader.instagram)" target="_blank"
                                         rel="noopener noreferrer"
                                         class="text-white/60 hover:text-white transition">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                                        </svg>
+                                        <Icon name="lucide:instagram" class="w-4 h-4" />
                                     </a>
                                 </div>
                                 <p class="text-xs text-white/50">{{ formatDate(photo.createdAt) }}</p>
@@ -300,9 +242,7 @@
                 class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md"
                 style="background: rgba(30,30,30,0.92); border: 1px solid rgba(255,255,255,0.12);">
                 <template v-if="pendingShareFile">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--accent);">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
+                    <Icon name="lucide:check" class="h-5 w-5 flex-shrink-0" style="color: var(--accent);" :stroke-width="2" />
                     <span class="text-sm text-white font-medium">Photo ready —</span>
                     <button @click="retryShare"
                         class="text-sm font-semibold px-3 py-1 rounded-xl transition active:scale-95"
@@ -311,10 +251,7 @@
                     </button>
                 </template>
                 <template v-else>
-                    <svg class="h-5 w-5 flex-shrink-0 animate-spin text-white/60" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>
+                    <Icon name="lucide:loader-2" class="h-5 w-5 flex-shrink-0 animate-spin text-white/60" />
                     <span class="text-sm text-white/80">Slow connection — still downloading…</span>
                 </template>
             </div>

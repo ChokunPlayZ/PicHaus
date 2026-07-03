@@ -9,9 +9,7 @@
                     style="background: var(--accent); color: var(--accent-text);"
                     @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
                     @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
+                    <Icon name="lucide:plus" class="h-4 w-4" :stroke-width="2" />
                     Upload Logo
                     <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
                         class="hidden" @change="handleUpload" :disabled="uploading" />
@@ -25,9 +23,7 @@
 
             <div v-else-if="logos.length === 0" class="rounded-2xl p-12 text-center"
                 style="background: var(--surface-1); border: 1px solid var(--separator);">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-3);">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.5-4.5a2 2 0 012.8 0L16 16m-2-2l1.5-1.5a2 2 0 012.8 0L20 14M8 6h.01M6 4h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" />
-                </svg>
+                <Icon name="lucide:image" class="h-10 w-10 mx-auto mb-3" style="color: var(--text-3);" :stroke-width="1.5" />
                 <p class="text-sm" style="color: var(--text-3);">No logos uploaded yet. Upload one to use in albums, share groups, or site branding.</p>
             </div>
 
@@ -44,9 +40,7 @@
                             class="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             style="background: var(--error); color: #fff;"
                             title="Delete logo">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
+                            <Icon name="lucide:trash-2" class="h-3.5 w-3.5" :stroke-width="2" />
                         </button>
                     </div>
 
