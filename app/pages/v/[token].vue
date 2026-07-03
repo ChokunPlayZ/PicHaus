@@ -323,6 +323,15 @@
                                 style="border-color: rgba(255,255,255,0.3); border-top-color: white;"></span>
                             {{ isSharing ? 'Sharing...' : 'Share Now' }}
                         </button>
+                        <button @click="downloadFavoritesAsZip"
+                            :disabled="isSharing"
+                            class="w-full py-3 rounded-xl text-sm font-semibold transition disabled:opacity-50 flex items-center justify-center gap-2"
+                            style="color: var(--text-1); background: var(--surface-2); border: 1px solid var(--separator);"
+                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                            <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
+                            Download ZIP
+                        </button>
                         <button @click="cancelShare"
                             :disabled="isSharing"
                             class="w-full py-3 rounded-xl text-sm font-semibold transition hover:bg-white/5 disabled:opacity-50"
@@ -364,8 +373,18 @@
 <script setup lang="ts">
 const dialog = useDialog()
 import JSZip from 'jszip'
-import { saveAs } from 'file-saver'
 import { setAuthToken, buildAssetUrl } from '~/utils/auth-client'
+
+const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
 
 interface Photo {
     id: string
@@ -469,6 +488,29 @@ const cancelShare = () => {
     downloading.value = false
     pendingShareFiles.value = null
     downloadProgress.value = { current: 0, total: 0 }
+}
+
+const downloadFavoritesAsZip = async () => {
+    if (!pendingShareFiles.value) return
+    isSharing.value = true
+    try {
+        const folderName = (viewMode.value === 'album' ? albumName.value : groupTitle.value) || 'photos'
+        const zip = new JSZip()
+        const folder = zip.folder(folderName)
+        pendingShareFiles.value.forEach(f => {
+            folder?.file(f.name, f)
+        })
+        const content = await zip.generateAsync({ type: 'blob' })
+        downloadBlob(content, `${folderName}-selected.zip`)
+    } catch (err) {
+        console.error('Download ZIP error:', err)
+        dialog.toast('Failed to download ZIP')
+    } finally {
+        isSharing.value = false
+        downloading.value = false
+        pendingShareFiles.value = null
+        downloadProgress.value = { current: 0, total: 0 }
+    }
 }
 
 // Favorites State — reactive object so toggling one photo only re-renders that tile
@@ -587,7 +629,7 @@ const downloadAll = async () => {
 
         // Generate zip
         const content = await zip.generateAsync({ type: 'blob' })
-        saveAs(content, `${albumName.value || 'album'}.zip`)
+        downloadBlob(content, `${albumName.value || 'album'}.zip`)
     } catch (err) {
         console.error('Download all error:', err)
         dialog.toast('Failed to download photos')
@@ -647,7 +689,7 @@ const downloadAllGroupPhotos = async () => {
 
         // Generate zip
         const content = await zip.generateAsync({ type: 'blob' })
-        saveAs(content, `${groupTitle.value || 'group'}-photos.zip`)
+        downloadBlob(content, `${groupTitle.value || 'group'}-photos.zip`)
     } catch (err) {
         console.error('Download all group photos error:', err)
         dialog.toast('Failed to download photos')
@@ -749,7 +791,7 @@ const downloadFavorites = async () => {
         const folder = zip.folder(folderName)
         files.forEach(f => folder?.file(f.name, f.blob))
         const content = await zip.generateAsync({ type: 'blob' })
-        saveAs(content, `${folderName}-selected.zip`)
+        downloadBlob(content, `${folderName}-selected.zip`)
     } catch (err: any) {
         if (err.name !== 'AbortError') {
             console.error('Download favorites error:', err)

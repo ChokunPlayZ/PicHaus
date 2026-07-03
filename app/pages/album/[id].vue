@@ -1141,8 +1141,18 @@
 
 <script setup lang="ts">
 import JSZip from 'jszip'
-import { saveAs } from 'file-saver'
 import { clearAuthToken, buildAssetUrl, getAuthToken } from '~/utils/auth-client'
+
+const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
 const { confirm: dialogConfirm, toast } = useDialog()
 import { calculateSHA256 } from '~/utils/hash'
 
@@ -1760,7 +1770,7 @@ const downloadSelected = async () => {
         }))
 
         const content = await zip.generateAsync({ type: 'blob' })
-        saveAs(content, `${album.value?.name || 'album'}-selected.zip`)
+        downloadBlob(content, `${album.value?.name || 'album'}-selected.zip`)
     } catch (err) {
         console.error('Download selected error:', err)
         toast('Failed to download selected photos', 'error')
@@ -2323,7 +2333,7 @@ const downloadPhoto = async (photo: Photo) => {
     try {
         const res = await fetch(`/api/assets/full/${photo.id}`)
         const blob = await res.blob()
-        saveAs(blob, photo.originalName)
+        downloadBlob(blob, photo.originalName)
     } catch (err) {
         console.error('Failed to download photo', err)
         toast('Failed to download photo', 'error')
@@ -2603,7 +2613,7 @@ const downloadAll = async () => {
             // We could also track zip generation progress here if we wanted
             // but file download is usually the bottleneck
         })
-        saveAs(content, `${album.value?.name || 'album'}.zip`)
+        downloadBlob(content, `${album.value?.name || 'album'}.zip`)
     } catch (err) {
         console.error('Download all error:', err)
         toast('Failed to download photos', 'error')
