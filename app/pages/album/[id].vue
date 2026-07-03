@@ -51,7 +51,7 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap gap-2.5 w-full md:w-auto items-center">
+                <div class="flex flex-wrap gap-2 w-full md:w-auto items-center">
                     <!-- Upload (Primary Action) -->
                     <template v-if="album.permissions.canUpload">
                         <button @click="triggerFileInput"
@@ -66,7 +66,7 @@
 
                     <!-- Share Button -->
                     <button v-if="album.permissions.isOwner" @click="openShareModal"
-                        class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2"
+                        class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-1.5"
                         style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
@@ -74,65 +74,37 @@
                         <Icon name="lucide:share-2" class="h-4 w-4" :stroke-width="2" />
                     </button>
 
-                    <!-- More Actions Dropdown -->
-                    <div class="relative inline-block text-left" v-if="album.permissions.isOwner || album.permissions.isCollaborator || album.permissions.canEdit">
-                        <button @click.stop="showMenu = !showMenu"
-                            class="px-3 py-2 rounded-full transition flex items-center justify-center gap-1"
-                            style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
-                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
-                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
-                            title="More Actions">
-                            <Icon name="lucide:ellipsis-vertical" class="h-5 w-5" :stroke-width="2" />
-                        </button>
+                    <!-- Download All Button -->
+                    <button v-if="album.permissions.isOwner || album.permissions.isCollaborator || album.permissions.canEdit" @click="downloadAll"
+                        :disabled="downloading"
+                        class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-1.5"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
+                        <span v-if="downloading">
+                            {{ downloadProgress.current }}/{{ downloadProgress.total }}
+                        </span>
+                        <span v-else>Download All</span>
+                        <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
+                    </button>
 
-                        <div v-if="showMenu"
-                            class="absolute right-0 mt-2 w-48 rounded-xl py-1 z-50 origin-top-right"
-                            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-lg);"
-                            @click.stop>
-                            <!-- Download All -->
-                            <button @click="downloadAll(); showMenu = false"
-                                :disabled="downloading"
-                                class="w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2"
-                                style="color: var(--text-1);"
-                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
-                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                                <Icon name="lucide:download" class="w-4 h-4" :stroke-width="2" />
-                                <span>{{ downloading ? 'Downloading...' : 'Download All' }}</span>
-                            </button>
+                    <!-- Collaborators Button -->
+                    <button v-if="album.permissions.isOwner" @click="openCollaboratorsModal"
+                        class="p-2 rounded-full transition flex items-center justify-center border"
+                        style="background: var(--surface-2); color: var(--text-1); border-color: var(--separator);"
+                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                        title="Collaborators">
+                        <Icon name="lucide:users" class="h-5 w-5" :stroke-width="2" />
+                    </button>
 
-                            <!-- Collaborators -->
-                            <button v-if="album.permissions.isOwner" @click="openCollaboratorsModal(); showMenu = false"
-                                class="w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2"
-                                style="color: var(--text-1);"
-                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
-                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                                <Icon name="lucide:users" class="w-4 h-4" :stroke-width="2" />
-                                <span>Collaborators</span>
-                            </button>
-
-                            <!-- Edit Album -->
-                            <button v-if="album.permissions.canEdit" @click="showEditModal = true; showMenu = false"
-                                class="w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2"
-                                style="color: var(--text-1);"
-                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
-                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                                <Icon name="lucide:settings" class="w-4 h-4" :stroke-width="2" />
-                                <span>Edit Album</span>
-                            </button>
-
-                            <div v-if="album.permissions.canEdit" class="h-px my-1" style="background: var(--separator);"></div>
-
-                            <!-- Delete -->
-                            <button v-if="album.permissions.canEdit" @click="confirmDelete(); showMenu = false"
-                                class="w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2"
-                                style="color: var(--error);"
-                                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--error-bg)'"
-                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
-                                <Icon name="lucide:trash-2" class="w-4 h-4" :stroke-width="2" />
-                                <span>Delete Album</span>
-                            </button>
-                        </div>
-                    </div>
+                    <!-- Edit Album Button -->
+                    <button v-if="album.permissions.canEdit" @click="showEditModal = true"
+                        class="p-2 rounded-full transition flex items-center justify-center border"
+                        style="background: var(--surface-2); color: var(--text-1); border-color: var(--separator);"
+                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
+                        title="Edit Album Settings">
+                        <Icon name="lucide:settings" class="h-5 w-5" :stroke-width="2" />
+                    </button>
                 </div>
             </div>
 
@@ -752,19 +724,26 @@
                     {{ editError }}
                 </div>
 
-                <div class="flex gap-3">
-                    <button type="button" @click="showEditModal = false; applyTheme(album?.themePreset, album?.customTheme)"
-                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition"
-                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
-                        Cancel
+                <div class="flex justify-between items-center gap-3">
+                    <button type="button" @click="confirmDelete(); showEditModal = false"
+                        class="px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap hover:brightness-105"
+                        style="background: var(--error-bg); color: var(--error-text);">
+                        Delete Album
                     </button>
-                    <button type="submit" :disabled="updating"
-                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
-                        style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="!updating && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
-                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                        {{ updating ? 'Updating…' : 'Update' }}
-                    </button>
+                    <div class="flex gap-2 w-full justify-end">
+                        <button type="button" @click="showEditModal = false; applyTheme(album?.themePreset, album?.customTheme)"
+                            class="px-4 py-2.5 rounded-full text-sm font-medium transition"
+                            style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
+                            Cancel
+                        </button>
+                        <button type="submit" :disabled="updating"
+                            class="px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
+                            style="background: var(--accent); color: var(--accent-text);"
+                            @mouseover="!updating && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
+                            Save Changes
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -1740,7 +1719,6 @@ const onWindowDrop = (e: DragEvent) => {
 // Close context menu on click outside
 onMounted(() => {
     window.addEventListener('click', closeContextMenu)
-    window.addEventListener('click', closeMenu)
     window.addEventListener('keydown', handleKeydown)
     window.addEventListener('dragenter', onWindowDragEnter)
     window.addEventListener('dragleave', onWindowDragLeave)
@@ -1750,7 +1728,6 @@ onMounted(() => {
 
 onUnmounted(() => {
     window.removeEventListener('click', closeContextMenu)
-    window.removeEventListener('click', closeMenu)
     window.removeEventListener('keydown', handleKeydown)
     window.removeEventListener('dragenter', onWindowDragEnter)
     window.removeEventListener('dragleave', onWindowDragLeave)
@@ -1830,12 +1807,6 @@ const shareLinks = ref<ShareLink[]>([])
 // Collaborators Modal State
 const showCollaboratorsModal = ref(false)
 const collaboratorsList = ref<any[]>([])
-
-// More Actions Menu State
-const showMenu = ref(false)
-const closeMenu = () => {
-    showMenu.value = false
-}
 const loadingCollaborators = ref(false)
 const addingCollaborator = ref(false)
 const newCollaboratorEmail = ref('')
