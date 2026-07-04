@@ -356,7 +356,8 @@
     <div v-if="showPhotographersModal"
         class="fixed inset-0 flex items-center justify-center p-4 z-50"
         style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
-        @click.self="showPhotographersModal = false">
+        @mousedown="handleBackdropMousedown"
+        @mouseup="handleBackdropMouseup($event, () => showPhotographersModal = false)">
         <div class="rounded-2xl p-6 max-w-md w-full"
             style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
             <div class="flex justify-between items-center mb-5">
@@ -407,7 +408,8 @@
     <div v-if="showEditPhotoModal"
         class="fixed inset-0 flex items-center justify-center p-4 z-50"
         style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
-        @click.self="showEditPhotoModal = false">
+        @mousedown="handleBackdropMousedown"
+        @mouseup="handleBackdropMouseup($event, () => showEditPhotoModal = false)">
         <div class="rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
             style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
             <h3 class="text-xl font-bold mb-4" style="color: var(--text-1);">Edit Photo Info</h3>
@@ -506,7 +508,8 @@
     <div v-if="showAdjustTimeModal"
         class="fixed inset-0 flex items-center justify-center p-4 z-50"
         style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
-        @click.self="showAdjustTimeModal = false">
+        @mousedown="handleBackdropMousedown"
+        @mouseup="handleBackdropMouseup($event, () => showAdjustTimeModal = false)">
         <div class="rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
             style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
             <h3 class="text-xl font-bold mb-2" style="color: var(--text-1);">Adjust Camera Timestamps</h3>
@@ -703,7 +706,8 @@
     <div v-if="showCropModal"
         class="fixed inset-0 flex items-start justify-center p-4 z-50 overflow-y-auto"
         style="background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);"
-        @click.self="cancelCrop">
+        @mousedown="handleBackdropMousedown"
+        @mouseup="handleBackdropMouseup($event, () => cancelCrop())">
         <div class="rounded-2xl w-full max-w-3xl my-8 overflow-hidden"
             style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
 
@@ -785,7 +789,8 @@
     <div v-if="showEditModal"
         class="fixed inset-0 flex items-center justify-center p-4 z-50"
         style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
-        @click.self="showEditModal = false; applyTheme(album?.themePreset, album?.customTheme)">
+        @mousedown="handleBackdropMousedown"
+        @mouseup="handleBackdropMouseup($event, () => { showEditModal = false; applyTheme(album?.themePreset, album?.customTheme) })">
         <div class="rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
             style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
             <h3 class="text-xl font-bold mb-4" style="color: var(--text-1);">Edit Album</h3>
@@ -992,7 +997,8 @@
     <div v-if="showShareModal"
         class="fixed inset-0 flex items-center justify-center p-4 z-50"
         style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
-        @click.self="showShareModal = false">
+        @mousedown="handleBackdropMousedown"
+        @mouseup="handleBackdropMouseup($event, () => showShareModal = false)">
         <div class="rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
             <div class="flex justify-between items-center mb-6">
@@ -1161,7 +1167,8 @@
             <Transition name="fade">
                 <div v-if="qrLinkId" class="fixed inset-0 z-[60] flex items-center justify-center p-4"
                     style="background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);"
-                    @click.self="closeQr">
+                    @mousedown="handleBackdropMousedown"
+                    @mouseup="handleBackdropMouseup($event, () => closeQr())">
                     <div class="rounded-2xl p-6 flex flex-col items-center gap-4 max-w-xs w-full"
                         style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                         <div class="w-full flex justify-between items-center">
@@ -1192,7 +1199,8 @@
         <div v-if="showCollaboratorsModal"
             class="fixed inset-0 flex items-center justify-center p-4 z-50"
             style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
-            @click.self="showCollaboratorsModal = false">
+            @mousedown="handleBackdropMousedown"
+            @mouseup="handleBackdropMouseup($event, () => showCollaboratorsModal = false)">
             <div class="rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="flex justify-between items-center mb-6">
@@ -2406,6 +2414,20 @@ const handleUpdatePhoto = async () => {
 const toLocalISOString = (date: Date) => {
     const tzOffset = date.getTimezoneOffset() * 60000
     return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16)
+}
+
+// Backdrop Click-to-Dismiss handlers (prevent closing when clicking inside and dragging out)
+let mousedownTarget: EventTarget | null = null
+
+const handleBackdropMousedown = (e: MouseEvent) => {
+    mousedownTarget = e.target
+}
+
+const handleBackdropMouseup = (e: MouseEvent, closeFn: () => void) => {
+    if (mousedownTarget === e.currentTarget && e.target === e.currentTarget) {
+        closeFn()
+    }
+    mousedownTarget = null
 }
 
 const openAdjustTimeModal = () => {
