@@ -1389,6 +1389,17 @@ interface Album {
         total: number
         hasMore: boolean
     }
+    filtersData?: {
+        cameras: string[]
+        lenses: string[]
+        uploaders: Array<{
+            id: string
+            name: string | null
+            email: string | null
+            instagram: string | null
+            avatar: string | null
+        }>
+    }
 }
 
 interface ShareLink {
@@ -1444,34 +1455,16 @@ const sortBy = ref('dateTaken')
 const sortOrder = ref('desc')
 
 
-// Computed: Get unique cameras from all photos
-const availableCameras = computed(() => {
-    const cameras = photos.value
-        .map(p => p.cameraModel)
-        .filter((c): c is string => c != null && c !== '')
-    return Array.from(new Set(cameras)).sort()
-})
-
-// Computed: Get unique lenses from all photos
-const availableLenses = computed(() => {
-    const lenses = photos.value
-        .map(p => p.lens)
-        .filter((l): l is string => l != null && l !== '')
-    return Array.from(new Set(lenses)).sort()
-})
-
-// Computed: Get unique uploaders from all photos
-const availableUploaders = computed(() => {
-    const uploaderMap = new Map()
-    photos.value.forEach(photo => {
-        if (photo.uploader) {
-            uploaderMap.set(photo.uploader.id, photo.uploader)
-        }
-    })
-    return Array.from(uploaderMap.values()).sort((a, b) =>
-        (a.name || a.email || '').localeCompare(b.name || b.email || '')
-    )
-})
+// Unique filter options (album-wide, loaded from server)
+const availableCameras = ref<string[]>([])
+const availableLenses = ref<string[]>([])
+const availableUploaders = ref<Array<{
+    id: string
+    name: string | null
+    email: string | null
+    instagram?: string | null
+    avatar?: string | null
+}>>([])
 
 const applyFilters = async () => {
     page.value = 1
@@ -2064,6 +2057,12 @@ const fetchAlbum = async () => {
 
         if (response.data.pagination) {
             hasMore.value = response.data.pagination.hasMore
+        }
+
+        if (response.data.filtersData) {
+            availableCameras.value = response.data.filtersData.cameras || []
+            availableLenses.value = response.data.filtersData.lenses || []
+            availableUploaders.value = response.data.filtersData.uploaders || []
         }
 
         // Populate edit form

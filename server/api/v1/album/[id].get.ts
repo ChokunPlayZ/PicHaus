@@ -98,7 +98,7 @@ export default defineEventHandler(async (event) => {
             photographer ? eq(photos.uploaderId, photographer) : undefined,
         )
 
-        const [photoRows, [{ total }], uploaders] = await Promise.all([
+        const [photoRows, [{ total }], uploaderRows, cameraRows, lensRows] = await Promise.all([
             db.select({
                 id: photos.id,
                 filename: photos.filename,
@@ -128,16 +128,29 @@ export default defineEventHandler(async (event) => {
                 .limit(limit)
                 .offset(skip),
             db.select({ total: sql<number>`COUNT(*)` }).from(photos).where(photoWhere),
-            db.select({ uploaderId: photos.uploaderId })
+            db.select({
+                id: users.id,
+                name: users.name,
+                email: users.email,
+                instagram: users.instagram,
+                avatarPath: users.avatarPath,
+            })
                 .from(photos)
-                .where(and(eq(photos.albumId, id), sql`${photos.uploaderId} IS NOT NULL`))
-                .groupBy(photos.uploaderId),
+                .innerJoin(users, eq(photos.uploaderId, users.id))
+                .where(eq(photos.albumId, id))
+                .groupBy(users.id),
+            db.select({ camera: photos.cameraModel })
+                .from(photos)
+                .where(and(eq(photos.albumId, id), sql`${photos.cameraModel} IS NOT NULL AND ${photos.cameraModel} != ''`))
+                .groupBy(photos.cameraModel),
+            db.select({ lens: photos.lens })
+                .from(photos)
+                .where(and(eq(photos.albumId, id), sql`${photos.lens} IS NOT NULL AND ${photos.lens} != ''`))
+                .groupBy(photos.lens),
         ])
 
         const uploaderIds = new Set(
-            uploaders
-                .map(u => u.uploaderId)
-                .filter((uid): uid is string => !!uid)
+            uploaderRows.map(u => u.id)
         )
 
         const mappedPhotos = photoRows.map(photo => ({
@@ -213,6 +226,17 @@ export default defineEventHandler(async (event) => {
                     canUpload: isOwner || (isCollaborator && ['admin', 'editor'].includes(collaborator.role)),
                 },
                 pagination: { page, limit, total: totalPhotos, hasMore: skip + photoRows.length < totalPhotos },
+                filtersData: {
+                    cameras: cameraRows.map(c => c.camera).filter((c): c is string => !!c).sort(),
+                    lenses: lensRows.map(l => l.lens).filter((l): l is string => !!l).sort(),
+                    uploaders: uploaderRows.map(u => ({
+                        id: u.id,
+                        name: u.name,
+                        email: u.email,
+                        instagram: u.instagram,
+                        avatar: u.avatarPath ? `/api/assets/avatar/${u.id}` : null,
+                    })).sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || '')),
+                },
             },
         }
     } catch (error: any) {
