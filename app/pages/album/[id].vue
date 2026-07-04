@@ -509,83 +509,172 @@
         @click.self="showAdjustTimeModal = false">
         <div class="rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
             style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
-            <h3 class="text-xl font-bold mb-2" style="color: var(--text-1);">Adjust Camera Timestamp Drift</h3>
+            <h3 class="text-xl font-bold mb-2" style="color: var(--text-1);">Adjust Camera Timestamps</h3>
             <p class="text-xs mb-4" style="color: var(--text-3);">
-                Shift the "Date Taken" timestamp of the selected {{ selectedPhotoIds.size }} photos by a specific offset.
+                Update metadata for the selected {{ selectedPhotoIds.size }} photos.
             </p>
 
             <form @submit.prevent="handleAdjustTime" class="space-y-4">
-                <!-- Direction toggle -->
+                <!-- Mode Toggle Tabs -->
                 <div>
-                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Adjustment Direction</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" @click="adjustTimeForm.direction = 'add'"
-                            class="py-2 px-3 text-sm rounded-xl font-medium transition flex items-center justify-center gap-1.5 border"
-                            :style="adjustTimeForm.direction === 'add'
-                                ? 'background: var(--accent); color: var(--accent-text); border-color: var(--accent);'
-                                : 'background: var(--surface-2); color: var(--text-1); border-color: var(--separator);'">
-                            <Icon name="lucide:plus" class="w-4 h-4" />
-                            Add Time
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Adjustment Mode</label>
+                    <div class="grid grid-cols-2 gap-1 p-1 rounded-xl" style="background: var(--surface-2); border: 1px solid var(--separator);">
+                        <button type="button" @click="adjustTimeForm.mode = 'offset'"
+                            class="py-1.5 px-3 text-xs rounded-lg font-medium transition"
+                            :style="adjustTimeForm.mode === 'offset'
+                                ? 'background: var(--surface-1); color: var(--text-1); box-shadow: var(--shadow-sm);'
+                                : 'color: var(--text-2);'">
+                            Constant Offset
                         </button>
-                        <button type="button" @click="adjustTimeForm.direction = 'subtract'"
-                            class="py-2 px-3 text-sm rounded-xl font-medium transition flex items-center justify-center gap-1.5 border"
-                            :style="adjustTimeForm.direction === 'subtract'
-                                ? 'background: var(--accent); color: var(--accent-text); border-color: var(--accent);'
-                                : 'background: var(--surface-2); color: var(--text-1); border-color: var(--separator);'">
-                            <Icon name="lucide:minus" class="w-4 h-4" />
-                            Subtract Time
+                        <button type="button" @click="adjustTimeForm.mode = 'sequence'"
+                            class="py-1.5 px-3 text-xs rounded-lg font-medium transition"
+                            :style="adjustTimeForm.mode === 'sequence'
+                                ? 'background: var(--surface-1); color: var(--text-1); box-shadow: var(--shadow-sm);'
+                                : 'color: var(--text-2);'">
+                            Sequence (Broken RTC)
                         </button>
                     </div>
                 </div>
 
-                <!-- Offset inputs grid -->
-                <div class="grid grid-cols-4 gap-2">
+                <!-- MODE 1: OFFSET -->
+                <template v-if="adjustTimeForm.mode === 'offset'">
+                    <!-- Direction toggle -->
                     <div>
-                        <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Days</label>
-                        <input v-model.number="adjustTimeForm.days" type="number" min="0" placeholder="0"
-                            class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
-                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
-                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+                        <label class="block text-xs font-semibold mb-1.5" style="color: var(--text-3);">Adjustment Direction</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" @click="adjustTimeForm.direction = 'add'"
+                                class="py-2 px-3 text-xs rounded-xl font-semibold transition flex items-center justify-center gap-1.5 border"
+                                :style="adjustTimeForm.direction === 'add'
+                                    ? 'background: var(--accent); color: var(--accent-text); border-color: var(--accent);'
+                                    : 'background: var(--surface-2); color: var(--text-1); border-color: var(--separator);'">
+                                <Icon name="lucide:plus" class="w-4 h-4" />
+                                Add Time
+                            </button>
+                            <button type="button" @click="adjustTimeForm.direction = 'subtract'"
+                                class="py-2 px-3 text-xs rounded-xl font-semibold transition flex items-center justify-center gap-1.5 border"
+                                :style="adjustTimeForm.direction === 'subtract'
+                                    ? 'background: var(--accent); color: var(--accent-text); border-color: var(--accent);'
+                                    : 'background: var(--surface-2); color: var(--text-1); border-color: var(--separator);'">
+                                <Icon name="lucide:minus" class="w-4 h-4" />
+                                Subtract Time
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Hours</label>
-                        <input v-model.number="adjustTimeForm.hours" type="number" min="0" placeholder="0"
-                            class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
-                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
-                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Mins</label>
-                        <input v-model.number="adjustTimeForm.minutes" type="number" min="0" placeholder="0"
-                            class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
-                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
-                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Secs</label>
-                        <input v-model.number="adjustTimeForm.seconds" type="number" min="0" placeholder="0"
-                            class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
-                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
-                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
-                    </div>
-                </div>
 
-                <!-- Preview Area -->
-                <div class="rounded-xl p-3.5 space-y-1.5 text-xs border" style="background: var(--surface-2); border-color: var(--separator);">
-                    <div class="font-semibold uppercase tracking-wider mb-1" style="color: var(--text-3);">Timestamp Preview</div>
-                    <div class="flex justify-between" style="color: var(--text-2);">
-                        <span>Original:</span>
-                        <span class="font-mono text-right">{{ formatUnixDate(firstSelectedPhoto?.dateTaken || firstSelectedPhoto?.createdAt) }}</span>
+                    <!-- Offset inputs grid -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Days</label>
+                            <input v-model.number="adjustTimeForm.days" type="number" min="0" placeholder="0"
+                                class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Hours</label>
+                            <input v-model.number="adjustTimeForm.hours" type="number" min="0" placeholder="0"
+                                class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Mins</label>
+                            <input v-model.number="adjustTimeForm.minutes" type="number" min="0" placeholder="0"
+                                class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Secs</label>
+                            <input v-model.number="adjustTimeForm.seconds" type="number" min="0" placeholder="0"
+                                class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+                        </div>
                     </div>
-                    <div class="flex justify-between font-bold" style="color: var(--text-1);">
-                        <span>Adjusted:</span>
-                        <span class="font-mono text-right text-[var(--accent)]">{{ previewAdjustedDate }}</span>
+
+                    <!-- Offset Preview Area -->
+                    <div class="rounded-xl p-3.5 space-y-1.5 text-xs border" style="background: var(--surface-2); border-color: var(--separator);">
+                        <div class="font-semibold uppercase tracking-wider mb-1" style="color: var(--text-3);">Timestamp Preview</div>
+                        <div class="flex justify-between" style="color: var(--text-2);">
+                            <span>Original:</span>
+                            <span class="font-mono text-right">{{ formatUnixDate(firstSelectedPhoto?.dateTaken || firstSelectedPhoto?.createdAt) }}</span>
+                        </div>
+                        <div class="flex justify-between font-bold" style="color: var(--text-1);">
+                            <span>Adjusted:</span>
+                            <span class="font-mono text-right text-[var(--accent)]">{{ previewAdjustedDate }}</span>
+                        </div>
                     </div>
-                </div>
+                </template>
+
+                <!-- MODE 2: SEQUENCE -->
+                <template v-else>
+                    <!-- Starting time picker -->
+                    <div>
+                        <label class="block text-xs font-semibold mb-1.5" style="color: var(--text-3);">Starting Date & Time</label>
+                        <input v-model="adjustTimeForm.sequenceStart" type="datetime-local"
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+                    </div>
+
+                    <!-- Interval selection -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold mb-1.5" style="color: var(--text-3);">Interval Step</label>
+                            <input v-model.number="adjustTimeForm.sequenceIntervalValue" type="number" min="1"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold mb-1.5" style="color: var(--text-3);">Interval Unit</label>
+                            <select v-model="adjustTimeForm.sequenceIntervalUnit"
+                                class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                                @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'">
+                                <option value="1">Seconds</option>
+                                <option value="60">Minutes</option>
+                                <option value="3600">Hours</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Sequence ordering -->
+                    <div>
+                        <label class="block text-xs font-semibold mb-1.5" style="color: var(--text-3);">Apply Chronologically</label>
+                        <select v-model="adjustTimeForm.sequenceSortBy"
+                            class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'">
+                            <option value="filename">By Original Filename (Recommended)</option>
+                            <option value="current">By Current Sorted View Order</option>
+                        </select>
+                        <p class="text-[10px] mt-1" style="color: var(--text-3);">
+                            Since filenames like DSC_0001, DSC_0002 are usually numbered sequentially by the camera, sorting by filename fixes broken RTCs perfectly.
+                        </p>
+                    </div>
+
+                    <!-- Sequence Previews -->
+                    <div class="rounded-xl p-3.5 space-y-2 text-xs border" style="background: var(--surface-2); border-color: var(--separator);">
+                        <div class="font-semibold uppercase tracking-wider mb-1" style="color: var(--text-3);">Sequence Preview</div>
+                        <div v-for="(prev, idx) in sequencePreviews" :key="`prev-${idx}`" class="flex justify-between gap-2">
+                            <span class="truncate font-medium" style="color: var(--text-2);">{{ prev.name }}</span>
+                            <span class="font-mono text-right shrink-0" style="color: var(--text-1);">{{ prev.time }}</span>
+                        </div>
+                        <div v-if="selectedPhotoIds.size > 3" class="text-center pt-1.5 border-t border-dashed" style="border-color: var(--separator); color: var(--text-3);">
+                            and {{ selectedPhotoIds.size - 3 }} more photos...
+                        </div>
+                    </div>
+                </template>
 
                 <div v-if="adjustTimeError" class="rounded-xl px-4 py-3 text-sm"
                     style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
@@ -1630,11 +1719,16 @@ const showAdjustTimeModal = ref(false)
 const adjustingTime = ref(false)
 const adjustTimeError = ref('')
 const adjustTimeForm = ref({
-    direction: 'add',
+    mode: 'offset' as 'offset' | 'sequence',
+    direction: 'add' as 'add' | 'subtract',
     days: 0,
     hours: 0,
     minutes: 0,
-    seconds: 0
+    seconds: 0,
+    sequenceStart: '',
+    sequenceIntervalValue: 1,
+    sequenceIntervalUnit: '60',
+    sequenceSortBy: 'filename' as 'filename' | 'current'
 })
 
 const rotatingPhotos = ref(false)
@@ -2309,14 +2403,27 @@ const handleUpdatePhoto = async () => {
     }
 }
 
+const toLocalISOString = (date: Date) => {
+    const tzOffset = date.getTimezoneOffset() * 60000
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16)
+}
+
 const openAdjustTimeModal = () => {
     if (selectedPhotoIds.value.size === 0) return
+    const firstPhoto = firstSelectedPhoto.value
+    const baseTime = firstPhoto ? (firstPhoto.dateTaken || firstPhoto.createdAt) : Math.floor(Date.now() / 1000)
+
     adjustTimeForm.value = {
+        mode: 'offset',
         direction: 'add',
         days: 0,
         hours: 0,
         minutes: 0,
-        seconds: 0
+        seconds: 0,
+        sequenceStart: toLocalISOString(new Date(baseTime * 1000)),
+        sequenceIntervalValue: 1,
+        sequenceIntervalUnit: '60',
+        sequenceSortBy: 'filename'
     }
     adjustTimeError.value = ''
     showAdjustTimeModal.value = true
@@ -2358,21 +2465,82 @@ const previewAdjustedDate = computed(() => {
     return formatUnixDate(newVal)
 })
 
+const orderedSelectedPhotos = computed(() => {
+    if (selectedPhotoIds.value.size === 0) return []
+    const selectedList = photos.value.filter(p => selectedPhotoIds.value.has(p.id))
+    const sortBy = adjustTimeForm.value.sequenceSortBy
+
+    if (sortBy === 'filename') {
+        return [...selectedList].sort((a, b) => {
+            const nameA = a.originalName || a.filename || ''
+            const nameB = b.originalName || b.filename || ''
+            return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' })
+        })
+    }
+
+    return selectedList
+})
+
+const sequenceIntervalSeconds = computed(() => {
+    const val = Number(adjustTimeForm.value.sequenceIntervalValue) || 1
+    const unit = Number(adjustTimeForm.value.sequenceIntervalUnit) || 60
+    return val * unit
+})
+
+const sequenceStartUnix = computed(() => {
+    if (!adjustTimeForm.value.sequenceStart) return 0
+    return Math.floor(new Date(adjustTimeForm.value.sequenceStart).getTime() / 1000)
+})
+
+const sequencePreviews = computed(() => {
+    const list = orderedSelectedPhotos.value
+    const start = sequenceStartUnix.value
+    const step = sequenceIntervalSeconds.value
+    if (list.length === 0 || !start) return []
+
+    return list.slice(0, 3).map((photo, i) => {
+        const time = start + i * step
+        return {
+            name: photo.originalName || photo.filename,
+            time: formatUnixDate(time)
+        }
+    })
+})
+
 const handleAdjustTime = async () => {
     if (selectedPhotoIds.value.size === 0) return
     adjustingTime.value = true
     adjustTimeError.value = ''
 
     try {
-        const offset = totalOffsetSeconds.value
-        const photoIds = Array.from(selectedPhotoIds.value)
+        const mode = adjustTimeForm.value.mode
+        let body: Record<string, any> = {}
 
-        const response = await $fetch<{ success: boolean; message: string; data: { updatedPhotos: Array<{ id: string; dateTaken: number; updatedAt: number }> } }>('/api/v1/photos/adjust-date', {
-            method: 'POST',
-            body: {
+        if (mode === 'sequence') {
+            const photoIds = orderedSelectedPhotos.value.map(p => p.id)
+            const startTime = sequenceStartUnix.value
+            const interval = sequenceIntervalSeconds.value
+
+            body = {
+                mode: 'sequence',
+                photoIds,
+                startTime,
+                interval
+            }
+        } else {
+            const offset = totalOffsetSeconds.value
+            const photoIds = Array.from(selectedPhotoIds.value)
+
+            body = {
+                mode: 'offset',
                 photoIds,
                 offset
             }
+        }
+
+        const response = await $fetch<{ success: boolean; message: string; data: { updatedPhotos: Array<{ id: string; dateTaken: number; updatedAt: number }> } }>('/api/v1/photos/adjust-date', {
+            method: 'POST',
+            body
         })
 
         // Update local state for all adjusted photos
