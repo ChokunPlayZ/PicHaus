@@ -184,54 +184,75 @@
 
             <!-- Filters Section -->
             <div class="mb-6 rounded-xl p-3" style="background: var(--surface-1); border: 1px solid var(--separator);">
-                <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-xs font-semibold mr-1" style="color: var(--text-3);">Filter:</span>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-semibold mr-1" style="color: var(--text-3);">Filter:</span>
 
-                    <select v-model="filters.camera" @change="applyFilters"
-                        class="px-3 py-2 text-sm rounded-xl"
-                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
-                        <option value="">All Cameras</option>
-                        <option v-for="camera in availableCameras" :key="camera" :value="camera">{{ camera }}</option>
-                    </select>
+                        <select v-model="filters.camera" @change="applyFilters"
+                            class="px-3 py-2 text-sm rounded-xl"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
+                            <option value="">All Cameras</option>
+                            <option v-for="camera in availableCameras" :key="camera" :value="camera">{{ camera }}</option>
+                        </select>
 
-                    <select v-model="filters.lens" @change="applyFilters"
-                        class="px-3 py-2 text-sm rounded-xl"
-                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
-                        <option value="">All Lenses</option>
-                        <option v-for="lens in availableLenses" :key="lens" :value="lens">{{ lens }}</option>
-                    </select>
+                        <select v-model="filters.lens" @change="applyFilters"
+                            class="px-3 py-2 text-sm rounded-xl"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
+                            <option value="">All Lenses</option>
+                            <option v-for="lens in availableLenses" :key="lens" :value="lens">{{ lens }}</option>
+                        </select>
 
-                    <select v-model="filters.photographer" @change="applyFilters"
-                        class="px-3 py-2 text-sm rounded-xl"
-                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
-                        <option value="">All Photographers</option>
-                        <option v-for="uploader in availableUploaders" :key="uploader.id" :value="uploader.id">
-                            {{ uploader.name || uploader.email }}
-                        </option>
-                    </select>
+                        <select v-model="filters.photographer" @change="applyFilters"
+                            class="px-3 py-2 text-sm rounded-xl"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
+                            <option value="">All Photographers</option>
+                            <option v-for="uploader in availableUploaders" :key="uploader.id" :value="uploader.id">
+                                {{ uploader.name || uploader.email }}
+                            </option>
+                        </select>
 
-                    <button v-if="filters.camera || filters.lens || filters.photographer" @click="clearFilters"
-                        class="px-3 py-2 rounded-xl text-sm transition"
-                        style="background: var(--surface-3); color: var(--text-2);">
-                        Clear Filters
-                    </button>
+                        <button v-if="filters.camera || filters.lens || filters.photographer" @click="clearFilters"
+                            class="px-3 py-2 rounded-xl text-sm transition"
+                            style="background: var(--surface-3); color: var(--text-2);">
+                            Clear Filters
+                        </button>
 
-                    <div class="h-4 w-px mx-1 hidden sm:block" style="background: var(--separator);"></div>
-                    <span class="text-xs font-semibold mr-1" style="color: var(--text-3);">Sort:</span>
+                        <div class="h-4 w-px mx-1 hidden sm:block" style="background: var(--separator);"></div>
+                        <span class="text-xs font-semibold mr-1" style="color: var(--text-3);">Sort:</span>
 
-                    <select v-model="sortBy" @change="applyFilters"
-                        class="px-3 py-2 text-sm rounded-xl"
-                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
-                        <option value="dateTaken">Date Taken</option>
-                        <option value="createdAt">Upload Date</option>
-                    </select>
+                        <select v-model="sortBy" @change="applyFilters"
+                            class="px-3 py-2 text-sm rounded-xl"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
+                            <option value="dateTaken">Date Taken</option>
+                            <option value="createdAt">Upload Date</option>
+                        </select>
 
-                    <select v-model="sortOrder" @change="applyFilters"
-                        class="px-3 py-2 text-sm rounded-xl"
-                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
-                        <option value="desc">Newest First</option>
-                        <option value="asc">Oldest First</option>
-                    </select>
+                        <select v-model="sortOrder" @change="applyFilters"
+                            class="px-3 py-2 text-sm rounded-xl"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
+                            <option value="desc">Newest First</option>
+                            <option value="asc">Oldest First</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-2 ml-auto lg:ml-0">
+                        <button v-if="hasMore" @click="loadAllPhotos" :disabled="loadingPhotos"
+                            class="px-3 py-2 rounded-xl text-sm transition flex items-center gap-1.5 font-medium whitespace-nowrap"
+                            style="background: var(--accent); color: var(--accent-text);"
+                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
+                            <Icon name="lucide:layers" class="h-4 w-4" />
+                            <span>{{ loadingPhotos ? 'Loading…' : 'Load All Pictures' }}</span>
+                        </button>
+                        <button v-else-if="photos.length > 0" @click="selectAll"
+                            class="px-3 py-2 rounded-xl text-sm transition flex items-center gap-1.5 font-medium whitespace-nowrap"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1);"
+                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                            <Icon name="lucide:check-square" class="h-4 w-4" />
+                            <span>Select All</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -290,6 +311,13 @@
                         class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--text-1);">
                         <Icon name="lucide:square-pen" class="h-4 w-4" :stroke-width="2" />
                         Edit Info
+                    </button>
+
+                    <!-- Adjust Time Button -->
+                    <button @click="openAdjustTimeModal"
+                        class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--text-1);">
+                        <Icon name="lucide:calendar-clock" class="h-4 w-4" :stroke-width="2" />
+                        Adjust Time
                     </button>
 
                     <button @click="deleteSelected"
@@ -454,6 +482,114 @@
                         @mouseover="!updatingPhoto && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         {{ updatingPhoto ? 'Updating…' : 'Update' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Adjust Time Modal -->
+    <div v-if="showAdjustTimeModal"
+        class="fixed inset-0 flex items-center justify-center p-4 z-50"
+        style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
+        @click.self="showAdjustTimeModal = false">
+        <div class="rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
+            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+            <h3 class="text-xl font-bold mb-2" style="color: var(--text-1);">Adjust Camera Timestamp Drift</h3>
+            <p class="text-xs mb-4" style="color: var(--text-3);">
+                Shift the "Date Taken" timestamp of the selected {{ selectedPhotoIds.size }} photos by a specific offset.
+            </p>
+
+            <form @submit.prevent="handleAdjustTime" class="space-y-4">
+                <!-- Direction toggle -->
+                <div>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Adjustment Direction</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" @click="adjustTimeForm.direction = 'add'"
+                            class="py-2 px-3 text-sm rounded-xl font-medium transition flex items-center justify-center gap-1.5 border"
+                            :style="adjustTimeForm.direction === 'add'
+                                ? 'background: var(--accent); color: var(--accent-text); border-color: var(--accent);'
+                                : 'background: var(--surface-2); color: var(--text-1); border-color: var(--separator);'">
+                            <Icon name="lucide:plus" class="w-4 h-4" />
+                            Add Time
+                        </button>
+                        <button type="button" @click="adjustTimeForm.direction = 'subtract'"
+                            class="py-2 px-3 text-sm rounded-xl font-medium transition flex items-center justify-center gap-1.5 border"
+                            :style="adjustTimeForm.direction === 'subtract'
+                                ? 'background: var(--accent); color: var(--accent-text); border-color: var(--accent);'
+                                : 'background: var(--surface-2); color: var(--text-1); border-color: var(--separator);'">
+                            <Icon name="lucide:minus" class="w-4 h-4" />
+                            Subtract Time
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Offset inputs grid -->
+                <div class="grid grid-cols-4 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Days</label>
+                        <input v-model.number="adjustTimeForm.days" type="number" min="0" placeholder="0"
+                            class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Hours</label>
+                        <input v-model.number="adjustTimeForm.hours" type="number" min="0" placeholder="0"
+                            class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Mins</label>
+                        <input v-model.number="adjustTimeForm.minutes" type="number" min="0" placeholder="0"
+                            class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-center mb-1" style="color: var(--text-3);">Secs</label>
+                        <input v-model.number="adjustTimeForm.seconds" type="number" min="0" placeholder="0"
+                            class="w-full text-center px-2 py-2 text-sm rounded-xl transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                            @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+                    </div>
+                </div>
+
+                <!-- Preview Area -->
+                <div class="rounded-xl p-3.5 space-y-1.5 text-xs border" style="background: var(--surface-2); border-color: var(--separator);">
+                    <div class="font-semibold uppercase tracking-wider mb-1" style="color: var(--text-3);">Timestamp Preview</div>
+                    <div class="flex justify-between" style="color: var(--text-2);">
+                        <span>Original:</span>
+                        <span class="font-mono text-right">{{ formatUnixDate(firstSelectedPhoto?.dateTaken || firstSelectedPhoto?.createdAt) }}</span>
+                    </div>
+                    <div class="flex justify-between font-bold" style="color: var(--text-1);">
+                        <span>Adjusted:</span>
+                        <span class="font-mono text-right text-[var(--accent)]">{{ previewAdjustedDate }}</span>
+                    </div>
+                </div>
+
+                <div v-if="adjustTimeError" class="rounded-xl px-4 py-3 text-sm"
+                    style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                    {{ adjustTimeError }}
+                </div>
+
+                <div class="flex gap-3 mt-4">
+                    <button type="button" @click="showAdjustTimeModal = false"
+                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
+                        Cancel
+                    </button>
+                    <button type="submit" :disabled="adjustingTime"
+                        class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
+                        style="background: var(--accent); color: var(--accent-text);"
+                        @mouseover="!adjustingTime && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
+                        {{ adjustingTime ? 'Adjusting…' : 'Apply Adjustment' }}
                     </button>
                 </div>
             </form>
@@ -1483,6 +1619,17 @@ const editPhotoForm = ref({
 const updatingPhoto = ref(false)
 const editPhotoError = ref('')
 
+const showAdjustTimeModal = ref(false)
+const adjustingTime = ref(false)
+const adjustTimeError = ref('')
+const adjustTimeForm = ref({
+    direction: 'add',
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+})
+
 const showCropModal = ref(false)
 const photoCropImage = ref<Photo | null>(null)
 const cropCanvasRef = ref<HTMLCanvasElement | null>(null)
@@ -1984,6 +2131,42 @@ const loadMorePhotos = async () => {
     }
 }
 
+const loadAllPhotos = async () => {
+    if (loadingPhotos.value) return
+    loadingPhotos.value = true
+    try {
+        const params: Record<string, string> = {
+            page: '1',
+            limit: '100000',
+            sort: sortBy.value,
+            order: sortOrder.value,
+            all: 'true'
+        }
+
+        if (filters.value.camera) params.camera = filters.value.camera
+        if (filters.value.lens) params.lens = filters.value.lens
+        if (filters.value.photographer) params.photographer = filters.value.photographer
+
+        const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/album/${albumId}`, {
+            params
+        })
+
+        if (response.data.photos) {
+            photos.value = response.data.photos
+        }
+
+        if (response.data.pagination) {
+            hasMore.value = response.data.pagination.hasMore
+        } else {
+            hasMore.value = false
+        }
+    } catch (err) {
+        console.error('Failed to load all photos:', err)
+    } finally {
+        loadingPhotos.value = false
+    }
+}
+
 // Infinite scroll observer
 let infiniteScrollObserver: IntersectionObserver | null = null
 
@@ -2102,6 +2285,95 @@ const handleUpdatePhoto = async () => {
         editPhotoError.value = err.data?.statusMessage || 'Failed to update photo'
     } finally {
         updatingPhoto.value = false
+    }
+}
+
+const openAdjustTimeModal = () => {
+    if (selectedPhotoIds.value.size === 0) return
+    adjustTimeForm.value = {
+        direction: 'add',
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0
+    }
+    adjustTimeError.value = ''
+    showAdjustTimeModal.value = true
+}
+
+const totalOffsetSeconds = computed(() => {
+    const mult = adjustTimeForm.value.direction === 'subtract' ? -1 : 1
+    const days = Number(adjustTimeForm.value.days) || 0
+    const hours = Number(adjustTimeForm.value.hours) || 0
+    const minutes = Number(adjustTimeForm.value.minutes) || 0
+    const seconds = Number(adjustTimeForm.value.seconds) || 0
+    return mult * (days * 86400 + hours * 3600 + minutes * 60 + seconds)
+})
+
+const firstSelectedPhoto = computed(() => {
+    if (selectedPhotoIds.value.size === 0) return null
+    const firstId = Array.from(selectedPhotoIds.value)[0]
+    return photos.value.find(p => p.id === firstId) || null
+})
+
+const formatUnixDate = (unix: number | null | undefined) => {
+    if (!unix) return 'N/A'
+    const date = new Date(unix * 1000)
+    const pad = (n: number) => n.toString().padStart(2, '0')
+    const y = date.getFullYear()
+    const m = pad(date.getMonth() + 1)
+    const d = pad(date.getDate())
+    const hh = pad(date.getHours())
+    const mm = pad(date.getMinutes())
+    const ss = pad(date.getSeconds())
+    return `${y}-${m}-${d} ${hh}:${mm}:${ss}`
+}
+
+const previewAdjustedDate = computed(() => {
+    const photo = firstSelectedPhoto.value
+    if (!photo) return 'N/A'
+    const currentVal = photo.dateTaken ? photo.dateTaken : photo.createdAt
+    const newVal = currentVal + totalOffsetSeconds.value
+    return formatUnixDate(newVal)
+})
+
+const handleAdjustTime = async () => {
+    if (selectedPhotoIds.value.size === 0) return
+    adjustingTime.value = true
+    adjustTimeError.value = ''
+
+    try {
+        const offset = totalOffsetSeconds.value
+        const photoIds = Array.from(selectedPhotoIds.value)
+
+        const response = await $fetch<{ success: boolean; message: string; data: { updatedPhotos: Array<{ id: string; dateTaken: number; updatedAt: number }> } }>('/api/v1/photos/adjust-date', {
+            method: 'POST',
+            body: {
+                photoIds,
+                offset
+            }
+        })
+
+        // Update local state for all adjusted photos
+        const updatedMap = new Map(response.data.updatedPhotos.map(p => [p.id, p]))
+        photos.value = photos.value.map(p => {
+            const updated = updatedMap.get(p.id)
+            if (updated) {
+                return {
+                    ...p,
+                    dateTaken: updated.dateTaken,
+                }
+            }
+            return p
+        })
+
+        toast(response.message || 'Timestamps adjusted successfully', 'success')
+        showAdjustTimeModal.value = false
+        clearSelection()
+    } catch (err: any) {
+        adjustTimeError.value = err.data?.statusMessage || 'Failed to adjust timestamps'
+    } finally {
+        adjustingTime.value = false
     }
 }
 

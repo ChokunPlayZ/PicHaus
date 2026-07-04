@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
         const query = getQuery(event)
         const page = Math.max(1, Number(query.page) || 1)
-        const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 100)
+        const limit = query.all === 'true' ? 100000 : Math.min(Math.max(Number(query.limit) || 50, 1), 100)
         const skip = (page - 1) * limit
 
         const sort = typeof query.sort === 'string' ? query.sort : 'dateTaken'
