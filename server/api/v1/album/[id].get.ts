@@ -119,6 +119,7 @@ export default defineEventHandler(async (event) => {
                 uploaderName: users.name,
                 uploaderInstagram: users.instagram,
                 uploaderAvatarPath: users.avatarPath,
+                updatedAt: photos.updatedAt,
             })
                 .from(photos)
                 .leftJoin(users, eq(photos.uploaderId, users.id))
@@ -147,6 +148,7 @@ export default defineEventHandler(async (event) => {
             blurhash: photo.blurhash,
             dateTaken: photo.dateTaken ? Number(photo.dateTaken) : null,
             createdAt: Number(photo.createdAt),
+            updatedAt: Number(photo.updatedAt),
             width: photo.width,
             height: photo.height,
             cameraModel: photo.cameraModel,

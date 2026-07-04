@@ -19,7 +19,7 @@
 
         <!-- Thumbnail -->
         <img
-            :src="buildAssetUrl(`/api/assets/thumb/${photo.id}`)"
+            :src="buildAssetUrl(`/api/assets/thumb/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`)"
             :alt="photo.originalName || photo.id"
             loading="lazy"
             class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
@@ -79,6 +79,8 @@ interface Photo {
     cameraModel?: string | null
     aperture?: string | null
     iso?: number | null
+    createdAt?: number | null
+    updatedAt?: number | null
 }
 
 interface Position {

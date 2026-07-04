@@ -320,6 +320,20 @@
                         Adjust Time
                     </button>
 
+                    <!-- Rotate Left Button -->
+                    <button @click="rotateSelected(-90)" :disabled="rotatingPhotos"
+                        class="flex items-center gap-1.5 text-sm font-medium transition disabled:opacity-50" style="color: var(--text-1);">
+                        <Icon name="lucide:rotate-ccw" class="h-4 w-4" :stroke-width="2" />
+                        Rotate Left
+                    </button>
+
+                    <!-- Rotate Right Button -->
+                    <button @click="rotateSelected(90)" :disabled="rotatingPhotos"
+                        class="flex items-center gap-1.5 text-sm font-medium transition disabled:opacity-50" style="color: var(--text-1);">
+                        <Icon name="lucide:rotate-cw" class="h-4 w-4" :stroke-width="2" />
+                        Rotate Right
+                    </button>
+
                     <button @click="deleteSelected"
                         class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--error-text);">
                         <Icon name="lucide:trash-2" class="h-4 w-4" :stroke-width="2" />
@@ -1630,6 +1644,8 @@ const adjustTimeForm = ref({
     seconds: 0
 })
 
+const rotatingPhotos = ref(false)
+
 const showCropModal = ref(false)
 const photoCropImage = ref<Photo | null>(null)
 const cropCanvasRef = ref<HTMLCanvasElement | null>(null)
@@ -1824,6 +1840,12 @@ const handleKeydown = (e: KeyboardEvent) => {
     }
     // Delete/Backspace to delete selected
     if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPhotoIds.value.size > 0 && canManageSelectedPhotos.value) {
+        const target = e.target as HTMLElement
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+
+        // Prevent deletion when any modal is active
+        if (showEditPhotoModal.value || showAdjustTimeModal.value || showCropModal.value || showShareModal.value || showCollaboratorsModal.value || showEditModal.value) return
+
         deleteSelected()
     }
 }
@@ -2374,6 +2396,45 @@ const handleAdjustTime = async () => {
         adjustTimeError.value = err.data?.statusMessage || 'Failed to adjust timestamps'
     } finally {
         adjustingTime.value = false
+    }
+}
+
+const rotateSelected = async (angle: number) => {
+    if (selectedPhotoIds.value.size === 0 || rotatingPhotos.value) return
+    rotatingPhotos.value = true
+
+    try {
+        const photoIds = Array.from(selectedPhotoIds.value)
+        const response = await $fetch<{ success: boolean; message: string; data: { updatedPhotos: Array<{ id: string; width: number; height: number; blurhash: string; updatedAt: number }> } }>('/api/v1/photos/rotate', {
+            method: 'POST',
+            body: {
+                photoIds,
+                angle
+            }
+        })
+
+        // Update local state for rotated photos
+        const updatedMap = new Map(response.data.updatedPhotos.map(p => [p.id, p]))
+        photos.value = photos.value.map(p => {
+            const updated = updatedMap.get(p.id)
+            if (updated) {
+                return {
+                    ...p,
+                    width: updated.width,
+                    height: updated.height,
+                    blurhash: updated.blurhash,
+                    updatedAt: updated.updatedAt,
+                }
+            }
+            return p
+        })
+
+        toast(response.message || 'Photos rotated successfully', 'success')
+        clearSelection()
+    } catch (err: any) {
+        toast(err.data?.statusMessage || 'Failed to rotate photos', 'error')
+    } finally {
+        rotatingPhotos.value = false
     }
 }
 

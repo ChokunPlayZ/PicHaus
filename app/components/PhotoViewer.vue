@@ -294,6 +294,7 @@ interface Photo {
     blurhash?: string | null
     width?: number | null
     height?: number | null
+    updatedAt?: number | null
 }
 
 const props = withDefaults(defineProps<{
@@ -321,7 +322,7 @@ const cachedImageUrls = new Map<string, string>()
 const pendingImageLoads = new Map<string, Promise<string | null>>()
 const loadedImageSrcByPhotoId = new Map<string, string>()
 
-const fullImageSrc = computed(() => buildAssetUrl(`/api/assets/full/${props.photo.id}`))
+const fullImageSrc = computed(() => buildAssetUrl(`/api/assets/full/${props.photo.id}?t=${props.photo.updatedAt || props.photo.createdAt || ''}`))
 const currentImageSrc = ref(fullImageSrc.value)
 
 const getCachedImageUrl = (photoId: string) => {
