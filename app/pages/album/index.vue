@@ -68,7 +68,27 @@
                     <div class="text-xs" style="color: var(--text-3);">
                         {{ filteredAlbums.length }} of {{ albums.length }} albums
                     </div>
-                    <div class="flex items-center gap-1.5">
+                    <div class="flex items-center flex-wrap gap-2">
+                        <div class="flex items-center gap-1">
+                            <span class="text-xs font-semibold mr-1" style="color: var(--text-3);">Sort:</span>
+                            <select v-model="albumSortBy"
+                                class="px-2 py-1.5 text-xs rounded-lg transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
+                                <option value="createdAt">Date Created</option>
+                                <option value="eventDate">Event Date</option>
+                                <option value="name">Name</option>
+                                <option value="photoCount">Photo Count</option>
+                            </select>
+                            <select v-model="albumSortOrder"
+                                class="px-2 py-1.5 text-xs rounded-lg transition"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
+                                <option value="desc">Newest/Z-A</option>
+                                <option value="asc">Oldest/A-Z</option>
+                            </select>
+                        </div>
+
+                        <div class="h-4 w-px hidden sm:block" style="background: var(--separator);"></div>
+
                         <button @click="albumViewMode = 'grid'"
                             class="px-3 py-1.5 rounded-lg text-xs font-medium transition"
                             :style="albumViewMode === 'grid' ? 'background: var(--accent-light); color: var(--accent);' : 'background: var(--surface-3); color: var(--text-2);'">
@@ -136,7 +156,7 @@
             <!-- Grid view -->
             <div v-else-if="albumViewMode === 'grid'" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 <AlbumCard
-                    v-for="album in filteredAlbums"
+                    v-for="album in sortedAlbums"
                     :key="album.id"
                     :album="album"
                     :photo-count="album._count.photos"
@@ -615,6 +635,8 @@ const searchQuery = ref('')
 const tagQuery = ref('')
 const activeTag = ref('')
 const albumViewMode = ref<'grid' | 'timeline'>('grid')
+const albumSortBy = ref('createdAt')
+const albumSortOrder = ref('desc')
 
 const allTags = computed(() => {
     const tags = albums.value.flatMap(album => album.tags || [])
@@ -659,6 +681,34 @@ const filteredAlbums = computed(() => {
     })
 })
 
+const sortedAlbums = computed(() => {
+    const list = [...filteredAlbums.value]
+    const sortBy = albumSortBy.value
+    const isDesc = albumSortOrder.value === 'desc'
+
+    return list.sort((a, b) => {
+        let compare = 0
+        if (sortBy === 'name') {
+            const nameA = a.name || ''
+            const nameB = b.name || ''
+            compare = nameA.localeCompare(nameB)
+        } else if (sortBy === 'photoCount') {
+            const countA = a._count?.photos || 0
+            const countB = b._count?.photos || 0
+            compare = countA - countB
+        } else if (sortBy === 'eventDate') {
+            const dateA = a.eventDate || a.createdAt || 0
+            const dateB = b.eventDate || b.createdAt || 0
+            compare = dateA - dateB
+        } else { // default to createdAt
+            const dateA = a.createdAt || 0
+            const dateB = b.createdAt || 0
+            compare = dateA - dateB
+        }
+        return isDesc ? -compare : compare
+    })
+})
+
 const timelineGroups = computed(() => {
     const groups = new Map<string, Album[]>()
 
@@ -675,8 +725,15 @@ const timelineGroups = computed(() => {
         groups.get(key)?.push(album)
     })
 
+    const isDesc = albumSortOrder.value === 'desc'
+    const sortBy = albumSortBy.value
+
     return Array.from(groups.entries())
-        .sort((a, b) => b[0].localeCompare(a[0]))
+        .sort((a, b) => {
+            if (a[0] === 'Unknown Date') return isDesc ? 1 : -1
+            if (b[0] === 'Unknown Date') return isDesc ? -1 : 1
+            return isDesc ? b[0].localeCompare(a[0]) : a[0].localeCompare(b[0])
+        })
         .map(([key, groupedAlbums]) => {
             const label = key === 'Unknown Date'
                 ? key
@@ -689,9 +746,25 @@ const timelineGroups = computed(() => {
                 key,
                 label,
                 albums: groupedAlbums.sort((a, b) => {
-                    const aTs = a.eventDate || a.createdAt || a.updatedAt || 0
-                    const bTs = b.eventDate || b.createdAt || b.updatedAt || 0
-                    return bTs - aTs
+                    let compare = 0
+                    if (sortBy === 'name') {
+                        const nameA = a.name || ''
+                        const nameB = b.name || ''
+                        compare = nameA.localeCompare(nameB)
+                    } else if (sortBy === 'photoCount') {
+                        const countA = a._count?.photos || 0
+                        const countB = b._count?.photos || 0
+                        compare = countA - countB
+                    } else if (sortBy === 'eventDate') {
+                        const dateA = a.eventDate || a.createdAt || 0
+                        const dateB = b.eventDate || b.createdAt || 0
+                        compare = dateA - dateB
+                    } else { // default to createdAt
+                        const dateA = a.createdAt || 0
+                        const dateB = b.createdAt || 0
+                        compare = dateA - dateB
+                    }
+                    return isDesc ? -compare : compare
                 })
             }
         })
