@@ -21,6 +21,7 @@ export async function generateThumbnail(
     maxHeight: number = 400
 ): Promise<Buffer> {
     return await sharp(buffer)
+        .rotate()
         .resize(maxWidth, maxHeight, {
             fit: 'inside',
             withoutEnlargement: true,
@@ -33,7 +34,7 @@ export async function generateThumbnail(
  * Generate blurhash from image buffer
  */
 export async function generateBlurhash(buffer: Buffer): Promise<string> {
-    const image = sharp(buffer)
+    const image = sharp(buffer).rotate()
     const { data, info } = await image
         .resize(32, 32, { fit: 'inside' })
         .ensureAlpha()
@@ -79,10 +80,12 @@ export function shouldAutoCompress(
  */
 export async function compressImage(buffer: Buffer, format: string): Promise<Buffer> {
     const MAX_DIMENSION = 4000
-    let pipeline = sharp(buffer).resize(MAX_DIMENSION, MAX_DIMENSION, {
-        fit: 'inside',
-        withoutEnlargement: true,
-    })
+    let pipeline = sharp(buffer)
+        .rotate()
+        .resize(MAX_DIMENSION, MAX_DIMENSION, {
+            fit: 'inside',
+            withoutEnlargement: true,
+        })
 
     if (format === 'png') {
         pipeline = pipeline.png({ quality: 88, compressionLevel: 8 })
@@ -109,8 +112,8 @@ export async function extractExifData(buffer: Buffer): Promise<{
     software?: string
 }> {
     try {
-        // Get dimensions from sharp
-        const metadata = await sharp(buffer).metadata()
+        // Get dimensions from sharp (auto-rotated to match baked pixels)
+        const metadata = await sharp(buffer).rotate().metadata()
 
         const exif = await exifr.parse(buffer, {
             pick: ['Make', 'Model', 'LensModel', 'FocalLength', 'ISO', 'FNumber', 'ExposureTime', 'DateTimeOriginal', 'Software'],
