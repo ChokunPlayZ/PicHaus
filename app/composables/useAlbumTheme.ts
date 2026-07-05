@@ -107,8 +107,10 @@ export const useAlbumTheme = () => {
         // No theme set — remove all overrides so variables.css defaults take over
         if (!preset) {
             THEMED_PROPS.forEach(p => root.style.removeProperty(p))
+            root.classList.remove('themed-album')
             return
         }
+        root.classList.add('themed-album')
 
         let bgStart: string, bgEnd: string, btnStart: string, btnEnd: string,
             hoverStart: string, hoverEnd: string, accentText: string
@@ -178,6 +180,7 @@ export const useAlbumTheme = () => {
     const resetTheme = () => {
         if (import.meta.server) return
         THEMED_PROPS.forEach(p => document.documentElement.style.removeProperty(p))
+        document.documentElement.classList.remove('themed-album')
     }
 
     return { applyTheme, resetTheme, ALBUM_THEMES }

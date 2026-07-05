@@ -200,9 +200,9 @@
         <!-- Photographers Modal -->
         <div v-if="showPhotographersModal"
             class="fixed inset-0 flex items-center justify-center p-4 z-50"
-            style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
+            style="background: rgba(0,0,0,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"
             @click.self="showPhotographersModal = false">
-            <div class="solid-modal rounded-2xl p-6 max-w-md w-full"
+            <div class="modal-box rounded-2xl p-6 max-w-md w-full"
                 style="border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold" style="color: var(--text-1);">{{ t('photographers') }}</h3>
@@ -1430,20 +1430,33 @@ const nextPhoto = () => {
     transform: translateY(100%);
     opacity: 0;
 }
-.solid-modal {
-    background: #ffffff !important;
+.modal-box {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    --text-1: #1d1d1f;
+    --text-2: #636366;
+    --text-3: #8e8e93;
+    --surface-2: rgba(0, 0, 0, 0.05);
+    --separator: rgba(0, 0, 0, 0.1);
 }
-:global(.dark) .solid-modal {
-    background: #1c1c1e !important;
+:global(.dark) .modal-box,
+:global(.themed-album) .modal-box {
+    background: rgba(28, 28, 30, 0.85);
+    --text-1: #ffffff;
+    --text-2: #aeaeb2;
+    --text-3: #8e8e93;
+    --surface-2: rgba(255, 255, 255, 0.08);
+    --separator: rgba(255, 255, 255, 0.15);
 }
 .role-badge {
-    background: #f2f2f7;
-    border: 1px solid #e5e5ea;
-    color: #636366;
+    background: var(--accent-light);
+    color: var(--accent);
 }
-:global(.dark) .role-badge {
-    background: #2c2c2e;
-    border: 1px solid #3a3a3c;
-    color: #aeaeb2;
+:global(.dark) .role-badge,
+:global(.themed-album) .role-badge {
+    background: var(--accent-light);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--accent);
 }
 </style>
