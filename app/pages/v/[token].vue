@@ -200,16 +200,17 @@
         <!-- Photographers Modal -->
         <div v-if="showPhotographersModal"
             class="fixed inset-0 flex items-center justify-center p-4 z-50"
-            style="background: rgba(0,0,0,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"
-            @click.self="showPhotographersModal = false">
-            <div class="modal-box rounded-2xl p-6 max-w-md w-full"
-                style="border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+            style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);"
+            @mousedown="handleBackdropMousedown"
+            @mouseup="handleBackdropMouseup($event, () => showPhotographersModal = false)">
+            <div class="rounded-2xl p-6 max-w-md w-full"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold" style="color: var(--text-1);">{{ t('photographers') }}</h3>
-                    <button @click="showPhotographersModal = false" class="p-1 rounded-lg transition"
+                    <h3 class="text-xl font-bold" style="color: var(--text-1);">{{ t('photographers') }}</h3>
+                    <button @click="showPhotographersModal = false" class="transition"
                         style="color: var(--text-3);"
-                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
-                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'">
+                        @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
                         <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
                     </button>
                 </div>
@@ -239,7 +240,8 @@
                                     </a>
                                 </div>
                             </div>
-                            <span class="role-badge px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0">
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0"
+                                style="background: var(--accent-light); color: var(--accent);">
                                 {{ photographer.role }}
                             </span>
                         </div>
@@ -704,6 +706,18 @@ const photographers = ref<Array<{
     instagram: string | null
     role: string
 }>>([])
+
+// Backdrop drag-close prevention helpers
+let backdropMouseDownTarget = false
+const handleBackdropMousedown = (e: MouseEvent) => {
+    backdropMouseDownTarget = e.target === e.currentTarget
+}
+const handleBackdropMouseup = (e: MouseEvent, closeFn: () => void) => {
+    if (backdropMouseDownTarget && e.target === e.currentTarget) {
+        closeFn()
+    }
+    backdropMouseDownTarget = false
+}
 
 // Helper: Extract nickname in parenthesis if exists, otherwise fall back to first name
 const formatUploaderDisplayName = (fullName: string | null) => {
@@ -1429,34 +1443,5 @@ const nextPhoto = () => {
 .slide-up-leave-to {
     transform: translateY(100%);
     opacity: 0;
-}
-.modal-box {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    --text-1: #1d1d1f;
-    --text-2: #636366;
-    --text-3: #8e8e93;
-    --surface-2: rgba(0, 0, 0, 0.05);
-    --separator: rgba(0, 0, 0, 0.1);
-}
-:global(.dark) .modal-box,
-:global(.themed-album) .modal-box {
-    background: rgba(28, 28, 30, 0.85);
-    --text-1: #ffffff;
-    --text-2: #aeaeb2;
-    --text-3: #8e8e93;
-    --surface-2: rgba(255, 255, 255, 0.08);
-    --separator: rgba(255, 255, 255, 0.15);
-}
-.role-badge {
-    background: var(--accent-light);
-    color: var(--accent);
-}
-:global(.dark) .role-badge,
-:global(.themed-album) .role-badge {
-    background: var(--accent-light);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--accent);
 }
 </style>
