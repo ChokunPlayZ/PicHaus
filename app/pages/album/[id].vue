@@ -1696,9 +1696,21 @@ const allPhotographers = computed(() => {
     return Array.from(photographersMap.values())
 })
 
+// Computed: Get unique photographers who have actually uploaded photos in this album
+const uploadedPhotographers = computed(() => {
+    if (!album.value) return []
+    const activeUploaderIds = new Set(availableUploaders.value.map(u => u.id))
+    return allPhotographers.value.filter(p => activeUploaderIds.has(p.id))
+})
+
 // Computed: Display text for photographers (first names only)
 const getPhotographersDisplay = computed(() => {
-    return allPhotographers.value
+    const list = uploadedPhotographers.value
+    if (list.length === 0 && album.value) {
+        // Fallback to owner if no photos are uploaded yet
+        return album.value.owner.name || album.value.owner.email || 'Unknown'
+    }
+    return list
         .map(p => p.name.split(' ')[0]) // Get first name only
         .join(', ')
 })
