@@ -334,6 +334,13 @@
                         Rotate Right
                     </button>
 
+                    <!-- Transfer Button -->
+                    <button @click="openTransferModal" :disabled="transferringPhotos"
+                        class="flex items-center gap-1.5 text-sm font-medium transition disabled:opacity-50" style="color: var(--text-1);">
+                        <Icon name="lucide:user-cog" class="h-4 w-4" :stroke-width="2" />
+                        Transfer
+                    </button>
+
                     <button @click="deleteSelected"
                         class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--error-text);">
                         <Icon name="lucide:trash-2" class="h-4 w-4" :stroke-width="2" />
@@ -347,6 +354,64 @@
                 <div v-if="loadingPhotos" class="flex items-center gap-2">
                     <div class="w-4 h-4 rounded-full border-2 animate-spin" style="border-color: var(--separator); border-top-color: var(--accent);"></div>
                     <span class="text-xs" style="color: var(--text-3);">Loading more…</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div v-if="showTransferModal"
+        class="fixed inset-0 flex items-center justify-center p-4 z-50"
+        style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
+        @mousedown="handleBackdropMousedown"
+        @mouseup="handleBackdropMouseup($event, () => showTransferModal = false)">
+        <div class="rounded-2xl p-6 max-w-md w-full"
+            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-xl font-semibold" style="color: var(--text-1);">Transfer Photos</h3>
+                <button @click="showTransferModal = false" style="color: var(--text-3);"
+                    @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
+                    <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
+                </button>
+            </div>
+
+            <p class="text-sm mb-4" style="color: var(--text-2);">
+                Transfer the selected {{ selectedPhotoIds.size }} photo(s) to another photographer.
+            </p>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-3);">
+                        Target Photographer
+                    </label>
+                    <select v-model="targetTransferUploaderId"
+                        class="w-full px-4 py-2.5 rounded-xl text-sm transition focus:outline-none focus:ring-2"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator); focus-ring-color: var(--accent);">
+                        <option value="" disabled>Select a photographer...</option>
+                        <option v-for="photographer in allPhotographers" :key="photographer.id" :value="photographer.id">
+                            {{ photographer.name }} ({{ photographer.role }})
+                        </option>
+                    </select>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button @click="showTransferModal = false"
+                        class="px-4 py-2 rounded-full text-sm font-medium transition"
+                        style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--separator);"
+                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                        Cancel
+                    </button>
+                    <button @click="transferPhotos"
+                        :disabled="!targetTransferUploaderId || transferringPhotos"
+                        class="px-5 py-2 rounded-full text-sm font-medium text-white transition flex items-center gap-1.5 disabled:opacity-50"
+                        style="background: var(--accent);"
+                        @mouseover="!transferringPhotos && targetTransferUploaderId && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
+                        <Icon v-if="transferringPhotos" name="lucide:loader-2" class="h-4 w-4 animate-spin" />
+                        <span>Transfer</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1740,6 +1805,9 @@ const adjustTimeForm = ref({
 })
 
 const rotatingPhotos = ref(false)
+const showTransferModal = ref(false)
+const targetTransferUploaderId = ref('')
+const transferringPhotos = ref(false)
 
 const showCropModal = ref(false)
 const photoCropImage = ref<Photo | null>(null)
@@ -1939,7 +2007,7 @@ const handleKeydown = (e: KeyboardEvent) => {
         if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
 
         // Prevent deletion when any modal is active
-        if (showEditPhotoModal.value || showAdjustTimeModal.value || showCropModal.value || showShareModal.value || showCollaboratorsModal.value || showEditModal.value) return
+        if (showEditPhotoModal.value || showAdjustTimeModal.value || showCropModal.value || showShareModal.value || showCollaboratorsModal.value || showEditModal.value || showTransferModal.value) return
 
         deleteSelected()
     }
@@ -2624,6 +2692,48 @@ const rotateSelected = async (angle: number) => {
         toast(err.data?.statusMessage || 'Failed to rotate photos', 'error')
     } finally {
         rotatingPhotos.value = false
+    }
+}
+
+const openTransferModal = () => {
+    targetTransferUploaderId.value = ''
+    showTransferModal.value = true
+}
+
+const transferPhotos = async () => {
+    if (transferringPhotos.value || !targetTransferUploaderId.value || selectedPhotoIds.value.size === 0) return
+    transferringPhotos.value = true
+    try {
+        const photoIds = Array.from(selectedPhotoIds.value)
+        const response = await $fetch<{ success: boolean; data: { targetUploader: { id: string; name: string; instagram: string | null; avatar: string | null }; transferredPhotoIds: string[] } }>('/api/v1/photos/transfer', {
+            method: 'POST',
+            body: {
+                photoIds,
+                targetUploaderId: targetTransferUploaderId.value
+            }
+        })
+        if (response.success) {
+            const { targetUploader, transferredPhotoIds } = response.data
+            // Update local state to reflect uploader change
+            photos.value = photos.value.map(p => {
+                if (transferredPhotoIds.includes(p.id)) {
+                    return {
+                        ...p,
+                        uploaderId: targetUploader.id,
+                        uploader: targetUploader
+                    }
+                }
+                return p
+            })
+            toast(`Successfully transferred ${transferredPhotoIds.length} photos`, 'success')
+            showTransferModal.value = false
+            clearSelection()
+        }
+    } catch (err: any) {
+        console.error('Failed to transfer photos:', err)
+        toast(err.data?.statusMessage || 'Failed to transfer photos', 'error')
+    } finally {
+        transferringPhotos.value = false
     }
 }
 
