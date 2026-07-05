@@ -353,7 +353,7 @@ const setCachedImageUrl = (photoId: string, objectUrl: string) => {
     }
 }
 
-const cacheImage = async (photoId: string) => {
+const cacheImage = async (photoId: string, timestamp?: number | string | bigint) => {
     const cached = getCachedImageUrl(photoId)
     if (cached) return cached
 
@@ -362,7 +362,8 @@ const cacheImage = async (photoId: string) => {
 
     const loadPromise = (async () => {
         try {
-            const response = await fetch(buildAssetUrl(`/api/assets/full/${photoId}`), { cache: 'force-cache' })
+            const cacheBuster = timestamp ? `?t=${timestamp}` : ''
+            const response = await fetch(buildAssetUrl(`/api/assets/full/${photoId}${cacheBuster}`), { cache: 'force-cache' })
 
             if (!response.ok) {
                 throw new Error(`Failed to fetch image: ${response.status}`)
@@ -424,13 +425,14 @@ watch(() => props.photo.id, async (newId, oldId) => {
         currentImageSrc.value = knownSrc
         imageLoading.value = false
     } else {
-        const loaded = await cacheImage(newId)
+        const timestamp = props.photo.updatedAt || props.photo.createdAt || ''
+        const loaded = await cacheImage(newId, timestamp)
 
         if (props.photo.id !== newId) {
             return
         }
 
-        currentImageSrc.value = loaded || buildAssetUrl(`/api/assets/full/${newId}`)
+        currentImageSrc.value = loaded || buildAssetUrl(`/api/assets/full/${newId}?t=${timestamp}`)
     }
 
     // Preload adjacent images
@@ -693,7 +695,8 @@ const sharePhoto = async () => {
     }, 1500)
 
     try {
-        const response = await fetch(buildAssetUrl(`/api/assets/full/${props.photo.id}`))
+        const timestamp = props.photo.updatedAt || props.photo.createdAt || ''
+        const response = await fetch(buildAssetUrl(`/api/assets/full/${props.photo.id}?t=${timestamp}`))
         const blob = await response.blob()
         const file = new File([blob], props.photo.originalName, { type: blob.type })
 
@@ -759,7 +762,8 @@ const downloadPhoto = async () => {
     if (isSharing.value) return
     isSharing.value = true
     try {
-        const response = await fetch(buildAssetUrl(`/api/assets/full/${props.photo.id}`))
+        const timestamp = props.photo.updatedAt || props.photo.createdAt || ''
+        const response = await fetch(buildAssetUrl(`/api/assets/full/${props.photo.id}?t=${timestamp}`))
         const blob = await response.blob()
 
         // Regular download

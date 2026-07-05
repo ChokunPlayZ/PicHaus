@@ -2104,7 +2104,7 @@ const downloadSelected = async () => {
 
         await Promise.all(selectedPhotos.map(async (photo) => {
             try {
-                const res = await fetch(`/api/assets/full/${photo.id}`)
+                const res = await fetch(`/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`)
                 const blob = await res.blob()
                 folder?.file(photo.originalName, blob)
                 downloadProgress.value.current++
@@ -2975,7 +2975,7 @@ const setAsCover = async (photo: Photo) => {
 
 const downloadPhoto = async (photo: Photo) => {
     try {
-        const res = await fetch(`/api/assets/full/${photo.id}`)
+        const res = await fetch(`/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`)
         const blob = await res.blob()
         downloadBlob(blob, photo.originalName)
     } catch (err) {
@@ -3241,7 +3241,7 @@ const downloadAll = async () => {
         // Download each photo
         const promises = photosToDownload.map(async (photo) => {
             try {
-                const res = await fetch(`/api/assets/full/${photo.id}`)
+                const res = await fetch(`/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`)
                 const blob = await res.blob()
                 folder?.file(photo.originalName, blob)
                 downloadProgress.value.current++

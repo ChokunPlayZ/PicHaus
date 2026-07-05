@@ -40,7 +40,13 @@ export default defineEventHandler(async (event) => {
             if (!hasAccess) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
         }
 
-        const photoRows = await db.select({ id: photos.id, originalName: photos.originalName, filename: photos.filename })
+                const photoRows = await db.select({
+            id: photos.id,
+            originalName: photos.originalName,
+            filename: photos.filename,
+            updatedAt: photos.updatedAt,
+            createdAt: photos.createdAt
+        })
             .from(photos)
             .where(eq(photos.albumId, id!))
 

@@ -600,7 +600,7 @@ const downloadAll = async () => {
         // Download each photo
         const promises = photosToDownload.map(async (photo) => {
             try {
-                const res = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}`))
+                const res = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`))
                 const blob = await res.blob()
                 files.push({ blob, name: photo.originalName })
                 downloadProgress.value.current++
@@ -681,7 +681,7 @@ const downloadAllGroupPhotos = async () => {
         // Download each photo
         const promises = photosToDownload.map(async (photo) => {
             try {
-                const res = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}`))
+                const res = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`))
                 const blob = await res.blob()
                 files.push({ blob, name: photo.originalName, albumName: photo.albumName })
                 downloadProgress.value.current++
@@ -795,7 +795,7 @@ const downloadFavorites = async () => {
         const files: { blob: Blob; name: string }[] = []
         for (const photo of photosToDownload) {
             try {
-                const res = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}`))
+                const res = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`))
                 const blob = await res.blob()
                 files.push({ blob, name: photo.originalName })
                 downloadProgress.value.current++
