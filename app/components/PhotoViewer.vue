@@ -312,53 +312,11 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits(['close', 'previous', 'next', 'toggleFavorite'])
 
-const translations = {
-    en: {
-        camera: 'Camera',
-        lens: 'Lens',
-        focalLength: 'Focal Length',
-        aperture: 'Aperture',
-        shutter: 'Shutter',
-        iso: 'ISO',
-        takenOn: 'Taken On',
-        filename: 'Filename',
-        size: 'Size',
-        dimensions: 'Dimensions',
-        photoReady: 'Photo ready —',
-        tapToShare: 'Tap to share',
-        slowConnection: 'Slow connection — still downloading…'
-    },
-    th: {
-        camera: 'กล้อง',
-        lens: 'เลนส์',
-        focalLength: 'ระยะโฟกัส',
-        aperture: 'รูรับแสง',
-        shutter: 'ความเร็วชัตเตอร์',
-        iso: 'ISO',
-        takenOn: 'ถ่ายเมื่อ',
-        filename: 'ชื่อไฟล์',
-        size: 'ขนาดไฟล์',
-        dimensions: 'สัดส่วนภาพ',
-        photoReady: 'ภาพพร้อมแล้ว —',
-        tapToShare: 'แตะเพื่อแชร์',
-        slowConnection: 'การเชื่อมต่อช้า — กำลังดาวน์โหลด…'
-    }
-}
-
-const currentLang = ref<'en' | 'th'>('en')
+import { t, initLanguage } from '~/utils/i18n'
 
 onMounted(() => {
-    if (typeof navigator !== 'undefined') {
-        const lang = navigator.language || (navigator.languages && navigator.languages[0]) || 'en'
-        if (lang.toLowerCase().startsWith('th')) {
-            currentLang.value = 'th'
-        }
-    }
+    initLanguage()
 })
-
-const t = (key: keyof typeof translations.en) => {
-    return translations[currentLang.value][key] || translations.en[key]
-}
 
 const showInfo = ref(false)
 const imageLoading = ref(true)
