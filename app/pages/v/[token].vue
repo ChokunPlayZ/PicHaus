@@ -464,7 +464,7 @@ const loading = ref(true)
 const error = ref('')
 const requiresPassword = ref(false)
 const password = ref('')
-const accessing = ref(false)
+const saving = ref(false)
 const isAuthenticated = ref(false)
 const showMetadata = ref(true)
 
@@ -1168,7 +1168,7 @@ onMounted(async () => {
 })
 
 const handleAccess = async () => {
-    accessing.value = true
+    saving.value = true
     try {
         const response = await $fetch<{ success: boolean; data: any }>('/api/v1/auth/guest-login', {
             method: 'POST',
@@ -1202,7 +1202,7 @@ const handleAccess = async () => {
         dialog.toast(err.data?.statusMessage || 'Failed to access')
         loading.value = false
     } finally {
-        accessing.value = false
+        saving.value = false
     }
 }
 
