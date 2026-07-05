@@ -1811,15 +1811,26 @@ const uploadedPhotographers = computed(() => {
     return allPhotographers.value.filter(p => activeUploaderIds.has(p.id))
 })
 
-// Computed: Display text for photographers (first names only)
+// Helper: Extract nickname in parenthesis if exists, otherwise fall back to first name
+const formatUploaderDisplayName = (fullName: string | null) => {
+    if (!fullName) return 'Unknown'
+    const nickMatch = fullName.match(/\(([^)]+)\)/)
+    if (nickMatch && nickMatch[1]) {
+        return nickMatch[1].trim()
+    }
+    return fullName.split(' ')[0]
+}
+
+// Computed: Display text for photographers (first names or nicknames only)
 const getPhotographersDisplay = computed(() => {
     const list = uploadedPhotographers.value
     if (list.length === 0 && album.value) {
         // Fallback to owner if no photos are uploaded yet
-        return album.value.owner.name || album.value.owner.email || 'Unknown'
+        const ownerName = album.value.owner.name || album.value.owner.email || 'Unknown'
+        return formatUploaderDisplayName(ownerName)
     }
     return list
-        .map(p => p.name.split(' ')[0]) // Get first name only
+        .map(p => formatUploaderDisplayName(p.name))
         .join(', ')
 })
 
