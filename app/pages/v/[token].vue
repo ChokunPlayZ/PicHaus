@@ -1022,7 +1022,7 @@ const fetchAllGroupPhotos = async () => {
 
         for (const album of groupAlbums.value) {
             try {
-                const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/album/${album.id}?page=1&limit=1000`)
+                const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/album/${album.id}?page=1&limit=1000&sort=dateTaken&order=asc`)
                 if (response.data.photos) {
                     response.data.photos.forEach((photo: Photo) => {
                         if (!photosMap.has(photo.id)) {
@@ -1035,6 +1035,13 @@ const fetchAllGroupPhotos = async () => {
                 console.error(`Failed to load photos from album ${album.id}:`, err)
             }
         }
+
+        // Sort all photos by shot time (dateTaken) ascending group-wide
+        allPhotos.sort((a, b) => {
+            const timeA = a.dateTaken != null ? a.dateTaken : a.createdAt
+            const timeB = b.dateTaken != null ? b.dateTaken : b.createdAt
+            return timeA - timeB
+        })
 
         photos.value = allPhotos
         hasMore.value = false // Since we fetch all at once
@@ -1052,8 +1059,8 @@ const fetchPhotos = async () => {
         loadingMore.value = page.value > 1
 
         const photoApiUrl = isPublicAlbum.value
-            ? `/api/pub/album/${albumId.value}/photos?page=${page.value}&limit=${limit.value}`
-            : `/api/v1/album/${albumId.value}?page=${page.value}&limit=${limit.value}`
+            ? `/api/pub/album/${albumId.value}/photos?page=${page.value}&limit=${limit.value}&sort=dateTaken&order=asc`
+            : `/api/v1/album/${albumId.value}?page=${page.value}&limit=${limit.value}&sort=dateTaken&order=asc`
         const response = await $fetch<{ success: boolean; data: any }>(photoApiUrl)
 
         // Populate photographers from album data (only once)
@@ -1115,7 +1122,7 @@ const loadMorePhotos = async () => {
             ? `/api/pub/album/${albumId.value}/photos`
             : `/api/v1/album/${albumId.value}`
         const response = await $fetch<{ success: boolean; data: any }>(loadMoreUrl, {
-            params: { page: nextPage, limit: limit.value }
+            params: { page: nextPage, limit: limit.value, sort: 'dateTaken', order: 'asc' }
         })
 
         if (response.data.photos && response.data.photos.length > 0) {

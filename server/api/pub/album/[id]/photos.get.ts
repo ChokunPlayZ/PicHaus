@@ -1,4 +1,4 @@
-import { eq, desc, sql } from 'drizzle-orm'
+import { eq, asc, desc, sql } from 'drizzle-orm'
 import { albums, photos, users } from '../../../../db/schema'
 
 export default defineEventHandler(async (event) => {
@@ -18,6 +18,22 @@ export default defineEventHandler(async (event) => {
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 100)
     const skip = (page - 1) * limit
+
+    const sort = (query.sort as string) || 'dateTaken'
+    const order = (query.order as string) || 'asc'
+
+    let orderByItems = []
+    if (sort === 'dateTaken') {
+        orderByItems = [
+            order === 'desc' ? desc(photos.dateTaken) : asc(photos.dateTaken),
+            order === 'desc' ? desc(photos.createdAt) : asc(photos.createdAt),
+        ]
+    } else {
+        orderByItems = [
+            order === 'desc' ? desc(photos.dateTaken) : asc(photos.dateTaken),
+            order === 'desc' ? desc(photos.createdAt) : asc(photos.createdAt),
+        ]
+    }
 
     const [photoRows, countResult] = await Promise.all([
         db.select({
@@ -44,7 +60,7 @@ export default defineEventHandler(async (event) => {
             .from(photos)
             .leftJoin(users, eq(photos.uploaderId, users.id))
             .where(eq(photos.albumId, id))
-            .orderBy(desc(photos.dateTaken), desc(photos.createdAt))
+            .orderBy(...orderByItems)
             .limit(limit)
             .offset(skip),
         db.select({ total: sql<number>`COUNT(*)` })
