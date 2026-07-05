@@ -99,7 +99,6 @@ export const useAlbumTheme = () => {
     const applyTheme = (
         preset: string | null | undefined,
         customTheme?: CustomThemeColors | string | null,
-        mode: 'accent' | 'full' = 'accent',
     ) => {
         if (import.meta.server) return
         const root = document.documentElement
@@ -155,26 +154,6 @@ export const useAlbumTheme = () => {
         root.style.setProperty('--accent-pressed', btnStart)
         root.style.setProperty('--accent-light', hexToRgba(btnEnd, 0.15))
         root.style.setProperty('--shadow-primary', hexToRgba(btnEnd, 0.25))
-
-        if (mode === 'full') {
-            root.style.setProperty('--bg-page', `linear-gradient(150deg, ${bgStart} 0%, ${bgEnd} 100%)`)
-            root.style.setProperty('--surface-1', 'rgba(255,255,255,0.10)')
-            root.style.setProperty('--surface-2', 'rgba(255,255,255,0.07)')
-            root.style.setProperty('--surface-3', 'rgba(255,255,255,0.04)')
-            root.style.setProperty('--sidebar-bg', 'rgba(0,0,0,0.15)')
-            root.style.setProperty('--sidebar-border', 'rgba(255,255,255,0.12)')
-            root.style.setProperty('--text-1', 'rgba(255,255,255,0.96)')
-            root.style.setProperty('--text-2', 'rgba(255,255,255,0.72)')
-            root.style.setProperty('--text-3', 'rgba(255,255,255,0.48)')
-            root.style.setProperty('--text-link', accentText)
-            root.style.setProperty('--separator', 'rgba(255,255,255,0.15)')
-            root.style.setProperty('--separator-strong', 'rgba(255,255,255,0.28)')
-            root.style.setProperty('--accent-text', '#1d1d1f')
-            root.style.setProperty('--shadow-sm', '0 1px 4px rgba(0,0,0,0.25)')
-            root.style.setProperty('--shadow-md', '0 4px 16px rgba(0,0,0,0.35)')
-            root.style.setProperty('--shadow-lg', '0 12px 40px rgba(0,0,0,0.45)')
-            root.style.setProperty('--shadow-xl', '0 24px 60px rgba(0,0,0,0.55)')
-        }
     }
 
     const resetTheme = () => {

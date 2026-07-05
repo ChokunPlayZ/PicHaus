@@ -620,7 +620,7 @@ const { settings: siteSettings, loadSettings, applyAccent } = useSiteSettings()
 onMounted(async () => {
     await Promise.all([checkAuth(), loadSettings()])
     await fetchAlbumInfo()
-    applyTheme(albumInfo.value?.themePreset, albumInfo.value?.customTheme, 'full')
+    applyTheme(albumInfo.value?.themePreset, albumInfo.value?.customTheme)
 })
 
 onUnmounted(() => {

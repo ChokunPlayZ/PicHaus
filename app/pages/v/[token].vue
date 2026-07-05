@@ -253,27 +253,25 @@
         <!-- Favorites download bar -->
         <Transition name="slide-up">
             <div v-if="favorites.size > 0 && !selectedPhoto"
-                class="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-black/85 backdrop-blur-xl border-t border-white/15">
-                <div class="flex items-center justify-between gap-4">
-                    <div class="flex items-center gap-2">
-                        <Icon name="lucide:heart" class="h-5 w-5 text-red-400 flex-shrink-0" style="fill: currentColor;" />
-                        <span class="text-white font-medium text-sm sm:text-base">
-                            {{ t('selectedCount').replace('{count}', String(favorites.size)).replace('{plural}', favorites.size === 1 ? t('photo') : t('photos')) }}
-                        </span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button @click="clearFavorites"
-                            class="px-3 py-1.5 text-sm text-white/60 hover:text-white transition rounded-lg hover:bg-white/10">
-                            {{ t('clear') }}
-                        </button>
-                        <button @click="downloadFavorites" :disabled="downloading"
-                            class="px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 disabled:opacity-50 transition"
-                            style="background: var(--accent); color: white;">
-                            <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
-                            {{ t('download') }}{{ favorites.size > 1 ? ` (${favorites.size})` : '' }}
-                        </button>
-                    </div>
+                class="fixed bottom-8 left-1/2 -translate-x-1/2 rounded-full px-5 py-3 flex items-center gap-4 z-40 whitespace-nowrap"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                <div class="text-sm font-medium pr-4 flex items-center gap-2" style="color: var(--text-1); border-right: 1px solid var(--separator);">
+                    <Icon name="lucide:heart" class="h-4.5 w-4.5 text-red-500 flex-shrink-0" style="fill: currentColor;" />
+                    <span>{{ t('selectedCount').replace('{count}', String(favorites.size)).replace('{plural}', favorites.size === 1 ? t('photo') : t('photos')) }}</span>
                 </div>
+
+                <button @click="clearFavorites" class="text-sm transition" style="color: var(--text-2);">
+                    {{ t('clear') }}
+                </button>
+
+                <div class="h-4 w-px" style="background: var(--separator);"></div>
+
+                <button @click="downloadFavorites" :disabled="downloading"
+                    class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--text-1);">
+                    <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
+                    <span v-if="downloading">{{ downloadProgress.current }}/{{ downloadProgress.total }}</span>
+                    <span v-else>{{ t('download') }}</span>
+                </button>
             </div>
         </Transition>
 
@@ -1171,7 +1169,7 @@ onMounted(async () => {
     }
 
     if (linkData.value?.data) {
-        applyTheme(linkData.value.data.themePreset, linkData.value.data.customTheme, 'full')
+        applyTheme(linkData.value.data.themePreset, linkData.value.data.customTheme)
     }
     if (isPublicAlbum.value && !isAuthenticated.value) {
         isAuthenticated.value = true
@@ -1203,7 +1201,7 @@ const handleAccess = async () => {
             ownerName.value = data.ownerName || ownerName.value
             groupAlbums.value = Array.isArray(data.albums) ? data.albums : groupAlbums.value
             showMetadata.value = data.showMetadata !== undefined ? data.showMetadata : showMetadata.value
-            if (data.themePreset) applyTheme(data.themePreset, data.customTheme, 'full')
+            if (data.themePreset) applyTheme(data.themePreset, data.customTheme)
             isAuthenticated.value = true
         } else {
             albumId.value = data.albumId
