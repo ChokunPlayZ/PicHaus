@@ -39,7 +39,7 @@ export default {
     // password
     passwordRequired: 'Password Required',
     passwordPlaceholder: 'Enter password',
-    accessing: 'Accessing...',
+    saving: 'Saving...',
     viewAccess: 'View Access',
     collectionBy: 'Collection by {owner}',
     viewAllPictures: 'View All Pictures',

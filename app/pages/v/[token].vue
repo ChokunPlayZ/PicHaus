@@ -30,12 +30,12 @@
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
-                        <button type="submit" :disabled="accessing"
+                        <button type="submit" :disabled="saving"
                             class="w-full py-2.5 rounded-full text-sm font-semibold transition disabled:opacity-50"
                             style="background: var(--accent); color: var(--accent-text);"
-                            @mouseover="!accessing && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
+                            @mouseover="!saving && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
                             @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                            {{ accessing ? t('accessing') : t('viewAccess') }}
+                            {{ saving ? t('saving') : t('viewAccess') }}
                         </button>
                     </form>
                 </div>
@@ -202,8 +202,8 @@
             class="fixed inset-0 flex items-center justify-center p-4 z-50"
             style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
             @click.self="showPhotographersModal = false">
-            <div class="rounded-2xl p-6 max-w-md w-full"
-                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+            <div class="modal-box rounded-2xl p-6 max-w-md w-full"
+                style="border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold" style="color: var(--text-1);">{{ t('photographers') }}</h3>
                     <button @click="showPhotographersModal = false" class="p-1 rounded-lg transition"
@@ -228,18 +228,18 @@
                                     {{ photographer.name?.charAt(0) || '?' }}
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="font-medium text-sm truncate" style="color: var(--text-1);">{{ photographer.name }}</p>
-                                    <div v-if="photographer.instagram" class="flex items-center gap-2 mt-1">
-                                        <span class="text-xs" style="color: var(--text-2);">@{{ photographer.instagram }}</span>
-                                        <a :href="`https://instagram.com/${photographer.instagram || ''}`" target="_blank"
-                                            rel="noopener noreferrer" style="color: var(--accent);">
-                                            <Icon name="lucide:instagram" class="w-3.5 h-3.5" />
-                                        </a>
-                                    </div>
+                                    <p class="font-medium text-sm leading-tight truncate" style="color: var(--text-1);">{{ photographer.name }}</p>
+                                    <a v-if="photographer.instagram"
+                                        :href="`https://instagram.com/${photographer.instagram || ''}`" target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="inline-flex items-center gap-1.5 mt-0.5 text-xs transition hover:opacity-80"
+                                        style="color: var(--text-2);">
+                                        <Icon name="lucide:instagram" class="w-3.5 h-3.5 flex-shrink-0" style="color: var(--accent);" />
+                                        <span>@{{ photographer.instagram }}</span>
+                                    </a>
                                 </div>
                             </div>
-                            <span class="px-2 py-0.5 rounded-full text-xs whitespace-nowrap flex-shrink-0"
-                                style="background: var(--accent-light); color: var(--accent);">
+                            <span class="role-badge px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0">
                                 {{ photographer.role }}
                             </span>
                         </div>
@@ -301,7 +301,7 @@
                             style="background: var(--accent);">
                             <span v-if="isSharing" class="w-4 h-4 rounded-full border-2 animate-spin"
                                 style="border-color: rgba(255,255,255,0.3); border-top-color: white;"></span>
-                            {{ isSharing ? t('accessing').replace('...', '') : t('shareSaveNow') }}
+                            {{ isSharing ? t('saving').replace('...', '') : t('shareSaveNow') }}
                         </button>
                         <button @click="downloadFavoritesAsZip"
                             :disabled="isSharing"
@@ -1429,5 +1429,23 @@ const nextPhoto = () => {
 .slide-up-leave-to {
     transform: translateY(100%);
     opacity: 0;
+}
+.modal-box {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+:global(.dark) .modal-box {
+    background: rgba(28, 28, 30, 0.85);
+}
+.role-badge {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--text-2);
+}
+:global(.dark) .role-badge {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-1);
 }
 </style>

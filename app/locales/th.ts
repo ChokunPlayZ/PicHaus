@@ -39,7 +39,7 @@ export default {
     // password
     passwordRequired: 'ต้องระบุรหัสผ่าน',
     passwordPlaceholder: 'ป้อนรหัสผ่าน',
-    accessing: 'กำลังตรวจสอบ...',
+    saving: 'กำลังบันทึก...',
     viewAccess: 'ดูข้อมูล',
     collectionBy: 'คอลเลกชันโดย {owner}',
     viewAllPictures: 'ดูรูปภาพทั้งหมด',
