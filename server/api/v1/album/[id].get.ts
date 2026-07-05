@@ -178,12 +178,15 @@ export default defineEventHandler(async (event) => {
             } : null,
         }))
 
+        const isGuest = !isOwner && !isCollaborator
+
         const collaborators = album.collaborators
             .map(collab => ({
                 ...collab,
                 createdAt: Number(collab.createdAt),
                 user: {
                     ...collab.user,
+                    email: isGuest ? undefined : collab.user.email,
                     avatar: collab.user.avatarPath ? `/api/assets/avatar/${collab.user.id}` : null,
                 },
             }))
@@ -208,6 +211,7 @@ export default defineEventHandler(async (event) => {
                 ...album,
                 owner: album.owner ? {
                     ...album.owner,
+                    email: isGuest ? undefined : album.owner.email,
                     avatar: album.owner.avatarPath ? `/api/assets/avatar/${album.owner.id}` : null,
                 } : null,
                 coverPhoto,
@@ -231,10 +235,10 @@ export default defineEventHandler(async (event) => {
                     uploaders: uploaderRows.map(u => ({
                         id: u.id,
                         name: u.name,
-                        email: u.email,
+                        email: isGuest ? undefined : u.email,
                         instagram: u.instagram,
                         avatar: u.avatarPath ? `/api/assets/avatar/${u.id}` : null,
-                    })).sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || '')),
+                    })).sort((a, b) => (a.name || '').localeCompare(b.name || '')),
                 },
             },
         }

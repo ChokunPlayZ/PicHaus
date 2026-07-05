@@ -229,7 +229,6 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="font-medium text-sm truncate" style="color: var(--text-1);">{{ photographer.name }}</p>
-                                    <p v-if="photographer.email" class="text-xs mt-0.5 truncate" style="color: var(--text-3);">{{ photographer.email }}</p>
                                     <div v-if="photographer.instagram" class="flex items-center gap-2 mt-1">
                                         <span class="text-xs" style="color: var(--text-2);">@{{ photographer.instagram }}</span>
                                         <a :href="`https://instagram.com/${photographer.instagram || ''}`" target="_blank"
@@ -349,6 +348,64 @@
             :is-favorited="selectedPhoto ? isFavorited(selectedPhoto.id) : false"
             @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto"
             @toggle-favorite="selectedPhoto && toggleFavorite(selectedPhoto.id)" />
+        <!-- Download Success Support Modal -->
+        <div v-if="showDownloadSuccessModal"
+            class="fixed inset-0 flex items-center justify-center p-4 z-[60]"
+            style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
+            @click.self="showDownloadSuccessModal = false">
+            <div class="rounded-2xl p-6 max-w-md w-full text-center"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                
+                <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+                    style="background: rgba(var(--accent-rgb), 0.1); color: var(--accent);">
+                    <Icon name="lucide:arrow-down-to-line" class="h-6 w-6" :stroke-width="2.5" />
+                </div>
+
+                <h3 class="text-xl font-bold mb-1" style="color: var(--text-1);">Download Started!</h3>
+                <p class="text-sm mb-6" style="color: var(--text-3);">Support the photographers who made these shots possible by tagging or following them:</p>
+
+                <div class="space-y-3 text-left max-h-60 overflow-y-auto pr-1 mb-6">
+                    <div v-for="photographer in downloadedPhotographers" :key="photographer.id"
+                        class="p-3 rounded-xl flex items-center justify-between gap-3"
+                        style="background: var(--surface-2); border: 1px solid var(--separator);">
+                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                            <img v-if="photographer.avatar" :src="photographer.avatar"
+                                class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                                style="border: 1px solid var(--separator);" />
+                            <div v-else
+                                class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                style="background: var(--accent);">
+                                {{ photographer.name?.charAt(0) || '?' }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-sm truncate" style="color: var(--text-1);">{{ photographer.name }}</p>
+                                <p v-if="photographer.instagram" class="text-xs mt-0.5 truncate" style="color: var(--text-3);">@{{ photographer.instagram }}</p>
+                            </div>
+                        </div>
+                        <a v-if="photographer.instagram"
+                            :href="`https://instagram.com/${photographer.instagram}`"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0"
+                            style="background: var(--accent); color: white;"
+                            @mouseover="($event.currentTarget as HTMLElement).style.opacity = '0.9'"
+                            @mouseout="($event.currentTarget as HTMLElement).style.opacity = '1'">
+                            <Icon name="lucide:instagram" class="w-3.5 h-3.5" />
+                            Follow
+                        </a>
+                    </div>
+                </div>
+
+                <button @click="showDownloadSuccessModal = false"
+                    class="w-full py-2.5 rounded-xl font-medium transition"
+                    style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1);"
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                    Done
+                </button>
+            </div>
+        </div>
+
     </div>
 </template>
 
@@ -446,6 +503,39 @@ const downloading = ref(false)
 const downloadProgress = ref({ current: 0, total: 0 })
 const pendingShareFiles = ref<File[] | null>(null)
 const isSharing = ref(false)
+const showDownloadSuccessModal = ref(false)
+const downloadedPhotographers = ref<any[]>([])
+
+const showSupportPopup = (downloadedPhotos: any[]) => {
+    const map = new Map()
+    downloadedPhotos.forEach(photo => {
+        const u = photo.uploader || (photo.uploaderId ? {
+            id: photo.uploaderId,
+            name: photo.uploaderName,
+            instagram: photo.uploaderInstagram,
+            avatar: photo.uploaderAvatarPath ? `/api/assets/avatar/${photo.uploaderId}` : null
+        } : null)
+
+        if (u) {
+            map.set(u.id, {
+                id: u.id,
+                name: u.name || 'Unknown',
+                instagram: u.instagram || null,
+                avatar: u.avatar || null
+            })
+        } else if (linkData.value?.data?.owner) {
+            const owner = linkData.value.data.owner
+            map.set(owner.id, {
+                id: owner.id,
+                name: owner.name || 'Unknown',
+                instagram: owner.instagram || null,
+                avatar: owner.avatar ? `/api/assets/avatar/${owner.id}` : null
+            })
+        }
+    })
+    downloadedPhotographers.value = Array.from(map.values())
+    showDownloadSuccessModal.value = true
+}
 
 const shareFavorites = async () => {
     if (!pendingShareFiles.value || !navigator.share) return
@@ -624,6 +714,7 @@ const downloadAll = async () => {
             if (navigator.canShare({ files: shareFiles })) {
                 pendingShareFiles.value = shareFiles
                 skipCleanup = true
+                showSupportPopup(photosToDownload)
                 return
             }
         }
@@ -634,6 +725,7 @@ const downloadAll = async () => {
         files.forEach(f => folder?.file(f.name, f.blob))
         const content = await zip.generateAsync({ type: 'blob' })
         downloadBlob(content, `${folderName}.zip`)
+        showSupportPopup(photosToDownload)
     } catch (err) {
         console.error('Download all error:', err)
         dialog.toast('Failed to download photos')
@@ -705,6 +797,7 @@ const downloadAllGroupPhotos = async () => {
             if (navigator.canShare({ files: shareFiles })) {
                 pendingShareFiles.value = shareFiles
                 skipCleanup = true
+                showSupportPopup(photosToDownload)
                 return
             }
         }
@@ -718,6 +811,7 @@ const downloadAllGroupPhotos = async () => {
         })
         const content = await zip.generateAsync({ type: 'blob' })
         downloadBlob(content, `${folderName}-photos.zip`)
+        showSupportPopup(photosToDownload)
     } catch (err) {
         console.error('Download all group photos error:', err)
         dialog.toast('Failed to download photos')
@@ -812,6 +906,7 @@ const downloadFavorites = async () => {
             if (navigator.canShare({ files: shareFiles })) {
                 pendingShareFiles.value = shareFiles
                 skipCleanup = true
+                showSupportPopup(photosToDownload)
                 return
             }
         }
@@ -822,6 +917,7 @@ const downloadFavorites = async () => {
         files.forEach(f => folder?.file(f.name, f.blob))
         const content = await zip.generateAsync({ type: 'blob' })
         downloadBlob(content, `${folderName}-selected.zip`)
+        showSupportPopup(photosToDownload)
     } catch (err: any) {
         if (err.name !== 'AbortError') {
             console.error('Download favorites error:', err)
@@ -1066,34 +1162,29 @@ const fetchPhotos = async () => {
         // Populate photographers from album data (only once)
         if (page.value === 1 && response.data) {
             const photographersMap = new Map()
+            const activeUploaders = response.data.filtersData?.uploaders || response.data.uploaders || []
+            const ownerId = response.data.ownerId || response.data.owner?.id
 
-            // Add owner
-            const owner = response.data.owner
-            if (owner) {
+            activeUploaders.forEach((u: any) => {
+                photographersMap.set(u.id, {
+                    id: u.id,
+                    name: u.name || 'Unknown',
+                    instagram: u.instagram || null,
+                    avatar: u.avatar || null,
+                    role: u.id === ownerId ? 'Owner' : 'Collaborator'
+                })
+            })
+
+            if (photographersMap.size === 0 && response.data.owner) {
+                const owner = response.data.owner
                 photographersMap.set(owner.id, {
                     id: owner.id,
-                    name: owner.name || owner.email || 'Unknown',
-                    email: owner.email,
+                    name: owner.name || 'Unknown',
                     instagram: owner.instagram || null,
                     avatar: owner.avatar || null,
                     role: 'Owner'
                 })
             }
-
-            // Add collaborators
-            response.data.collaborators?.forEach((collab: any) => {
-                const user = collab.user
-                if (!photographersMap.has(user.id)) {
-                    photographersMap.set(user.id, {
-                        id: user.id,
-                        name: user.name || user.email || 'Unknown',
-                        email: user.email,
-                        instagram: user.instagram || null,
-                        avatar: user.avatar || null,
-                        role: 'Collaborator'
-                    })
-                }
-            })
 
             photographers.value = Array.from(photographersMap.values())
         }

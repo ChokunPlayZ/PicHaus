@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
         ]
     }
 
-    const [photoRows, countResult] = await Promise.all([
+    const [photoRows, countResult, uploaderRows] = await Promise.all([
         db.select({
             id: photos.id,
             filename: photos.filename,
@@ -65,6 +65,15 @@ export default defineEventHandler(async (event) => {
             .offset(skip),
         db.select({ total: sql<number>`COUNT(*)` })
             .from(photos)
+            .where(eq(photos.albumId, id)),
+        db.selectDistinctOn([photos.uploaderId], {
+            id: users.id,
+            name: users.name,
+            instagram: users.instagram,
+            avatarPath: users.avatarPath,
+        })
+            .from(photos)
+            .innerJoin(users, eq(photos.uploaderId, users.id))
             .where(eq(photos.albumId, id)),
     ])
 
@@ -106,6 +115,12 @@ export default defineEventHandler(async (event) => {
                 total,
                 hasMore: skip + photoRows.length < total,
             },
+            uploaders: uploaderRows.map(u => ({
+                id: u.id,
+                name: u.name,
+                instagram: u.instagram,
+                avatar: u.avatarPath ? `/api/assets/avatar/${u.id}` : null,
+            })).sort((a, b) => (a.name || '').localeCompare(b.name || '')),
         },
     }
 })

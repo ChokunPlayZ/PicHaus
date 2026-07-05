@@ -1449,6 +1449,64 @@
             </Transition>
         </Teleport>
 
+        <!-- Download Success Support Modal -->
+        <div v-if="showDownloadSuccessModal"
+            class="fixed inset-0 flex items-center justify-center p-4 z-[60]"
+            style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
+            @click.self="showDownloadSuccessModal = false">
+            <div class="rounded-2xl p-6 max-w-md w-full text-center"
+                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
+                
+                <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+                    style="background: rgba(var(--accent-rgb), 0.1); color: var(--accent);">
+                    <Icon name="lucide:arrow-down-to-line" class="h-6 w-6" :stroke-width="2.5" />
+                </div>
+
+                <h3 class="text-xl font-bold mb-1" style="color: var(--text-1);">Download Started!</h3>
+                <p class="text-sm mb-6" style="color: var(--text-3);">Support the photographers who made these shots possible by tagging or following them:</p>
+
+                <div class="space-y-3 text-left max-h-60 overflow-y-auto pr-1 mb-6">
+                    <div v-for="photographer in downloadedPhotographers" :key="photographer.id"
+                        class="p-3 rounded-xl flex items-center justify-between gap-3"
+                        style="background: var(--surface-2); border: 1px solid var(--separator);">
+                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                            <img v-if="photographer.avatar" :src="photographer.avatar"
+                                class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                                style="border: 1px solid var(--separator);" />
+                            <div v-else
+                                class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                style="background: var(--accent);">
+                                {{ photographer.name?.charAt(0) || '?' }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-sm truncate" style="color: var(--text-1);">{{ photographer.name }}</p>
+                                <p v-if="photographer.instagram" class="text-xs mt-0.5 truncate" style="color: var(--text-3);">@{{ photographer.instagram }}</p>
+                            </div>
+                        </div>
+                        <a v-if="photographer.instagram"
+                            :href="`https://instagram.com/${photographer.instagram}`"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0"
+                            style="background: var(--accent); color: white;"
+                            @mouseover="($event.currentTarget as HTMLElement).style.opacity = '0.9'"
+                            @mouseout="($event.currentTarget as HTMLElement).style.opacity = '1'">
+                            <Icon name="lucide:instagram" class="w-3.5 h-3.5" />
+                            Follow
+                        </a>
+                    </div>
+                </div>
+
+                <button @click="showDownloadSuccessModal = false"
+                    class="w-full py-2.5 rounded-xl font-medium transition"
+                    style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1);"
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                    Done
+                </button>
+            </div>
+        </div>
+
 </template>
 
 <script setup lang="ts">
@@ -1958,6 +2016,39 @@ const uploadProgress = computed(() => {
 
 const downloading = ref(false)
 const downloadProgress = ref({ current: 0, total: 0 })
+const showDownloadSuccessModal = ref(false)
+const downloadedPhotographers = ref<any[]>([])
+
+const showSupportPopup = (downloadedPhotos: any[]) => {
+    const map = new Map()
+    downloadedPhotos.forEach(photo => {
+        const u = photo.uploader || (photo.uploaderId ? {
+            id: photo.uploaderId,
+            name: photo.uploaderName,
+            instagram: photo.uploaderInstagram,
+            avatar: photo.uploaderAvatarPath ? `/api/assets/avatar/${photo.uploaderId}` : null
+        } : null)
+
+        if (u) {
+            map.set(u.id, {
+                id: u.id,
+                name: u.name || 'Unknown',
+                instagram: u.instagram || null,
+                avatar: u.avatar || null
+            })
+        } else if (album.value?.owner) {
+            const owner = album.value.owner
+            map.set(owner.id, {
+                id: owner.id,
+                name: owner.name || 'Unknown',
+                instagram: owner.instagram || null,
+                avatar: owner.avatar || null
+            })
+        }
+    })
+    downloadedPhotographers.value = Array.from(map.values())
+    showDownloadSuccessModal.value = true
+}
 
 const selectedPhotoIndex = ref<number | null>(null)
 const selectedPhoto = computed(() => {
@@ -2115,6 +2206,7 @@ const downloadSelected = async () => {
 
         const content = await zip.generateAsync({ type: 'blob' })
         downloadBlob(content, `${album.value?.name || 'album'}-selected.zip`)
+        showSupportPopup(selectedPhotos)
     } catch (err) {
         console.error('Download selected error:', err)
         toast('Failed to download selected photos', 'error')
@@ -3258,6 +3350,7 @@ const downloadAll = async () => {
             // but file download is usually the bottleneck
         })
         downloadBlob(content, `${album.value?.name || 'album'}.zip`)
+        showSupportPopup(photosToDownload)
     } catch (err) {
         console.error('Download all error:', err)
         toast('Failed to download photos', 'error')
