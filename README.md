@@ -152,6 +152,7 @@ volumes:
 | `AUTO_COMPRESS_LIMIT_MB` | No | `15` | File size in MB above which ANY uploaded image is compressed, regardless of origin/editing software |
 | `FRESH_COMPRESS_LIMIT_MB` | No | `4` | File size in MB above which fresh-off-camera images (no editing software) are compressed |
 | `AUTO_COMPRESS_FORCE` | No | `false` | Set to `true` to force auto-compression on all files, bypassing editing software detection |
+| `AUTO_COMPRESS_RATIO_MB_PER_MP` | No | `0.5` | Ratio of file size (in MB) to image resolution (in Megapixels) above which JPEGs are compressed |
 | `AUTO_COMPRESS_MAX_DIMENSION` | No | `4000` | Maximum width or height dimension (in pixels) to resize compressed images to |
 | `AUTO_COMPRESS_QUALITY` | No | `88` | Compression quality for JPEGs/PNGs (1 to 100) |
 | `NODE_ENV` | No | `development` | Set to `production` in production deployments |
@@ -166,6 +167,13 @@ volumes:
 > **Passkeys in production**: Set `WEBAUTHN_RP_ID` to your bare domain (e.g. `photos.example.com`), `WEBAUTHN_ORIGIN` to `https://photos.example.com`, and `WEBAUTHN_RP_NAME` to whatever label you want users to see in their authenticator. The three values must match exactly — mismatches cause silent passkey registration or login failures.
 
 > **Google Sign-In**: Create an OAuth 2.0 credential in [Google Cloud Console](https://console.cloud.google.com/apis/credentials), add your origin to the authorised JavaScript origins, and add `<origin>/api/v1/auth/google/callback` as an authorised redirect URI. Set both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to enable the feature — Google Sign-In is hidden from the UI when `GOOGLE_CLIENT_ID` is absent.
+
+> **Auto-Compression and Resizing**:
+> PicHaus automatically compresses and resizes uploaded photos to keep storage footprint and load times low, while preserving EXIF metadata on the saved files:
+> - **Resizing**: Resizes files exceeding `AUTO_COMPRESS_MAX_DIMENSION` (default: `4000`px on the longest edge) using standard quality parameters (`AUTO_COMPRESS_QUALITY` default: `88`).
+> - **Always-Compress Threshold**: Any uploaded image exceeding `AUTO_COMPRESS_LIMIT_MB` (default: `15`MB) is always compressed.
+> - **Size-to-Resolution Ratio**: If a JPEG is larger than necessary for its actual resolution (Megapixels), it gets compressed. By default, if the ratio of file size (in MB) to image resolution (in Megapixels) exceeds `AUTO_COMPRESS_RATIO_MB_PER_MP` (default: `0.5` MB/MP), it is compressed. For example, a 12MP photo that is 9MB has a ratio of 0.75, which triggers compression.
+> - **Fresh Camera vs Edited Photos**: Edited photos exported from software (e.g. Lightroom, Photoshop) are respected as-is, unless they exceed the always-compress threshold or the ratio check. Direct-from-camera photos without editor tags are compressed if they exceed `FRESH_COMPRESS_LIMIT_MB` (default: `4`MB) or 15 megapixels.
 
 ---
 

@@ -68,9 +68,16 @@ export function shouldAutoCompress(
     const autoCompressLimit = parseFloat(process.env.AUTO_COMPRESS_LIMIT_MB || '15')
     const freshCompressLimit = parseFloat(process.env.FRESH_COMPRESS_LIMIT_MB || '4')
     const forceAll = process.env.AUTO_COMPRESS_FORCE === 'true'
+    const ratioThreshold = parseFloat(process.env.AUTO_COMPRESS_RATIO_MB_PER_MP || '0.5')
 
     // Very large files always get compressed regardless of origin
     if (fileSizeMB > autoCompressLimit) return true
+
+    // Check if the file size is disproportionately large for the image resolution (bloated JPEGs)
+    const isJPEG = buffer.length > 2 && buffer[0] === 0xff && buffer[1] === 0xd8
+    if (isJPEG && fileSizeMB > 1.5 && megapixels > 0 && (fileSizeMB / megapixels) > ratioThreshold) {
+        return true
+    }
 
     // If force compress all is disabled and editing software is detected, respect the export as-is
     if (!forceAll && exifSoftware && EDITING_SOFTWARE_RE.test(exifSoftware)) return false
