@@ -435,7 +435,7 @@
             </div>
 
             <div class="space-y-2">
-                <div v-for="photographer in allPhotographers" :key="photographer.id"
+                <div v-for="photographer in uploadedPhotographers" :key="photographer.id"
                     class="rounded-xl p-3" style="background: var(--surface-2); border: 1px solid var(--separator);">
                     <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-3 flex-1 min-w-0">
@@ -465,6 +465,10 @@
                         </span>
                     </div>
                 </div>
+
+                <p v-if="uploadedPhotographers.length === 0" class="text-sm text-center py-4" style="color: var(--text-3);">
+                    No photos have been uploaded yet.
+                </p>
             </div>
         </div>
     </div>
