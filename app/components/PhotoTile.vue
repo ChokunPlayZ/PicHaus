@@ -56,7 +56,7 @@
         <!-- Favorite button (public share) -->
         <button v-if="showFavorite"
             @click.stop="$emit('toggle-favorite')"
-            class="absolute bottom-2 right-2 z-10 p-1.5 rounded-full transition-all duration-200"
+            class="absolute bottom-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-full transition-all duration-200"
             :class="favorited
                 ? 'bg-red-500/80 text-white opacity-100'
                 : 'bg-black/40 text-white/60 opacity-100 md:opacity-0 md:group-hover:opacity-100'">
