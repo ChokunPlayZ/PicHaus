@@ -93,15 +93,6 @@
                             <span v-if="groupDescription">{{ groupDescription }}</span>
                         </div>
                     </div>
-
-                    <button @click="downloadAllGroupPhotos" :disabled="downloading"
-                        class="px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
-                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
-                        @mouseover="!downloading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
-                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                        <span>Download All</span>
-                        <Icon name="lucide:download" class="h-5 w-5" :stroke-width="2" />
-                    </button>
                 </div>
 
                 <!-- Loading Photos State -->
@@ -168,15 +159,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <button @click="downloadAll" :disabled="downloading"
-                        class="px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
-                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
-                        @mouseover="!downloading && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
-                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                        <span>Download All</span>
-                        <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
-                    </button>
                 </div>
 
                 <!-- Loading Photos State -->
