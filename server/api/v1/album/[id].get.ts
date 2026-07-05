@@ -179,7 +179,6 @@ export default defineEventHandler(async (event) => {
         }))
 
         const collaborators = album.collaborators
-            .filter(collab => uploaderIds.has(collab.userId))
             .map(collab => ({
                 ...collab,
                 createdAt: Number(collab.createdAt),
