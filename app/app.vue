@@ -82,6 +82,29 @@ const syncImpersonating = () => {
 onMounted(() => {
     loadSettings()
     syncImpersonating()
+
+    // Initialize/sync light/dark mode class on client hydration
+    const syncTheme = () => {
+        const theme = localStorage.getItem('theme') || document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1]
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (theme === 'dark' || (!theme && prefersDark)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    }
+    syncTheme()
+
+    // Also listen for system-wide color scheme changes
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            // Only follow system changes if there is no explicit user preference saved
+            const theme = localStorage.getItem('theme') || document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1]
+            if (!theme) {
+                syncTheme()
+            }
+        })
+    }
 })
 
 watch(() => route.fullPath, syncImpersonating)
