@@ -360,7 +360,7 @@
                     <Icon name="lucide:arrow-down-to-line" class="h-6 w-6" :stroke-width="2.5" />
                 </div>
 
-                <h3 class="text-xl font-bold mb-1" style="color: var(--text-1);">Download Started!</h3>
+                <h3 class="text-xl font-bold mb-1" style="color: var(--text-1);">{{ isIOS ? 'Download Complete!' : 'Download Started!' }}</h3>
                 <p class="text-sm mb-6" style="color: var(--text-3);">Support the photographers who made these shots possible by tagging or following them:</p>
 
                 <div class="space-y-3 text-left max-h-60 overflow-y-auto pr-1 mb-6">
