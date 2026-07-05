@@ -35,7 +35,7 @@
                             style="background: var(--accent); color: var(--accent-text);"
                             @mouseover="!saving && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
                             @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                            {{ saving ? t('saving') : t('viewAccess') }}
+                            {{ saving ? t('unlocking') : t('viewAccess') }}
                         </button>
                     </form>
                 </div>

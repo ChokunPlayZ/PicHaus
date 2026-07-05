@@ -40,6 +40,7 @@ export default {
     passwordRequired: 'ต้องระบุรหัสผ่าน',
     passwordPlaceholder: 'ป้อนรหัสผ่าน',
     saving: 'กำลังบันทึก...',
+    unlocking: 'กำลังปลดล็อก...',
     viewAccess: 'ดูข้อมูล',
     collectionBy: 'คอลเลกชันโดย {owner}',
     viewAllPictures: 'ดูรูปภาพทั้งหมด',
