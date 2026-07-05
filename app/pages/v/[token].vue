@@ -267,9 +267,8 @@
                         <button @click="downloadFavorites" :disabled="downloading"
                             class="px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 disabled:opacity-50 transition"
                             style="background: var(--accent); color: white;">
-                            <Icon v-if="isIOS" name="lucide:share" class="h-4 w-4" :stroke-width="2" />
-                            <Icon v-else name="lucide:download" class="h-4 w-4" :stroke-width="2" />
-                            {{ isIOS ? 'Share' : 'Download' }}{{ favorites.size > 1 ? ` (${favorites.size})` : '' }}
+                            <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
+                            Download{{ favorites.size > 1 ? ` (${favorites.size})` : '' }}
                         </button>
                     </div>
                 </div>
@@ -302,7 +301,7 @@
                             style="background: var(--accent);">
                             <span v-if="isSharing" class="w-4 h-4 rounded-full border-2 animate-spin"
                                 style="border-color: rgba(255,255,255,0.3); border-top-color: white;"></span>
-                            {{ isSharing ? 'Sharing...' : 'Share Now' }}
+                            {{ isSharing ? 'Sharing...' : 'Share/Save Now' }}
                         </button>
                         <button @click="downloadFavoritesAsZip"
                             :disabled="isSharing"
@@ -505,6 +504,7 @@ const pendingShareFiles = ref<File[] | null>(null)
 const isSharing = ref(false)
 const showDownloadSuccessModal = ref(false)
 const downloadedPhotographers = ref<any[]>([])
+const photosToSupportAfterShare = ref<any[]>([])
 
 const showSupportPopup = (downloadedPhotos: any[]) => {
     const map = new Map()
@@ -540,8 +540,10 @@ const showSupportPopup = (downloadedPhotos: any[]) => {
 const shareFavorites = async () => {
     if (!pendingShareFiles.value || !navigator.share) return
     isSharing.value = true
+    let sharedSuccessfully = false
     try {
         await navigator.share({ files: pendingShareFiles.value })
+        sharedSuccessfully = true
     } catch (err: any) {
         if (err.name !== 'AbortError') {
             console.error('Share favorites error:', err)
@@ -552,6 +554,9 @@ const shareFavorites = async () => {
         downloading.value = false
         pendingShareFiles.value = null
         downloadProgress.value = { current: 0, total: 0 }
+        if (sharedSuccessfully) {
+            showSupportPopup(photosToSupportAfterShare.value)
+        }
     }
 }
 
@@ -565,6 +570,7 @@ const cancelShare = () => {
 const downloadFavoritesAsZip = async () => {
     if (!pendingShareFiles.value) return
     isSharing.value = true
+    let downloadSuccess = false
     try {
         const folderName = (viewMode.value === 'album' ? albumName.value : groupTitle.value) || 'photos'
         const zip = new JSZip()
@@ -574,6 +580,7 @@ const downloadFavoritesAsZip = async () => {
         })
         const content = await zip.generateAsync({ type: 'blob' })
         downloadBlob(content, `${folderName}-selected.zip`)
+        downloadSuccess = true
     } catch (err) {
         console.error('Download ZIP error:', err)
         dialog.toast('Failed to download ZIP')
@@ -582,6 +589,9 @@ const downloadFavoritesAsZip = async () => {
         downloading.value = false
         pendingShareFiles.value = null
         downloadProgress.value = { current: 0, total: 0 }
+        if (downloadSuccess) {
+            showSupportPopup(photosToSupportAfterShare.value)
+        }
     }
 }
 
@@ -713,8 +723,8 @@ const downloadAll = async () => {
             const shareFiles = files.map(f => new File([f.blob], f.name, { type: f.blob.type }))
             if (navigator.canShare({ files: shareFiles })) {
                 pendingShareFiles.value = shareFiles
+                photosToSupportAfterShare.value = photosToDownload
                 skipCleanup = true
-                showSupportPopup(photosToDownload)
                 return
             }
         }
@@ -796,8 +806,8 @@ const downloadAllGroupPhotos = async () => {
             const shareFiles = files.map(f => new File([f.blob], f.name, { type: f.blob.type }))
             if (navigator.canShare({ files: shareFiles })) {
                 pendingShareFiles.value = shareFiles
+                photosToSupportAfterShare.value = photosToDownload
                 skipCleanup = true
-                showSupportPopup(photosToDownload)
                 return
             }
         }
@@ -905,8 +915,8 @@ const downloadFavorites = async () => {
             const shareFiles = files.map(f => new File([f.blob], f.name, { type: f.blob.type }))
             if (navigator.canShare({ files: shareFiles })) {
                 pendingShareFiles.value = shareFiles
+                photosToSupportAfterShare.value = photosToDownload
                 skipCleanup = true
-                showSupportPopup(photosToDownload)
                 return
             }
         }
