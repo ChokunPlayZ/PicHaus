@@ -189,38 +189,38 @@
                         <h4 class="text-sm font-medium text-white/50 border-b border-white/10 pb-2">Camera Info</h4>
 
                         <div v-if="photo.cameraModel" class="flex justify-between md:grid md:grid-cols-2 gap-2 text-sm">
-                            <span class="text-white/50">Camera</span>
+                            <span class="text-white/50">{{ t('camera') }}</span>
                             <span class="text-white md:text-right">{{ photo.cameraModel }}</span>
                         </div>
 
                         <div v-if="photo.lens" class="flex justify-between md:grid md:grid-cols-2 gap-2 text-sm">
-                            <span class="text-white/50">Lens</span>
+                            <span class="text-white/50">{{ t('lens') }}</span>
                             <span class="text-white md:text-right">{{ photo.lens }}</span>
                         </div>
 
                         <div v-if="photo.focalLength" class="flex justify-between md:grid md:grid-cols-2 gap-2 text-sm">
-                            <span class="text-white/50">Focal Length</span>
+                            <span class="text-white/50">{{ t('focalLength') }}</span>
                             <span class="text-white md:text-right">{{ photo.focalLength }}</span>
                         </div>
 
                         <div v-if="photo.aperture" class="flex justify-between md:grid md:grid-cols-2 gap-2 text-sm">
-                            <span class="text-white/50">Aperture</span>
+                            <span class="text-white/50">{{ t('aperture') }}</span>
                             <span class="text-white md:text-right">{{ photo.aperture }}</span>
                         </div>
 
                         <div v-if="photo.shutterSpeed"
                             class="flex justify-between md:grid md:grid-cols-2 gap-2 text-sm">
-                            <span class="text-white/50">Shutter</span>
+                            <span class="text-white/50">{{ t('shutter') }}</span>
                             <span class="text-white md:text-right">{{ photo.shutterSpeed }}</span>
                         </div>
 
                         <div v-if="photo.iso" class="flex justify-between md:grid md:grid-cols-2 gap-2 text-sm">
-                            <span class="text-white/50">ISO</span>
+                            <span class="text-white/50">{{ t('iso') }}</span>
                             <span class="text-white md:text-right">{{ photo.iso }}</span>
                         </div>
 
                         <div v-if="photo.dateTaken" class="flex justify-between md:grid md:grid-cols-2 gap-2 text-sm">
-                            <span class="text-white/50">Taken On</span>
+                            <span class="text-white/50">{{ t('takenOn') }}</span>
                             <span class="text-white md:text-right">{{ formatDate(photo.dateTaken) }}</span>
                         </div>
                     </div>
@@ -228,16 +228,16 @@
                     <!-- File Info -->
                     <div class="mt-8 pt-6 border-t border-white/10 space-y-2" v-if="showMetadata">
                         <div class="flex justify-between md:grid md:grid-cols-2 gap-2 text-xs">
-                            <span class="text-white/50">Filename</span>
+                            <span class="text-white/50">{{ t('filename') }}</span>
                             <span class="text-white md:text-right truncate" :title="photo.originalName">{{
                                 photo.originalName }}</span>
                         </div>
                         <div class="flex justify-between md:grid md:grid-cols-2 gap-2 text-xs">
-                            <span class="text-white/50">Size</span>
+                            <span class="text-white/50">{{ t('size') }}</span>
                             <span class="text-white md:text-right">{{ formatSize(photo.size) }}</span>
                         </div>
                         <div v-if="photo.width && photo.height" class="flex justify-between md:grid md:grid-cols-2 gap-2 text-xs">
-                            <span class="text-white/50">Dimensions</span>
+                            <span class="text-white/50">{{ t('dimensions') }}</span>
                             <span class="text-white md:text-right">{{ photo.width }} × {{ photo.height }}</span>
                         </div>
                     </div>
@@ -246,22 +246,22 @@
         </div>
 
         <!-- Share-ready popup (iOS slow connection) -->
-        <Transition name="share-popup">
+        <Transition name="fade">
             <div v-if="shareTimedOut"
                 class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md"
                 style="background: rgba(30,30,30,0.92); border: 1px solid rgba(255,255,255,0.12);">
                 <template v-if="pendingShareFile">
                     <Icon name="lucide:check" class="h-5 w-5 flex-shrink-0" style="color: var(--accent);" :stroke-width="2" />
-                    <span class="text-sm text-white font-medium">Photo ready —</span>
+                    <span class="text-sm text-white font-medium">{{ t('photoReady') }}</span>
                     <button @click="retryShare"
                         class="text-sm font-semibold px-3 py-1 rounded-xl transition active:scale-95"
                         style="background: var(--accent); color: #fff;">
-                        Tap to share
+                        {{ t('tapToShare') }}
                     </button>
                 </template>
                 <template v-else>
                     <Icon name="lucide:loader-2" class="h-5 w-5 flex-shrink-0 animate-spin text-white/60" />
-                    <span class="text-sm text-white/80">Slow connection — still downloading…</span>
+                    <span class="text-sm text-white/80">{{ t('slowConnection') }}</span>
                 </template>
             </div>
         </Transition>
@@ -311,6 +311,54 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits(['close', 'previous', 'next', 'toggleFavorite'])
+
+const translations = {
+    en: {
+        camera: 'Camera',
+        lens: 'Lens',
+        focalLength: 'Focal Length',
+        aperture: 'Aperture',
+        shutter: 'Shutter',
+        iso: 'ISO',
+        takenOn: 'Taken On',
+        filename: 'Filename',
+        size: 'Size',
+        dimensions: 'Dimensions',
+        photoReady: 'Photo ready —',
+        tapToShare: 'Tap to share',
+        slowConnection: 'Slow connection — still downloading…'
+    },
+    th: {
+        camera: 'กล้อง',
+        lens: 'เลนส์',
+        focalLength: 'ระยะโฟกัส',
+        aperture: 'รูรับแสง',
+        shutter: 'ความเร็วชัตเตอร์',
+        iso: 'ISO',
+        takenOn: 'ถ่ายเมื่อ',
+        filename: 'ชื่อไฟล์',
+        size: 'ขนาดไฟล์',
+        dimensions: 'สัดส่วนภาพ',
+        photoReady: 'ภาพพร้อมแล้ว —',
+        tapToShare: 'แตะเพื่อแชร์',
+        slowConnection: 'การเชื่อมต่อช้า — กำลังดาวน์โหลด…'
+    }
+}
+
+const currentLang = ref<'en' | 'th'>('en')
+
+onMounted(() => {
+    if (typeof navigator !== 'undefined') {
+        const lang = navigator.language || (navigator.languages && navigator.languages[0]) || 'en'
+        if (lang.toLowerCase().startsWith('th')) {
+            currentLang.value = 'th'
+        }
+    }
+})
+
+const t = (key: keyof typeof translations.en) => {
+    return translations[currentLang.value][key] || translations.en[key]
+}
 
 const showInfo = ref(false)
 const imageLoading = ref(true)

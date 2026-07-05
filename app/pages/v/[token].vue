@@ -15,15 +15,15 @@
                     <p v-else-if="error" style="color: var(--error);">{{ error }}</p>
                     <p v-else class="text-sm" style="color: var(--text-2);">
                         {{ pageTitle }}
-                        <span v-if="ownerName" class="block text-xs mt-1" style="color: var(--text-3);">by {{ ownerName }}</span>
+                        <span v-if="ownerName" class="block text-xs mt-1" style="color: var(--text-3);">{{ t('by') }} {{ ownerName }}</span>
                     </p>
                 </div>
 
                 <div v-if="!loading && !error && requiresPassword">
                     <form @submit.prevent="handleAccess" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Password Required</label>
-                            <input v-model="password" type="password" required placeholder="Enter password"
+                            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">{{ t('passwordRequired') }}</label>
+                            <input v-model="password" type="password" required :placeholder="t('passwordPlaceholder')"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
@@ -35,7 +35,7 @@
                             style="background: var(--accent); color: var(--accent-text);"
                             @mouseover="!accessing && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
                             @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                            {{ accessing ? 'Accessing…' : 'View Access' }}
+                            {{ accessing ? t('accessing') : t('viewAccess') }}
                         </button>
                     </form>
                 </div>
@@ -50,14 +50,14 @@
                 <div class="text-center mb-12">
                     <h1 class="text-4xl sm:text-5xl font-bold mb-3 tracking-tight" style="color: var(--text-1);">{{ groupTitle }}</h1>
                     <p v-if="groupDescription" class="text-base max-w-2xl mx-auto" style="color: var(--text-2);">{{ groupDescription }}</p>
-                    <div class="mt-2 text-sm" style="color: var(--text-3);">Collection by {{ ownerName }}</div>
+                    <div class="mt-2 text-sm" style="color: var(--text-3);">{{ t('collectionBy').replace('{owner}', ownerName || '') }}</div>
                     <button @click="viewAllGroupPhotos"
                         class="mt-6 px-6 py-2.5 rounded-full text-sm font-semibold transition inline-flex items-center gap-2"
                         style="background: var(--accent); color: var(--accent-text);"
                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         <Icon name="lucide:image" class="h-4 w-4" :stroke-width="2" />
-                        View All Pictures
+                        {{ t('viewAllPictures') }}
                     </button>
                 </div>
 
@@ -85,10 +85,10 @@
                                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                                 <Icon name="lucide:arrow-left" class="h-4 w-4" :stroke-width="2" />
-                                Back to {{ groupTitle }}
+                                {{ t('backToGroup').replace('{group}', groupTitle || '') }}
                             </button>
                         </div>
-                        <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold mb-2 tracking-tight" style="color: var(--text-1);">All Pictures</h1>
+                        <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold mb-2 tracking-tight" style="color: var(--text-1);">{{ t('allPictures') }}</h1>
                         <div class="text-sm" style="color: var(--text-2);">
                             <span v-if="groupDescription">{{ groupDescription }}</span>
                         </div>
@@ -105,7 +105,7 @@
                 <div v-else-if="photos.length === 0" class="text-center py-12 rounded-2xl"
                     style="background: var(--surface-1); border: 1px solid var(--separator);">
                     <div class="text-5xl sm:text-6xl mb-4">📷</div>
-                    <h3 class="text-lg sm:text-xl font-bold mb-2" style="color: var(--text-1);">No photos yet</h3>
+                    <h3 class="text-lg sm:text-xl font-bold mb-2" style="color: var(--text-1);">{{ t('noPhotosYet') }}</h3>
                 </div>
 
                 <!-- Photo Grid -->
@@ -143,7 +143,7 @@
                                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                                 <Icon name="lucide:arrow-left" class="h-4 w-4" :stroke-width="2" />
-                                Back to {{ groupTitle }}
+                                {{ t('backToGroup').replace('{group}', groupTitle || '') }}
                             </button>
                         </div>
                         <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold mb-2 tracking-tight" style="color: var(--text-1);">{{ albumName }}</h1>
@@ -151,7 +151,7 @@
                             <span v-if="eventDate">{{ formatDate(eventDate) }}</span>
                             <div v-if="description" class="whitespace-pre-line mt-1" style="color: var(--text-3);">{{ description }}</div>
                             <div v-if="photographers.length > 0" class="flex items-center gap-2 mt-2">
-                                <span style="color: var(--text-3);">by</span>
+                                <span style="color: var(--text-3);">{{ t('by') }}</span>
                                 <button @click="showPhotographersModal = true"
                                     class="transition underline decoration-dotted" style="color: var(--accent);">
                                     {{ photographersDisplay }}
@@ -171,7 +171,7 @@
                 <div v-else-if="photos.length === 0" class="text-center py-12 rounded-2xl"
                     style="background: var(--surface-1); border: 1px solid var(--separator);">
                     <div class="text-5xl sm:text-6xl mb-4">📷</div>
-                    <h3 class="text-lg sm:text-xl font-bold mb-2" style="color: var(--text-1);">No photos yet</h3>
+                    <h3 class="text-lg sm:text-xl font-bold mb-2" style="color: var(--text-1);">{{ t('noPhotosYet') }}</h3>
                 </div>
 
                 <!-- Photo Grid -->
@@ -205,7 +205,7 @@
             <div class="rounded-2xl p-6 max-w-md w-full"
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold" style="color: var(--text-1);">Photographers</h3>
+                    <h3 class="text-lg font-bold" style="color: var(--text-1);">{{ t('photographers') }}</h3>
                     <button @click="showPhotographersModal = false" class="p-1 rounded-lg transition"
                         style="color: var(--text-3);"
                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'"
@@ -256,19 +256,19 @@
                     <div class="flex items-center gap-2">
                         <Icon name="lucide:heart" class="h-5 w-5 text-red-400 flex-shrink-0" style="fill: currentColor;" />
                         <span class="text-white font-medium text-sm sm:text-base">
-                            {{ favorites.size }} {{ favorites.size === 1 ? 'photo' : 'photos' }} selected
+                            {{ t('selectedCount').replace('{count}', String(favorites.size)).replace('{plural}', favorites.size === 1 ? t('photo') : t('photos')) }}
                         </span>
                     </div>
                     <div class="flex items-center gap-2">
                         <button @click="clearFavorites"
                             class="px-3 py-1.5 text-sm text-white/60 hover:text-white transition rounded-lg hover:bg-white/10">
-                            Clear
+                            {{ t('clear') }}
                         </button>
                         <button @click="downloadFavorites" :disabled="downloading"
                             class="px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 disabled:opacity-50 transition"
                             style="background: var(--accent); color: white;">
                             <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
-                            Download{{ favorites.size > 1 ? ` (${favorites.size})` : '' }}
+                            {{ t('download') }}{{ favorites.size > 1 ? ` (${favorites.size})` : '' }}
                         </button>
                     </div>
                 </div>
@@ -282,16 +282,16 @@
             <div class="rounded-2xl p-6 max-w-sm w-full"
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <h3 class="text-base font-bold mb-4 text-center" style="color: var(--text-1);">
-                    {{ pendingShareFiles ? (isSharing ? 'Sharing Photos' : 'Photos Ready') : 'Downloading Photos' }}
+                    {{ pendingShareFiles ? (isSharing ? t('sharingPhotos') : t('photosReadyTitle')) : t('downloadingPhotos') }}
                 </h3>
 
                 <template v-if="pendingShareFiles">
                     <div class="mb-6 text-center">
                         <p class="text-sm" :class="isSharing ? 'mb-2' : ''" style="color: var(--text-2);">
-                            Your photos are ready to share.
+                            {{ t('photosReady') }}
                         </p>
                         <p v-if="isSharing" class="text-xs font-semibold animate-pulse" style="color: var(--accent);">
-                            Do not close until this dialog closes.
+                            {{ t('doNotClose') }}
                         </p>
                     </div>
                     <div class="flex flex-col gap-2">
@@ -301,7 +301,7 @@
                             style="background: var(--accent);">
                             <span v-if="isSharing" class="w-4 h-4 rounded-full border-2 animate-spin"
                                 style="border-color: rgba(255,255,255,0.3); border-top-color: white;"></span>
-                            {{ isSharing ? 'Sharing...' : 'Share/Save Now' }}
+                            {{ isSharing ? t('accessing').replace('...', '') : t('shareSaveNow') }}
                         </button>
                         <button @click="downloadFavoritesAsZip"
                             :disabled="isSharing"
@@ -310,19 +310,19 @@
                             @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                             @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
                             <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
-                            Download ZIP
+                            {{ t('downloadZip') }}
                         </button>
                         <button @click="cancelShare"
                             :disabled="isSharing"
                             class="w-full py-3 rounded-xl text-sm font-semibold transition hover:bg-white/5 disabled:opacity-50"
                             style="color: var(--text-2);">
-                            Cancel
+                            {{ t('cancel') }}
                         </button>
                     </div>
                 </template>
                 <template v-else>
                     <div class="mb-2 flex justify-between text-sm">
-                        <span style="color: var(--text-2);">Progress</span>
+                        <span style="color: var(--text-2);">{{ t('progress') }}</span>
                         <span style="color: var(--accent); font-weight: 600;">{{ Math.round((downloadProgress.current / downloadProgress.total) * 100) }}%</span>
                     </div>
 
@@ -334,7 +334,7 @@
                     </div>
 
                     <p class="text-center text-xs" style="color: var(--text-3);">
-                        {{ downloadProgress.current }} of {{ downloadProgress.total }} files processed
+                        {{ downloadProgress.current }} / {{ downloadProgress.total }} {{ t('filesProcessed') }}
                     </p>
                 </template>
             </div>
@@ -360,8 +360,8 @@
                     <Icon name="lucide:arrow-down-to-line" class="h-6 w-6" :stroke-width="2.5" />
                 </div>
 
-                <h3 class="text-xl font-bold mb-1" style="color: var(--text-1);">{{ isIOS ? 'Download Complete!' : 'Download Started!' }}</h3>
-                <p class="text-sm mb-6" style="color: var(--text-3);">Support the photographers who made these shots possible by tagging or following them:</p>
+                <h3 class="text-xl font-bold mb-1" style="color: var(--text-1);">{{ isIOS ? t('downloadComplete') : t('downloadStarted') }}</h3>
+                <p class="text-sm mb-6" style="color: var(--text-3);">{{ t('supportPhotographers') }}</p>
 
                 <div class="space-y-3 text-left max-h-60 overflow-y-auto pr-1 mb-6">
                     <div v-for="photographer in downloadedPhotographers" :key="photographer.id"
@@ -400,7 +400,7 @@
                     style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1);"
                     @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
                     @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                    Done
+                    {{ t('done') }}
                 </button>
             </div>
         </div>
@@ -505,6 +505,90 @@ const isSharing = ref(false)
 const showDownloadSuccessModal = ref(false)
 const downloadedPhotographers = ref<any[]>([])
 const photosToSupportAfterShare = ref<any[]>([])
+
+const translations = {
+    en: {
+        backToGroup: 'Back to {group}',
+        by: 'by',
+        noPhotosYet: 'No photos yet',
+        downloadStarted: 'Download Started!',
+        downloadComplete: 'Download Complete!',
+        supportPhotographers: 'Support the photographers who made these shots possible by tagging or following them:',
+        done: 'Done',
+        photographers: 'Photographers',
+        photosReady: 'Your photos are ready to share.',
+        doNotClose: 'Do not close until this dialog closes.',
+        shareSaveNow: 'Share/Save Now',
+        downloadZip: 'Download ZIP',
+        cancel: 'Cancel',
+        progress: 'Progress',
+        filesProcessed: 'files processed',
+        clear: 'Clear',
+        download: 'Download',
+        downloadingPhotos: 'Downloading Photos',
+        sharingPhotos: 'Sharing Photos',
+        photosReadyTitle: 'Photos Ready',
+        // password
+        passwordRequired: 'Password Required',
+        passwordPlaceholder: 'Enter password',
+        accessing: 'Accessing...',
+        viewAccess: 'View Access',
+        collectionBy: 'Collection by {owner}',
+        viewAllPictures: 'View All Pictures',
+        allPictures: 'All Pictures',
+        selectedCount: '{count} {plural} selected',
+        photo: 'photo',
+        photos: 'photos'
+    },
+    th: {
+        backToGroup: 'กลับไปที่ {group}',
+        by: 'โดย',
+        noPhotosYet: 'ยังไม่มีรูปภาพ',
+        downloadStarted: 'เริ่มดาวน์โหลดแล้ว!',
+        downloadComplete: 'ดาวน์โหลดเสร็จสิ้น!',
+        supportPhotographers: 'สนับสนุนช่างภาพที่ถ่ายภาพเหล่านี้ด้วยการแท็กหรือติดตามพวกเขา:',
+        done: 'เสร็จสิ้น',
+        photographers: 'ช่างภาพ',
+        photosReady: 'รูปภาพของคุณพร้อมสำหรับการแชร์แล้ว',
+        doNotClose: 'กรุณาอย่าปิดจนกว่ากล่องข้อความนี้จะปิดลง',
+        shareSaveNow: 'แชร์/บันทึกทันที',
+        downloadZip: 'ดาวน์โหลดไฟล์ ZIP',
+        cancel: 'ยกเลิก',
+        progress: 'ความคืบหน้า',
+        filesProcessed: 'ไฟล์ได้รับการประมวลผลแล้ว',
+        clear: 'ล้างข้อมูล',
+        download: 'ดาวน์โหลด',
+        downloadingPhotos: 'กำลังดาวน์โหลดรูปภาพ',
+        sharingPhotos: 'กำลังแชร์รูปภาพ',
+        photosReadyTitle: 'รูปภาพพร้อมแล้ว',
+        // password
+        passwordRequired: 'ต้องระบุรหัสผ่าน',
+        passwordPlaceholder: 'ป้อนรหัสผ่าน',
+        accessing: 'กำลังตรวจสอบ...',
+        viewAccess: 'ดูข้อมูล',
+        collectionBy: 'คอลเลกชันโดย {owner}',
+        viewAllPictures: 'ดูรูปภาพทั้งหมด',
+        allPictures: 'รูปภาพทั้งหมด',
+        selectedCount: 'เลือกแล้ว {count} {plural}',
+        photo: 'รูปภาพ',
+        photos: 'รูปภาพ'
+    }
+}
+
+const currentLang = ref<'en' | 'th'>('en')
+
+onMounted(() => {
+    if (typeof navigator !== 'undefined') {
+        const lang = navigator.language || (navigator.languages && navigator.languages[0]) || 'en'
+        if (lang.toLowerCase().startsWith('th')) {
+            currentLang.value = 'th'
+        }
+    }
+})
+
+const t = (key: keyof typeof translations.en) => {
+    return translations[currentLang.value][key] || translations.en[key]
+}
 
 const showSupportPopup = (downloadedPhotos: any[]) => {
     const map = new Map()
