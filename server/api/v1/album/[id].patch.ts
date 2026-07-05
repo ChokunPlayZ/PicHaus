@@ -49,6 +49,8 @@ export default defineEventHandler(async (event) => {
             updatedAt: now,
         }).where(eq(albums.id, id)).returning()
 
+        if (!updatedAlbum) throw createError({ statusCode: 500, statusMessage: 'Failed to update album' })
+
         const owner = await db.query.users.findFirst({ where: eq(users.id, updatedAlbum.ownerId), columns: { id: true, name: true, avatarPath: true } })
 
         return {

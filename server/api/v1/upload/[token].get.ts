@@ -89,9 +89,11 @@ export default defineEventHandler(async (event) => {
             return { success: true, data: { type: 'album', requiresPassword: true, shareType: shareLink.type, showMetadata: shareLink.showMetadata } }
         }
 
-        const [{ photoCount }] = await db.select({ photoCount: sql<number>`COUNT(*)` })
+        const countResult = await db.select({ photoCount: sql<number>`COUNT(*)` })
             .from(photos)
             .where(eq(photos.albumId, shareLink.album.id))
+
+        const photoCount = countResult[0]?.photoCount ?? 0
 
         return {
             success: true,

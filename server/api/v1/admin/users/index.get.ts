@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
             ? or(ilike(users.name, `%${search}%`), ilike(users.email, `%${search}%`))
             : undefined
 
-        const [rows, [{ total }]] = await Promise.all([
+        const [rows, countResult] = await Promise.all([
             db.select({
                 id: users.id,
                 name: users.name,
@@ -34,6 +34,8 @@ export default defineEventHandler(async (event) => {
                 .offset(skip),
             db.select({ total: count() }).from(users).where(where),
         ])
+
+        const total = countResult[0]?.total ?? 0
 
         const userIds = rows.map(u => u.id)
 

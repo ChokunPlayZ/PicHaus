@@ -29,6 +29,8 @@ export default defineEventHandler(async (event) => {
             updatedAt: now,
         }).returning()
 
+        if (!album) throw createError({ statusCode: 500, statusMessage: 'Failed to create album' })
+
         const owner = await db.query.users.findFirst({
             where: eq(users.id, user.id),
             columns: { id: true, name: true, email: true },

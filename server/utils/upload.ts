@@ -259,7 +259,7 @@ export async function processPhotoBackground(options: {
     try {
         const filePath = getAbsoluteFilePath(options.storagePath)
         const fs = await import('fs/promises')
-        let fileBuffer = await fs.readFile(filePath)
+        let fileBuffer: Buffer = await fs.readFile(filePath)
 
         const exifData = await extractExifData(fileBuffer)
         let storedWidth = exifData.width ?? 0

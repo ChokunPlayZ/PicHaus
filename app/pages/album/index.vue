@@ -580,6 +580,7 @@ interface Album {
     updatedAt?: number
     isPublic: boolean
     owner: {
+        id: string
         name: string | null
     }
     _count: {

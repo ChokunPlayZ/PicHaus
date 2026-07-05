@@ -80,8 +80,12 @@ export default defineEventHandler(async (event) => {
         .innerJoin(albums, eq(photos.albumId, albums.id))
         .where(ownedAlbum)
 
+    const totalPhotosCount = totalPhotos[0]?.value ?? 0
+    const totalAlbumsCount = totalAlbums[0]?.value ?? 0
+    const totalBytes = storageStats?.total ? Number(storageStats.total) : 0
+
     return {
-        totals: { photos: Number(totalPhotos[0].value), albums: Number(totalAlbums[0].value) },
+        totals: { photos: Number(totalPhotosCount), albums: Number(totalAlbumsCount) },
         cameras: cameraStats.map(s => ({ model: s.model, count: Number(s.count) })),
         lenses: lensStats.map(s => ({ model: s.model, count: Number(s.count) })),
         technical: {
@@ -91,6 +95,6 @@ export default defineEventHandler(async (event) => {
             focalLength: focalLengthStats.map(s => ({ value: s.value, count: Number(s.count) })),
         },
         timeline: photosByMonth.map(s => ({ date: s.date, count: Number(s.count) })),
-        storage: { totalBytes: Number(storageStats.total ?? 0) },
+        storage: { totalBytes },
     }
 })

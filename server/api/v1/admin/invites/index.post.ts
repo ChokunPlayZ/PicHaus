@@ -37,6 +37,8 @@ export default defineEventHandler(async (event) => {
         createdBy: admin.id,
     }).returning()
 
+    if (!row) throw createError({ statusCode: 500, statusMessage: 'Failed to create invite token' })
+
     return {
         success: true,
         data: {

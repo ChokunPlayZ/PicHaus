@@ -37,6 +37,8 @@ export default defineEventHandler(async (event) => {
         uploadedAt: getUnixTimestamp(),
     }).returning()
 
+    if (!logo) throw createError({ statusCode: 500, statusMessage: 'Failed to create logo' })
+
     return {
         success: true,
         data: {

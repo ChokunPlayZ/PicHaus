@@ -36,6 +36,8 @@ export default defineEventHandler(async (event) => {
             iso: body.iso ? Number(body.iso) : undefined,
         }).where(eq(photos.id, id)).returning()
 
+        if (!updatedPhoto) throw createError({ statusCode: 500, statusMessage: 'Failed to update photo' })
+
         return {
             success: true,
             data: {

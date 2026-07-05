@@ -439,6 +439,7 @@ interface Photo {
     blurhash: string | null
     dateTaken: number | null
     createdAt: number
+    updatedAt?: number
     uploader: {
         id: string
         name: string | null
@@ -603,7 +604,7 @@ const downloadFavoritesAsZip = async () => {
         }
 
         for (let i = 0; i < batches.length; i++) {
-            const batch = batches[i]
+            const batch = batches[i]!
             const zip = new JSZip()
             const folder = zip.folder(folderName)
             batch.forEach(f => {
@@ -703,6 +704,7 @@ const photographers = ref<Array<{
     email: string | null
     instagram: string | null
     role: string
+    avatar?: string | null
 }>>([])
 
 // Backdrop drag-close prevention helpers
@@ -741,6 +743,8 @@ const downloadAll = async () => {
     downloadProgress.value = { current: 0, total: 0 }
     pendingShareFiles.value = null
     isSharing.value = false
+    let skipCleanup = false
+    const folderName = (viewMode.value === 'album' ? albumName.value : groupTitle.value) || 'photos'
 
     try {
         // Fetch all photo URLs
@@ -809,7 +813,7 @@ const downloadAll = async () => {
         }
 
         for (let i = 0; i < batches.length; i++) {
-            const batch = batches[i]
+            const batch = batches[i]!
             const zip = new JSZip()
             const folder = zip.folder(folderName)
             batch.forEach(f => folder?.file(f.name, f.blob))
@@ -841,6 +845,7 @@ const downloadAllGroupPhotos = async () => {
     downloadProgress.value = { current: 0, total: 0 }
     pendingShareFiles.value = null
     isSharing.value = false
+    let skipCleanup = false
 
     try {
         // Collect all photos to download
@@ -917,7 +922,7 @@ const downloadAllGroupPhotos = async () => {
         for (let i = 0; i < batches.length; i++) {
             const zip = new JSZip()
             const groupFolder = zip.folder(folderName)
-            batches[i].forEach(f => {
+            batches[i]!.forEach(f => {
                 const albumFolder = groupFolder?.folder(f.albumName || 'uncategorized')
                 albumFolder?.file(f.name, f.blob)
             })
@@ -1047,7 +1052,7 @@ const downloadFavorites = async () => {
         }
 
         for (let i = 0; i < batches.length; i++) {
-            const batch = batches[i]
+            const batch = batches[i]!
             const zip = new JSZip()
             const folder = zip.folder(folderName)
             batch.forEach(f => folder?.file(f.name, f.blob))

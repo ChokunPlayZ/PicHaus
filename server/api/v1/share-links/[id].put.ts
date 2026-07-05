@@ -44,9 +44,11 @@ export default defineEventHandler(async (event) => {
         if (body.logoImageId !== undefined) groupUpdateData.logoImageId = body.logoImageId || null
 
         if (body.groupAlbumIds && Array.isArray(body.groupAlbumIds)) {
-            const [{ value }] = await db.select({ value: count() })
+            const countResult = await db.select({ value: count() })
                 .from(albums)
                 .where(and(inArray(albums.id, body.groupAlbumIds), eq(albums.ownerId, user.id)))
+
+            const value = countResult[0]?.value ?? 0
 
             if (value !== body.groupAlbumIds.length) {
                 throw createError({ statusCode: 400, statusMessage: 'One or more albums invalid or not owned by you' })

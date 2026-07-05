@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
 
     const where = conditions.length > 1 ? and(...conditions) : conditions[0]
 
-    const [albumRows, [{ total }]] = await Promise.all([
+    const [albumRows, countResult] = await Promise.all([
         db.select({
             id: albums.id,
             title: albums.title,
@@ -66,6 +66,8 @@ export default defineEventHandler(async (event) => {
             .offset(skip),
         db.select({ total: count() }).from(albums).where(where),
     ])
+
+    const total = countResult[0]?.total ?? 0
 
     const timeline = albumRows.reduce((acc: Record<string, number>, album) => {
         const ts = album.eventDate ? Number(album.eventDate) : Number(album.createdAt)

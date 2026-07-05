@@ -50,17 +50,17 @@ export default defineEventHandler(async (event) => {
     let stats = { users: 0, albums: 0, photos: 0, storageMb: 0 }
     if (dbOk) {
         try {
-            const [[u], [a], [p], [s]] = await Promise.all([
+            const [uRes, aRes, pRes, sRes] = await Promise.all([
                 db.select({ value: count() }).from(users),
                 db.select({ value: count() }).from(albums),
                 db.select({ value: count() }).from(photos),
                 db.select({ value: sum(photos.size) }).from(photos),
             ])
             stats = {
-                users: u.value,
-                albums: a.value,
-                photos: p.value,
-                storageMb: Math.round(Number(s.value ?? 0) / 1024 / 1024),
+                users: uRes[0]?.value ?? 0,
+                albums: aRes[0]?.value ?? 0,
+                photos: pRes[0]?.value ?? 0,
+                storageMb: Math.round(Number(sRes[0]?.value ?? 0) / 1024 / 1024),
             }
         } catch {}
     }

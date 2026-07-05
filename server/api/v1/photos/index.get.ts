@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
 
     const where = and(...(conditions as any[]))
 
-    const [rows, [{ total }]] = await Promise.all([
+    const [rows, countResult] = await Promise.all([
         db.select({
             id: photos.id,
             filename: photos.filename,
@@ -83,6 +83,8 @@ export default defineEventHandler(async (event) => {
             .offset(skip),
         db.select({ total: count() }).from(photos).where(where),
     ])
+
+    const total = countResult[0]?.total ?? 0
 
     const serializedPhotos = rows.map(p => ({
         ...p,

@@ -105,7 +105,7 @@ export default defineEventHandler(async (event) => {
             targetPhotographer ? eq(photos.uploaderId, targetPhotographer) : undefined,
         )
 
-        const [photoRows, [{ total }], uploaderRows, cameraRows, lensRows] = await Promise.all([
+        const [photoRows, countResult, uploaderRows, cameraRows, lensRows] = await Promise.all([
             db.select({
                 id: photos.id,
                 filename: photos.filename,
@@ -155,6 +155,8 @@ export default defineEventHandler(async (event) => {
                 .where(and(eq(photos.albumId, id), sql`${photos.lens} IS NOT NULL AND ${photos.lens} != ''`))
                 .groupBy(photos.lens),
         ])
+
+        const total = countResult[0]?.total ?? 0
 
         const uploaderIds = new Set(
             uploaderRows.map(u => u.id)

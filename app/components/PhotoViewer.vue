@@ -474,7 +474,7 @@ onMounted(() => {
 
 onUnmounted(() => {
     for (const objectUrl of cachedImageUrls.values()) {
-        URL.revokeObjectURL(objectUrl)
+        URL.revokeObjectURL(objectUrl.url)
     }
     cachedImageUrls.clear()
     loadedImageSrcByPhotoId.clear()

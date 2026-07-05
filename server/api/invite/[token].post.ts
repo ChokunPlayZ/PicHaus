@@ -59,6 +59,8 @@ export default defineEventHandler(async (event) => {
             updatedAt: now,
         }).returning()
 
+        if (!newUser) throw createError({ statusCode: 500, statusMessage: 'Failed to create user' })
+
         await db.update(inviteTokens)
             .set({ usedAt: now })
             .where(eq(inviteTokens.id, row.id))

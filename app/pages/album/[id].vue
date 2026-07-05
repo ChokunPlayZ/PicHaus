@@ -1538,6 +1538,8 @@ interface User {
     name: string | null
     email: string | null
     instagram: string | null
+    role?: string
+    avatar?: string | null
 }
 
 interface Photo {
@@ -1551,9 +1553,12 @@ interface Photo {
     blurhash: string | null
     dateTaken: number | null
     createdAt: number
+    updatedAt?: number
     uploader: {
         id: string
         name: string | null
+        instagram?: string | null
+        avatar?: string | null
     } | null
     // EXIF data
     cameraModel?: string | null
@@ -1579,6 +1584,7 @@ interface Collaborator {
         id: string
         name: string | null
         email: string | null
+        avatar?: string | null
     }
     createdAt: number
 }
@@ -1654,7 +1660,7 @@ const canEditPhoto = (photo: Photo | null) => {
     if (!photo) return false
     if (album.value?.permissions.isOwner) return true
     if (user.value?.role === 'ADMIN') return true
-    if (album.value?.permissions.canUpload && photo.uploaderId === user.value?.id) return true
+    if (album.value?.permissions.canUpload && photo.uploader?.id === user.value?.id) return true
     return false
 }
 
@@ -2299,7 +2305,7 @@ const downloadSelected = async () => {
         const albumName = album.value?.name || 'photos'
 
         for (let i = 0; i < batches.length; i++) {
-            const batch = batches[i]
+            const batch = batches[i]!
             const zip = new JSZip()
             const folder = zip.folder(albumName)
             batch.forEach(f => folder?.file(f.name, f.blob))
@@ -3477,7 +3483,7 @@ const downloadAll = async () => {
         const albumName = album.value?.name || 'album'
 
         for (let i = 0; i < batches.length; i++) {
-            const batch = batches[i]
+            const batch = batches[i]!
             const zip = new JSZip()
             const folder = zip.folder(albumName)
             batch.forEach(f => folder?.file(f.name, f.blob))

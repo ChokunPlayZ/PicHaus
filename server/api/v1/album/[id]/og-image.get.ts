@@ -87,7 +87,9 @@ export default defineEventHandler(async (event) => {
     if (albumPhotos.length > 0) {
         for (let i = albumPhotos.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [albumPhotos[i], albumPhotos[j]] = [albumPhotos[j], albumPhotos[i]]
+            const temp = albumPhotos[i]!
+            albumPhotos[i] = albumPhotos[j]!
+            albumPhotos[j] = temp
         }
         const count = Math.min(albumPhotos.length, Math.floor(Math.random() * (32 - 16 + 1)) + 16)
         albumPhotos = albumPhotos.slice(0, count)
@@ -122,7 +124,7 @@ export default defineEventHandler(async (event) => {
             } catch { return null }
         }))
 
-        composites.push(...results.filter((c): c is sharp.OverlayOptions => c !== null))
+        composites.push(...(results.filter(c => c !== null) as sharp.OverlayOptions[]))
     }
 
     const finalImage = await composite.composite(composites).png().toBuffer()

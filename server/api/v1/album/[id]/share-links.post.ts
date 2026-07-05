@@ -30,6 +30,8 @@ export default defineEventHandler(async (event) => {
         createdAt: getUnixTimestamp(),
     }).returning()
 
+    if (!link) throw createError({ statusCode: 500, statusMessage: 'Failed to create share link' })
+
     return {
         success: true,
         data: { ...link, createdAt: Number(link.createdAt), expiresAt: link.expiresAt ? Number(link.expiresAt) : null },

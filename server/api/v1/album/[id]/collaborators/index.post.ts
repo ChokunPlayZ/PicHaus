@@ -52,6 +52,8 @@ export default defineEventHandler(async (event) => {
             createdAt: getUnixTimestamp(),
         }).returning()
 
+        if (!newCollab) throw createError({ statusCode: 500, statusMessage: 'Failed to add collaborator' })
+
         return {
             success: true,
             message: 'Collaborator added successfully',

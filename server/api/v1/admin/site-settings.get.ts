@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
         .where(eq(siteSettings.id, 1))
         .limit(1)
 
-    const row = rows[0] ?? { siteName: 'PicHaus', accentColor: null, logoImageId: null, allowRegistration: false, googleOAuthEnabled: false, googleOAuthAllowedDomain: null }
+    const row = rows[0] ?? ({ siteName: 'PicHaus', accentColor: null, logoImageId: null, allowRegistration: false, googleOAuthEnabled: false, googleOAuthAllowedDomain: null } as any)
 
     return {
         success: true,

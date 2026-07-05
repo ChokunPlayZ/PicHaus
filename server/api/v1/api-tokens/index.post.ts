@@ -37,6 +37,10 @@ export default defineEventHandler(async (event) => {
         userId: user.id,
     }).returning()
 
+    if (!apiToken) {
+        throw createError({ statusCode: 500, statusMessage: 'Failed to create API token' })
+    }
+
     return {
         success: true,
         data: {

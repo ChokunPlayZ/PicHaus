@@ -148,7 +148,7 @@ definePageMeta({
 useHead({
     script: [
         {
-            children: `
+            innerHTML: `
                 (function() {
                     if (typeof window !== 'undefined' && localStorage.getItem('pichaus_access_token')) {
                         document.documentElement.classList.add('login-loading');

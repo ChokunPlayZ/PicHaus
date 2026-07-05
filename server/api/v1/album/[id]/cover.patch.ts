@@ -36,6 +36,8 @@ export default defineEventHandler(async (event) => {
             .where(eq(albums.id, id))
             .returning()
 
+        if (!updatedAlbum) throw createError({ statusCode: 500, statusMessage: 'Failed to update album cover' })
+
         let coverPhoto = null
         if (updatedAlbum.coverPhotoId) {
             const p = await db.query.photos.findFirst({

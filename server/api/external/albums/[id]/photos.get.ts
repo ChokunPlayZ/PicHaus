@@ -69,6 +69,7 @@ export default defineEventHandler(async (event) => {
         }).slice(0, limit)
 
     const baseUrl = getRequestURL(event).origin
+    const totalCount = total[0]?.value ?? 0
 
     return {
         success: true,
@@ -87,8 +88,8 @@ export default defineEventHandler(async (event) => {
         pagination: {
             page,
             limit,
-            total: total[0].value,
-            hasMore: orientation === 'any' ? skip + photoRows.length < total[0].value : filteredPhotos.length === limit,
+            total: totalCount,
+            hasMore: orientation === 'any' ? skip + photoRows.length < totalCount : filteredPhotos.length === limit,
         },
         meta: {
             filters: { orientation, sortBy, order: order === 'asc' ? 'asc' : 'desc', fromDateTaken: fromDateTaken ? Number(fromDateTaken) : null, toDateTaken: toDateTaken ? Number(toDateTaken) : null },

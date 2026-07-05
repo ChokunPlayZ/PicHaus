@@ -43,6 +43,8 @@ export default defineEventHandler(async (event) => {
             tags: hasTags ? tags : [],
         }).returning()
 
+        if (!shareGroup) throw createError({ statusCode: 500, statusMessage: 'Failed to create share group' })
+
         if (hasAlbums) {
             await db.insert(albumToShareGroups).values(
                 albumIds.map((id: string) => ({ A: id, B: shareGroup.id }))
@@ -61,6 +63,8 @@ export default defineEventHandler(async (event) => {
         if (password) linkData.password = await hashPassword(password)
 
         const [shareLink] = await db.insert(shareLinks).values(linkData as typeof shareLinks.$inferInsert).returning()
+
+        if (!shareLink) throw createError({ statusCode: 500, statusMessage: 'Failed to create share link' })
 
         return {
             success: true,

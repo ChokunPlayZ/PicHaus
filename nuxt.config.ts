@@ -19,7 +19,7 @@ export default defineNuxtConfig({
       ],
       script: [
         {
-          children: `
+          innerHTML: `
             (function() {
               const getCookie = function(name) {
                 const value = "; " + document.cookie;

@@ -104,6 +104,8 @@ export default defineEventHandler(async (event) => {
             updatedAt: BigInt(Date.now()),
         }).returning()
 
+        if (!coverPhoto) throw createError({ statusCode: 500, statusMessage: 'Failed to create cover photo' })
+
         // Delete old cover photo
         if (album.coverPhotoId) {
             const oldCover = await db.query.photos.findFirst({ where: eq(photos.id, album.coverPhotoId) })
@@ -120,6 +122,8 @@ export default defineEventHandler(async (event) => {
             .set({ coverPhotoId: coverPhoto.id })
             .where(eq(albums.id, id))
             .returning()
+
+        if (!updatedAlbum) throw createError({ statusCode: 500, statusMessage: 'Failed to update album cover' })
 
         const updatedCoverPhoto = await db.query.photos.findFirst({
             where: eq(photos.id, updatedAlbum.coverPhotoId!),

@@ -23,6 +23,8 @@ export default defineEventHandler(async (event) => {
             updatedAt: now,
         }).returning({ id: users.id, email: users.email, name: users.name, createdAt: users.createdAt })
 
+        if (!user) throw createError({ statusCode: 500, statusMessage: 'Failed to create admin user during setup' })
+
         return {
             success: true,
             message: 'Setup completed successfully',

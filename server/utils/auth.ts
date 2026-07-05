@@ -63,7 +63,8 @@ function verifySessionToken(token: string): { userId: string } | null {
     const parts = token.split('.')
     if (parts.length !== 2) return null
 
-    const [encodedPayload, signature] = parts
+    const encodedPayload = parts[0]!
+    const signature = parts[1]!
     const expectedSignature = createHmac('sha256', getSessionSecret())
         .update(encodedPayload)
         .digest('base64url')

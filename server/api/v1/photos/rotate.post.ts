@@ -84,6 +84,8 @@ export default defineEventHandler(async (event) => {
                 updatedAt: BigInt(nowSeconds),
             }).where(eq(photos.id, photo.id)).returning()
 
+            if (!updatedPhoto) throw createError({ statusCode: 500, statusMessage: 'Failed to update photo record' })
+
             updatedPhotosList.push({
                 id: updatedPhoto.id,
                 width: updatedPhoto.width,
