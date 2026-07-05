@@ -545,6 +545,11 @@ const handleTouchMove = (e: TouchEvent) => {
         } else {
             imageSwipeOffset.value = deltaX
         }
+    } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10) {
+        // Prevent browser scrolling during vertical swipes to close
+        if (e.cancelable) {
+            e.preventDefault()
+        }
     }
 }
 
@@ -561,6 +566,9 @@ const handleTouchEnd = () => {
             // Swipe right - previous photo
             emit('previous')
         }
+    } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > minSwipeDistance) {
+        // Swipe up/down - close viewer
+        emit('close')
     }
 
     // Reset values

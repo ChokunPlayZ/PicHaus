@@ -377,8 +377,8 @@
                                 {{ photographer.name?.charAt(0) || '?' }}
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="font-medium text-sm truncate" style="color: var(--text-1);">{{ photographer.name }}</p>
-                                <p v-if="photographer.instagram" class="text-xs mt-0.5 truncate" style="color: var(--text-3);">@{{ photographer.instagram }}</p>
+                                <p class="font-medium text-sm break-words" style="color: var(--text-1);">{{ photographer.name }}</p>
+                                <p v-if="photographer.instagram" class="text-xs mt-0.5 break-words" style="color: var(--text-3);">@{{ photographer.instagram }}</p>
                             </div>
                         </div>
                         <a v-if="photographer.instagram"

@@ -107,6 +107,12 @@ export const useAlbumTheme = () => {
         if (!preset) {
             THEMED_PROPS.forEach(p => root.style.removeProperty(p))
             root.classList.remove('themed-album')
+            
+            // Restore site-wide custom accent color if configured
+            const { settings, applyAccent } = useSiteSettings()
+            if (settings.value?.accentColor) {
+                applyAccent(settings.value.accentColor)
+            }
             return
         }
         root.classList.add('themed-album')
@@ -160,6 +166,12 @@ export const useAlbumTheme = () => {
         if (import.meta.server) return
         THEMED_PROPS.forEach(p => document.documentElement.style.removeProperty(p))
         document.documentElement.classList.remove('themed-album')
+        
+        // Restore site-wide custom accent color if configured
+        const { settings, applyAccent } = useSiteSettings()
+        if (settings.value?.accentColor) {
+            applyAccent(settings.value.accentColor)
+        }
     }
 
     return { applyTheme, resetTheme, ALBUM_THEMES }
