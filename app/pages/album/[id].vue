@@ -3504,42 +3504,85 @@ const processNextStep = async () => {
 const uploadFile = async (item: UploadItem) => {
     item.status = 'uploading'
     item.progress = 0
-    // activeUploads is updated by the loop check or we can track it here but better to rely on status
 
     try {
-        const formData = new FormData()
-        formData.append('file', item.file)
+        const authToken = getAuthToken()
+        const hash = await calculateSHA256(item.file)
 
-        await new Promise<void>((resolve, reject) => {
-            const xhr = new XMLHttpRequest()
+        // 1. Initiate resumable upload
+        const initRes = await $fetch<{ success: boolean; uploadId?: string; nextOffset?: number; duplicate?: boolean }>(
+            `/api/v1/album/${albumId}/upload/resumable/initiate`,
+            {
+                method: 'POST',
+                body: {
+                    filename: item.file.name,
+                    fileSize: item.file.size,
+                    fileHash: hash,
+                    mimeType: item.file.type || 'application/octet-stream',
+                },
+                headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
+            }
+        )
 
-            xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable) {
-                    item.progress = Math.round((e.loaded * 100) / e.total)
+        if (initRes.duplicate) {
+            item.status = 'skipped'
+            item.progress = 100
+            
+            // Check if all done to refresh album
+            if (uploadQueue.value.every(i => ['completed', 'skipped', 'failed'].includes(i.status))) {
+                fetchAlbum()
+            }
+            return
+        }
+
+        const uploadId = initRes.uploadId
+        let offset = initRes.nextOffset ?? 0
+        const CHUNK_SIZE = 2 * 1024 * 1024 // 2 MB chunks
+
+        // 2. Upload chunks one by one
+        while (offset < item.file.size) {
+            const chunk = item.file.slice(offset, offset + CHUNK_SIZE)
+            const currentOffset = offset
+
+            await new Promise<void>((resolvePromise, rejectPromise) => {
+                const xhr = new XMLHttpRequest()
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const chunkUploaded = e.loaded
+                        const totalUploaded = currentOffset + chunkUploaded
+                        item.progress = Math.round((totalUploaded * 100) / item.file.size)
+                    }
                 }
-            }
 
-            xhr.onload = () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve()
-                } else {
-                    reject({
-                        status: xhr.status,
-                        statusText: xhr.statusText,
-                        data: tryParseJSON(xhr.responseText)
-                    })
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        const res = tryParseJSON(xhr.responseText)
+                        if (res && res.nextOffset !== undefined) {
+                            offset = res.nextOffset
+                        } else {
+                            offset += chunk.size
+                        }
+                        resolvePromise()
+                    } else {
+                        rejectPromise({
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            data: tryParseJSON(xhr.responseText),
+                        })
+                    }
                 }
-            }
 
-            xhr.onerror = () => reject({ status: 0, statusText: 'Network Error' })
+                xhr.onerror = () => rejectPromise({ status: 0, statusText: 'Network Error' })
 
-            const authToken = getAuthToken()
-            xhr.open('POST', `/api/v1/album/${albumId}/upload`)
-            if (authToken) {
-                xhr.setRequestHeader('Authorization', `Bearer ${authToken}`)
-            }
-            xhr.send(formData)
-        })
+                xhr.open('POST', `/api/v1/album/${albumId}/upload/resumable/chunk?uploadId=${uploadId}&offset=${currentOffset}`)
+                xhr.setRequestHeader('Content-Type', 'application/octet-stream')
+                if (authToken) {
+                    xhr.setRequestHeader('Authorization', `Bearer ${authToken}`)
+                }
+                xhr.send(chunk)
+            })
+        }
 
         item.status = 'completed'
         item.progress = 100
@@ -3553,6 +3596,10 @@ const uploadFile = async (item: UploadItem) => {
         if (err.status === 409) {
             item.status = 'skipped'
             item.progress = 100
+            // Check if all done to refresh album
+            if (uploadQueue.value.every(i => ['completed', 'skipped', 'failed'].includes(i.status))) {
+                fetchAlbum()
+            }
         } else {
             console.error('Upload failed:', err)
             item.status = 'failed'
@@ -3560,7 +3607,6 @@ const uploadFile = async (item: UploadItem) => {
             item.progress = 0
         }
     } finally {
-        // activeUploads decrement happens implicitly because status changes from 'uploading'
         processNextStep()
     }
 }

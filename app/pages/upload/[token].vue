@@ -467,16 +467,54 @@ const uploadPhotos = async () => {
         }
 
         // Upload one by one
-        for (const { item } of filesWithHashes.filter(({ hash }) => !duplicates.includes(hash))) {
+        const CHUNK_SIZE = 2 * 1024 * 1024 // 2 MB chunks
+        for (const { item, hash } of filesWithHashes.filter(({ hash }) => !duplicates.includes(hash))) {
             item.status = 'uploading'
             try {
-                const formData = new FormData()
-                formData.append('file', item.file)
-                await $fetch(`/api/v1/album/${albumInfo.value.albumId}/upload`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
-                })
+                // 1. Initiate resumable upload
+                const initRes = await $fetch<{ success: boolean; uploadId?: string; nextOffset?: number; duplicate?: boolean }>(
+                    `/api/v1/album/${albumInfo.value.albumId}/upload/resumable/initiate`,
+                    {
+                        method: 'POST',
+                        body: {
+                            filename: item.file.name,
+                            fileSize: item.file.size,
+                            fileHash: hash,
+                            mimeType: item.file.type || 'application/octet-stream',
+                        },
+                        headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
+                    }
+                )
+
+                if (initRes.duplicate) {
+                    item.status = 'duplicate'
+                    continue
+                }
+
+                const uploadId = initRes.uploadId
+                let offset = initRes.nextOffset ?? 0
+
+                // 2. Upload chunks one by one
+                while (offset < item.file.size) {
+                    const chunk = item.file.slice(offset, offset + CHUNK_SIZE)
+                    
+                    const chunkRes = await $fetch<{ success: boolean; completed: boolean; nextOffset: number }>(
+                        `/api/v1/album/${albumInfo.value.albumId}/upload/resumable/chunk?uploadId=${uploadId}&offset=${offset}`,
+                        {
+                            method: 'POST',
+                            body: chunk,
+                            headers: authToken
+                                ? {
+                                      'Content-Type': 'application/octet-stream',
+                                      Authorization: `Bearer ${authToken}`,
+                                  }
+                                : { 'Content-Type': 'application/octet-stream' },
+                        }
+                    )
+
+                    offset = chunkRes.nextOffset
+                }
+
                 item.status = 'done'
             } catch (err: any) {
                 item.status = 'error'

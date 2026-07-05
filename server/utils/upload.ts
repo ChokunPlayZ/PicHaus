@@ -1,9 +1,12 @@
 import sharp from 'sharp'
-import { createHash } from 'crypto'
+import { createHash, randomUUID } from 'crypto'
 import { writeFile, mkdir } from 'fs/promises'
 import { join, resolve, sep } from 'path'
 import exifr from 'exifr'
 import { encode } from 'blurhash'
+import { db } from './db'
+import { photos } from '../db/schema'
+import { getUnixTimestamp } from './auth'
 
 /**
  * Calculate SHA-256 hash of file buffer
@@ -240,3 +243,79 @@ export async function deleteFile(storagePath: string): Promise<boolean> {
         return false
     }
 }
+
+/**
+ * Processes the uploaded photo in the background (compresses, extracts metadata/exif, generates thumbnail & blurhash, and inserts into DB)
+ */
+export async function processPhotoBackground(options: {
+    storagePath: string
+    originalFilename: string
+    trustedMimeType: string
+    fileHash: string
+    albumId: string
+    uploaderId: string | null
+}): Promise<void> {
+    let thumbnailStoragePath: string | null = null
+    try {
+        const filePath = getAbsoluteFilePath(options.storagePath)
+        const fs = await import('fs/promises')
+        let fileBuffer = await fs.readFile(filePath)
+
+        const exifData = await extractExifData(fileBuffer)
+        let storedWidth = exifData.width ?? 0
+        let storedHeight = exifData.height ?? 0
+
+        // Compress if needed
+        if (shouldAutoCompress(fileBuffer, exifData.software, storedWidth, storedHeight)) {
+            const format = options.trustedMimeType.split('/')[1] ?? 'jpeg'
+            fileBuffer = await compressImage(fileBuffer, format)
+            await fs.writeFile(filePath, fileBuffer)
+            
+            const compressedMeta = await sharp(fileBuffer).metadata()
+            storedWidth = compressedMeta.width ?? storedWidth
+            storedHeight = compressedMeta.height ?? storedHeight
+        }
+
+        const thumbnailBuffer = await generateThumbnail(fileBuffer)
+        const blurhash = await generateBlurhash(fileBuffer)
+
+        const thumbnailFilename = generateUniqueFilename(options.originalFilename, options.fileHash, true)
+        thumbnailStoragePath = await saveFile(thumbnailBuffer, thumbnailFilename, 'thumbnails')
+
+        const now = getUnixTimestamp()
+        const photoId = randomUUID()
+
+        await db.insert(photos).values({
+            id: photoId,
+            filename: options.storagePath.split('/').pop()!,
+            originalName: options.originalFilename,
+            storagePath: options.storagePath,
+            thumbnailStoragePath,
+            blurhash,
+            size: fileBuffer.length,
+            mimeType: options.trustedMimeType,
+            fileHash: options.fileHash,
+            albumId: options.albumId,
+            uploaderId: options.uploaderId,
+            cameraModel: exifData.cameraModel || null,
+            lens: exifData.lens || null,
+            focalLength: exifData.focalLength || null,
+            iso: exifData.iso || null,
+            aperture: exifData.aperture || null,
+            shutterSpeed: exifData.shutterSpeed || null,
+            dateTaken: exifData.dateTaken ? BigInt(exifData.dateTaken) : null,
+            width: storedWidth,
+            height: storedHeight,
+            createdAt: now,
+            updatedAt: now,
+        })
+    } catch (error) {
+        console.error('Failed to process photo in background:', error)
+        // Clean up files
+        await deleteFile(options.storagePath).catch(() => {})
+        if (thumbnailStoragePath) {
+            await deleteFile(thumbnailStoragePath).catch(() => {})
+        }
+    }
+}
+
