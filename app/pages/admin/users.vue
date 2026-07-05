@@ -91,6 +91,13 @@
                                         title="Edit User">
                                         <Icon name="lucide:square-pen" class="h-4 w-4" :stroke-width="2" />
                                     </button>
+                                    <button @click="quickGenerateResetLink(u)"
+                                        class="p-1.5 rounded-lg transition mr-2" style="color: var(--warning-text);"
+                                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--warning-bg)'"
+                                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
+                                        title="Generate Password Reset Link">
+                                        <Icon name="lucide:key" class="h-4 w-4" :stroke-width="2" />
+                                    </button>
                                     <button v-if="u.id !== user?.id" @click="openMergeModal(u)"
                                         class="p-1.5 rounded-lg transition mr-2" style="color: var(--text-2);"
                                         @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
@@ -174,6 +181,33 @@
                             <option value="USER">USER</option>
                             <option value="ADMIN">ADMIN</option>
                         </select>
+                    </div>
+                    <!-- Password Reset Section -->
+                    <div class="pt-2 border-t" style="border-color: var(--separator);">
+                        <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Security</label>
+                        <div class="space-y-2">
+                            <button type="button" @click="generateResetLinkForEditingUser" :disabled="generatingResetLink"
+                                class="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium rounded-xl transition disabled:opacity-50"
+                                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1);"
+                                @mouseover="!generatingResetLink && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
+                                @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                                <Icon name="lucide:key" class="w-4 h-4" :stroke-width="2" />
+                                {{ generatingResetLink ? 'Generating…' : 'Generate Password Reset Link' }}
+                            </button>
+                            <div v-if="editingUserResetLink" class="space-y-1">
+                                <div class="flex gap-2">
+                                    <input :value="editingUserResetLink" readonly type="text"
+                                        class="flex-1 px-3 py-2 text-xs rounded-xl transition font-mono"
+                                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;" />
+                                    <button type="button" @click="copyEditingUserResetLink"
+                                        class="px-3 py-2 rounded-xl text-xs font-medium transition shrink-0"
+                                        style="background: var(--accent); color: var(--accent-text);">
+                                        {{ copiedResetLink ? 'Copied!' : 'Copy' }}
+                                    </button>
+                                </div>
+                                <p class="text-[10px]" style="color: var(--text-3);">This link is valid for 24 hours.</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="flex gap-3 pt-2">
                         <button type="button" @click="showEditModal = false"
@@ -437,6 +471,69 @@ const editForm = ref({
 })
 const saving = ref(false)
 
+const generatingResetLink = ref(false)
+const editingUserResetLink = ref('')
+const copiedResetLink = ref(false)
+
+const generateResetLinkForEditingUser = async () => {
+    if (!editingUser.value) return
+    generatingResetLink.value = true
+    try {
+        const res = await $fetch<{ success: boolean; data: { token: string } }>('/api/v1/admin/invites', {
+            method: 'POST',
+            body: {
+                type: 'password_reset',
+                userId: editingUser.value.id,
+                expiresInHours: 24,
+            }
+        })
+        if (res.success) {
+            editingUserResetLink.value = `${window.location.origin}/invite/${res.data.token}`
+            copiedResetLink.value = false
+        }
+    } catch (err: any) {
+        dialog.toast(err.data?.statusMessage || 'Failed to generate reset link')
+    } finally {
+        generatingResetLink.value = false
+    }
+}
+
+const copyEditingUserResetLink = async () => {
+    if (!editingUserResetLink.value) return
+    try {
+        await navigator.clipboard.writeText(editingUserResetLink.value)
+        copiedResetLink.value = true
+        dialog.toast('Password reset link copied to clipboard', 'success')
+        setTimeout(() => {
+            copiedResetLink.value = false
+        }, 2000)
+    } catch (err) {
+        dialog.toast('Failed to copy link')
+    }
+}
+
+const quickGenerateResetLink = async (targetUser: User) => {
+    if (!await dialog.confirm(`Generate a password reset link for ${targetUser.name || targetUser.email || 'this user'}?`)) return
+
+    try {
+        const res = await $fetch<{ success: boolean; data: { token: string } }>('/api/v1/admin/invites', {
+            method: 'POST',
+            body: {
+                type: 'password_reset',
+                userId: targetUser.id,
+                expiresInHours: 24,
+            }
+        })
+        if (res.success) {
+            const url = `${window.location.origin}/invite/${res.data.token}`
+            await navigator.clipboard.writeText(url)
+            dialog.toast(`Password reset link copied to clipboard for ${targetUser.name || targetUser.email}`, 'success')
+        }
+    } catch (err: any) {
+        dialog.toast(err.data?.statusMessage || 'Failed to generate reset link')
+    }
+}
+
 const openEditModal = (targetUser: User) => {
     editingUser.value = targetUser
     editForm.value = {
@@ -445,6 +542,8 @@ const openEditModal = (targetUser: User) => {
         instagram: targetUser.instagram || '',
         role: targetUser.role
     }
+    editingUserResetLink.value = ''
+    copiedResetLink.value = false
     showEditModal.value = true
 }
 
