@@ -202,7 +202,7 @@
             class="fixed inset-0 flex items-center justify-center p-4 z-50"
             style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
             @click.self="showPhotographersModal = false">
-            <div class="modal-box rounded-2xl p-6 max-w-md w-full"
+            <div class="solid-modal rounded-2xl p-6 max-w-md w-full"
                 style="border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold" style="color: var(--text-1);">{{ t('photographers') }}</h3>
@@ -1430,22 +1430,20 @@ const nextPhoto = () => {
     transform: translateY(100%);
     opacity: 0;
 }
-.modal-box {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+.solid-modal {
+    background: #ffffff !important;
 }
-:global(.dark) .modal-box {
-    background: rgba(28, 28, 30, 0.85);
+:global(.dark) .solid-modal {
+    background: #1c1c1e !important;
 }
 .role-badge {
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    color: var(--text-2);
+    background: #f2f2f7;
+    border: 1px solid #e5e5ea;
+    color: #636366;
 }
 :global(.dark) .role-badge {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: var(--text-1);
+    background: #2c2c2e;
+    border: 1px solid #3a3a3c;
+    color: #aeaeb2;
 }
 </style>
