@@ -413,6 +413,10 @@ const dialog = useDialog()
 import JSZip from 'jszip'
 import { setAuthToken, buildAssetUrl } from '~/utils/auth-client'
 
+const MAX_ZIP_SIZE = 100 * 1024 * 1024 // 100 MB
+const MAX_SHARE_SIZE = 25 * 1024 * 1024 // 25 MB
+const MAX_SHARE_COUNT = 15
+
 const downloadBlob = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -579,13 +583,41 @@ const downloadFavoritesAsZip = async () => {
     let downloadSuccess = false
     try {
         const folderName = (viewMode.value === 'album' ? albumName.value : groupTitle.value) || 'photos'
-        const zip = new JSZip()
-        const folder = zip.folder(folderName)
-        pendingShareFiles.value.forEach(f => {
-            folder?.file(f.name, f)
-        })
-        const content = await zip.generateAsync({ type: 'blob' })
-        downloadBlob(content, `${folderName}-selected.zip`)
+        
+        const files = pendingShareFiles.value
+        const batches: File[][] = []
+        let currentBatch: File[] = []
+        let currentBatchSize = 0
+
+        for (const file of files) {
+            if (currentBatchSize + file.size > MAX_ZIP_SIZE && currentBatch.length > 0) {
+                batches.push(currentBatch)
+                currentBatch = []
+                currentBatchSize = 0
+            }
+            currentBatch.push(file)
+            currentBatchSize += file.size
+        }
+        if (currentBatch.length > 0) {
+            batches.push(currentBatch)
+        }
+
+        for (let i = 0; i < batches.length; i++) {
+            const batch = batches[i]
+            const zip = new JSZip()
+            const folder = zip.folder(folderName)
+            batch.forEach(f => {
+                folder?.file(f.name, f)
+            })
+            const content = await zip.generateAsync({ type: 'blob' })
+            const partSuffix = batches.length > 1 ? `-part${i + 1}` : ''
+            downloadBlob(content, `${folderName}-selected${partSuffix}.zip`)
+
+            if (i < batches.length - 1) {
+                await new Promise(r => setTimeout(r, 600))
+            }
+        }
+        
         downloadSuccess = true
     } catch (err) {
         console.error('Download ZIP error:', err)
@@ -722,12 +754,13 @@ const downloadAll = async () => {
             return
         }
 
-        let skipCleanup = false
-        const folderName = albumName.value || 'album'
+        const totalSize = files.reduce((sum, f) => sum + f.blob.size, 0)
+        let canShareNatively = false
 
-        if (isIOS.value && navigator.canShare) {
+        if (isIOS.value && navigator.canShare && files.length <= MAX_SHARE_COUNT && totalSize <= MAX_SHARE_SIZE) {
             const shareFiles = files.map(f => new File([f.blob], f.name, { type: f.blob.type }))
             if (navigator.canShare({ files: shareFiles })) {
+                canShareNatively = true
                 pendingShareFiles.value = shareFiles
                 photosToSupportAfterShare.value = photosToDownload
                 skipCleanup = true
@@ -735,12 +768,38 @@ const downloadAll = async () => {
             }
         }
 
-        // All other platforms: zip download
-        const zip = new JSZip()
-        const folder = zip.folder(folderName)
-        files.forEach(f => folder?.file(f.name, f.blob))
-        const content = await zip.generateAsync({ type: 'blob' })
-        downloadBlob(content, `${folderName}.zip`)
+        // All other platforms / fallback: zip download
+        const batches: { blob: Blob; name: string }[][] = []
+        let currentBatch: { blob: Blob; name: string }[] = []
+        let currentBatchSize = 0
+
+        for (const file of files) {
+            if (currentBatchSize + file.blob.size > MAX_ZIP_SIZE && currentBatch.length > 0) {
+                batches.push(currentBatch)
+                currentBatch = []
+                currentBatchSize = 0
+            }
+            currentBatch.push(file)
+            currentBatchSize += file.blob.size
+        }
+        if (currentBatch.length > 0) {
+            batches.push(currentBatch)
+        }
+
+        for (let i = 0; i < batches.length; i++) {
+            const batch = batches[i]
+            const zip = new JSZip()
+            const folder = zip.folder(folderName)
+            batch.forEach(f => folder?.file(f.name, f.blob))
+            const content = await zip.generateAsync({ type: 'blob' })
+            const partSuffix = batches.length > 1 ? `-part${i + 1}` : ''
+            downloadBlob(content, `${folderName}${partSuffix}.zip`)
+
+            if (i < batches.length - 1) {
+                await new Promise(r => setTimeout(r, 600))
+            }
+        }
+
         showSupportPopup(photosToDownload)
     } catch (err) {
         console.error('Download all error:', err)
@@ -805,10 +864,10 @@ const downloadAllGroupPhotos = async () => {
             return
         }
 
-        let skipCleanup = false
+        const totalSize = files.reduce((sum, f) => sum + f.blob.size, 0)
         const folderName = groupTitle.value || 'group'
 
-        if (isIOS.value && navigator.canShare) {
+        if (isIOS.value && navigator.canShare && files.length <= MAX_SHARE_COUNT && totalSize <= MAX_SHARE_SIZE) {
             const shareFiles = files.map(f => new File([f.blob], f.name, { type: f.blob.type }))
             if (navigator.canShare({ files: shareFiles })) {
                 pendingShareFiles.value = shareFiles
@@ -818,15 +877,34 @@ const downloadAllGroupPhotos = async () => {
             }
         }
 
-        // All other platforms: zip download
-        const zip = new JSZip()
-        const groupFolder = zip.folder(folderName)
-        files.forEach(f => {
-            const albumFolder = groupFolder?.folder(f.albumName || 'uncategorized')
-            albumFolder?.file(f.name, f.blob)
-        })
-        const content = await zip.generateAsync({ type: 'blob' })
-        downloadBlob(content, `${folderName}-photos.zip`)
+        const batches: { blob: Blob; name: string; albumName?: string }[][] = []
+        let currentBatch: { blob: Blob; name: string; albumName?: string }[] = []
+        let currentBatchSize = 0
+
+        for (const file of files) {
+            if (currentBatchSize + file.blob.size > MAX_ZIP_SIZE && currentBatch.length > 0) {
+                batches.push(currentBatch)
+                currentBatch = []
+                currentBatchSize = 0
+            }
+            currentBatch.push(file)
+            currentBatchSize += file.blob.size
+        }
+        if (currentBatch.length > 0) batches.push(currentBatch)
+
+        for (let i = 0; i < batches.length; i++) {
+            const zip = new JSZip()
+            const groupFolder = zip.folder(folderName)
+            batches[i].forEach(f => {
+                const albumFolder = groupFolder?.folder(f.albumName || 'uncategorized')
+                albumFolder?.file(f.name, f.blob)
+            })
+            const content = await zip.generateAsync({ type: 'blob' })
+            const partSuffix = batches.length > 1 ? `-part${i + 1}` : ''
+            downloadBlob(content, `${folderName}-photos${partSuffix}.zip`)
+            if (i < batches.length - 1) await new Promise(r => setTimeout(r, 600))
+        }
+
         showSupportPopup(photosToDownload)
     } catch (err) {
         console.error('Download all group photos error:', err)
@@ -914,12 +992,13 @@ const downloadFavorites = async () => {
             }
         }
 
-        if (files.length === 0) return
+        const totalSize = files.reduce((sum, f) => sum + f.blob.size, 0)
+        let canShareNatively = false
 
-        // iOS: try Web Share API with multiple files (no zip needed)
-        if (isIOS.value && navigator.canShare) {
+        if (isIOS.value && navigator.canShare && files.length <= MAX_SHARE_COUNT && totalSize <= MAX_SHARE_SIZE) {
             const shareFiles = files.map(f => new File([f.blob], f.name, { type: f.blob.type }))
             if (navigator.canShare({ files: shareFiles })) {
+                canShareNatively = true
                 pendingShareFiles.value = shareFiles
                 photosToSupportAfterShare.value = photosToDownload
                 skipCleanup = true
@@ -927,12 +1006,38 @@ const downloadFavorites = async () => {
             }
         }
 
-        // All other platforms: zip download
-        const zip = new JSZip()
-        const folder = zip.folder(folderName)
-        files.forEach(f => folder?.file(f.name, f.blob))
-        const content = await zip.generateAsync({ type: 'blob' })
-        downloadBlob(content, `${folderName}-selected.zip`)
+        // All other platforms / fallback: zip download
+        const batches: { blob: Blob; name: string }[][] = []
+        let currentBatch: { blob: Blob; name: string }[] = []
+        let currentBatchSize = 0
+
+        for (const file of files) {
+            if (currentBatchSize + file.blob.size > MAX_ZIP_SIZE && currentBatch.length > 0) {
+                batches.push(currentBatch)
+                currentBatch = []
+                currentBatchSize = 0
+            }
+            currentBatch.push(file)
+            currentBatchSize += file.blob.size
+        }
+        if (currentBatch.length > 0) {
+            batches.push(currentBatch)
+        }
+
+        for (let i = 0; i < batches.length; i++) {
+            const batch = batches[i]
+            const zip = new JSZip()
+            const folder = zip.folder(folderName)
+            batch.forEach(f => folder?.file(f.name, f.blob))
+            const content = await zip.generateAsync({ type: 'blob' })
+            const partSuffix = batches.length > 1 ? `-part${i + 1}` : ''
+            downloadBlob(content, `${folderName}-selected${partSuffix}.zip`)
+
+            if (i < batches.length - 1) {
+                await new Promise(r => setTimeout(r, 600))
+            }
+        }
+
         showSupportPopup(photosToDownload)
     } catch (err: any) {
         if (err.name !== 'AbortError') {

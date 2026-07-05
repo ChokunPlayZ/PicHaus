@@ -1517,6 +1517,9 @@
 import JSZip from 'jszip'
 import { clearAuthToken, buildAssetUrl, getAuthToken } from '~/utils/auth-client'
 
+const MAX_ZIP_SIZE = 100 * 1024 * 1024 // 100 MB
+
+
 const downloadBlob = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -2256,24 +2259,62 @@ const downloadSelected = async () => {
     downloadProgress.value = { current: 0, total: selectedPhotoIds.value.size }
 
     try {
-        const zip = new JSZip()
-        const folder = zip.folder(album.value?.name || 'photos')
         const selectedPhotos = photos.value.filter(p => selectedPhotoIds.value.has(p.id))
+        const files: { blob: Blob; name: string }[] = []
 
         await Promise.all(selectedPhotos.map(async (photo) => {
             try {
                 const res = await fetch(`/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`)
                 const blob = await res.blob()
-                folder?.file(photo.originalName, blob)
+                files.push({ blob, name: photo.originalName })
                 downloadProgress.value.current++
             } catch (err) {
                 console.error(`Failed to download ${photo.originalName}`, err)
             }
         }))
 
-        const content = await zip.generateAsync({ type: 'blob' })
-        downloadBlob(content, `${album.value?.name || 'album'}-selected.zip`)
+        if (files.length === 0) {
+            downloading.value = false
+            return
+        }
+
+        // Batch zipping
+        const batches: { blob: Blob; name: string }[][] = []
+        let currentBatch: { blob: Blob; name: string }[] = []
+        let currentBatchSize = 0
+
+        for (const file of files) {
+            if (currentBatchSize + file.blob.size > MAX_ZIP_SIZE && currentBatch.length > 0) {
+                batches.push(currentBatch)
+                currentBatch = []
+                currentBatchSize = 0
+            }
+            currentBatch.push(file)
+            currentBatchSize += file.blob.size
+        }
+        if (currentBatch.length > 0) {
+            batches.push(currentBatch)
+        }
+
+        const albumName = album.value?.name || 'photos'
+
+        for (let i = 0; i < batches.length; i++) {
+            const batch = batches[i]
+            const zip = new JSZip()
+            const folder = zip.folder(albumName)
+            batch.forEach(f => folder?.file(f.name, f.blob))
+
+            const content = await zip.generateAsync({ type: 'blob' })
+            const partSuffix = batches.length > 1 ? `-part${i + 1}` : ''
+            downloadBlob(content, `${albumName}-selected${partSuffix}.zip`)
+
+            if (i < batches.length - 1) {
+                await new Promise(r => setTimeout(r, 600))
+            }
+        }
+
         showSupportPopup(selectedPhotos)
+        clearSelection()
     } catch (err) {
         console.error('Download selected error:', err)
         toast('Failed to download selected photos', 'error')
@@ -3389,20 +3430,19 @@ const downloadAll = async () => {
 
         if (photosToDownload.length === 0) {
             toast('No photos to download', 'info')
+            downloading.value = false
             return
         }
 
         downloadProgress.value.total = photosToDownload.length
-
-        const zip = new JSZip()
-        const folder = zip.folder(album.value?.name || 'album')
+        const files: { blob: Blob; name: string }[] = []
 
         // Download each photo
         const promises = photosToDownload.map(async (photo) => {
             try {
                 const res = await fetch(`/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`)
                 const blob = await res.blob()
-                folder?.file(photo.originalName, blob)
+                files.push({ blob, name: photo.originalName })
                 downloadProgress.value.current++
             } catch (err) {
                 console.error(`Failed to download ${photo.originalName}`, err)
@@ -3411,12 +3451,46 @@ const downloadAll = async () => {
 
         await Promise.all(promises)
 
-        // Generate zip
-        const content = await zip.generateAsync({ type: 'blob' }, (metadata) => {
-            // We could also track zip generation progress here if we wanted
-            // but file download is usually the bottleneck
-        })
-        downloadBlob(content, `${album.value?.name || 'album'}.zip`)
+        if (files.length === 0) {
+            downloading.value = false
+            return
+        }
+
+        // Batch zipping
+        const batches: { blob: Blob; name: string }[][] = []
+        let currentBatch: { blob: Blob; name: string }[] = []
+        let currentBatchSize = 0
+
+        for (const file of files) {
+            if (currentBatchSize + file.blob.size > MAX_ZIP_SIZE && currentBatch.length > 0) {
+                batches.push(currentBatch)
+                currentBatch = []
+                currentBatchSize = 0
+            }
+            currentBatch.push(file)
+            currentBatchSize += file.blob.size
+        }
+        if (currentBatch.length > 0) {
+            batches.push(currentBatch)
+        }
+
+        const albumName = album.value?.name || 'album'
+
+        for (let i = 0; i < batches.length; i++) {
+            const batch = batches[i]
+            const zip = new JSZip()
+            const folder = zip.folder(albumName)
+            batch.forEach(f => folder?.file(f.name, f.blob))
+
+            const content = await zip.generateAsync({ type: 'blob' })
+            const partSuffix = batches.length > 1 ? `-part${i + 1}` : ''
+            downloadBlob(content, `${albumName}${partSuffix}.zip`)
+
+            if (i < batches.length - 1) {
+                await new Promise(r => setTimeout(r, 600))
+            }
+        }
+
         showSupportPopup(photosToDownload)
     } catch (err) {
         console.error('Download all error:', err)
