@@ -89,13 +89,20 @@ export default defineEventHandler(async (event) => {
         const camera = query.camera as string | undefined
         const lens = query.lens as string | undefined
         const photographer = query.photographer as string | undefined
+        const onlyMe = query.onlyMe === 'true'
+
+        let targetPhotographer = photographer
+        if (onlyMe || photographer === 'me') {
+            if (!authUserId) throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
+            targetPhotographer = authUserId
+        }
 
         const photoWhere = and(
             eq(photos.albumId, id),
             album.coverPhotoId ? sql`${photos.id} != ${album.coverPhotoId}::uuid` : undefined,
             camera ? ilike(photos.cameraModel, `%${camera}%`) : undefined,
             lens ? ilike(photos.lens, `%${lens}%`) : undefined,
-            photographer ? eq(photos.uploaderId, photographer) : undefined,
+            targetPhotographer ? eq(photos.uploaderId, targetPhotographer) : undefined,
         )
 
         const [photoRows, [{ total }], uploaderRows, cameraRows, lensRows] = await Promise.all([

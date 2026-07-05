@@ -30,6 +30,13 @@ export default defineEventHandler(async (event) => {
     const orderFn = order === 'asc' ? asc : desc
     const fromDateTaken = parseUnix(typeof query.fromDateTaken === 'string' ? query.fromDateTaken : '')
     const toDateTaken = parseUnix(typeof query.toDateTaken === 'string' ? query.toDateTaken : '')
+    const photographer = query.photographer as string | undefined
+    const onlyMe = query.onlyMe === 'true'
+
+    let targetPhotographer = photographer
+    if (onlyMe || photographer === 'me') {
+        targetPhotographer = apiToken.userId
+    }
 
     const sortCol = sortBy === 'dateTaken' ? photos.dateTaken
         : sortBy === 'originalName' ? photos.originalName
@@ -39,6 +46,7 @@ export default defineEventHandler(async (event) => {
         eq(photos.albumId, albumId),
         fromDateTaken ? gte(photos.dateTaken, fromDateTaken) : undefined,
         toDateTaken ? lte(photos.dateTaken, toDateTaken) : undefined,
+        targetPhotographer ? eq(photos.uploaderId, targetPhotographer) : undefined,
     ].filter(Boolean) as any[]
 
     const where = and(...conditions)
