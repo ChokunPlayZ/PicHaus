@@ -65,32 +65,39 @@ export function shouldAutoCompress(
     const fileSizeMB = buffer.length / (1024 * 1024)
     const megapixels = (width * height) / 1_000_000
 
+    const autoCompressLimit = parseFloat(process.env.AUTO_COMPRESS_LIMIT_MB || '15')
+    const freshCompressLimit = parseFloat(process.env.FRESH_COMPRESS_LIMIT_MB || '4')
+    const forceAll = process.env.AUTO_COMPRESS_FORCE === 'true'
+
     // Very large files always get compressed regardless of origin
-    if (fileSizeMB > 15) return true
+    if (fileSizeMB > autoCompressLimit) return true
 
-    // If editing software is detected, respect the export as-is
-    if (exifSoftware && EDITING_SOFTWARE_RE.test(exifSoftware)) return false
+    // If force compress all is disabled and editing software is detected, respect the export as-is
+    if (!forceAll && exifSoftware && EDITING_SOFTWARE_RE.test(exifSoftware)) return false
 
-    // Fresh off camera (no editing software) and notably large → compress
-    return fileSizeMB > 4 || megapixels > 15
+    // Fresh off camera (or forced all) and notably large → compress
+    return fileSizeMB > freshCompressLimit || megapixels > 15
 }
 
 /**
  * Compress an image to a web-friendly size. Returns the compressed buffer.
  */
 export async function compressImage(buffer: Buffer, format: string): Promise<Buffer> {
-    const MAX_DIMENSION = 4000
+    const maxDimension = parseInt(process.env.AUTO_COMPRESS_MAX_DIMENSION || '4000', 10)
+    const quality = parseInt(process.env.AUTO_COMPRESS_QUALITY || '88', 10)
+
     let pipeline = sharp(buffer)
         .rotate()
-        .resize(MAX_DIMENSION, MAX_DIMENSION, {
+        .resize(maxDimension, maxDimension, {
             fit: 'inside',
             withoutEnlargement: true,
         })
+        .withMetadata() // Preserve EXIF/metadata in the compressed image
 
     if (format === 'png') {
-        pipeline = pipeline.png({ quality: 88, compressionLevel: 8 })
+        pipeline = pipeline.png({ quality, compressionLevel: 8 })
     } else {
-        pipeline = pipeline.jpeg({ quality: 88, progressive: true })
+        pipeline = pipeline.jpeg({ quality, progressive: true })
     }
 
     return pipeline.toBuffer()

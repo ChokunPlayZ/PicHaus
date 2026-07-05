@@ -149,6 +149,11 @@ volumes:
 | `AUTH_SECRET` | Yes (prod) | dev fallback | HMAC secret for session tokens — minimum 32 characters |
 | `STORAGE_DIR` | No | `storage/uploads` | Absolute or relative path where uploaded files are stored |
 | `MAX_FILE_SIZE_MB` | No | `10` | Maximum upload size per file in megabytes |
+| `AUTO_COMPRESS_LIMIT_MB` | No | `15` | File size in MB above which ANY uploaded image is compressed, regardless of origin/editing software |
+| `FRESH_COMPRESS_LIMIT_MB` | No | `4` | File size in MB above which fresh-off-camera images (no editing software) are compressed |
+| `AUTO_COMPRESS_FORCE` | No | `false` | Set to `true` to force auto-compression on all files, bypassing editing software detection |
+| `AUTO_COMPRESS_MAX_DIMENSION` | No | `4000` | Maximum width or height dimension (in pixels) to resize compressed images to |
+| `AUTO_COMPRESS_QUALITY` | No | `88` | Compression quality for JPEGs/PNGs (1 to 100) |
 | `NODE_ENV` | No | `development` | Set to `production` in production deployments |
 | `WEBAUTHN_RP_ID` | No | `localhost` | Passkey relying-party ID — must match the domain users visit (no port, no protocol) |
 | `WEBAUTHN_RP_NAME` | No | `PicHaus` | Human-readable relying-party name shown by the browser during passkey registration |

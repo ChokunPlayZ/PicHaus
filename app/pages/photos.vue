@@ -131,6 +131,9 @@ interface Photo {
     } | null
 }
 
+const route = useRoute()
+const router = useRouter()
+
 const photos = ref<Photo[]>([])
 const loading = ref(true)
 const loadingMore = ref(false)
@@ -151,13 +154,13 @@ const options = reactive({
 })
 
 const filters = ref({
-    camera: '',
-    lens: '',
-    aperture: '',
-    iso: '',
-    shutterSpeed: '',
-    dateFrom: '',
-    dateTo: ''
+    camera: (route.query.camera as string) || '',
+    lens: (route.query.lens as string) || '',
+    aperture: (route.query.aperture as string) || '',
+    iso: (route.query.iso as string) || '',
+    shutterSpeed: (route.query.shutterSpeed as string) || '',
+    dateFrom: (route.query.dateFrom as string) || '',
+    dateTo: (route.query.dateTo as string) || ''
 })
 
 // Computed for selected photo to ensure safety
@@ -220,7 +223,18 @@ const fetchOptions = async () => {
     }
 }
 
-const applyFilters = () => fetchPhotos(true)
+const applyFilters = () => {
+    const query = { ...route.query }
+    Object.entries(filters.value).forEach(([k, v]) => {
+        if (v) {
+            query[k] = v
+        } else {
+            delete query[k]
+        }
+    })
+    router.replace({ query })
+    fetchPhotos(true)
+}
 const debouncedApply = debounce(applyFilters, 500)
 
 const clearFilters = () => {
@@ -235,6 +249,21 @@ const clearFilters = () => {
     }
     applyFilters()
 }
+
+// Watch route.query to handle browser back/forward navigation
+watch(() => route.query, (newQuery) => {
+    let changed = false
+    Object.keys(filters.value).forEach((key) => {
+        const nextVal = (newQuery[key] as string) || ''
+        if (nextVal !== (filters.value as any)[key]) {
+            (filters.value as any)[key] = nextVal
+            changed = true
+        }
+    })
+    if (changed) {
+        fetchPhotos(true)
+    }
+})
 
 const openViewer = (index: number) => {
     viewerIndex.value = index

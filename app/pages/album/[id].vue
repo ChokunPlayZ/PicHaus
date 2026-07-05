@@ -1635,6 +1635,7 @@ interface ShareLink {
 }
 
 const route = useRoute()
+const router = useRouter()
 const albumId = route.params.id as string
 
 const user = ref<User | null>(null)
@@ -1666,13 +1667,13 @@ const sentinelRef = ref<HTMLElement | null>(null)
 
 // Filter state
 const filters = ref({
-    camera: '',
-    lens: '',
-    photographer: ''
+    camera: (route.query.camera as string) || '',
+    lens: (route.query.lens as string) || '',
+    photographer: (route.query.photographer as string) || ''
 })
 
-const sortBy = ref('dateTaken')
-const sortOrder = ref('desc')
+const sortBy = ref((route.query.sort as string) || 'dateTaken')
+const sortOrder = ref((route.query.order as string) || 'desc')
 
 
 // Unique filter options (album-wide, loaded from server)
@@ -1689,6 +1690,24 @@ const availableUploaders = ref<Array<{
 const applyFilters = async () => {
     page.value = 1
     photos.value = []
+    
+    const query = { ...route.query }
+    if (filters.value.camera) query.camera = filters.value.camera
+    else delete query.camera
+    
+    if (filters.value.lens) query.lens = filters.value.lens
+    else delete query.lens
+    
+    if (filters.value.photographer) query.photographer = filters.value.photographer
+    else delete query.photographer
+    
+    if (sortBy.value && sortBy.value !== 'dateTaken') query.sort = sortBy.value
+    else delete query.sort
+    
+    if (sortOrder.value && sortOrder.value !== 'desc') query.order = sortOrder.value
+    else delete query.order
+
+    await router.replace({ query })
     await fetchAlbum()
 }
 
@@ -1700,6 +1719,33 @@ const clearFilters = () => {
     }
     applyFilters()
 }
+
+// Watch route.query to handle browser back/forward navigation
+watch(() => route.query, (newQuery) => {
+    const nextCamera = (newQuery.camera as string) || ''
+    const nextLens = (newQuery.lens as string) || ''
+    const nextPhotographer = (newQuery.photographer as string) || ''
+    const nextSort = (newQuery.sort as string) || 'dateTaken'
+    const nextOrder = (newQuery.order as string) || 'desc'
+    
+    if (
+        nextCamera !== filters.value.camera ||
+        nextLens !== filters.value.lens ||
+        nextPhotographer !== filters.value.photographer ||
+        nextSort !== sortBy.value ||
+        nextOrder !== sortOrder.value
+    ) {
+        filters.value.camera = nextCamera
+        filters.value.lens = nextLens
+        filters.value.photographer = nextPhotographer
+        sortBy.value = nextSort
+        sortOrder.value = nextOrder
+        
+        page.value = 1
+        photos.value = []
+        fetchAlbum()
+    }
+})
 
 // Photographers modal
 const showPhotographersModal = ref(false)
