@@ -318,35 +318,38 @@ const isSharing = ref(false)
 const shareTimedOut = ref(false)
 const pendingShareFile = ref<File | null>(null)
 let shareTimeoutId: ReturnType<typeof setTimeout> | null = null
-const cachedImageUrls = new Map<string, string>()
+const cachedImageUrls = new Map<string, { url: string; timestamp: string }>()
 const pendingImageLoads = new Map<string, Promise<string | null>>()
-const loadedImageSrcByPhotoId = new Map<string, string>()
+const loadedImageSrcByPhotoId = new Map<string, { url: string; timestamp: string }>()
 
 const fullImageSrc = computed(() => buildAssetUrl(`/api/assets/full/${props.photo.id}?t=${props.photo.updatedAt || props.photo.createdAt || ''}`))
 const currentImageSrc = ref(fullImageSrc.value)
 
-const getCachedImageUrl = (photoId: string) => {
-    return cachedImageUrls.get(photoId) || null
+const getCachedImageUrl = (photoId: string, timestamp?: string) => {
+    const cached = cachedImageUrls.get(photoId)
+    if (!cached) return null
+    if (timestamp !== undefined && cached.timestamp !== timestamp) return null
+    return cached.url
 }
 
-const getKnownImageSrc = (photoId: string) => {
-    const loadedSrc = loadedImageSrcByPhotoId.get(photoId)
-    if (loadedSrc) {
-        return loadedSrc
+const getKnownImageSrc = (photoId: string, timestamp: string) => {
+    const loaded = loadedImageSrcByPhotoId.get(photoId)
+    if (loaded && loaded.timestamp === timestamp) {
+        return loaded.url
     }
 
-    return getCachedImageUrl(photoId)
+    return getCachedImageUrl(photoId, timestamp)
 }
 
-const setCachedImageUrl = (photoId: string, objectUrl: string) => {
-    cachedImageUrls.set(photoId, objectUrl)
+const setCachedImageUrl = (photoId: string, objectUrl: string, timestamp: string) => {
+    cachedImageUrls.set(photoId, { url: objectUrl, timestamp })
 
     if (cachedImageUrls.size > 30) {
         const oldestPhotoId = cachedImageUrls.keys().next().value
         if (oldestPhotoId) {
-            const oldestUrl = cachedImageUrls.get(oldestPhotoId)
-            if (oldestUrl) {
-                URL.revokeObjectURL(oldestUrl)
+            const oldest = cachedImageUrls.get(oldestPhotoId)
+            if (oldest?.url) {
+                URL.revokeObjectURL(oldest.url)
             }
             cachedImageUrls.delete(oldestPhotoId)
         }
@@ -354,7 +357,8 @@ const setCachedImageUrl = (photoId: string, objectUrl: string) => {
 }
 
 const cacheImage = async (photoId: string, timestamp?: number | string | bigint) => {
-    const cached = getCachedImageUrl(photoId)
+    const tsStr = timestamp ? String(timestamp) : ''
+    const cached = getCachedImageUrl(photoId, tsStr)
     if (cached) return cached
 
     const pending = pendingImageLoads.get(photoId)
@@ -362,7 +366,7 @@ const cacheImage = async (photoId: string, timestamp?: number | string | bigint)
 
     const loadPromise = (async () => {
         try {
-            const cacheBuster = timestamp ? `?t=${timestamp}` : ''
+            const cacheBuster = tsStr ? `?t=${tsStr}` : ''
             const response = await fetch(buildAssetUrl(`/api/assets/full/${photoId}${cacheBuster}`), { cache: 'force-cache' })
 
             if (!response.ok) {
@@ -371,7 +375,7 @@ const cacheImage = async (photoId: string, timestamp?: number | string | bigint)
 
             const blob = await response.blob()
             const objectUrl = URL.createObjectURL(blob)
-            setCachedImageUrl(photoId, objectUrl)
+            setCachedImageUrl(photoId, objectUrl, tsStr)
             return objectUrl
         } catch {
             return null
@@ -385,7 +389,8 @@ const cacheImage = async (photoId: string, timestamp?: number | string | bigint)
 }
 
 const onImageError = async () => {
-    const cachedUrl = await cacheImage(props.photo.id)
+    const timestamp = props.photo.updatedAt || props.photo.createdAt || ''
+    const cachedUrl = await cacheImage(props.photo.id, timestamp)
 
     if (cachedUrl) {
         currentImageSrc.value = cachedUrl
@@ -408,7 +413,8 @@ const isAndroid = computed(() => {
 
 // Image loading handler
 const onImageLoad = () => {
-    loadedImageSrcByPhotoId.set(props.photo.id, currentImageSrc.value)
+    const timestamp = String(props.photo.updatedAt || props.photo.createdAt || '')
+    loadedImageSrcByPhotoId.set(props.photo.id, { url: currentImageSrc.value, timestamp })
     imageLoading.value = false
 }
 
@@ -420,12 +426,12 @@ watch(() => props.photo.id, async (newId, oldId) => {
 
     imageLoading.value = true
 
-    const knownSrc = getKnownImageSrc(newId)
+    const timestamp = String(props.photo.updatedAt || props.photo.createdAt || '')
+    const knownSrc = getKnownImageSrc(newId, timestamp)
     if (knownSrc) {
         currentImageSrc.value = knownSrc
         imageLoading.value = false
     } else {
-        const timestamp = props.photo.updatedAt || props.photo.createdAt || ''
         const loaded = await cacheImage(newId, timestamp)
 
         if (props.photo.id !== newId) {
@@ -448,7 +454,7 @@ watch(() => props.photo.id, async (newId, oldId) => {
 
 // Preload image function
 const preloadImage = (photoId: string) => {
-    if (getKnownImageSrc(photoId)) {
+    if (getCachedImageUrl(photoId, '')) {
         return
     }
 
