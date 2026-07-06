@@ -225,8 +225,8 @@
             </div>
 
             <!-- Crop canvas area -->
-            <div class="relative overflow-hidden select-none"
-                :style="{ height: cropContainerSize + 'px', background: 'var(--surface-3)' }"
+            <div class="relative overflow-hidden select-none mx-auto"
+                :style="{ width: cropContainerSize + 'px', height: cropContainerSize + 'px', background: 'var(--surface-3)' }"
                 ref="cropContainerRef"
                 @mousedown="cropDragStart" @mousemove="cropDragMove" @mouseup="cropDragEnd" @mouseleave="cropDragEnd"
                 @touchstart.prevent="cropTouchStart" @touchmove.prevent="cropTouchMove" @touchend="cropDragEnd"
@@ -234,16 +234,7 @@
 
                 <!-- The image being cropped -->
                 <img ref="cropImgRef" :src="cropSrc"
-                    :style="{
-                        position: 'absolute',
-                        left: cropX + 'px',
-                        top: cropY + 'px',
-                        width: (cropImgNaturalW * cropScale) + 'px',
-                        height: (cropImgNaturalH * cropScale) + 'px',
-                        userSelect: 'none',
-                        pointerEvents: 'none',
-                        cursor: 'grab',
-                    }" draggable="false" />
+                    :style="cropImgStyle" draggable="false" />
 
                 <!-- Circular mask overlay -->
                 <div class="absolute inset-0 pointer-events-none" style="cursor: grab;">
@@ -319,6 +310,23 @@ const cropScale = ref(1)
 const cropZoom = ref(1)
 const cropMinZoom = ref(1)
 const cropMaxZoom = ref(4)
+
+const cropImgStyle = computed(() => {
+    const w = cropImgNaturalW.value * cropScale.value
+    const h = cropImgNaturalH.value * cropScale.value
+    return {
+        position: 'absolute' as const,
+        left: cropX.value + 'px',
+        top: cropY.value + 'px',
+        width: `${w}px !important`,
+        height: `${h}px !important`,
+        maxWidth: 'none !important',
+        maxHeight: 'none !important',
+        userSelect: 'none' as const,
+        pointerEvents: 'none' as const,
+        cursor: 'grab',
+    }
+})
 
 let isDragging = false
 let dragLastX = 0
