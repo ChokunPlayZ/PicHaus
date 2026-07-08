@@ -356,6 +356,12 @@ interface FileUpload {
 const files = ref<FileUpload[]>([])
 const fileInput = ref<HTMLInputElement | null>(null)
 
+const VIDEO_FILE_RE = /\.(mp4|m4v|mov|webm|avi|mkv|wmv|flv|mpeg|mpg|3gp|3g2)$/i
+const IMAGE_FILE_RE = /\.(heic|heif|raw|arw|cr2|nef|orf|rw2|dng)$/i
+
+const isVideoFile = (file: File) => file.type.startsWith('video/') || VIDEO_FILE_RE.test(file.name)
+const isAcceptedImageFile = (file: File) => !isVideoFile(file) && (file.type.startsWith('image/') || IMAGE_FILE_RE.test(file.name))
+
 const overallProgress = computed(() => {
     if (files.value.length === 0) return 0
     let totalSize = 0
@@ -606,9 +612,27 @@ const handleFileSelect = (event: Event | DragEvent) => {
     }
     if (!selectedFiles || selectedFiles.length === 0) return
 
+    let rejectedCount = 0
     for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i]
-        if (file) files.value.unshift({ file, progress: 0, status: 'pending' })
+        if (!file) continue
+
+        if (!isAcceptedImageFile(file)) {
+            rejectedCount++
+            files.value.unshift({
+                file,
+                progress: 100,
+                status: 'error',
+                errorMessage: 'Only image files can be uploaded. Videos are not supported.',
+            })
+            continue
+        }
+
+        files.value.unshift({ file, progress: 0, status: 'pending' })
+    }
+
+    if (rejectedCount > 0) {
+        dialog.toast('Only image files can be uploaded. Videos are not supported.', 'error')
     }
     processUploadQueue()
     if (fileInput.value) fileInput.value.value = ''

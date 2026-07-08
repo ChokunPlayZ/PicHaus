@@ -2064,6 +2064,12 @@ const showUploadModal = ref(false)
 const isDragging = ref(false)
 let dragEnterCounter = 0
 
+const VIDEO_FILE_RE = /\.(mp4|m4v|mov|webm|avi|mkv|wmv|flv|mpeg|mpg|3gp|3g2)$/i
+const IMAGE_FILE_RE = /\.(heic|heif|raw|arw|cr2|nef|orf|rw2|dng)$/i
+
+const isVideoFile = (file: File) => file.type.startsWith('video/') || VIDEO_FILE_RE.test(file.name)
+const isAcceptedImageFile = (file: File) => !isVideoFile(file) && (file.type.startsWith('image/') || IMAGE_FILE_RE.test(file.name))
+
 const uploadProgress = computed(() => {
     const total = uploadQueue.value.length
     if (total === 0) return { completed: 0, total: 0, percentage: 0 }
@@ -3696,6 +3702,41 @@ const processQueue = () => {
     processNextStep()
 }
 
+const queueSelectedFiles = (files: File[]) => {
+    if (files.length === 0) return
+
+    showUploadModal.value = true
+
+    let rejectedCount = 0
+    let acceptedCount = 0
+
+    for (const file of files) {
+        if (!isAcceptedImageFile(file)) {
+            rejectedCount++
+            uploadQueue.value.push({
+                id: Math.random().toString(36).substring(7),
+                file,
+                status: 'failed',
+                error: 'Only image files can be uploaded. Videos are not supported.',
+                progress: 100,
+            })
+            continue
+        }
+
+        acceptedCount++
+        uploadQueue.value.push({
+            id: Math.random().toString(36).substring(7),
+            file,
+            status: 'hashing',
+        })
+    }
+
+    if (rejectedCount > 0) {
+        toast('Only image files can be uploaded. Videos are not supported.', 'error')
+    }
+    if (acceptedCount > 0) processQueue()
+}
+
 // Handle file selection
 const handleFileSelect = async (event: Event) => {
     const target = event.target as HTMLInputElement
@@ -3703,23 +3744,7 @@ const handleFileSelect = async (event: Event) => {
 
     if (!files || files.length === 0) return
 
-    showUploadModal.value = true
-
-    // Add to queue
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        if (!file) continue
-
-        uploadQueue.value.push({
-            id: Math.random().toString(36).substring(7),
-            file,
-            status: 'hashing'
-        })
-    }
-
-    // Start processing
-    processQueue()
-
+    queueSelectedFiles(Array.from(files))
     if (target) target.value = ''
 }
 
@@ -3732,22 +3757,7 @@ const handleDrop = async (event: DragEvent) => {
 
     if (!files || files.length === 0) return
 
-    showUploadModal.value = true
-
-    // Add to queue
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        if (!file) continue
-
-        uploadQueue.value.push({
-            id: Math.random().toString(36).substring(7),
-            file,
-            status: 'hashing'
-        })
-    }
-
-    // Start processing
-    processQueue()
+    queueSelectedFiles(Array.from(files))
 }
 
 // Retry Logic

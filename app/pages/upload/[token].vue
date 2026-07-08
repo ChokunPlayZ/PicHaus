@@ -358,6 +358,12 @@ const isDragging = ref(false)
 const dropZoneActive = ref(false)
 let dragEnterCount = 0
 
+const VIDEO_FILE_RE = /\.(mp4|m4v|mov|webm|avi|mkv|wmv|flv|mpeg|mpg|3gp|3g2)$/i
+const IMAGE_FILE_RE = /\.(heic|heif|raw|arw|cr2|nef|orf|rw2|dng)$/i
+
+const isVideoFile = (file: File) => file.type.startsWith('video/') || VIDEO_FILE_RE.test(file.name)
+const isAcceptedImageFile = (file: File) => !isVideoFile(file) && (file.type.startsWith('image/') || IMAGE_FILE_RE.test(file.name))
+
 const totalSizeLabel = computed(() => {
     const bytes = queue.value.reduce((sum, item) => sum + item.file.size, 0)
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -381,16 +387,19 @@ const uploadSummary = computed(() => {
 })
 
 const addFiles = (files: File[]) => {
-    const imageFiles = files.filter(
-        f => f.type.startsWith('image/') || /\.(heic|heif|raw|arw|cr2|nef|orf|rw2|dng)$/i.test(f.name)
-    )
+    const rejectedCount = files.filter(f => !isAcceptedImageFile(f)).length
+    uploadError.value = ''
+    if (rejectedCount > 0) {
+        uploadError.value = 'Only image files can be uploaded. Videos are not supported.'
+    }
+
+    const imageFiles = files.filter(isAcceptedImageFile)
     for (const file of imageFiles) {
         const id = `${file.name}-${file.size}-${file.lastModified}`
         if (queue.value.some(item => item.id === id)) continue
         queue.value.push({ id, file, previewUrl: URL.createObjectURL(file), status: 'pending' })
     }
     uploadDone.value = false
-    uploadError.value = ''
 }
 
 const removeFile = (index: number) => {

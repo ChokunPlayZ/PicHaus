@@ -4,6 +4,8 @@ import { requireAuth } from '../../../../../../utils/auth'
 import { join } from 'path'
 import fs from 'fs/promises'
 
+const VIDEO_FILE_RE = /\.(mp4|m4v|mov|webm|avi|mkv|wmv|flv|mpeg|mpg|3gp|3g2)$/i
+
 export default defineEventHandler(async (event) => {
     try {
         const albumId = getRouterParam(event, 'id')
@@ -29,6 +31,9 @@ export default defineEventHandler(async (event) => {
         const { filename, fileSize, fileHash, mimeType } = body
         if (!filename || !fileSize || !fileHash || !mimeType) {
             throw createError({ statusCode: 400, statusMessage: 'Missing required parameters: filename, fileSize, fileHash, mimeType' })
+        }
+        if (String(mimeType).startsWith('video/') || VIDEO_FILE_RE.test(String(filename))) {
+            throw createError({ statusCode: 400, statusMessage: 'Only image files can be uploaded. Videos are not supported.' })
         }
 
         // Duplicate check
