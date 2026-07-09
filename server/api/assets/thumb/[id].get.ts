@@ -1,9 +1,9 @@
-import { createReadStream } from 'fs'
 import { stat } from 'fs/promises'
 import { eq } from 'drizzle-orm'
 import { photos, shareLinks } from '../../../db/schema'
 import { getAbsoluteFilePath } from '../../../utils/upload'
 import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
+import { getImmutableAssetCacheControl, sendCachedAsset } from '../../../utils/asset-response'
 
 export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
@@ -69,11 +69,16 @@ export default defineEventHandler(async (event) => {
 
     try {
         const stats = await stat(filePath)
-        setHeader(event, 'Content-Type', 'image/webp')
-        setHeader(event, 'Content-Length', stats.size)
-        setHeader(event, 'Cache-Control', photo.album.isPublic ? 'public, max-age=31536000, immutable' : 'private, max-age=3600')
-        return sendStream(event, createReadStream(filePath))
-    } catch {
+        return sendCachedAsset(event, {
+            filePath,
+            stats,
+            contentType: 'image/webp',
+            cacheControl: getImmutableAssetCacheControl(photo.album.isPublic),
+            lastModified: new Date(Number(photo.updatedAt || photo.createdAt) * 1000),
+            etagSeed: `thumb:${photo.id}:${photo.updatedAt || photo.createdAt || ''}`,
+        })
+    } catch (error: any) {
+        if (error?.statusCode) throw error
         return sendRedirect(event, `/api/assets/full/${id}`)
     }
 })

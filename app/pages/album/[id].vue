@@ -1432,7 +1432,8 @@
         <!-- Photo Viewer -->
         <PhotoViewer v-if="selectedPhoto" :photo="selectedPhoto" :has-previous="selectedPhotoIndex! > 0"
             :has-next="selectedPhotoIndex! < (photos.length || 0) - 1 || hasMore" :previous-photo-id="previousPhotoId"
-            :next-photo-id="nextPhotoId" @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto" />
+            :next-photo-id="nextPhotoId" :previous-photo-timestamp="previousPhotoTimestamp"
+            :next-photo-timestamp="nextPhotoTimestamp" @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto" />
 
 
         <!-- Full-screen Drag-to-Upload Overlay -->
@@ -2148,6 +2149,19 @@ const nextPhotoId = computed(() => {
     if (selectedPhotoIndex.value === null || !photos.value.length) return null
     if (selectedPhotoIndex.value >= photos.value.length - 1) return null
     return photos.value[selectedPhotoIndex.value + 1]?.id || null
+})
+
+const previousPhotoTimestamp = computed(() => {
+    if (selectedPhotoIndex.value === null || selectedPhotoIndex.value <= 0) return null
+    const photo = photos.value[selectedPhotoIndex.value - 1]
+    return photo ? photo.updatedAt || photo.createdAt || null : null
+})
+
+const nextPhotoTimestamp = computed(() => {
+    if (selectedPhotoIndex.value === null || !photos.value.length) return null
+    if (selectedPhotoIndex.value >= photos.value.length - 1) return null
+    const photo = photos.value[selectedPhotoIndex.value + 1]
+    return photo ? photo.updatedAt || photo.createdAt || null : null
 })
 
 

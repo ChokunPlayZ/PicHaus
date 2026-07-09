@@ -22,6 +22,8 @@
             :src="buildAssetUrl(`/api/assets/thumb/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`)"
             :alt="photo.originalName || photo.id"
             loading="lazy"
+            decoding="async"
+            fetchpriority="low"
             class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
         />
 

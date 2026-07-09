@@ -120,6 +120,7 @@
                     </div>
 
                     <img :src="currentImageSrc" :alt="photo.filename" @load="onImageLoad" @error="onImageError"
+                        decoding="async" fetchpriority="high"
                         class="relative max-h-full max-w-full object-contain rounded-lg shadow-2xl z-10"
                         :class="{ 'opacity-0': imageLoading }" />
                 </div>
@@ -269,8 +270,8 @@
 </template>
 
 <script setup lang="ts">
-import { decode } from 'blurhash'
 import { buildAssetUrl } from '~/utils/auth-client'
+import { blurhashToDataUrl } from '~/composables/useBlurhash'
 
 interface Photo {
     id: string
@@ -303,6 +304,8 @@ const props = withDefaults(defineProps<{
     hasNext: boolean
     previousPhotoId?: string | null
     nextPhotoId?: string | null
+    previousPhotoTimestamp?: number | string | null
+    nextPhotoTimestamp?: number | string | null
     showMetadata?: boolean
     isFavorited?: boolean
 }>(), {
@@ -324,86 +327,11 @@ const isSharing = ref(false)
 const shareTimedOut = ref(false)
 const pendingShareFile = ref<File | null>(null)
 let shareTimeoutId: ReturnType<typeof setTimeout> | null = null
-const cachedImageUrls = new Map<string, { url: string; timestamp: string }>()
-const pendingImageLoads = new Map<string, Promise<string | null>>()
-const loadedImageSrcByPhotoId = new Map<string, { url: string; timestamp: string }>()
+const preloadedImageKeys = new Set<string>()
+const failedImageKeys = new Set<string>()
 
 const fullImageSrc = computed(() => buildAssetUrl(`/api/assets/full/${props.photo.id}?t=${props.photo.updatedAt || props.photo.createdAt || ''}`))
 const currentImageSrc = ref(fullImageSrc.value)
-
-const getCachedImageUrl = (photoId: string, timestamp?: string) => {
-    const cached = cachedImageUrls.get(photoId)
-    if (!cached) return null
-    if (timestamp !== undefined && cached.timestamp !== timestamp) return null
-    return cached.url
-}
-
-const getKnownImageSrc = (photoId: string, timestamp: string) => {
-    const loaded = loadedImageSrcByPhotoId.get(photoId)
-    if (loaded && loaded.timestamp === timestamp) {
-        return loaded.url
-    }
-
-    return getCachedImageUrl(photoId, timestamp)
-}
-
-const setCachedImageUrl = (photoId: string, objectUrl: string, timestamp: string) => {
-    cachedImageUrls.set(photoId, { url: objectUrl, timestamp })
-
-    if (cachedImageUrls.size > 30) {
-        const oldestPhotoId = cachedImageUrls.keys().next().value
-        if (oldestPhotoId) {
-            const oldest = cachedImageUrls.get(oldestPhotoId)
-            if (oldest?.url) {
-                URL.revokeObjectURL(oldest.url)
-            }
-            cachedImageUrls.delete(oldestPhotoId)
-        }
-    }
-}
-
-const cacheImage = async (photoId: string, timestamp?: number | string | bigint) => {
-    const tsStr = timestamp ? String(timestamp) : ''
-    const cached = getCachedImageUrl(photoId, tsStr)
-    if (cached) return cached
-
-    const pending = pendingImageLoads.get(photoId)
-    if (pending) return pending
-
-    const loadPromise = (async () => {
-        try {
-            const cacheBuster = tsStr ? `?t=${tsStr}` : ''
-            const response = await fetch(buildAssetUrl(`/api/assets/full/${photoId}${cacheBuster}`), { cache: 'force-cache' })
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch image: ${response.status}`)
-            }
-
-            const blob = await response.blob()
-            const objectUrl = URL.createObjectURL(blob)
-            setCachedImageUrl(photoId, objectUrl, tsStr)
-            return objectUrl
-        } catch {
-            return null
-        } finally {
-            pendingImageLoads.delete(photoId)
-        }
-    })()
-
-    pendingImageLoads.set(photoId, loadPromise)
-    return loadPromise
-}
-
-const onImageError = async () => {
-    const timestamp = props.photo.updatedAt || props.photo.createdAt || ''
-    const cachedUrl = await cacheImage(props.photo.id, timestamp)
-
-    if (cachedUrl) {
-        currentImageSrc.value = cachedUrl
-    } else {
-        imageLoading.value = false
-    }
-}
 
 // Platform detection
 const isIOS = computed(() => {
@@ -419,40 +347,37 @@ const isAndroid = computed(() => {
 
 // Image loading handler
 const onImageLoad = () => {
+    imageLoading.value = false
+}
+
+const onImageError = () => {
     const timestamp = String(props.photo.updatedAt || props.photo.createdAt || '')
-    loadedImageSrcByPhotoId.set(props.photo.id, { url: currentImageSrc.value, timestamp })
+    const imageKey = `${props.photo.id}:${timestamp}`
+
+    if (!failedImageKeys.has(imageKey)) {
+        failedImageKeys.add(imageKey)
+        currentImageSrc.value = buildAssetUrl(`/api/assets/full/${props.photo.id}?t=${timestamp}&retry=${Date.now()}`)
+        return
+    }
+
     imageLoading.value = false
 }
 
 // Watch for photo changes to reset loading state and preload adjacent images
-watch(() => props.photo.id, async (newId, oldId) => {
-    if (newId === oldId) {
+watch(() => [props.photo.id, props.photo.updatedAt || props.photo.createdAt || ''] as const, async ([newId, timestamp], [oldId, oldTimestamp] = ['', '']) => {
+    if (newId === oldId && timestamp === oldTimestamp) {
         return
     }
 
     imageLoading.value = true
-
-    const timestamp = String(props.photo.updatedAt || props.photo.createdAt || '')
-    const knownSrc = getKnownImageSrc(newId, timestamp)
-    if (knownSrc) {
-        currentImageSrc.value = knownSrc
-        imageLoading.value = false
-    } else {
-        const loaded = await cacheImage(newId, timestamp)
-
-        if (props.photo.id !== newId) {
-            return
-        }
-
-        currentImageSrc.value = loaded || buildAssetUrl(`/api/assets/full/${newId}?t=${timestamp}`)
-    }
+    currentImageSrc.value = buildAssetUrl(`/api/assets/full/${newId}?t=${timestamp}`)
 
     // Preload adjacent images
     nextTick(() => {
-        if (props.previousPhotoId) {
+        if (!shouldAvoidFullPreload() && props.previousPhotoId) {
             preloadImage(props.previousPhotoId)
         }
-        if (props.nextPhotoId) {
+        if (!shouldAvoidFullPreload() && props.nextPhotoId) {
             preloadImage(props.nextPhotoId)
         }
     })
@@ -460,11 +385,24 @@ watch(() => props.photo.id, async (newId, oldId) => {
 
 // Preload image function
 const preloadImage = (photoId: string) => {
-    if (getCachedImageUrl(photoId, '')) {
-        return
-    }
+    const timestamp = photoId === props.previousPhotoId ? props.previousPhotoTimestamp : props.nextPhotoTimestamp
+    const key = `${photoId}:${timestamp || ''}`
+    if (preloadedImageKeys.has(key)) return
+    preloadedImageKeys.add(key)
 
-    void cacheImage(photoId)
+    const image = new Image()
+    image.decoding = 'async'
+    image.setAttribute('fetchpriority', 'low')
+    image.src = buildAssetUrl(`/api/assets/full/${photoId}?t=${timestamp || ''}`)
+}
+
+const shouldAvoidFullPreload = () => {
+    if (typeof navigator === 'undefined') return true
+    const connection = (navigator as Navigator & {
+        connection?: { saveData?: boolean; effectiveType?: string }
+    }).connection
+
+    return !!connection?.saveData || connection?.effectiveType === 'slow-2g' || connection?.effectiveType === '2g'
 }
 
 // Prevent body scroll when viewer is open
@@ -473,12 +411,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    for (const objectUrl of cachedImageUrls.values()) {
-        URL.revokeObjectURL(objectUrl.url)
-    }
-    cachedImageUrls.clear()
-    loadedImageSrcByPhotoId.clear()
-    pendingImageLoads.clear()
+    preloadedImageKeys.clear()
+    failedImageKeys.clear()
     document.body.style.overflow = ''
 })
 
@@ -631,21 +565,9 @@ const handleInfoTouchEnd = () => {
 const getBlurhashUrl = (hash: string | null, width: number | null, height: number | null) => {
     if (!hash || !width || !height) return null
 
-    // Use smaller dimensions for blurhash
     const w = 32
     const h = Math.round(w * (height / width))
-
-    const pixels = decode(hash, w, h)
-    const canvas = document.createElement('canvas')
-    canvas.width = w
-    canvas.height = h
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
-
-    const imageData = ctx.createImageData(w, h)
-    imageData.data.set(pixels)
-    ctx.putImageData(imageData, 0, 0)
-    return canvas.toDataURL()
+    return blurhashToDataUrl(hash, w, h) || null
 }
 
 const formatDate = (timestamp: number) => {
