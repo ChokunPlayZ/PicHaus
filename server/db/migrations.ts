@@ -254,6 +254,22 @@ END $$`,
         ],
     },
     {
+        name: '0008_site_settings.sql',
+        statements: [
+            `CREATE TABLE IF NOT EXISTS "site_settings" (
+    "id"                 integer     PRIMARY KEY DEFAULT 1,
+    "siteName"           text        NOT NULL DEFAULT 'PicHaus',
+    "accentColor"        text,
+    "logoImageId"        uuid        REFERENCES "logos"("id") ON DELETE SET NULL,
+    "allowRegistration"  boolean     NOT NULL DEFAULT false,
+    "updatedAt"          bigint      NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::bigint
+)`,
+            `INSERT INTO "site_settings" ("id", "siteName", "updatedAt")
+VALUES (1, 'PicHaus', EXTRACT(EPOCH FROM NOW())::bigint)
+ON CONFLICT ("id") DO NOTHING`,
+        ],
+    },
+    {
         name: '0009_google_oauth.sql',
         statements: [
             `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "googleId" TEXT`,
@@ -279,22 +295,6 @@ END $$`,
             `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "microsoftOAuthTenantId" TEXT`,
             `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "microsoftButtonText" TEXT`,
             `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "microsoftButtonLogoId" UUID REFERENCES "logos"("id") ON DELETE SET NULL`,
-        ],
-    },
-    {
-        name: '0008_site_settings.sql',
-        statements: [
-            `CREATE TABLE IF NOT EXISTS "site_settings" (
-    "id"                 integer     PRIMARY KEY DEFAULT 1,
-    "siteName"           text        NOT NULL DEFAULT 'PicHaus',
-    "accentColor"        text,
-    "logoImageId"        uuid        REFERENCES "logos"("id") ON DELETE SET NULL,
-    "allowRegistration"  boolean     NOT NULL DEFAULT false,
-    "updatedAt"          bigint      NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::bigint
-)`,
-            `INSERT INTO "site_settings" ("id", "siteName", "updatedAt")
-VALUES (1, 'PicHaus', EXTRACT(EPOCH FROM NOW())::bigint)
-ON CONFLICT ("id") DO NOTHING`,
         ],
     },
     {
