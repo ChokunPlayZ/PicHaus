@@ -1,8 +1,6 @@
-import { createReadStream } from 'fs'
-import { stat } from 'fs/promises'
 import { eq } from 'drizzle-orm'
 import { logos } from '../../../db/schema'
-import { getAbsoluteFilePath } from '../../../utils/upload'
+import { getDirectAssetUrl, getStorageObject, statStorageFile } from '../../../utils/storage'
 
 export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
@@ -13,20 +11,21 @@ export default defineEventHandler(async (event) => {
 
     if (!logo) throw createError({ statusCode: 404, statusMessage: 'Logo not found' })
 
-    const filePath = getAbsoluteFilePath(logo.storagePath)
-
     try {
-        const stats = await stat(filePath)
+        const metadata = await statStorageFile(logo.storagePath)
 
         const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
         const safeMimeType = allowedMimeTypes.has(logo.mimeType) ? logo.mimeType : 'application/octet-stream'
+        const directUrl = getDirectAssetUrl(logo.storagePath)
+        if (directUrl) return sendRedirect(event, directUrl, 302)
 
         setHeader(event, 'Content-Type', safeMimeType)
         setHeader(event, 'X-Content-Type-Options', 'nosniff')
-        setHeader(event, 'Content-Length', stats.size)
+        setHeader(event, 'Content-Length', metadata.size)
         setHeader(event, 'Cache-Control', 'public, max-age=31536000, immutable')
 
-        return sendStream(event, createReadStream(filePath))
+        const object = await getStorageObject(logo.storagePath)
+        return sendStream(event, object.body)
     } catch {
         throw createError({ statusCode: 404, statusMessage: 'File not found on server' })
     }

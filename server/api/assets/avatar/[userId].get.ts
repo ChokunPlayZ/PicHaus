@@ -1,8 +1,6 @@
-import { createReadStream } from 'fs'
-import { stat } from 'fs/promises'
-import { join } from 'path'
 import { eq } from 'drizzle-orm'
 import { users } from '../../../db/schema'
+import { getDirectAssetUrl, getStorageObject, statStorageFile } from '../../../utils/storage'
 
 export default defineEventHandler(async (event) => {
     const userId = getRouterParam(event, 'userId')
@@ -11,15 +9,16 @@ export default defineEventHandler(async (event) => {
     const user = await db.query.users.findFirst({ where: eq(users.id, userId) })
     if (!user?.avatarPath) throw createError({ statusCode: 404, statusMessage: 'No avatar' })
 
-    const storageBase = process.env.STORAGE_DIR || 'storage/uploads'
-    const filePath = join(process.cwd(), storageBase, user.avatarPath)
-
     try {
-        const stats = await stat(filePath)
+        const metadata = await statStorageFile(user.avatarPath)
+        const directUrl = getDirectAssetUrl(user.avatarPath)
+        if (directUrl) return sendRedirect(event, directUrl, 302)
+
         setHeader(event, 'Content-Type', 'image/webp')
-        setHeader(event, 'Content-Length', stats.size)
+        setHeader(event, 'Content-Length', metadata.size)
         setHeader(event, 'Cache-Control', 'public, max-age=86400')
-        return sendStream(event, createReadStream(filePath))
+        const object = await getStorageObject(user.avatarPath)
+        return sendStream(event, object.body)
     } catch {
         throw createError({ statusCode: 404, statusMessage: 'Avatar file not found' })
     }

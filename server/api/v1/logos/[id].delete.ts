@@ -1,8 +1,7 @@
 import { eq } from 'drizzle-orm'
-import { unlink } from 'fs/promises'
 import { logos } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
-import { getAbsoluteFilePath } from '../../../utils/upload'
+import { deleteStorageFile } from '../../../utils/storage'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
@@ -17,7 +16,7 @@ export default defineEventHandler(async (event) => {
     await db.delete(logos).where(eq(logos.id, id))
 
     try {
-        await unlink(getAbsoluteFilePath(logo.storagePath))
+        await deleteStorageFile(logo.storagePath)
     } catch {
         // File already gone — ignore
     }

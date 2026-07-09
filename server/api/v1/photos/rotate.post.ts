@@ -1,8 +1,8 @@
 import { eq, inArray } from 'drizzle-orm'
-import { readFile, writeFile } from 'fs/promises'
 import { photos } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
-import { getAbsoluteFilePath, generateBlurhash } from '../../../utils/upload'
+import { generateBlurhash } from '../../../utils/upload'
+import { readStorageFile, writeStorageFile } from '../../../utils/storage'
 import sharp from 'sharp'
 
 export default defineEventHandler(async (event) => {
@@ -45,11 +45,8 @@ export default defineEventHandler(async (event) => {
         const updatedPhotosList = []
 
         for (const photo of editablePhotos) {
-            const originalPath = getAbsoluteFilePath(photo.storagePath)
-            const thumbPath = photo.thumbnailStoragePath ? getAbsoluteFilePath(photo.thumbnailStoragePath) : null
-
             // Read original image
-            const originalBuffer = await readFile(originalPath)
+            const originalBuffer = await readStorageFile(photo.storagePath)
 
             // Rotate using sharp
             const rotatedOriginalBuffer = await sharp(originalBuffer)
@@ -57,15 +54,15 @@ export default defineEventHandler(async (event) => {
                 .toBuffer()
 
             // Save back
-            await writeFile(originalPath, rotatedOriginalBuffer)
+            await writeStorageFile(photo.storagePath, rotatedOriginalBuffer)
 
             // Rotate thumbnail if it exists
-            if (thumbPath) {
-                const thumbBuffer = await readFile(thumbPath)
+            if (photo.thumbnailStoragePath) {
+                const thumbBuffer = await readStorageFile(photo.thumbnailStoragePath)
                 const rotatedThumbBuffer = await sharp(thumbBuffer)
                     .rotate(angle)
                     .toBuffer()
-                await writeFile(thumbPath, rotatedThumbBuffer)
+                await writeStorageFile(photo.thumbnailStoragePath, rotatedThumbBuffer)
             }
 
             // Get new dimensions

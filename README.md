@@ -147,7 +147,19 @@ volumes:
 |---|---|---|---|
 | `DATABASE_URL` | Yes | — | PostgreSQL connection string |
 | `AUTH_SECRET` | Yes (prod) | dev fallback | HMAC secret for session tokens — minimum 32 characters |
+| `STORAGE_DRIVER` | No | `local` | Storage backend: `local` or `s3` |
 | `STORAGE_DIR` | No | `storage/uploads` | Absolute or relative path where uploaded files are stored |
+| `ASSET_DELIVERY` | No | `proxy` | Asset delivery mode: `proxy` streams through PicHaus; `redirect` sends clients to S3 after access checks |
+| `S3_BUCKET` | When `STORAGE_DRIVER=s3` | — | S3-compatible bucket name |
+| `S3_REGION` | When `STORAGE_DRIVER=s3` | `us-east-1` | S3 signing region |
+| `S3_ENDPOINT` | No | AWS S3 endpoint | Custom S3-compatible endpoint, e.g. MinIO or R2 |
+| `S3_ACCESS_KEY_ID` | When `STORAGE_DRIVER=s3` | — | S3 access key ID; `AWS_ACCESS_KEY_ID` is also accepted |
+| `S3_SECRET_ACCESS_KEY` | When `STORAGE_DRIVER=s3` | — | S3 secret access key; `AWS_SECRET_ACCESS_KEY` is also accepted |
+| `S3_SESSION_TOKEN` | No | — | Temporary credential session token; `AWS_SESSION_TOKEN` is also accepted |
+| `S3_PREFIX` | No | — | Optional object key prefix inside the bucket |
+| `S3_FORCE_PATH_STYLE` | No | endpoint-aware | Use path-style URLs; defaults to `true` with `S3_ENDPOINT` and `false` for AWS S3 |
+| `S3_PUBLIC_BASE_URL` | No | — | Public bucket or CDN base URL used by `ASSET_DELIVERY=redirect`; omit to use short-lived presigned URLs |
+| `S3_PRESIGNED_URL_TTL_SECONDS` | No | `300` | Lifetime for private-bucket presigned redirects, clamped to 1 second through 7 days |
 | `MAX_FILE_SIZE_MB` | No | `10` | Maximum upload size per file in megabytes |
 | `AUTO_COMPRESS_LIMIT_MB` | No | `15` | File size in MB above which ANY uploaded image is compressed, regardless of origin/editing software |
 | `FRESH_COMPRESS_LIMIT_MB` | No | `4` | File size in MB above which fresh-off-camera images (no editing software) are compressed |
@@ -643,13 +655,33 @@ All passwords (user accounts and share link passwords) are hashed with Argon2id:
 
 ## Storage
 
-Files are stored on the local filesystem at `STORAGE_DIR` (default `storage/uploads`).
+Files are stored through the configured storage backend. By default PicHaus uses the local filesystem at `STORAGE_DIR` (default `storage/uploads`). Set `STORAGE_DRIVER=s3` to store photos, thumbnails, logos, and avatars in an S3-compatible bucket.
 
-**Directory layout**
+Asset delivery defaults to `ASSET_DELIVERY=proxy`, where browsers request PicHaus asset endpoints and PicHaus streams bytes from storage after enforcing auth/share-link checks. With `ASSET_DELIVERY=redirect`, PicHaus still performs the same access checks, then returns a 302 to the bucket or CDN so the browser downloads the file directly.
+
+**Storage backend choices**
+
+| Backend | Configuration | Best for |
+|---|---|---|
+| Local filesystem | `STORAGE_DRIVER=local` and `STORAGE_DIR=/path/to/uploads` | Small/self-hosted installs with a durable disk or Docker volume |
+| S3-compatible bucket | `STORAGE_DRIVER=s3` plus `S3_*` credentials | Larger libraries, object storage backups/lifecycle policies, multi-host deployments |
+
+**Asset delivery choices**
+
+| Delivery mode | Configuration | Browser receives | Bucket visibility | Tradeoff |
+|---|---|---|---|---|
+| Proxy | `ASSET_DELIVERY=proxy` | PicHaus `/api/assets/...` response body | Private | Strongest control and simplest setup, but PicHaus pays bandwidth and handles streaming |
+| Redirect with presigned URLs | `ASSET_DELIVERY=redirect`, no `S3_PUBLIC_BASE_URL` | Short-lived signed bucket URL | Private | Saves PicHaus bandwidth while preserving private objects; URLs remain valid until TTL expiry |
+| Redirect to CDN/public base | `ASSET_DELIVERY=redirect` and `S3_PUBLIC_BASE_URL=...` | Public bucket/CDN URL | Public or CDN-authorized | Lowest PicHaus bandwidth and best CDN caching, but object access is controlled outside PicHaus after redirect |
+
+**Local directory layout**
 
 ```
 storage/uploads/
+├── avatars/         # User avatars
+├── logos/           # Site, OAuth button, album, and share group logos
 ├── photos/          # Original uploaded files + cover photos
+├── resumable/       # Temporary resumable-upload sessions
 └── thumbnails/      # WebP thumbnails (max 400×400)
 ```
 
@@ -666,10 +698,104 @@ Example: `a3f9c12d8e4b7f01_1743465600000.jpg`
 3. EXIF data extracted
 4. WebP thumbnail generated at ≤400×400
 5. Blurhash generated at 32×32 for progressive loading
-6. Both files written to disk, then the database record is created
+6. Both files written to the configured storage backend, then the database record is created
 7. If the database write fails, both files are deleted (no orphans)
 
 Cover photos are processed to JPEG at up to 2560×2560 and stored alongside regular photos.
+
+**S3-compatible storage**
+
+Set the bucket credentials and switch the driver. PicHaus signs S3 requests itself using SigV4, so no AWS SDK dependency is required.
+
+```env
+STORAGE_DRIVER="s3"
+S3_BUCKET="pichaus"
+S3_REGION="us-east-1"
+S3_ENDPOINT="https://s3.example.com"
+S3_ACCESS_KEY_ID="..."
+S3_SECRET_ACCESS_KEY="..."
+S3_PREFIX="production"
+```
+
+Stored object keys keep the same internal layout (`photos/...`, `thumbnails/...`, `logos/...`, `avatars/...`), optionally under `S3_PREFIX`. Existing local files are not migrated automatically. Resumable-upload chunks are still staged on the PicHaus server under `STORAGE_DIR/resumable` until each upload completes, then the final file is written to S3.
+
+The access key must be able to:
+
+- `PutObject` for uploads, thumbnails, logos, avatars, and health checks
+- `GetObject` for proxy reads, image processing, rotations, cover crops, and presigned redirects
+- `HeadObject` for asset existence and cache metadata
+- `DeleteObject` for deleted photos/logos and health checks
+
+For direct browser reads, keep the bucket private and omit `S3_PUBLIC_BASE_URL` to use short-lived presigned S3 URLs:
+
+```env
+ASSET_DELIVERY="redirect"
+S3_PRESIGNED_URL_TTL_SECONDS="300"
+```
+
+The browser first requests `/api/assets/...`; PicHaus validates album ownership, collaborator access, API-token/share-link cookies, and public-album rules. Only after that check does PicHaus return a 302 to a presigned URL. The default TTL is 300 seconds and is clamped between 1 second and 7 days.
+
+If objects are intentionally public behind a bucket website or CDN, set `S3_PUBLIC_BASE_URL` instead:
+
+```env
+ASSET_DELIVERY="redirect"
+S3_PUBLIC_BASE_URL="https://cdn.example.com/pichaus/"
+```
+
+When `S3_PUBLIC_BASE_URL` is set, PicHaus maps internal object keys directly under that base URL. For example, with `S3_PREFIX=production` and `S3_PUBLIC_BASE_URL=https://cdn.example.com/pichaus/`, `photos/a.jpg` redirects to `https://cdn.example.com/pichaus/production/photos/a.jpg`.
+
+**AWS S3 example**
+
+```env
+STORAGE_DRIVER="s3"
+ASSET_DELIVERY="proxy"
+S3_BUCKET="pichaus-prod"
+S3_REGION="us-east-1"
+S3_ACCESS_KEY_ID="..."
+S3_SECRET_ACCESS_KEY="..."
+S3_PREFIX="uploads"
+```
+
+For AWS S3, omit `S3_ENDPOINT`. PicHaus defaults to virtual-hosted-style URLs for AWS S3. Set `ASSET_DELIVERY=redirect` to use presigned browser downloads.
+
+**Cloudflare R2 example**
+
+```env
+STORAGE_DRIVER="s3"
+ASSET_DELIVERY="redirect"
+S3_BUCKET="pichaus"
+S3_REGION="auto"
+S3_ENDPOINT="https://<account-id>.r2.cloudflarestorage.com"
+S3_ACCESS_KEY_ID="..."
+S3_SECRET_ACCESS_KEY="..."
+S3_FORCE_PATH_STYLE="true"
+S3_PRESIGNED_URL_TTL_SECONDS="300"
+```
+
+R2 supports SigV4-style presigned URLs. Custom endpoints default to path-style URLs, but setting `S3_FORCE_PATH_STYLE=true` makes that explicit.
+
+**MinIO example**
+
+```env
+STORAGE_DRIVER="s3"
+ASSET_DELIVERY="proxy"
+S3_BUCKET="pichaus"
+S3_REGION="us-east-1"
+S3_ENDPOINT="https://minio.example.com"
+S3_ACCESS_KEY_ID="..."
+S3_SECRET_ACCESS_KEY="..."
+S3_FORCE_PATH_STYLE="true"
+```
+
+If you put MinIO behind a public reverse proxy or CDN and want direct reads, set `ASSET_DELIVERY=redirect` and either use presigned URLs or set `S3_PUBLIC_BASE_URL` to the public object URL prefix.
+
+**Operational notes**
+
+- Keep `ASSET_DELIVERY=proxy` if you need PicHaus to remain the only host clients contact for media.
+- Use `ASSET_DELIVERY=redirect` to reduce PicHaus egress and CPU load for image downloads.
+- Presigned redirects expose temporary object URLs to the user who passed PicHaus access checks. Use a short TTL if album membership or share-link access changes often.
+- Public/CDN redirects do not make PicHaus re-check access after the redirect; configure bucket/CDN policies accordingly.
+- Switching from local storage to S3 changes where new files are written. Copy existing `STORAGE_DIR` contents to matching S3 keys before switching a production instance.
 
 ---
 

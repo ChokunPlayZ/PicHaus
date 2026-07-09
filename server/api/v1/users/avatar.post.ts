@@ -1,9 +1,8 @@
 import { eq } from 'drizzle-orm'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 import sharp from 'sharp'
 import { users } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
+import { saveStorageFile } from '../../../utils/storage'
 
 export default defineEventHandler(async (event) => {
     const currentUser = await requireAuth(event)
@@ -30,15 +29,8 @@ export default defineEventHandler(async (event) => {
         .webp({ quality: 85 })
         .toBuffer()
 
-    const storageBase = process.env.STORAGE_DIR || 'storage/uploads'
-    const avatarDir = join(process.cwd(), storageBase, 'avatars')
-    await mkdir(avatarDir, { recursive: true })
-
     const fileName = `${currentUser.id}.webp`
-    const filePath = join(avatarDir, fileName)
-    await writeFile(filePath, resized)
-
-    const avatarPath = `avatars/${fileName}`
+    const avatarPath = await saveStorageFile(resized, fileName, 'avatars')
 
     await db.update(users)
         .set({ avatarPath, updatedAt: BigInt(Date.now()) })

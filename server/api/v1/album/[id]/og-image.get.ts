@@ -1,7 +1,7 @@
 import sharp from 'sharp'
 import { eq, and, isNotNull } from 'drizzle-orm'
 import { albums, shareLinks, shareGroups, albumToShareGroups, photos } from '../../../../db/schema'
-import { getAbsoluteFilePath } from '../../../../utils/upload'
+import { readStorageFile } from '../../../../utils/storage'
 import justifiedLayout from 'justified-layout'
 import { getAuthUserId, getUnixTimestamp } from '../../../../utils/auth'
 
@@ -62,8 +62,8 @@ export default defineEventHandler(async (event) => {
 
     if (album.coverPhoto?.storagePath) {
         try {
-            const fullPath = getAbsoluteFilePath(album.coverPhoto.storagePath)
-            const imageBuffer = await sharp(fullPath).resize(width, height, { fit: 'cover', position: 'center' }).png().toBuffer()
+            const coverBuffer = await readStorageFile(album.coverPhoto.storagePath)
+            const imageBuffer = await sharp(coverBuffer).resize(width, height, { fit: 'cover', position: 'center' }).png().toBuffer()
             setHeaders(event, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' })
             return imageBuffer
         } catch {}
@@ -112,11 +112,11 @@ export default defineEventHandler(async (event) => {
             const path = photo.thumbnailStoragePath || photo.storagePath
             if (!path) return null
             try {
-                const fullPath = getAbsoluteFilePath(path)
+                const sourceBuffer = await readStorageFile(path)
                 const boxWidth = Math.round(box.width)
                 const boxHeight = Math.round(box.height)
                 const roundedCorners = Buffer.from(`<svg><rect x="0" y="0" width="${boxWidth}" height="${boxHeight}" rx="10" ry="10" /></svg>`)
-                const imgBuffer = await sharp(fullPath)
+                const imgBuffer = await sharp(sourceBuffer)
                     .resize(boxWidth, boxHeight, { fit: 'cover' })
                     .composite([{ input: roundedCorners, blend: 'dest-in' }])
                     .toBuffer()

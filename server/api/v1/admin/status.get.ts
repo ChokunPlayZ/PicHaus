@@ -1,7 +1,7 @@
 import { eq, count, sum, sql } from 'drizzle-orm'
 import { users, albums, photos } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
-import { access, constants } from 'fs/promises'
+import { checkStorageWritable, getStorageDriver } from '../../../utils/storage'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
@@ -35,16 +35,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // ── Storage ───────────────────────────────────────────────────────────────
-    const storageDir = process.env.STORAGE_DIR || 'storage/uploads'
-    let storageOk = false
-    let storageError: string | null = null
-    let storageSizeBytes = 0
-    try {
-        await access(storageDir, constants.W_OK)
-        storageOk = true
-    } catch (err: any) {
-        storageError = err?.code === 'ENOENT' ? 'Directory does not exist' : 'Not writable'
-    }
+    const storageHealth = await checkStorageWritable()
 
     // ── Quick stats ───────────────────────────────────────────────────────────
     let stats = { users: 0, albums: 0, photos: 0, storageMb: 0 }
@@ -69,7 +60,12 @@ export default defineEventHandler(async (event) => {
         success: true,
         data: {
             database: { ok: dbOk, latencyMs: dbLatencyMs, error: dbError },
-            storage: { ok: storageOk, path: storageDir, error: storageError },
+            storage: {
+                ok: storageHealth.ok,
+                driver: getStorageDriver(),
+                path: storageHealth.location,
+                error: storageHealth.error,
+            },
             migrations: { applied: migrations.length, list: migrations },
             stats,
         },

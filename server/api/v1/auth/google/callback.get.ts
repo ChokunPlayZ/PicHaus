@@ -1,10 +1,9 @@
 import { eq, or } from 'drizzle-orm'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 import sharp from 'sharp'
 import { users, siteSettings } from '../../../../db/schema'
 import { createAccessToken, getUnixTimestamp } from '../../../../utils/auth'
 import { exchangeGoogleCode, getGoogleUserInfo, storePendingAuth } from '../../../../utils/google-oauth'
+import { saveStorageFile } from '../../../../utils/storage'
 
 export default defineEventHandler(async (event) => {
     const query = getQuery(event)
@@ -84,11 +83,7 @@ export default defineEventHandler(async (event) => {
                         .resize(256, 256, { fit: 'cover', position: 'centre' })
                         .webp({ quality: 85 })
                         .toBuffer()
-                    const storageBase = process.env.STORAGE_DIR || 'storage/uploads'
-                    const avatarDir = join(process.cwd(), storageBase, 'avatars')
-                    await mkdir(avatarDir, { recursive: true })
-                    await writeFile(join(avatarDir, `${user.id}.webp`), resized)
-                    const avatarPath = `avatars/${user.id}.webp`
+                    const avatarPath = await saveStorageFile(resized, `${user.id}.webp`, 'avatars')
                     await db.update(users).set({ avatarPath, updatedAt: BigInt(now) }).where(eq(users.id, user.id))
                     user = { ...user, avatarPath }
                 }

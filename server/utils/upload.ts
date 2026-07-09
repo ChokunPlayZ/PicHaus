@@ -1,12 +1,19 @@
 import sharp from 'sharp'
 import { createHash, randomUUID } from 'crypto'
-import { writeFile, mkdir } from 'fs/promises'
-import { join, resolve, sep } from 'path'
 import exifr from 'exifr'
 import { encode } from 'blurhash'
 import { db } from './db'
 import { photos } from '../db/schema'
 import { getUnixTimestamp } from './auth'
+import {
+    deleteStorageFile,
+    getLocalAbsoluteFilePath,
+    readStorageFile,
+    saveStorageFile,
+    writeStorageFile,
+} from './storage'
+
+export { getLocalAbsoluteFilePath as getAbsoluteFilePath }
 
 /**
  * Calculate SHA-256 hash of file buffer
@@ -167,33 +174,7 @@ export async function saveFile(
     filename: string,
     subdirectory: string = 'photos'
 ): Promise<string> {
-    const storageBaseDir = process.env.STORAGE_DIR || 'storage/uploads'
-    const uploadDir = join(process.cwd(), storageBaseDir, subdirectory)
-
-    // Ensure directory exists
-    await mkdir(uploadDir, { recursive: true })
-
-    const filePath = join(uploadDir, filename)
-    await writeFile(filePath, buffer)
-
-    // Return storage path (relative to storage root)
-    return `${subdirectory}/${filename}`
-}
-
-/**
- * Get absolute file path from storage path
- */
-export function getAbsoluteFilePath(storagePath: string): string {
-    const storageBaseDir = process.env.STORAGE_DIR || 'storage/uploads'
-    const storageRoot = resolve(process.cwd(), storageBaseDir)
-    const normalizedStoragePath = storagePath.replace(/^\/+/, '')
-    const resolvedPath = resolve(storageRoot, normalizedStoragePath)
-
-    if (resolvedPath !== storageRoot && !resolvedPath.startsWith(storageRoot + sep)) {
-        throw new Error('Invalid storage path')
-    }
-
-    return resolvedPath
+    return saveStorageFile(buffer, filename, subdirectory)
 }
 
 /**
@@ -232,11 +213,7 @@ export async function deleteFile(storagePath: string): Promise<boolean> {
     if (!storagePath) return false
 
     try {
-        const fullPath = getAbsoluteFilePath(storagePath)
-
-        // Check if file exists (using fs/promises access or just try unlink)
-        const { unlink } = await import('fs/promises')
-        await unlink(fullPath)
+        await deleteStorageFile(storagePath)
         return true
     } catch (error) {
         console.error(`Failed to delete file ${storagePath}:`, error)
@@ -257,9 +234,7 @@ export async function processPhotoBackground(options: {
 }): Promise<void> {
     let thumbnailStoragePath: string | null = null
     try {
-        const filePath = getAbsoluteFilePath(options.storagePath)
-        const fs = await import('fs/promises')
-        let fileBuffer: Buffer = await fs.readFile(filePath)
+        let fileBuffer: Buffer = await readStorageFile(options.storagePath)
 
         const exifData = await extractExifData(fileBuffer)
         let storedWidth = exifData.width ?? 0
@@ -269,7 +244,7 @@ export async function processPhotoBackground(options: {
         if (shouldAutoCompress(fileBuffer, exifData.software, storedWidth, storedHeight)) {
             const format = options.trustedMimeType.split('/')[1] ?? 'jpeg'
             fileBuffer = await compressImage(fileBuffer, format)
-            await fs.writeFile(filePath, fileBuffer)
+            await writeStorageFile(options.storagePath, fileBuffer)
             
             const compressedMeta = await sharp(fileBuffer).metadata()
             storedWidth = compressedMeta.width ?? storedWidth
@@ -318,4 +293,3 @@ export async function processPhotoBackground(options: {
         }
     }
 }
-

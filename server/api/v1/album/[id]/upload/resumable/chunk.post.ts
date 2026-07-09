@@ -3,7 +3,7 @@ import { albums, albumCollaborators } from '../../../../../../db/schema'
 import { requireAuth } from '../../../../../../utils/auth'
 import { join } from 'path'
 import fs from 'fs/promises'
-import { generateUniqueFilename, processPhotoBackground } from '../../../../../../utils/upload'
+import { generateUniqueFilename, processPhotoBackground, saveFile } from '../../../../../../utils/upload'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -72,14 +72,8 @@ export default defineEventHandler(async (event) => {
             const originalFilename = meta.filename || 'photo.jpg'
             const filename = generateUniqueFilename(originalFilename, meta.fileHash)
 
-            // Move the file to the final destination
-            const uploadDir = join(process.cwd(), storageBaseDir, 'photos')
-            await fs.mkdir(uploadDir, { recursive: true })
-            const finalFilePath = join(uploadDir, filename)
-            
-            // Move file
-            await fs.rename(dataPath, finalFilePath)
-            const storagePath = `photos/${filename}`
+            const fileBuffer = await fs.readFile(dataPath)
+            const storagePath = await saveFile(fileBuffer, filename, 'photos')
 
             // Clean up session directory
             await fs.rm(sessionDir, { recursive: true, force: true })

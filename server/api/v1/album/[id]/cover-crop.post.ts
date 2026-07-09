@@ -2,7 +2,8 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { albums, albumCollaborators, photos } from '../../../../db/schema'
 import { requireAuth } from '../../../../utils/auth'
 import sharp from 'sharp'
-import { saveFile, generateBlurhash, deleteFile, calculateFileHash, getAbsoluteFilePath } from '../../../../utils/upload'
+import { saveFile, generateBlurhash, deleteFile, calculateFileHash } from '../../../../utils/upload'
+import { readStorageFile } from '../../../../utils/storage'
 import crypto from 'crypto'
 
 export default defineEventHandler(async (event) => {
@@ -41,9 +42,9 @@ export default defineEventHandler(async (event) => {
             })
             if (!photo) throw createError({ statusCode: 404, statusMessage: 'Photo not found' })
 
-            const filePath = getAbsoluteFilePath(photo.storagePath)
             try {
-                processedBuffer = await sharp(filePath)
+                const photoBuffer = await readStorageFile(photo.storagePath)
+                processedBuffer = await sharp(photoBuffer)
                     .extract({
                         left: Math.max(0, Math.round(x)),
                         top: Math.max(0, Math.round(y)),

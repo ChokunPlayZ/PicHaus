@@ -1,9 +1,8 @@
-import { stat } from 'fs/promises'
 import { eq } from 'drizzle-orm'
 import { photos, shareLinks } from '../../../db/schema'
-import { getAbsoluteFilePath } from '../../../utils/upload'
 import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
 import { getImmutableAssetCacheControl, sendCachedAsset } from '../../../utils/asset-response'
+import { getDirectAssetUrl, statStorageFile } from '../../../utils/storage'
 
 export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
@@ -65,13 +64,14 @@ export default defineEventHandler(async (event) => {
 
     if (!photo.thumbnailStoragePath) return sendRedirect(event, `/api/assets/full/${id}`)
 
-    const filePath = getAbsoluteFilePath(photo.thumbnailStoragePath)
-
     try {
-        const stats = await stat(filePath)
+        const metadata = await statStorageFile(photo.thumbnailStoragePath)
+        const directUrl = getDirectAssetUrl(photo.thumbnailStoragePath)
+        if (directUrl) return sendRedirect(event, directUrl, 302)
+
         return sendCachedAsset(event, {
-            filePath,
-            stats,
+            storagePath: photo.thumbnailStoragePath,
+            metadata,
             contentType: 'image/webp',
             cacheControl: getImmutableAssetCacheControl(photo.album.isPublic),
             lastModified: new Date(Number(photo.updatedAt || photo.createdAt) * 1000),

@@ -1,9 +1,9 @@
-import { createReadStream } from 'fs'
-import type { Stats } from 'fs'
+import type { StorageObjectMetadata } from './storage'
+import { getStorageObject } from './storage'
 
 interface StreamAssetOptions {
-    filePath: string
-    stats: Stats
+    storagePath: string
+    metadata: StorageObjectMetadata
     contentType: string
     cacheControl: string
     lastModified?: Date
@@ -44,9 +44,9 @@ export function getImmutableAssetCacheControl(isPublic: boolean): string {
 }
 
 export function sendCachedAsset(event: any, options: StreamAssetOptions) {
-    const lastModified = options.lastModified || options.stats.mtime
+    const lastModified = options.lastModified || options.metadata.lastModified || new Date()
     const lastModifiedMs = Math.floor(lastModified.getTime() / 1000) * 1000
-    const etag = `"${Buffer.from(`${options.etagSeed}:${options.stats.size}:${lastModifiedMs}`).toString('base64url')}"`
+    const etag = `"${Buffer.from(`${options.etagSeed}:${options.metadata.size}:${lastModifiedMs}`).toString('base64url')}"`
     const requestHeaders = getRequestHeaders(event)
     const ifNoneMatch = requestHeaders['if-none-match']
     const ifModifiedSince = requestHeaders['if-modified-since']
@@ -66,9 +66,9 @@ export function sendCachedAsset(event: any, options: StreamAssetOptions) {
         return null
     }
 
-    const range = parseRangeHeader(requestHeaders.range, options.stats.size)
+    const range = parseRangeHeader(requestHeaders.range, options.metadata.size)
     if (range === 'invalid') {
-        setHeader(event, 'Content-Range', `bytes */${options.stats.size}`)
+        setHeader(event, 'Content-Range', `bytes */${options.metadata.size}`)
         throw createError({ statusCode: 416, statusMessage: 'Range Not Satisfiable' })
     }
 
@@ -76,10 +76,10 @@ export function sendCachedAsset(event: any, options: StreamAssetOptions) {
         const contentLength = range.end - range.start + 1
         setResponseStatus(event, 206)
         setHeader(event, 'Content-Length', contentLength)
-        setHeader(event, 'Content-Range', `bytes ${range.start}-${range.end}/${options.stats.size}`)
-        return sendStream(event, createReadStream(options.filePath, { start: range.start, end: range.end }))
+        setHeader(event, 'Content-Range', `bytes ${range.start}-${range.end}/${options.metadata.size}`)
+        return getStorageObject(options.storagePath, range).then(object => sendStream(event, object.body))
     }
 
-    setHeader(event, 'Content-Length', options.stats.size)
-    return sendStream(event, createReadStream(options.filePath))
+    setHeader(event, 'Content-Length', options.metadata.size)
+    return getStorageObject(options.storagePath).then(object => sendStream(event, object.body))
 }

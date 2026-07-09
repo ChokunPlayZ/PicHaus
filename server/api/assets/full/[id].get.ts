@@ -1,9 +1,8 @@
-import { stat } from 'fs/promises'
 import { eq } from 'drizzle-orm'
 import { photos, shareLinks } from '../../../db/schema'
-import { getAbsoluteFilePath } from '../../../utils/upload'
 import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
 import { getImmutableAssetCacheControl, sendCachedAsset } from '../../../utils/asset-response'
+import { getDirectAssetUrl, statStorageFile } from '../../../utils/storage'
 
 export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
@@ -64,17 +63,17 @@ export default defineEventHandler(async (event) => {
     if (!hasAccess) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
     if (!photo.storagePath) throw createError({ statusCode: 404, statusMessage: 'File path not found' })
 
-    const filePath = getAbsoluteFilePath(photo.storagePath)
-
     try {
-        const stats = await stat(filePath)
+        const metadata = await statStorageFile(photo.storagePath)
 
         const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/tiff', 'image/avif', 'image/heif', 'image/heic'])
         const safeMimeType = allowedMimeTypes.has(photo.mimeType) ? photo.mimeType : 'application/octet-stream'
+        const directUrl = getDirectAssetUrl(photo.storagePath)
+        if (directUrl) return sendRedirect(event, directUrl, 302)
 
         return sendCachedAsset(event, {
-            filePath,
-            stats,
+            storagePath: photo.storagePath,
+            metadata,
             contentType: safeMimeType,
             cacheControl: getImmutableAssetCacheControl(photo.album.isPublic),
             lastModified: new Date(Number(photo.updatedAt || photo.createdAt) * 1000),
