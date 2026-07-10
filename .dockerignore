@@ -1,4 +1,8 @@
 node_modules/
 dist/
+.nuxt/
+.output/
+.git/
+storage/
 .vscode/
 .env

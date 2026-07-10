@@ -5,6 +5,12 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss', '@nuxt/icon'],
   css: ['~/assets/css/variables.css'],
   nitro: {
+    externals: {
+      // Nitro's dependency tracer can omit Vue's ESM entrypoint when the build
+      // dependencies were installed by Bun. Bundle the SSR runtime so the
+      // production server does not depend on that incomplete traced package.
+      inline: ['vue', /^@vue\//, 'vue-bundle-renderer'],
+    },
     serverAssets: [{
       baseName: 'migrations',
       dir: './drizzle/migrations',
