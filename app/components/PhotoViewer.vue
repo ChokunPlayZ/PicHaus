@@ -52,7 +52,7 @@
                     <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                 </button>
                 <!-- Heart/Favorite button -->
-                <button @click="$emit('toggleFavorite')" aria-label="Toggle favorite" :aria-pressed="isFavorited"
+                <button v-if="showFavorite" @click="$emit('toggleFavorite')" aria-label="Toggle favorite" :aria-pressed="isFavorited"
                     :class="[
                         'w-11 h-11 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm active:scale-90',
                         isFavorited
@@ -71,14 +71,13 @@
 
         <div class="flex flex-col md:flex-row w-full h-full mx-auto md:p-4 md:gap-4 relative z-20">
             <!-- Main Image Area -->
-            <div class="flex-1 flex items-center justify-center relative group overflow-hidden px-3 md:px-0 pt-20 pb-5 md:py-0"
+            <div ref="imageAreaEl" class="flex-1 flex items-center justify-center relative group overflow-hidden px-3 md:px-0 pt-20 pb-5 md:py-0"
                 @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd"
                 @wheel.prevent="handleWheel" @dblclick="toggleZoom" @mousedown="handlePanStart">
 
                 <div class="hidden md:flex absolute top-4 left-4 right-4 items-start justify-between gap-4 z-30">
                     <div class="max-w-[min(44rem,52vw)] rounded-full bg-black/45 px-4 py-2 text-sm text-white/80 backdrop-blur-md opacity-0 shadow-lg shadow-black/20 transition group-hover:opacity-100">
-                        <p class="truncate font-medium text-white">{{ photo.originalName || photo.filename }}</p>
-                        <p class="mt-0.5 text-xs text-white/50">Double-click or scroll to zoom</p>
+                        <p class="text-xs text-white/50">Double-click or scroll to zoom</p>
                     </div>
 
                     <div class="flex gap-2">
@@ -94,7 +93,7 @@
                         class="w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white/75 transition backdrop-blur-sm active:scale-90 opacity-0 group-hover:opacity-100 hover:bg-black/70 hover:text-white">
                         <Icon name="lucide:info" class="h-5 w-5" :stroke-width="2" />
                     </button>
-                    <button @click.stop="$emit('toggleFavorite')" @touchstart.stop @touchmove.stop.prevent
+                    <button v-if="showFavorite" @click.stop="$emit('toggleFavorite')" @touchstart.stop @touchmove.stop.prevent
                         aria-label="Toggle favorite" :aria-pressed="isFavorited"
                         class="w-10 h-10 flex items-center justify-center rounded-full transition backdrop-blur-sm active:scale-90"
                         :class="isFavorited
@@ -357,9 +356,11 @@ const props = withDefaults(defineProps<{
     previousPhotoTimestamp?: number | string | null
     nextPhotoTimestamp?: number | string | null
     showMetadata?: boolean
+    showFavorite?: boolean
     isFavorited?: boolean
 }>(), {
     showMetadata: true,
+    showFavorite: false,
     isFavorited: false
 })
 
@@ -377,6 +378,7 @@ const isSharing = ref(false)
 const shareTimedOut = ref(false)
 const pendingShareFile = ref<File | null>(null)
 const viewerEl = ref<HTMLElement | null>(null)
+const imageAreaEl = ref<HTMLElement | null>(null)
 const zoomLevel = ref(1)
 const panX = ref(0)
 const panY = ref(0)
@@ -531,12 +533,36 @@ const setZoom = (nextZoom: number) => {
     }
 }
 
-const toggleZoom = () => {
+const setZoomAtPoint = (nextZoom: number, clientX: number, clientY: number) => {
+    const imageArea = imageAreaEl.value
+    if (!imageArea) {
+        setZoom(nextZoom)
+        return
+    }
+
+    const previousZoom = zoomLevel.value
+    const clampedZoom = clamp(nextZoom, minZoom, maxZoom)
+    const zoomRatio = clampedZoom / previousZoom
+    const bounds = imageArea.getBoundingClientRect()
+    const pointerX = clientX - (bounds.left + bounds.width / 2)
+    const pointerY = clientY - (bounds.top + bounds.height / 2)
+
+    zoomLevel.value = clampedZoom
+    panX.value = pointerX - (pointerX - panX.value) * zoomRatio
+    panY.value = pointerY - (pointerY - panY.value) * zoomRatio
+}
+
+const toggleZoom = (e?: MouseEvent) => {
     if (zoomLevel.value > minZoom) {
         resetZoom()
         return
     }
-    setZoom(2.25)
+
+    if (e?.currentTarget === imageAreaEl.value) {
+        setZoomAtPoint(2.25, e.clientX, e.clientY)
+    } else {
+        setZoom(2.25)
+    }
 }
 
 function resetZoom() {

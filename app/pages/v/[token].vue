@@ -345,6 +345,7 @@
             :has-next="selectedPhotoIndex! < (photos.length || 0) - 1" :previous-photo-id="previousPhotoId"
             :next-photo-id="nextPhotoId" :previous-photo-timestamp="previousPhotoTimestamp"
             :next-photo-timestamp="nextPhotoTimestamp" :show-metadata="showMetadata"
+            :show-favorite="true"
             :is-favorited="selectedPhoto ? isFavorited(selectedPhoto.id) : false"
             @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto"
             @toggle-favorite="selectedPhoto && toggleFavorite(selectedPhoto.id)" />
