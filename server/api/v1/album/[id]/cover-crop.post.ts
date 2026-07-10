@@ -2,11 +2,17 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { albums, albumCollaborators, photos } from '../../../../db/schema'
 import { requireAuth } from '../../../../utils/auth'
 import sharp from 'sharp'
-import { saveFile, generateBlurhash, deleteFile, calculateFileHash } from '../../../../utils/upload'
+import { saveFile, generateBlurhash, deleteFile, calculateFileHash, generateThumbnail } from '../../../../utils/upload'
 import { readStorageFile } from '../../../../utils/storage'
 import crypto from 'crypto'
 
+const COVER_MAX_DIMENSION = 1920
+const COVER_JPEG_QUALITY = 85
+
 export default defineEventHandler(async (event) => {
+    let coverPath: string | null = null
+    let thumbnailPath: string | null = null
+
     try {
         const id = getRouterParam(event, 'id')
         if (!id) throw createError({ statusCode: 400, statusMessage: 'Album ID is required' })
@@ -51,8 +57,8 @@ export default defineEventHandler(async (event) => {
                         width: Math.max(1, Math.round(width)),
                         height: Math.max(1, Math.round(height)),
                     })
-                    .resize(2560, 2560, { fit: 'inside', withoutEnlargement: true })
-                    .toFormat('jpeg', { quality: 90 })
+                    .resize(COVER_MAX_DIMENSION, COVER_MAX_DIMENSION, { fit: 'inside', withoutEnlargement: true })
+                    .toFormat('jpeg', { quality: COVER_JPEG_QUALITY, progressive: true })
                     .toBuffer()
             } catch (err: any) {
                 console.error('Server crop failed:', err)
@@ -68,8 +74,8 @@ export default defineEventHandler(async (event) => {
             const buffer = fileData.data
             try {
                 processedBuffer = await sharp(buffer)
-                    .resize(2560, 2560, { fit: 'inside', withoutEnlargement: true })
-                    .toFormat('jpeg', { quality: 90 })
+                    .resize(COVER_MAX_DIMENSION, COVER_MAX_DIMENSION, { fit: 'inside', withoutEnlargement: true })
+                    .toFormat('jpeg', { quality: COVER_JPEG_QUALITY, progressive: true })
                     .toBuffer()
             } catch {
                 throw createError({ statusCode: 400, statusMessage: 'Failed to process image' })
@@ -78,7 +84,10 @@ export default defineEventHandler(async (event) => {
 
         const fileHash = crypto.randomBytes(8).toString('hex')
         const coverFilename = `cover_${id}_${fileHash}.jpg`
-        const coverPath = await saveFile(processedBuffer, coverFilename, 'photos')
+        const thumbnailFilename = `cover_${id}_${fileHash}_thumb.webp`
+        const thumbnailBuffer = await generateThumbnail(processedBuffer)
+        coverPath = await saveFile(processedBuffer, coverFilename, 'photos')
+        thumbnailPath = await saveFile(thumbnailBuffer, thumbnailFilename, 'thumbnails')
 
         let metadata: sharp.Metadata | undefined
         let blurhash = ''
@@ -92,7 +101,7 @@ export default defineEventHandler(async (event) => {
             filename: coverFilename,
             originalName: `${album.title}_cover.jpg`,
             storagePath: coverPath,
-            thumbnailStoragePath: coverPath,
+            thumbnailStoragePath: thumbnailPath,
             size: processedBuffer.length,
             width: metadata?.width || 1,
             height: metadata?.height || 1,
@@ -133,6 +142,8 @@ export default defineEventHandler(async (event) => {
 
         return { success: true, message: 'Album cover updated successfully', data: updatedCoverPhoto }
     } catch (error: any) {
+        if (coverPath) await deleteFile(coverPath).catch(() => {})
+        if (thumbnailPath && thumbnailPath !== coverPath) await deleteFile(thumbnailPath).catch(() => {})
         if (error.statusCode) throw error
         throw createError({ statusCode: 500, statusMessage: 'Failed to update album cover' })
     }
