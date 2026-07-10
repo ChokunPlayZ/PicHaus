@@ -43,6 +43,10 @@ const REQUIRED_COLUMNS: Record<string, string[]> = {
     site_settings: ['id', 'siteName', 'updatedAt', 'allowRegistration', 'googleOAuthEnabled', 'microsoftOAuthEnabled'],
 }
 
+function sqlList(values: string[]) {
+    return sql.join(values.map(value => sql`${value}`), sql`, `)
+}
+
 export function getSystemOutage() {
     return globalThis._pichausOutage
 }
@@ -99,7 +103,7 @@ async function validateRequiredSchema() {
         SELECT table_name
         FROM information_schema.tables
         WHERE table_schema = 'public'
-          AND table_name = ANY(${REQUIRED_TABLES})
+          AND table_name IN (${sqlList(REQUIRED_TABLES)})
     `) as { table_name: string }[]
 
     const existingTables = new Set(tableRows.map(row => row.table_name))
@@ -112,7 +116,7 @@ async function validateRequiredSchema() {
         SELECT table_name, column_name
         FROM information_schema.columns
         WHERE table_schema = 'public'
-          AND table_name = ANY(${Object.keys(REQUIRED_COLUMNS)})
+          AND table_name IN (${sqlList(Object.keys(REQUIRED_COLUMNS))})
     `) as { table_name: string, column_name: string }[]
 
     const columnsByTable = new Map<string, Set<string>>()
