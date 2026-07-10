@@ -49,9 +49,9 @@
   --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.08);
 
   /* ── Radii ───────────────────────────────────────────── */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
   --radius-pill: 980px;
 
   /* ── Legacy aliases (album theming + existing templates) */
@@ -134,13 +134,87 @@
 }
 
 /* ── Base ───────────────────────────────────────────────── */
+html {
+  background-color: var(--bg-page);
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
+  min-height: 100vh;
+  margin: 0;
   background-color: var(--bg-page);
   color: var(--text-1);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--text-link);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  letter-spacing: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  line-height: 1.35;
+}
+
+.min-h-screen {
+  background-color: var(--bg-page);
+}
+
+body.has-sidebar-nav .min-h-screen > div[class*="px-4"][class*="sm:px-6"][class*="lg:px-8"] {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+}
+
+@media (min-width: 1024px) {
+  body.has-sidebar-nav .min-h-screen > div[class*="px-4"][class*="sm:px-6"][class*="lg:px-8"] {
+    padding-inline: 2rem;
+  }
+}
+
+:where(.rounded-2xl, .rounded-3xl) {
+  border-radius: var(--radius-lg) !important;
+}
+
+:where(.rounded-xl) {
+  border-radius: var(--radius-md) !important;
+}
+
+:where(.shadow-2xl) {
+  box-shadow: var(--shadow-xl) !important;
+}
+
+:where(.shadow-xl) {
+  box-shadow: var(--shadow-lg) !important;
 }
 
 /* ── Glass card containers ──────────────────────────────── */
@@ -161,6 +235,12 @@ textarea[class*="bg-white/5"][class*="border-white/10"] {
   color: var(--text-1);
   border-radius: var(--radius-md);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
+  min-height: 2.5rem;
 }
 
 input[class*="bg-white/5"][class*="border-white/10"]:focus,
@@ -210,6 +290,10 @@ button:disabled {
   opacity: 0.45;
 }
 
+button[class*="rounded-full"]:not([class*="w-"]):not([class*="h-"]) {
+  min-height: 2.25rem;
+}
+
 /* ── Icon buttons ───────────────────────────────────────── */
 button[class*="rounded-lg"][class*="p-2"],
 button[class*="rounded-lg"][class*="p-3"] {
@@ -240,6 +324,28 @@ button[class*="rounded-lg"][class*="p-3"]:active {
   background-color: var(--surface-2) !important;
   border-color: var(--separator) !important;
   border-radius: var(--radius-md);
+}
+
+/* ── App panels and tables ──────────────────────────────── */
+[style*="background: var(--surface-1)"][style*="border: 1px solid var(--separator)"] {
+  border-radius: var(--radius-lg);
+}
+
+thead {
+  background-color: var(--surface-2);
+}
+
+tbody tr {
+  border-top: 1px solid var(--separator);
+}
+
+tbody tr:hover {
+  background-color: var(--surface-2);
+}
+
+code {
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
 }
 
 /* ── Floating bulk action bars ──────────────────────────── */

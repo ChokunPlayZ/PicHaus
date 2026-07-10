@@ -14,7 +14,7 @@ export default defineNuxtConfig({
     head: {
       title: 'PicHaus',
       meta: [
-        { name: 'theme-color', content: '#5e4d56' }, // Matches the app's purple gradient
+        { name: 'theme-color', content: '#f5f5f7' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
       ],
       script: [

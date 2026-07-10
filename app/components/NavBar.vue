@@ -16,6 +16,15 @@
             </div>
 
             <div class="p-2 space-y-0.5 flex-1 overflow-y-auto">
+                <button v-if="showBack" @click="handleBack"
+                    class="w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center gap-2.5 mb-2"
+                    style="color: var(--text-2); background: transparent;"
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-2)'">
+                    <Icon name="lucide:chevron-left" class="w-4 h-4 shrink-0" :stroke-width="2" />
+                    <span>{{ backText || 'Back' }}</span>
+                </button>
+
                 <!-- Search Button -->
                 <button @click="isOpen = true"
                     class="w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center justify-between mb-2 group"
@@ -108,9 +117,20 @@
 
         <!-- Mobile top bar -->
         <div
-            class="lg:hidden sticky top-0 z-50 h-14 flex items-center justify-between px-4"
+            class="lg:hidden sticky top-0 z-50 h-14 grid grid-cols-[2.5rem_1fr_2.5rem] items-center gap-2 px-3"
             style="background: var(--sidebar-bg); border-bottom: 1px solid var(--sidebar-border); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
-            <span class="font-semibold text-base truncate inline-flex items-center gap-2" style="color: var(--text-1);">
+            <button v-if="showBack" @click="handleBack"
+                class="w-10 h-10 rounded-lg flex items-center justify-center transition"
+                style="color: var(--text-1); background: transparent;"
+                :aria-label="backText || 'Back'">
+                <Icon name="lucide:chevron-left" class="w-5 h-5" :stroke-width="2" />
+            </button>
+            <span v-else></span>
+
+            <span v-if="displayTitle" class="font-semibold text-base truncate text-center" style="color: var(--text-1);">
+                {{ displayTitle }}
+            </span>
+            <span v-else class="font-semibold text-base truncate inline-flex items-center justify-center gap-2" style="color: var(--text-1);">
                 <img v-if="effectiveLogoImageUrl" :src="effectiveLogoImageUrl" alt="Logo"
                     class="h-7 max-w-[120px] object-contain" />
                 <template v-else>
@@ -120,9 +140,10 @@
             </span>
 
             <button @click="mobileOpen = true"
-                class="px-3 py-1.5 rounded-lg text-sm font-medium transition"
-                style="background: var(--surface-3); color: var(--text-1); border: 1px solid var(--separator);">
-                Menu
+                class="w-10 h-10 rounded-lg flex items-center justify-center transition"
+                style="background: var(--surface-3); color: var(--text-1); border: 1px solid var(--separator);"
+                aria-label="Open menu">
+                <Icon name="lucide:menu" class="w-5 h-5" :stroke-width="2" />
             </button>
         </div>
 
@@ -140,8 +161,11 @@
                         </template>
                     </div>
                     <button @click="mobileOpen = false"
-                        class="w-7 h-7 rounded-full flex items-center justify-center text-sm transition"
-                        style="background: var(--surface-3); color: var(--text-2);">✕</button>
+                        class="w-8 h-8 rounded-lg flex items-center justify-center text-sm transition"
+                        style="background: var(--surface-3); color: var(--text-2);"
+                        aria-label="Close menu">
+                        <Icon name="lucide:x" class="w-4 h-4" :stroke-width="2" />
+                    </button>
                 </div>
 
                 <div class="space-y-0.5 flex-1 overflow-y-auto">
