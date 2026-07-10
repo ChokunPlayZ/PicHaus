@@ -269,6 +269,11 @@
     </div>
 </template>
 
+<script lang="ts">
+const viewerPreloadCache = new Map<string, HTMLImageElement>()
+const viewerLoadedImageKeys = new Set<string>()
+</script>
+
 <script setup lang="ts">
 import { buildAssetUrl } from '~/utils/auth-client'
 import { blurhashToDataUrl } from '~/composables/useBlurhash'
@@ -327,10 +332,15 @@ const isSharing = ref(false)
 const shareTimedOut = ref(false)
 const pendingShareFile = ref<File | null>(null)
 let shareTimeoutId: ReturnType<typeof setTimeout> | null = null
-const preloadedImageKeys = new Set<string>()
 const failedImageKeys = new Set<string>()
 
-const fullImageSrc = computed(() => buildAssetUrl(`/api/assets/full/${props.photo.id}?t=${props.photo.updatedAt || props.photo.createdAt || ''}`))
+const getPhotoCacheKey = (photoId: string, timestamp: number | string | null | undefined) => `${photoId}:${timestamp || ''}`
+const buildFullImageSrc = (photoId: string, timestamp: number | string | null | undefined) => {
+    return buildAssetUrl(`/api/assets/full/${photoId}?t=${timestamp || ''}`)
+}
+
+const currentImageKey = computed(() => getPhotoCacheKey(props.photo.id, props.photo.updatedAt || props.photo.createdAt || ''))
+const fullImageSrc = computed(() => buildFullImageSrc(props.photo.id, props.photo.updatedAt || props.photo.createdAt || ''))
 const currentImageSrc = ref(fullImageSrc.value)
 
 // Platform detection
@@ -347,16 +357,17 @@ const isAndroid = computed(() => {
 
 // Image loading handler
 const onImageLoad = () => {
+    viewerLoadedImageKeys.add(currentImageKey.value)
     imageLoading.value = false
 }
 
 const onImageError = () => {
     const timestamp = String(props.photo.updatedAt || props.photo.createdAt || '')
-    const imageKey = `${props.photo.id}:${timestamp}`
+    const imageKey = getPhotoCacheKey(props.photo.id, timestamp)
 
     if (!failedImageKeys.has(imageKey)) {
         failedImageKeys.add(imageKey)
-        currentImageSrc.value = buildAssetUrl(`/api/assets/full/${props.photo.id}?t=${timestamp}&retry=${Date.now()}`)
+        currentImageSrc.value = `${buildFullImageSrc(props.photo.id, timestamp)}&retry=${Date.now()}`
         return
     }
 
@@ -369,8 +380,9 @@ watch(() => [props.photo.id, props.photo.updatedAt || props.photo.createdAt || '
         return
     }
 
-    imageLoading.value = true
-    currentImageSrc.value = buildAssetUrl(`/api/assets/full/${newId}?t=${timestamp}`)
+    const imageKey = getPhotoCacheKey(newId, timestamp)
+    imageLoading.value = !viewerLoadedImageKeys.has(imageKey)
+    currentImageSrc.value = buildFullImageSrc(newId, timestamp)
 
     // Preload adjacent images
     nextTick(() => {
@@ -386,14 +398,16 @@ watch(() => [props.photo.id, props.photo.updatedAt || props.photo.createdAt || '
 // Preload image function
 const preloadImage = (photoId: string) => {
     const timestamp = photoId === props.previousPhotoId ? props.previousPhotoTimestamp : props.nextPhotoTimestamp
-    const key = `${photoId}:${timestamp || ''}`
-    if (preloadedImageKeys.has(key)) return
-    preloadedImageKeys.add(key)
+    const key = getPhotoCacheKey(photoId, timestamp)
+    if (viewerPreloadCache.has(key) || viewerLoadedImageKeys.has(key)) return
 
     const image = new Image()
     image.decoding = 'async'
     image.setAttribute('fetchpriority', 'low')
-    image.src = buildAssetUrl(`/api/assets/full/${photoId}?t=${timestamp || ''}`)
+    image.onload = () => viewerLoadedImageKeys.add(key)
+    image.onerror = () => viewerPreloadCache.delete(key)
+    viewerPreloadCache.set(key, image)
+    image.src = buildFullImageSrc(photoId, timestamp)
 }
 
 const shouldAvoidFullPreload = () => {
@@ -411,7 +425,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    preloadedImageKeys.clear()
     failedImageKeys.clear()
     document.body.style.overflow = ''
 })

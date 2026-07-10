@@ -99,7 +99,9 @@
 
         <!-- Photo Viewer -->
         <PhotoViewer v-if="viewerOpen && selectedPhoto" :photo="selectedPhoto" :has-previous="viewerIndex > 0"
-            :has-next="viewerIndex < photos.length - 1" @close="viewerOpen = false" @previous="viewerIndex--"
+            :has-next="viewerIndex < photos.length - 1" :previous-photo-id="previousPhotoId"
+            :next-photo-id="nextPhotoId" :previous-photo-timestamp="previousPhotoTimestamp"
+            :next-photo-timestamp="nextPhotoTimestamp" @close="viewerOpen = false" @previous="viewerIndex--"
             @next="viewerIndex++" />
     </div>
 </template>
@@ -118,6 +120,7 @@ interface Photo {
     blurhash?: string | null
     dateTaken?: number | null
     createdAt: number
+    updatedAt?: number | null
     cameraModel?: string | null
     lens?: string | null
     aperture?: string | null
@@ -167,6 +170,28 @@ const filters = ref({
 const selectedPhoto = computed(() => {
     if (viewerIndex.value < 0 || viewerIndex.value >= photos.value.length) return undefined
     return photos.value[viewerIndex.value]
+})
+
+const previousPhotoId = computed(() => {
+    if (!viewerOpen.value || viewerIndex.value <= 0) return null
+    return photos.value[viewerIndex.value - 1]?.id || null
+})
+
+const nextPhotoId = computed(() => {
+    if (!viewerOpen.value || viewerIndex.value >= photos.value.length - 1) return null
+    return photos.value[viewerIndex.value + 1]?.id || null
+})
+
+const previousPhotoTimestamp = computed(() => {
+    if (!viewerOpen.value || viewerIndex.value <= 0) return null
+    const photo = photos.value[viewerIndex.value - 1]
+    return photo ? photo.updatedAt || photo.createdAt || null : null
+})
+
+const nextPhotoTimestamp = computed(() => {
+    if (!viewerOpen.value || viewerIndex.value >= photos.value.length - 1) return null
+    const photo = photos.value[viewerIndex.value + 1]
+    return photo ? photo.updatedAt || photo.createdAt || null : null
 })
 
 const hasActiveFilters = computed(() => {
