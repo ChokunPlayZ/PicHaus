@@ -110,6 +110,7 @@
 
                 <div class="relative w-full h-full flex items-center justify-center" :style="imageContainerStyle">
                     <img v-if="photo.blurhash"
+                        :key="`blurhash-${photo.id}`"
                         :src="getBlurhashUrl(photo.blurhash, photo.width ?? null, photo.height ?? null) || ''"
                         class="absolute inset-0 w-full h-full object-contain blur-xl scale-105 opacity-50" />
 
@@ -119,7 +120,7 @@
                         </div>
                     </div>
 
-                    <img :src="currentImageSrc" :alt="photo.filename" @load="onImageLoad" @error="onImageError"
+                    <img :key="currentImageSrc" :src="currentImageSrc" :alt="photo.filename" @load="onImageLoad" @error="onImageError"
                         decoding="async" fetchpriority="high"
                         class="relative max-h-full max-w-full object-contain rounded-lg shadow-2xl z-10"
                         :class="{ 'opacity-0': imageLoading }" />
