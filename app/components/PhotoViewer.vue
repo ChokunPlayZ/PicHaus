@@ -1,28 +1,19 @@
 <template>
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm overflow-hidden"
+    <div ref="viewerEl"
+        class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#050505] text-white backdrop-blur-md"
+        role="dialog" aria-modal="true" :aria-label="photo.originalName || photo.filename" tabindex="-1"
         @click.self="$emit('close')" style="touch-action: none;">
-
-
+        <div class="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/80 to-transparent z-10" />
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/70 to-transparent z-10" />
 
         <!-- Mobile Top Action Bar -->
         <div
-            class="md:hidden fixed top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-4 z-50 flex items-center justify-between">
-            <!-- Left: Navigation -->
-            <div class="flex gap-2">
-                <button v-if="hasPrevious" @click="$emit('previous')"
-                    class="w-12 h-12 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm active:scale-90">
-                    <Icon name="lucide:chevron-left" class="h-6 w-6" :stroke-width="2" />
-                </button>
-                <button v-if="hasNext" @click="$emit('next')"
-                    class="w-12 h-12 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm active:scale-90">
-                    <Icon name="lucide:chevron-right" class="h-6 w-6" :stroke-width="2" />
-                </button>
-            </div>
-
-            <!-- Right: Actions -->
-            <div class="flex gap-2">
-                <button @click="showInfo = !showInfo" :class="[
-                    'w-12 h-12 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm active:scale-90',
+            class="md:hidden fixed top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent px-3 pb-4 z-50 flex items-center justify-end"
+            style="padding-top: max(0.75rem, env(safe-area-inset-top));">
+            <!-- Actions -->
+            <div class="flex max-w-full gap-2 overflow-x-auto">
+                <button @click="showInfo = !showInfo" aria-label="Photo information" :aria-pressed="showInfo" :class="[
+                    'w-11 h-11 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm active:scale-90',
                     showInfo ? 'bg-white/20 hover:bg-white/25' : 'bg-white/10 hover:bg-white/20'
                 ]">
                     <Icon name="lucide:info" class="h-6 w-6" :stroke-width="2" />
@@ -30,7 +21,8 @@
                 <!-- iOS: Download button that triggers share sheet -->
                 <button v-if="isIOS" @click="sharePhoto"
                     :disabled="isSharing"
-                    class="w-12 h-12 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
+                    aria-label="Download photo"
+                    class="w-11 h-11 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
                     <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                     <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                 </button>
@@ -38,13 +30,15 @@
                 <template v-else-if="isAndroid">
                     <button @click="sharePhoto"
                         :disabled="isSharing"
-                        class="w-12 h-12 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm active:scale-90 disabled:opacity-50">
+                        aria-label="Share photo"
+                        class="w-11 h-11 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm active:scale-90 disabled:opacity-50">
                         <Icon v-if="!isSharing" name="lucide:share-2" class="h-6 w-6" :stroke-width="2" />
                         <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                     </button>
                     <button @click="downloadPhoto"
                         :disabled="isSharing"
-                        class="w-12 h-12 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
+                        aria-label="Download photo"
+                        class="w-11 h-11 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
                         <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                         <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                     </button>
@@ -52,14 +46,15 @@
                 <!-- Desktop/Other: Download button only -->
                 <button v-else @click="downloadPhoto"
                     :disabled="isSharing"
-                    class="w-12 h-12 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
+                    aria-label="Download photo"
+                    class="w-11 h-11 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
                     <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                     <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                 </button>
                 <!-- Heart/Favorite button -->
-                <button @click="$emit('toggleFavorite')"
+                <button @click="$emit('toggleFavorite')" aria-label="Toggle favorite" :aria-pressed="isFavorited"
                     :class="[
-                        'w-12 h-12 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm active:scale-90',
+                        'w-11 h-11 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm active:scale-90',
                         isFavorited
                             ? 'bg-red-500/30 text-red-300 hover:bg-red-500/40 active:bg-red-500/50'
                             : 'bg-white/10 hover:bg-white/20 active:bg-white/30'
@@ -67,52 +62,90 @@
                     <Icon v-if="isFavorited" name="lucide:heart" class="h-6 w-6 fill-current" :stroke-width="2" />
                     <Icon v-else name="lucide:heart" class="h-6 w-6" :stroke-width="2" />
                 </button>
-                <button @click="$emit('close')"
-                    class="w-12 h-12 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm active:scale-90">
+                <button @click="$emit('close')" aria-label="Close viewer"
+                    class="w-11 h-11 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm active:scale-90">
                     <Icon name="lucide:x" class="h-6 w-6" :stroke-width="2" />
                 </button>
             </div>
         </div>
 
-        <div class="flex flex-col md:flex-row w-full h-full mx-auto md:p-4 md:gap-4">
+        <div class="flex flex-col md:flex-row w-full h-full mx-auto md:p-4 md:gap-4 relative z-20">
             <!-- Main Image Area -->
-            <div class="flex-1 flex items-center justify-center relative group overflow-hidden px-4 md:px-0 pt-20 md:pt-0"
-                @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
+            <div class="flex-1 flex items-center justify-center relative group overflow-hidden px-3 md:px-0 pt-20 pb-5 md:py-0"
+                @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd"
+                @wheel.prevent="handleWheel" @dblclick="toggleZoom" @mousedown="handlePanStart">
 
-                <div class="hidden md:flex absolute top-4 right-4 gap-2 z-20">
+                <div class="hidden md:flex absolute top-4 left-4 right-4 items-start justify-between gap-4 z-30">
+                    <div class="max-w-[min(44rem,52vw)] rounded-full bg-black/45 px-4 py-2 text-sm text-white/80 backdrop-blur-md opacity-0 shadow-lg shadow-black/20 transition group-hover:opacity-100">
+                        <p class="truncate font-medium text-white">{{ photo.originalName || photo.filename }}</p>
+                        <p class="mt-0.5 text-xs text-white/50">Double-click or scroll to zoom</p>
+                    </div>
+
+                    <div class="flex gap-2">
+                    <button @click.stop="toggleZoom" title="Zoom" aria-label="Zoom"
+                        class="w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white/75 transition backdrop-blur-sm active:scale-90 opacity-0 group-hover:opacity-100 hover:bg-black/70 hover:text-white">
+                        <Icon :name="zoomLevel > 1 ? 'lucide:zoom-out' : 'lucide:zoom-in'" class="h-5 w-5" :stroke-width="2" />
+                    </button>
+                    <button v-if="zoomLevel > 1" @click.stop="resetZoom" title="Reset zoom" aria-label="Reset zoom"
+                        class="h-10 min-w-14 px-3 flex items-center justify-center rounded-full bg-black/50 text-xs font-semibold text-white/75 transition backdrop-blur-sm active:scale-90 hover:bg-black/70 hover:text-white">
+                        {{ Math.round(zoomLevel * 100) }}%
+                    </button>
+                    <button @click.stop="showInfo = !showInfo" title="Photo details" aria-label="Photo details" :aria-pressed="showInfo"
+                        class="w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white/75 transition backdrop-blur-sm active:scale-90 opacity-0 group-hover:opacity-100 hover:bg-black/70 hover:text-white">
+                        <Icon name="lucide:info" class="h-5 w-5" :stroke-width="2" />
+                    </button>
                     <button @click.stop="$emit('toggleFavorite')" @touchstart.stop @touchmove.stop.prevent
+                        aria-label="Toggle favorite" :aria-pressed="isFavorited"
                         class="w-10 h-10 flex items-center justify-center rounded-full transition backdrop-blur-sm active:scale-90"
                         :class="isFavorited
                             ? 'bg-red-500/80 text-white opacity-100 hover:bg-red-500/90'
-                            : 'bg-black/50 text-white/70 opacity-0 group-hover:opacity-100 hover:bg-black/70'">
+                            : 'bg-black/50 text-white/75 opacity-0 group-hover:opacity-100 hover:bg-black/70 hover:text-white'">
                         <Icon v-if="isFavorited" name="lucide:heart" class="h-6 w-6 fill-current" :stroke-width="2" />
                         <Icon v-else name="lucide:heart" class="h-6 w-6" :stroke-width="2" />
                     </button>
                     <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()" @touchstart.stop
                         @touchmove.stop.prevent
                         :disabled="isSharing"
+                        title="Download" aria-label="Download photo"
                         class="w-10 h-10 flex items-center justify-center rounded-full text-white transition shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
                         <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                         <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                     </button>
+                    <button @click.stop="$emit('close')" title="Close" aria-label="Close viewer"
+                        class="w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white/75 transition backdrop-blur-sm active:scale-90 opacity-0 group-hover:opacity-100 hover:bg-black/70 hover:text-white">
+                        <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
+                    </button>
+                    </div>
                 </div>
 
-                <!-- Desktop Navigation Buttons -->
-                <button v-if="hasPrevious" @click="$emit('previous')"
-                    class="hidden md:block absolute left-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 transition opacity-0 group-hover:opacity-100 z-20">
+                <!-- Mobile Navigation Buttons -->
+                <button v-if="hasPrevious" @click="$emit('previous')" aria-label="Previous photo"
+                    class="md:hidden absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white/80 backdrop-blur-sm transition active:scale-90 active:bg-black/70">
                     <Icon name="lucide:chevron-left" class="h-6 w-6" :stroke-width="2" />
                 </button>
 
-                <button v-if="hasNext" @click="$emit('next')"
-                    class="hidden md:block absolute right-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 transition opacity-0 group-hover:opacity-100 z-20">
+                <button v-if="hasNext" @click="$emit('next')" aria-label="Next photo"
+                    class="md:hidden absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white/80 backdrop-blur-sm transition active:scale-90 active:bg-black/70">
                     <Icon name="lucide:chevron-right" class="h-6 w-6" :stroke-width="2" />
                 </button>
 
-                <div class="relative w-full h-full flex items-center justify-center" :style="imageContainerStyle">
+                <!-- Desktop Navigation Buttons -->
+                <button v-if="hasPrevious" @click="$emit('previous')" aria-label="Previous photo"
+                    class="hidden md:flex absolute left-4 w-12 h-12 items-center justify-center rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 transition opacity-0 group-hover:opacity-100 z-20 backdrop-blur-sm">
+                    <Icon name="lucide:chevron-left" class="h-6 w-6" :stroke-width="2" />
+                </button>
+
+                <button v-if="hasNext" @click="$emit('next')" aria-label="Next photo"
+                    class="hidden md:flex absolute right-4 w-12 h-12 items-center justify-center rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 transition opacity-0 group-hover:opacity-100 z-20 backdrop-blur-sm">
+                    <Icon name="lucide:chevron-right" class="h-6 w-6" :stroke-width="2" />
+                </button>
+
+                <div class="relative w-full h-full flex items-center justify-center select-none" :style="imageContainerStyle">
                     <img v-if="photo.blurhash"
                         :key="`blurhash-${photo.id}`"
                         :src="getBlurhashUrl(photo.blurhash, photo.width ?? null, photo.height ?? null) || ''"
-                        class="absolute inset-0 w-full h-full object-contain blur-xl scale-105 opacity-50" />
+                        aria-hidden="true"
+                        class="absolute inset-0 w-full h-full object-contain blur-2xl scale-110 opacity-40" />
 
                     <!-- Loading Spinner -->
                     <div v-if="imageLoading" class="absolute inset-0 flex items-center justify-center z-20">
@@ -122,8 +155,18 @@
 
                     <img :key="currentImageSrc" :src="currentImageSrc" :alt="photo.filename" @load="onImageLoad" @error="onImageError"
                         decoding="async" fetchpriority="high"
-                        class="relative max-h-full max-w-full object-contain rounded-lg shadow-2xl z-10"
-                        :class="{ 'opacity-0': imageLoading }" />
+                        class="relative max-h-full max-w-full object-contain rounded-lg shadow-2xl z-10 transition-opacity duration-200"
+                        :class="[imageLoading ? 'opacity-0' : 'opacity-100', zoomLevel > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in']"
+                        :style="imageStyle"
+                        draggable="false" />
+                </div>
+
+                <div class="hidden md:flex absolute bottom-4 left-1/2 -translate-x-1/2 z-30 items-center gap-3 rounded-full bg-black/45 px-4 py-2 text-xs text-white/60 opacity-0 shadow-lg shadow-black/20 backdrop-blur-md transition group-hover:opacity-100">
+                    <span>Esc</span>
+                    <span class="text-white/25">Close</span>
+                    <span class="h-3 w-px bg-white/20"></span>
+                    <span>← →</span>
+                    <span class="text-white/25">Navigate</span>
                 </div>
             </div>
 
@@ -132,12 +175,13 @@
 
             <!-- Info Sidebar (Desktop) / Bottom Sheet (Mobile) -->
             <div :class="[
-                'overflow-y-auto',
+                'overflow-x-hidden overflow-y-auto',
                 // Mobile: Bottom sheet
                 'fixed bottom-0 left-0 right-0 rounded-t-3xl border-t md:border-l md:border-t-0',
                 'max-h-[70vh] md:max-h-none',
                 // Desktop: Side panel
-                'md:static md:w-80 md:rounded-r-xl md:rounded-t-none',
+                'md:static md:rounded-r-xl md:rounded-t-none md:transition-all md:duration-300 md:ease-out',
+                showInfo ? 'md:w-80 md:opacity-100' : 'md:w-0 md:opacity-0 md:pointer-events-none md:border-l-0',
                 'z-40',
                 !isSwiping && 'transition-transform duration-300'
             ]" :style="[mobileTransformStyle, { background: '#111112', borderColor: 'rgba(255,255,255,0.08)' }]"
@@ -332,8 +376,19 @@ const imageLoading = ref(true)
 const isSharing = ref(false)
 const shareTimedOut = ref(false)
 const pendingShareFile = ref<File | null>(null)
+const viewerEl = ref<HTMLElement | null>(null)
+const zoomLevel = ref(1)
+const panX = ref(0)
+const panY = ref(0)
+const isPanning = ref(false)
+const panStartX = ref(0)
+const panStartY = ref(0)
+const panOriginX = ref(0)
+const panOriginY = ref(0)
 let shareTimeoutId: ReturnType<typeof setTimeout> | null = null
 const failedImageKeys = new Set<string>()
+const minZoom = 1
+const maxZoom = 4
 
 const getPhotoCacheKey = (photoId: string, timestamp: number | string | null | undefined) => `${photoId}:${timestamp || ''}`
 const buildFullImageSrc = (photoId: string, timestamp: number | string | null | undefined) => {
@@ -384,6 +439,7 @@ watch(() => [props.photo.id, props.photo.updatedAt || props.photo.createdAt || '
     const imageKey = getPhotoCacheKey(newId, timestamp)
     imageLoading.value = !viewerLoadedImageKeys.has(imageKey)
     currentImageSrc.value = buildFullImageSrc(newId, timestamp)
+    resetZoom()
 
     // Preload adjacent images
     nextTick(() => {
@@ -423,11 +479,13 @@ const shouldAvoidFullPreload = () => {
 // Prevent body scroll when viewer is open
 onMounted(() => {
     document.body.style.overflow = 'hidden'
+    nextTick(() => viewerEl.value?.focus())
 })
 
 onUnmounted(() => {
     failedImageKeys.clear()
     document.body.style.overflow = ''
+    removePanListeners()
 })
 
 // Computed style for mobile transform (desktop should not have transform)
@@ -454,6 +512,77 @@ const imageContainerStyle = computed(() => {
     }
 })
 
+const imageStyle = computed(() => ({
+    transform: `translate3d(${panX.value}px, ${panY.value}px, 0) scale(${zoomLevel.value})`,
+    transition: isPanning.value ? 'none' : 'transform 180ms ease-out, opacity 200ms ease',
+    transformOrigin: 'center center'
+}))
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+
+const setZoom = (nextZoom: number) => {
+    zoomLevel.value = clamp(nextZoom, minZoom, maxZoom)
+    if (zoomLevel.value === minZoom) {
+        panX.value = 0
+        panY.value = 0
+    } else {
+        panX.value = clamp(panX.value, -window.innerWidth * 0.45, window.innerWidth * 0.45)
+        panY.value = clamp(panY.value, -window.innerHeight * 0.45, window.innerHeight * 0.45)
+    }
+}
+
+const toggleZoom = () => {
+    if (zoomLevel.value > minZoom) {
+        resetZoom()
+        return
+    }
+    setZoom(2.25)
+}
+
+function resetZoom() {
+    zoomLevel.value = minZoom
+    panX.value = 0
+    panY.value = 0
+    isPanning.value = false
+}
+
+const handleWheel = (e: WheelEvent) => {
+    if (typeof window === 'undefined' || window.innerWidth < 768) return
+    const step = e.deltaY > 0 ? -0.18 : 0.18
+    setZoom(zoomLevel.value + step)
+}
+
+const handlePanStart = (e: MouseEvent) => {
+    if (zoomLevel.value <= minZoom || e.button !== 0) return
+    e.preventDefault()
+    isPanning.value = true
+    panStartX.value = e.clientX
+    panStartY.value = e.clientY
+    panOriginX.value = panX.value
+    panOriginY.value = panY.value
+    window.addEventListener('mousemove', handlePanMove)
+    window.addEventListener('mouseup', handlePanEnd)
+}
+
+const handlePanMove = (e: MouseEvent) => {
+    if (!isPanning.value) return
+    const maxPanX = window.innerWidth * 0.45
+    const maxPanY = window.innerHeight * 0.45
+    panX.value = clamp(panOriginX.value + e.clientX - panStartX.value, -maxPanX, maxPanX)
+    panY.value = clamp(panOriginY.value + e.clientY - panStartY.value, -maxPanY, maxPanY)
+}
+
+const handlePanEnd = () => {
+    isPanning.value = false
+    removePanListeners()
+}
+
+const removePanListeners = () => {
+    if (typeof window === 'undefined') return
+    window.removeEventListener('mousemove', handlePanMove)
+    window.removeEventListener('mouseup', handlePanEnd)
+}
+
 // Touch/Swipe handling for mobile
 const touchStartX = ref(0)
 const touchEndX = ref(0)
@@ -464,6 +593,7 @@ const imageSwipeOffset = ref(0)
 const isImageSwiping = ref(false)
 
 const handleTouchStart = (e: TouchEvent) => {
+    if (zoomLevel.value > minZoom) return
     if (!e.touches[0]) return
     touchStartX.value = e.touches[0].clientX
     touchStartY.value = e.touches[0].clientY
@@ -473,6 +603,7 @@ const handleTouchStart = (e: TouchEvent) => {
 }
 
 const handleTouchMove = (e: TouchEvent) => {
+    if (zoomLevel.value > minZoom) return
     if (!e.touches[0]) return
     touchEndX.value = e.touches[0].clientX
     touchEndY.value = e.touches[0].clientY
@@ -502,6 +633,7 @@ const handleTouchMove = (e: TouchEvent) => {
 }
 
 const handleTouchEnd = () => {
+    if (zoomLevel.value > minZoom) return
     const deltaX = touchStartX.value - touchEndX.value
     const deltaY = touchStartY.value - touchEndY.value
 
@@ -619,6 +751,14 @@ const handleKeydown = (e: KeyboardEvent) => {
         emit('previous')
     } else if (e.key === 'ArrowRight' && props.hasNext) {
         emit('next')
+    } else if (e.key === 'i' || e.key === 'I') {
+        showInfo.value = !showInfo.value
+    } else if (e.key === '+' || e.key === '=') {
+        setZoom(zoomLevel.value + 0.5)
+    } else if (e.key === '-') {
+        setZoom(zoomLevel.value - 0.5)
+    } else if (e.key === '0') {
+        resetZoom()
     }
 }
 
