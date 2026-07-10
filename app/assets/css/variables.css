@@ -160,6 +160,20 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+::selection {
+  background: var(--accent-light);
+  color: var(--text-1);
+}
+
+:where(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
+:where(button, [role="button"]) {
+  -webkit-tap-highlight-color: transparent;
+}
+
 a {
   color: var(--text-link);
 }
@@ -288,6 +302,24 @@ button[class*="bg-white/10"]:hover:not(:disabled) {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+@media (max-width: 767px) {
+  button,
+  [role="button"] {
+    min-height: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 button[class*="rounded-full"]:not([class*="w-"]):not([class*="h-"]) {

@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen" style="background: var(--bg-page);">
-    <NavBar title="Statistics" :showBack="true" backTo="/album" />
+    <NavBar title="Statistics" />
 
     <div class="px-4 sm:px-6 lg:px-8 py-12">
       <header class="mb-10">

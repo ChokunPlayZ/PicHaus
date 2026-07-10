@@ -1,6 +1,6 @@
 <template>
     <div class="min-h-screen" style="background: var(--bg-page);">
-        <NavBar title="All Photos" :showBack="true" backTo="/album" :solid="true" />
+        <NavBar title="All Photos" :solid="true" />
 
         <div class="px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
@@ -20,6 +20,7 @@
                     <span class="text-sm font-medium" style="color: var(--text-2);">Filters:</span>
 
                     <select v-model="filters.camera" @change="applyFilters"
+                        aria-label="Filter by camera"
                         class="px-3 py-2 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
@@ -29,6 +30,7 @@
                     </select>
 
                     <select v-model="filters.lens" @change="applyFilters"
+                        aria-label="Filter by lens"
                         class="px-3 py-2 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
@@ -38,6 +40,7 @@
                     </select>
 
                     <input v-model="filters.dateFrom" @change="applyFilters" type="date"
+                        aria-label="Filter from date"
                         class="px-3 py-2 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
@@ -56,6 +59,17 @@
                 <div v-if="loading && photos.length === 0" class="flex justify-center py-20">
                     <div class="w-10 h-10 rounded-full border-2 animate-spin"
                         style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                </div>
+
+                <div v-else-if="loadError"
+                    class="text-center py-16 rounded-3xl"
+                    role="alert"
+                    style="background: var(--error-bg); border: 1px solid var(--error-border);">
+                    <Icon name="lucide:wifi-off" class="w-8 h-8 mx-auto mb-4" style="color: var(--error-text);" :stroke-width="1.75" />
+                    <h3 class="text-lg font-semibold mb-2" style="color: var(--text-1);">Couldn’t load your photos</h3>
+                    <p class="text-sm mb-5" style="color: var(--text-2);">{{ loadError }}</p>
+                    <button @click="fetchPhotos(true)" class="px-5 py-2.5 rounded-full text-sm font-medium"
+                        style="background: var(--accent); color: var(--accent-text);">Try Again</button>
                 </div>
 
                 <div v-else-if="photos.length === 0"
@@ -143,6 +157,7 @@ const loadingMore = ref(false)
 const page = ref(1)
 const hasMore = ref(true)
 const total = ref(0)
+const loadError = ref('')
 const viewerOpen = ref(false)
 const viewerIndex = ref(0)
 
@@ -200,6 +215,7 @@ const hasActiveFilters = computed(() => {
 
 // Fetch initial data logic
 const fetchPhotos = async (reset = false) => {
+    loadError.value = ''
     if (reset) {
         page.value = 1
         photos.value = []
@@ -229,8 +245,9 @@ const fetchPhotos = async (reset = false) => {
         hasMore.value = res.pagination.hasMore
         if (hasMore.value) page.value++
 
-    } catch (e) {
+    } catch (e: any) {
         console.error(e)
+        loadError.value = e?.data?.statusMessage || 'Check your connection and try again.'
     } finally {
         loading.value = false
         loadingMore.value = false

@@ -1,10 +1,16 @@
 <template>
     <div
         class="rounded-xl overflow-hidden cursor-pointer group relative transition hover:-translate-y-0.5"
+        role="button"
+        tabindex="0"
+        :aria-label="selectionMode ? `${selected ? 'Deselect' : 'Select'} ${album.name}` : `Open ${album.name}`"
+        :aria-pressed="selectionMode ? !!selected : undefined"
         :style="selected
             ? 'background: var(--surface-1); border: 2px solid var(--accent); box-shadow: var(--shadow-md);'
             : 'background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);'"
         @click="$emit('click', $event)"
+        @keydown.enter.prevent="$emit('click', $event)"
+        @keydown.space.prevent="$emit('click', $event)"
         @contextmenu.prevent="$emit('contextmenu', $event)"
         @mouseover="($event.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'"
         @mouseout="($event.currentTarget as HTMLElement).style.boxShadow = selected ? 'var(--shadow-md)' : 'var(--shadow-sm)'"
@@ -79,7 +85,7 @@ defineProps<{
 }>()
 
 defineEmits<{
-    click: [event: MouseEvent]
+    click: [event: MouseEvent | KeyboardEvent]
     contextmenu: [event: MouseEvent]
 }>()
 

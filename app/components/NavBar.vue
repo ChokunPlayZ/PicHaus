@@ -3,6 +3,7 @@
         <!-- Desktop sidebar -->
         <aside
             class="hidden lg:flex fixed inset-y-0 left-0 w-64 z-50 flex-col"
+            aria-label="Primary navigation"
             style="background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
             <div class="p-4" style="border-bottom: 1px solid var(--separator);">
                 <div class="font-semibold text-base leading-tight flex items-center gap-2" style="color: var(--text-1);">
@@ -40,7 +41,8 @@
                 </button>
 
                 <button v-for="item in navItems" :key="item.path" @click="navigateTo(item.path)"
-                    :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)">
+                    :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)"
+                    :aria-current="isActivePath(item.path) ? 'page' : undefined">
                     <span class="inline-flex items-center gap-2.5">
                         <Icon :name="getIconName(item.icon)" class="w-4 h-4" :stroke-width="2" />
                         <span>{{ item.label }}</span>
@@ -142,14 +144,15 @@
             <button @click="mobileOpen = true"
                 class="w-10 h-10 rounded-lg flex items-center justify-center transition"
                 style="background: var(--surface-3); color: var(--text-1); border: 1px solid var(--separator);"
-                aria-label="Open menu">
+                aria-label="Open navigation menu" :aria-expanded="mobileOpen" aria-controls="mobile-navigation">
                 <Icon name="lucide:menu" class="w-5 h-5" :stroke-width="2" />
             </button>
         </div>
 
         <!-- Mobile drawer -->
-        <div v-if="mobileOpen" class="lg:hidden fixed inset-0 z-[60]" style="background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);" @click.self="mobileOpen = false">
-            <aside class="w-72 h-full flex flex-col p-2"
+        <div v-if="mobileOpen" class="lg:hidden fixed inset-0 z-[60]" style="background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);" @click.self="mobileOpen = false" @keydown.esc="mobileOpen = false">
+            <aside id="mobile-navigation" ref="mobileDrawer" class="w-72 max-w-[88vw] h-full flex flex-col p-2"
+                role="dialog" aria-modal="true" aria-label="Navigation menu" tabindex="-1"
                 style="background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
                 <div class="flex items-center justify-between mb-2 px-2 pt-2 pb-3" style="border-bottom: 1px solid var(--separator);">
                     <div class="font-semibold text-base inline-flex items-center gap-2" style="color: var(--text-1);">
@@ -160,8 +163,8 @@
                             <span>{{ effectiveLogoText }}</span>
                         </template>
                     </div>
-                    <button @click="mobileOpen = false"
-                        class="w-8 h-8 rounded-lg flex items-center justify-center text-sm transition"
+                    <button ref="mobileCloseButton" @click="mobileOpen = false"
+                        class="w-10 h-10 rounded-lg flex items-center justify-center text-sm transition"
                         style="background: var(--surface-3); color: var(--text-2);"
                         aria-label="Close menu">
                         <Icon name="lucide:x" class="w-4 h-4" :stroke-width="2" />
@@ -180,7 +183,8 @@
                     </button>
 
                     <button v-for="item in navItems" :key="`m-${item.path}`" @click="goMobile(item.path)"
-                        :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)">
+                        :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)"
+                        :aria-current="isActivePath(item.path) ? 'page' : undefined">
                         <span class="inline-flex items-center gap-2.5">
                             <Icon :name="getIconName(item.icon)" class="w-4 h-4" :stroke-width="2" />
                             <span>{{ item.label }}</span>
@@ -260,6 +264,9 @@ import { clearAuthToken } from '~/utils/auth-client'
 
 const route = useRoute()
 const mobileOpen = ref(false)
+const mobileDrawer = ref<HTMLElement | null>(null)
+const mobileCloseButton = ref<HTMLButtonElement | null>(null)
+let menuTrigger: HTMLElement | null = null
 const isOpen = useState<boolean>('command-palette-open', () => false)
 
 const props = defineProps<{
@@ -294,8 +301,10 @@ const navItems = [
     { label: 'API Keys', path: '/api-tokens', icon: 'api-keys' },
 ]
 
+const isActivePath = (path: string) => route.path === path || route.path.startsWith(`${path}/`)
+
 const sidebarButtonClass = (path: string) => {
-    const isActive = route.path === path || (path !== '/album' && route.path.startsWith(`${path}/`))
+    const isActive = isActivePath(path)
     const base = 'w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap'
     return isActive
         ? `${base} font-medium`
@@ -303,7 +312,7 @@ const sidebarButtonClass = (path: string) => {
 }
 
 const sidebarButtonStyle = (path: string) => {
-    const isActive = route.path === path || (path !== '/album' && route.path.startsWith(`${path}/`))
+    const isActive = isActivePath(path)
     return isActive
         ? `background: var(--accent); color: var(--accent-text);`
         : `color: var(--text-2); background: transparent;`
@@ -391,10 +400,26 @@ onUnmounted(() => {
     if (win.__picHausSidebarNavCount === 0) {
         document.body.classList.remove('has-sidebar-nav')
     }
+    if (mobileOpen.value) {
+        document.body.style.overflow = ''
+    }
 })
 
 watch(() => route.path, () => {
     mobileOpen.value = false
+})
+
+watch(mobileOpen, async (open) => {
+    if (open) {
+        menuTrigger = document.activeElement as HTMLElement | null
+        document.body.style.overflow = 'hidden'
+        await nextTick()
+        mobileCloseButton.value?.focus()
+    } else {
+        document.body.style.overflow = ''
+        menuTrigger?.focus()
+        menuTrigger = null
+    }
 })
 
 const handleBack = () => {

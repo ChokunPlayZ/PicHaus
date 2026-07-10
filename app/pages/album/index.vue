@@ -38,12 +38,14 @@
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <input v-model="searchQuery" type="text"
+                        aria-label="Search albums"
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="Search albums…"
                         @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     <input v-model="tagQuery" type="text"
+                        aria-label="Filter albums by tag"
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="Filter by tag…"
@@ -72,6 +74,7 @@
                         <div class="flex items-center gap-1">
                             <span class="text-xs font-semibold mr-1" style="color: var(--text-3);">Sort:</span>
                             <select v-model="albumSortBy"
+                                aria-label="Sort albums by"
                                 class="px-2 py-1.5 text-xs rounded-lg transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
                                 <option value="createdAt">Date Created</option>
@@ -80,6 +83,7 @@
                                 <option value="photoCount">Photo Count</option>
                             </select>
                             <select v-model="albumSortOrder"
+                                aria-label="Album sort direction"
                                 class="px-2 py-1.5 text-xs rounded-lg transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
                                 <option value="desc">Newest/Z-A</option>
@@ -117,8 +121,13 @@
 
             <!-- Error -->
             <div v-else-if="error" class="rounded-xl px-4 py-3 text-sm"
+                role="alert"
                 style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
-                {{ error }}
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <span>{{ error }}</span>
+                    <button @click="retryAlbums" class="px-4 py-2 rounded-full text-sm font-medium"
+                        style="background: var(--error); color: white;">Try Again</button>
+                </div>
             </div>
 
             <!-- Empty: no albums -->
@@ -813,8 +822,8 @@ const toggleSelectionMode = () => {
     }
 }
 
-const handleAlbumClick = (album: Album, event?: MouseEvent) => {
-    const isQuickSelect = !!event && (event.metaKey || event.ctrlKey)
+const handleAlbumClick = (album: Album, event?: MouseEvent | KeyboardEvent) => {
+    const isQuickSelect = event instanceof MouseEvent && (event.metaKey || event.ctrlKey)
 
     if (isQuickSelect) {
         isSelectionMode.value = true
@@ -829,6 +838,12 @@ const handleAlbumClick = (album: Album, event?: MouseEvent) => {
     } else {
         navigateTo(`/album/${album.id}`)
     }
+}
+
+const retryAlbums = async () => {
+    loading.value = true
+    error.value = ''
+    await fetchAlbums()
 }
 
 const albumContextMenu = reactive({
