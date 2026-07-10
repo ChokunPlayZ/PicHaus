@@ -1,35 +1,21 @@
-import { eq, and, inArray } from 'drizzle-orm'
-import { albums, albumCollaborators, users } from '../../../db/schema'
+import { eq } from 'drizzle-orm'
+import { albums, users } from '../../../db/schema'
 import { getUnixTimestamp, requireAuth } from '../../../utils/auth'
-
-const normalizeTags = (value: unknown): string[] => {
-    if (!Array.isArray(value)) return []
-    const normalized = value.map(tag => (typeof tag === 'string' ? tag.trim() : '')).filter(tag => tag.length > 0)
-    return Array.from(new Set(normalized))
-}
+import { requireRouterParamValue } from '../../../utils/api'
+import { assertAlbumOwnerWithEmail, avatarUrl, normalizeTags, serializeAlbum } from '../../../utils/albums'
 
 export default defineEventHandler(async (event) => {
     try {
-        const id = getRouterParam(event, 'id')
-        if (!id) throw createError({ statusCode: 400, statusMessage: 'Album ID is required' })
+        const id = requireRouterParamValue(event, 'id', 'Album ID')
 
         const user = await requireAuth(event)
 
         const album = await db.query.albums.findFirst({
             where: eq(albums.id, id),
-            with: { collaborators: { where: and(eq(albumCollaborators.userId, user.id), inArray(albumCollaborators.role, ['admin', 'editor'])) } },
         })
 
         if (!album) throw createError({ statusCode: 404, statusMessage: 'Album not found' })
-
-        const isOwner = album.ownerId === user.id
-        if (!isOwner) {
-            throw createError({ statusCode: 403, statusMessage: 'Only the album owner can edit this album' })
-        }
-
-        if (!user.email) {
-            throw createError({ statusCode: 403, statusMessage: 'Guest users cannot edit albums until they have an email assigned' })
-        }
+        assertAlbumOwnerWithEmail(album, user, 'edit')
 
         const body = await readBody(event)
         const now = getUnixTimestamp()
@@ -57,14 +43,10 @@ export default defineEventHandler(async (event) => {
             success: true,
             message: 'Album updated successfully',
             data: {
-                ...updatedAlbum,
-                name: updatedAlbum.title,
-                createdAt: Number(updatedAlbum.createdAt),
-                updatedAt: Number(updatedAlbum.updatedAt),
-                eventDate: updatedAlbum.eventDate ? Number(updatedAlbum.eventDate) : null,
+                ...serializeAlbum(updatedAlbum),
                 owner: owner ? {
                     ...owner,
-                    avatar: owner.avatarPath ? `/api/assets/avatar/${owner.id}` : null,
+                    avatar: avatarUrl(owner),
                 } : null,
             },
         }

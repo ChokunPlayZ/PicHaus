@@ -1,15 +1,10 @@
-import { eq, and, inArray } from 'drizzle-orm'
-import { albums, albumCollaborators } from '../../../../db/schema'
+import { eq, inArray } from 'drizzle-orm'
+import { albums } from '../../../../db/schema'
 import { getUnixTimestamp, requireAuth } from '../../../../utils/auth'
+import { normalizeTags } from '../../../../utils/albums'
 
 type VisibilityAction = 'keep' | 'public' | 'private'
 type TagAction = 'none' | 'replace' | 'add' | 'remove'
-
-const normalizeTags = (value: unknown): string[] => {
-    if (!Array.isArray(value)) return []
-    const normalized = value.map(tag => (typeof tag === 'string' ? tag.trim() : '')).filter(tag => tag.length > 0)
-    return Array.from(new Set(normalized))
-}
 
 export default defineEventHandler(async (event) => {
     try {

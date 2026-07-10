@@ -1,12 +1,13 @@
 import { eq } from 'drizzle-orm'
-import { albums, photos } from '../../../db/schema'
+import { albums } from '../../../db/schema'
 import { deleteFile } from '../../../utils/upload'
 import { requireAuth } from '../../../utils/auth'
+import { requireRouterParamValue } from '../../../utils/api'
+import { assertAlbumOwnerWithEmail } from '../../../utils/albums'
 
 export default defineEventHandler(async (event) => {
     try {
-        const id = getRouterParam(event, 'id')
-        if (!id) throw createError({ statusCode: 400, statusMessage: 'Album ID is required' })
+        const id = requireRouterParamValue(event, 'id', 'Album ID')
 
         const user = await requireAuth(event)
 
@@ -16,10 +17,7 @@ export default defineEventHandler(async (event) => {
         })
 
         if (!album) throw createError({ statusCode: 404, statusMessage: 'Album not found' })
-        if (album.ownerId !== user.id) throw createError({ statusCode: 403, statusMessage: 'Only the album owner can delete this album' })
-        if (!user.email) {
-            throw createError({ statusCode: 403, statusMessage: 'Guest users cannot delete albums until they have an email assigned' })
-        }
+        assertAlbumOwnerWithEmail(album, user, 'delete')
 
         for (const photo of album.photos) {
             if (photo.storagePath) await deleteFile(photo.storagePath)

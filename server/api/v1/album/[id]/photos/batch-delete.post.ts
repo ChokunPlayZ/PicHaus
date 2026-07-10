@@ -2,18 +2,18 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { albums, albumCollaborators, photos } from '../../../../../db/schema'
 import { requireAuth } from '../../../../../utils/auth'
 import { deleteFile } from '../../../../../utils/upload'
+import { requireRouterParamValue, requireStringArray } from '../../../../../utils/api'
 
 export default defineEventHandler(async (event) => {
     try {
         const user = await requireAuth(event)
-        const albumId = getRouterParam(event, 'id')
+        const albumId = requireRouterParamValue(event, 'id', 'Album ID')
         const body = await readBody(event)
-        const { ids } = body
-
-        if (!albumId) throw createError({ statusCode: 400, statusMessage: 'Album ID required' })
-        if (!ids || !Array.isArray(ids) || ids.length === 0) throw createError({ statusCode: 400, statusMessage: 'Photo IDs required' })
-        if (!ids.every((photoId) => typeof photoId === 'string')) throw createError({ statusCode: 400, statusMessage: 'Invalid photo IDs format' })
-        if (ids.length > 200) throw createError({ statusCode: 400, statusMessage: 'Too many photos requested (max 200)' })
+        const ids = requireStringArray(body.ids, 'Photo IDs', {
+            maxLength: 200,
+            invalidMessage: 'Invalid photo IDs format',
+            maxLengthMessage: 'Too many photos requested (max 200)',
+        })
 
         const album = await db.query.albums.findFirst({
             where: eq(albums.id, albumId),

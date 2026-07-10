@@ -1,12 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { albums, users } from '../../../db/schema'
 import { getUnixTimestamp, requireAuth } from '../../../utils/auth'
-
-const normalizeTags = (value: unknown): string[] => {
-    if (!Array.isArray(value)) return []
-    const normalized = value.map(tag => (typeof tag === 'string' ? tag.trim() : '')).filter(tag => tag.length > 0)
-    return Array.from(new Set(normalized))
-}
+import { normalizeTags, serializeAlbum } from '../../../utils/albums'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -40,11 +35,7 @@ export default defineEventHandler(async (event) => {
             success: true,
             message: 'Album created successfully',
             data: {
-                ...album,
-                name: album.title,
-                createdAt: Number(album.createdAt),
-                updatedAt: Number(album.updatedAt),
-                eventDate: album.eventDate ? Number(album.eventDate) : null,
+                ...serializeAlbum(album),
                 owner,
             },
         }
