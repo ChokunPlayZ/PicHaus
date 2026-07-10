@@ -118,12 +118,12 @@
                 </div>
 
                 <!-- Mobile Navigation Buttons -->
-                <button v-if="hasPrevious" @click="$emit('previous')" aria-label="Previous photo"
+                <button v-if="hasPrevious && zoomLevel === minZoom" @click="$emit('previous')" aria-label="Previous photo"
                     class="md:hidden absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white/80 backdrop-blur-sm transition active:scale-90 active:bg-black/70">
                     <Icon name="lucide:chevron-left" class="h-6 w-6" :stroke-width="2" />
                 </button>
 
-                <button v-if="hasNext" @click="$emit('next')" aria-label="Next photo"
+                <button v-if="hasNext && zoomLevel === minZoom" @click="$emit('next')" aria-label="Next photo"
                     class="md:hidden absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white/80 backdrop-blur-sm transition active:scale-90 active:bg-black/70">
                     <Icon name="lucide:chevron-right" class="h-6 w-6" :stroke-width="2" />
                 </button>
@@ -166,6 +166,18 @@
                     <span class="h-3 w-px bg-white/20"></span>
                     <span>← →</span>
                     <span class="text-white/25">Navigate</span>
+                </div>
+
+                <!-- Mobile Zoom Controls -->
+                <div v-if="!showInfo"
+                    class="md:hidden absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 p-1.5 shadow-lg shadow-black/20 backdrop-blur-md">
+                    <button @click.stop="toggleZoom" aria-label="Zoom" class="flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition active:scale-90 active:bg-white/15">
+                        <Icon :name="zoomLevel > minZoom ? 'lucide:zoom-out' : 'lucide:zoom-in'" class="h-5 w-5" :stroke-width="2" />
+                    </button>
+                    <button v-if="zoomLevel > minZoom" @click.stop="resetZoom" aria-label="Reset zoom"
+                        class="flex h-10 min-w-14 items-center justify-center rounded-full bg-white/10 px-3 text-xs font-semibold text-white/80 transition active:scale-90 active:bg-white/20">
+                        {{ Math.round(zoomLevel * 100) }}%
+                    </button>
                 </div>
             </div>
 
@@ -382,6 +394,8 @@ const zoomLevel = ref(1)
 const panX = ref(0)
 const panY = ref(0)
 const isPanning = ref(false)
+const isTouchPanning = ref(false)
+const isPinching = ref(false)
 const panStartX = ref(0)
 const panStartY = ref(0)
 const panOriginX = ref(0)
@@ -520,7 +534,7 @@ const imageContainerStyle = computed(() => {
 
 const imageStyle = computed(() => ({
     transform: `translate3d(${panX.value}px, ${panY.value}px, 0) scale(${zoomLevel.value})`,
-    transition: isPanning.value ? 'none' : 'transform 180ms ease-out, opacity 200ms ease',
+    transition: isPanning.value || isTouchPanning.value || isPinching.value ? 'none' : 'transform 180ms ease-out, opacity 200ms ease',
     transformOrigin: 'center center'
 }))
 
@@ -574,6 +588,8 @@ function resetZoom() {
     panX.value = 0
     panY.value = 0
     isPanning.value = false
+    isTouchPanning.value = false
+    isPinching.value = false
 }
 
 const handleWheel = (e: WheelEvent) => {
@@ -621,10 +637,46 @@ const touchEndY = ref(0)
 const minSwipeDistance = 50 // minimum distance for a swipe
 const imageSwipeOffset = ref(0)
 const isImageSwiping = ref(false)
+const pinchStartDistance = ref(0)
+const pinchStartZoom = ref(1)
+
+const getTouchDistance = (first: Touch, second: Touch) => {
+    return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY)
+}
+
+const resetTouchGesture = () => {
+    touchStartX.value = 0
+    touchEndX.value = 0
+    touchStartY.value = 0
+    touchEndY.value = 0
+    imageSwipeOffset.value = 0
+    isImageSwiping.value = false
+    isTouchPanning.value = false
+    isPinching.value = false
+    pinchStartDistance.value = 0
+}
 
 const handleTouchStart = (e: TouchEvent) => {
-    if (zoomLevel.value > minZoom) return
+    if (e.touches.length === 2 && e.touches[0] && e.touches[1]) {
+        pinchStartDistance.value = getTouchDistance(e.touches[0], e.touches[1])
+        pinchStartZoom.value = zoomLevel.value
+        isPinching.value = true
+        isTouchPanning.value = false
+        isImageSwiping.value = false
+        return
+    }
+
     if (!e.touches[0]) return
+
+    if (zoomLevel.value > minZoom) {
+        panStartX.value = e.touches[0].clientX
+        panStartY.value = e.touches[0].clientY
+        panOriginX.value = panX.value
+        panOriginY.value = panY.value
+        isTouchPanning.value = true
+        return
+    }
+
     touchStartX.value = e.touches[0].clientX
     touchStartY.value = e.touches[0].clientY
     touchEndX.value = e.touches[0].clientX
@@ -633,8 +685,24 @@ const handleTouchStart = (e: TouchEvent) => {
 }
 
 const handleTouchMove = (e: TouchEvent) => {
-    if (zoomLevel.value > minZoom) return
+    if (e.touches.length === 2 && e.touches[0] && e.touches[1] && pinchStartDistance.value > 0) {
+        if (e.cancelable) e.preventDefault()
+        isPinching.value = true
+        setZoom(pinchStartZoom.value * (getTouchDistance(e.touches[0], e.touches[1]) / pinchStartDistance.value))
+        return
+    }
+
     if (!e.touches[0]) return
+
+    if (zoomLevel.value > minZoom && isTouchPanning.value) {
+        if (e.cancelable) e.preventDefault()
+        const maxPanX = window.innerWidth * 0.45
+        const maxPanY = window.innerHeight * 0.45
+        panX.value = clamp(panOriginX.value + e.touches[0].clientX - panStartX.value, -maxPanX, maxPanX)
+        panY.value = clamp(panOriginY.value + e.touches[0].clientY - panStartY.value, -maxPanY, maxPanY)
+        return
+    }
+
     touchEndX.value = e.touches[0].clientX
     touchEndY.value = e.touches[0].clientY
 
@@ -662,8 +730,21 @@ const handleTouchMove = (e: TouchEvent) => {
     }
 }
 
-const handleTouchEnd = () => {
-    if (zoomLevel.value > minZoom) return
+const handleTouchEnd = (e: TouchEvent) => {
+    if (isPinching.value || isTouchPanning.value || zoomLevel.value > minZoom) {
+        const remainingTouch = e.touches[0]
+        resetTouchGesture()
+
+        if (remainingTouch && zoomLevel.value > minZoom) {
+            panStartX.value = remainingTouch.clientX
+            panStartY.value = remainingTouch.clientY
+            panOriginX.value = panX.value
+            panOriginY.value = panY.value
+            isTouchPanning.value = true
+        }
+        return
+    }
+
     const deltaX = touchStartX.value - touchEndX.value
     const deltaY = touchStartY.value - touchEndY.value
 
@@ -682,12 +763,7 @@ const handleTouchEnd = () => {
     }
 
     // Reset values
-    touchStartX.value = 0
-    touchEndX.value = 0
-    touchStartY.value = 0
-    touchEndY.value = 0
-    imageSwipeOffset.value = 0
-    isImageSwiping.value = false
+    resetTouchGesture()
 }
 
 // Info panel touch/swipe handling for dismiss
