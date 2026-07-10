@@ -1,9 +1,11 @@
 import { eq, or } from 'drizzle-orm'
 import sharp from 'sharp'
-import { users, siteSettings } from '../../../../db/schema'
+import { users } from '../../../../db/schema'
 import { createAccessToken, getUnixTimestamp } from '../../../../utils/auth'
-import { exchangeMicrosoftCode, getMicrosoftUserInfo, storePendingMicrosoftAuth } from '../../../../utils/microsoft-oauth'
+import { consumeMicrosoftOAuthState, exchangeMicrosoftCode, getMicrosoftUserInfo, storePendingMicrosoftAuth } from '../../../../utils/microsoft-oauth'
 import { saveStorageFile } from '../../../../utils/storage'
+import { getRegistrationPolicy } from '../../../../utils/registration'
+import { enforceRateLimit } from '../../../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
     const query = getQuery(event)
@@ -16,16 +18,17 @@ export default defineEventHandler(async (event) => {
     if (!code) return redirectToError('No authorization code received from Microsoft')
 
     try {
+        enforceRateLimit(event, { key: 'microsoft-callback', limit: 20, windowMs: 5 * 60 * 1000 })
+        const statePayload = consumeMicrosoftOAuthState(state)
+        if (!statePayload) return redirectToError('Invalid or expired sign-in state')
+
+        const policy = await getRegistrationPolicy()
+        if (!policy.microsoftOAuthEnabled) return redirectToError('Microsoft sign-in is not enabled')
+
         const requestUrl = getRequestURL(event)
         const redirectUri = `${requestUrl.protocol}//${requestUrl.host}/api/v1/auth/microsoft/callback`
 
-        const rows = await db
-            .select({ microsoftOAuthTenantId: siteSettings.microsoftOAuthTenantId })
-            .from(siteSettings)
-            .where(eq(siteSettings.id, 1))
-            .limit(1)
-
-        const tenantId = rows[0]?.microsoftOAuthTenantId || 'common'
+        const tenantId = policy.microsoftOAuthTenantId || 'common'
 
         const msAccessToken = await exchangeMicrosoftCode(code, redirectUri, tenantId)
         const userInfo = await getMicrosoftUserInfo(msAccessToken)
@@ -50,6 +53,9 @@ export default defineEventHandler(async (event) => {
                 if (updated) user = updated
             }
         } else {
+            if (!policy.allowRegistration) {
+                return redirectToError('Public registration is disabled')
+            }
             isNewUser = true
             const [created] = await db.insert(users).values({
                 email,
@@ -91,7 +97,7 @@ export default defineEventHandler(async (event) => {
             userId: user.id,
             name: user.name ?? userInfo.displayName,
             email: user.email ?? email,
-            state,
+            state: statePayload,
             isNewUser,
         })
 

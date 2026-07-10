@@ -1,6 +1,8 @@
 import { consumePendingAuth } from '../../../../utils/google-oauth'
+import { enforceRateLimit } from '../../../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
+    enforceRateLimit(event, { key: 'google-exchange', limit: 20, windowMs: 5 * 60 * 1000 })
     const body = await readBody(event)
     const { code } = body
 

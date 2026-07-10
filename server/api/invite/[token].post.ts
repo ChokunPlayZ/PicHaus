@@ -1,8 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { inviteTokens, users } from '../../db/schema'
 import { getUnixTimestamp, hashPassword, createAccessToken } from '../../utils/auth'
+import { enforceRateLimit } from '../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
+    enforceRateLimit(event, { key: 'invite-consume', limit: 10, windowMs: 15 * 60 * 1000 })
     const token = getRouterParam(event, 'token')
     if (!token) throw createError({ statusCode: 400, statusMessage: 'Token required' })
 

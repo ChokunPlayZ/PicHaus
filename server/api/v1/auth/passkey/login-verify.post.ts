@@ -3,8 +3,10 @@ import { passkeys } from '../../../../db/schema'
 import { createAccessToken, getUnixTimestamp } from '../../../../utils/auth'
 import { verifyAuthenticationResponse, getRpConfig, consumeChallenge } from '../../../../utils/webauthn'
 import type { AuthenticatorTransportFuture } from '../../../../utils/webauthn'
+import { enforceRateLimit } from '../../../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
+    enforceRateLimit(event, { key: 'passkey-verify', limit: 20, windowMs: 5 * 60 * 1000 })
     const body = await readBody(event)
     const { response, challengeId } = body
 

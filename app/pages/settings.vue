@@ -79,7 +79,7 @@
                     <div class="pt-4" style="border-top: 1px solid var(--separator);">
                         <h3 class="text-base font-semibold mb-1" style="color: var(--text-1);">Change Password</h3>
                         <p class="text-sm mb-3" style="color: var(--text-3);">Leave blank to keep your current password.</p>
-                        <input v-model="form.password" type="password" minlength="6"
+                        <input v-model="form.password" type="password" minlength="8"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="••••••••"

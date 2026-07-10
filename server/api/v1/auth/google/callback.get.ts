@@ -1,9 +1,11 @@
 import { eq, or } from 'drizzle-orm'
 import sharp from 'sharp'
-import { users, siteSettings } from '../../../../db/schema'
+import { users } from '../../../../db/schema'
 import { createAccessToken, getUnixTimestamp } from '../../../../utils/auth'
-import { exchangeGoogleCode, getGoogleUserInfo, storePendingAuth } from '../../../../utils/google-oauth'
+import { consumeGoogleOAuthState, exchangeGoogleCode, getGoogleUserInfo, storePendingAuth } from '../../../../utils/google-oauth'
 import { saveStorageFile } from '../../../../utils/storage'
+import { getRegistrationPolicy } from '../../../../utils/registration'
+import { enforceRateLimit } from '../../../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
     const query = getQuery(event)
@@ -16,6 +18,18 @@ export default defineEventHandler(async (event) => {
     if (!code) return redirectToError('No authorization code received from Google')
 
     try {
+        enforceRateLimit(event, { key: 'google-callback', limit: 20, windowMs: 5 * 60 * 1000 })
+        const statePayload = consumeGoogleOAuthState(state)
+        if (!statePayload) return redirectToError('Invalid or expired sign-in state')
+
+        const policy = await getRegistrationPolicy()
+        if (!policy.googleOAuthEnabled) return redirectToError('Google sign-in is not enabled')
+
+        let bypassDomain = false
+        try {
+            bypassDomain = Boolean(JSON.parse(Buffer.from(statePayload, 'base64url').toString('utf8')).bypassDomain)
+        } catch {}
+
         const requestUrl = getRequestURL(event)
         const redirectUri = `${requestUrl.protocol}//${requestUrl.host}/api/v1/auth/google/callback`
 
@@ -25,13 +39,9 @@ export default defineEventHandler(async (event) => {
         if (!userInfo.email_verified) return redirectToError('Google account email is not verified')
 
         // Check domain restriction
-        const rows = await db
-            .select({ googleOAuthAllowedDomain: siteSettings.googleOAuthAllowedDomain })
-            .from(siteSettings)
-            .where(eq(siteSettings.id, 1))
-            .limit(1)
-
-        const allowedDomain = rows[0]?.googleOAuthAllowedDomain
+        const allowedDomain = bypassDomain && policy.googleOAuthShiftBypassEnabled
+            ? null
+            : policy.googleOAuthAllowedDomain
         if (allowedDomain) {
             // Validate the hd claim from Google's token — the authoritative hosted-domain
             // field for Workspace accounts; cannot be spoofed by a matching email address
@@ -59,6 +69,9 @@ export default defineEventHandler(async (event) => {
                 if (updated) user = updated
             }
         } else {
+            if (!policy.allowRegistration) {
+                return redirectToError('Public registration is disabled')
+            }
             isNewUser = true
             const [created] = await db.insert(users).values({
                 email: userInfo.email,
@@ -98,7 +111,7 @@ export default defineEventHandler(async (event) => {
             userId: user.id,
             name: user.name ?? userInfo.name,
             email: user.email ?? userInfo.email,
-            state,
+            state: statePayload,
             isNewUser,
         })
 

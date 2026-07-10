@@ -1,4 +1,4 @@
-import { JustifiedLayout } from '@immich/justified-layout-wasm'
+import justifiedLayout from 'justified-layout'
 
 interface PhotoDimensions {
     width?: number | null
@@ -13,16 +13,26 @@ export function useJustifiedLayout(photos: Ref<PhotoDimensions[]>) {
         if (!photos.value.length) return null
 
         const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
-        const aspectRatios = new Float32Array(
-            photos.value.map(p => (p.width || 1) / (p.height || 1))
+        const layout = justifiedLayout(
+            photos.value.map(p => (p.width || 1) / (p.height || 1)),
+            {
+                targetRowHeight: isMobile ? 120 : 180,
+                containerWidth: containerWidth.value,
+                boxSpacing: isMobile ? 8 : 12,
+                containerPadding: 0,
+                targetRowHeightTolerance: 0.1,
+            },
         )
 
-        return new JustifiedLayout(aspectRatios, {
-            rowHeight: isMobile ? 120 : 180,
-            rowWidth: containerWidth.value,
-            spacing: isMobile ? 8 : 12,
-            heightTolerance: 0.1,
-        })
+        return {
+            containerHeight: layout.containerHeight,
+            getPosition(index: number) {
+                const box = layout.boxes[index]
+                return box
+                    ? { top: box.top, left: box.left, width: box.width, height: box.height }
+                    : { top: 0, left: 0, width: 0, height: 0 }
+            },
+        }
     })
 
     let resizeObserver: ResizeObserver | null = null

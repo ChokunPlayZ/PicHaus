@@ -321,6 +321,7 @@ const viewerLoadedImageKeys = new Set<string>()
 <script setup lang="ts">
 import { buildAssetUrl } from '~/utils/auth-client'
 import { blurhashToDataUrl } from '~/composables/useBlurhash'
+import { t, initLanguage } from '~/utils/i18n'
 
 interface Photo {
     id: string
@@ -365,8 +366,6 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits(['close', 'previous', 'next', 'toggleFavorite'])
-
-import { t, initLanguage } from '~/utils/i18n'
 
 onMounted(() => {
     initLanguage()
@@ -433,14 +432,19 @@ const onImageError = () => {
 }
 
 // Watch for photo changes to reset loading state and preload adjacent images
-watch(() => [props.photo.id, props.photo.updatedAt || props.photo.createdAt || ''] as const, async ([newId, timestamp], [oldId, oldTimestamp] = ['', '']) => {
-    if (newId === oldId && timestamp === oldTimestamp) {
+const watchedPhoto = computed(() => ({
+    id: props.photo.id,
+    timestamp: props.photo.updatedAt || props.photo.createdAt || '',
+}))
+
+watch(watchedPhoto, async (current, previous) => {
+    if (previous && current.id === previous.id && current.timestamp === previous.timestamp) {
         return
     }
 
-    const imageKey = getPhotoCacheKey(newId, timestamp)
+    const imageKey = getPhotoCacheKey(current.id, current.timestamp)
     imageLoading.value = !viewerLoadedImageKeys.has(imageKey)
-    currentImageSrc.value = buildFullImageSrc(newId, timestamp)
+    currentImageSrc.value = buildFullImageSrc(current.id, current.timestamp)
     resetZoom()
 
     // Preload adjacent images

@@ -51,7 +51,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     ;(nuxtApp as any).$fetch = authFetch
 
     const nativeFetch = window.fetch.bind(window)
-    window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const wrappedFetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
         const requestUrl = typeof input === 'string'
             ? input
             : input instanceof URL
@@ -71,4 +71,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 
         return nativeFetch(input, nextInit)
     }
+    Object.assign(wrappedFetch, window.fetch)
+    window.fetch = wrappedFetch as typeof window.fetch
 })

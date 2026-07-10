@@ -1,8 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { siteSettings } from '../../../../db/schema'
-import { buildGoogleAuthUrl } from '../../../../utils/google-oauth'
+import { buildGoogleAuthUrl, createGoogleOAuthState } from '../../../../utils/google-oauth'
+import { enforceRateLimit } from '../../../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
+    enforceRateLimit(event, { key: 'google-initiate', limit: 20, windowMs: 5 * 60 * 1000 })
     const rows = await db
         .select({
             googleOAuthEnabled: siteSettings.googleOAuthEnabled,
@@ -25,7 +27,7 @@ export default defineEventHandler(async (event) => {
     const uploadToken = typeof query.uploadToken === 'string' ? query.uploadToken : ''
     const bypassDomain = query.bypassDomain === 'true'
 
-    const state = Buffer.from(JSON.stringify({ redirect, uploadToken })).toString('base64url')
+    const state = createGoogleOAuthState({ redirect, uploadToken, bypassDomain })
 
     const requestUrl = getRequestURL(event)
     const redirectUri = `${requestUrl.protocol}//${requestUrl.host}/api/v1/auth/google/callback`

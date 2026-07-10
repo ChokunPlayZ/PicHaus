@@ -4,6 +4,7 @@ const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
 const PENDING_TTL_MS = 5 * 60 * 1000
+const STATE_TTL_MS = 10 * 60 * 1000
 
 export interface GoogleUserInfo {
     sub: string
@@ -25,6 +26,25 @@ interface PendingAuth {
 }
 
 const _pending = new Map<string, PendingAuth>()
+const _states = new Map<string, { payload: string; expiresAt: number }>()
+
+export function createGoogleOAuthState(payload: Record<string, unknown>): string {
+    const now = Date.now()
+    for (const [key, entry] of _states) {
+        if (entry.expiresAt < now) _states.delete(key)
+    }
+    const key = randomUUID()
+    const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url')
+    _states.set(key, { payload: encoded, expiresAt: now + STATE_TTL_MS })
+    return key
+}
+
+export function consumeGoogleOAuthState(key: string): string | null {
+    const entry = _states.get(key)
+    _states.delete(key)
+    if (!entry || entry.expiresAt < Date.now()) return null
+    return entry.payload
+}
 
 export function buildGoogleAuthUrl(redirectUri: string, state: string, hd?: string): string {
     const clientId = process.env.GOOGLE_CLIENT_ID

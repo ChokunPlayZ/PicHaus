@@ -2,8 +2,10 @@ import { eq } from 'drizzle-orm'
 import { users } from '../../../../db/schema'
 import { generateAuthenticationOptions, getRpConfig, saveChallenge } from '../../../../utils/webauthn'
 import type { AuthenticatorTransportFuture } from '../../../../utils/webauthn'
+import { enforceRateLimit } from '../../../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
+    enforceRateLimit(event, { key: 'passkey-options', limit: 20, windowMs: 5 * 60 * 1000 })
     const body = await readBody(event).catch(() => ({}))
     const email: string | undefined = body?.email?.trim() || undefined
     const { rpID } = getRpConfig()

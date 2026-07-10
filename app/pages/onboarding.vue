@@ -157,8 +157,8 @@ async function handleSave() {
                 dialog.toast('Password is required.')
                 return
             }
-            if (password.value.length < 6) {
-                dialog.toast('Password must be at least 6 characters.')
+            if (password.value.length < 8) {
+                dialog.toast('Password must be at least 8 characters.')
                 return
             }
             if (password.value !== confirmPassword.value) {

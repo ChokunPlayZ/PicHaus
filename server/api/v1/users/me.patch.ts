@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
         }
 
         if (password) {
-            if (password.length < 6) throw createError({ statusCode: 400, statusMessage: 'Password must be at least 6 characters' })
+            if (password.length < 8) throw createError({ statusCode: 400, statusMessage: 'Password must be at least 8 characters' })
             updateData.passwordHash = await hashPassword(password)
         }
 

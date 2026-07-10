@@ -12,7 +12,7 @@ export interface StorageObjectMetadata {
 }
 
 export interface StorageObject extends StorageObjectMetadata {
-    body: NodeJS.ReadableStream
+    body: Readable | globalThis.ReadableStream<Uint8Array>
 }
 
 export function getStorageDriver(): 'local' | 's3' {
@@ -166,7 +166,7 @@ async function s3Fetch(storagePath: string, options: {
     return fetch(target.url, {
         method: options.method,
         headers,
-        body: options.body,
+        body: options.body ? new Uint8Array(options.body) : undefined,
     })
 }
 

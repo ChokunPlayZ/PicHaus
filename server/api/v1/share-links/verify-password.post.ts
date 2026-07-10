@@ -1,8 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { shareLinks } from '../../../db/schema'
 import { verifyPassword, getUnixTimestamp } from '../../../utils/auth'
+import { enforceRateLimit } from '../../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
+    enforceRateLimit(event, { key: 'share-password', limit: 10, windowMs: 15 * 60 * 1000 })
     const body = await readBody(event)
     const { token, password } = body
     const now = getUnixTimestamp()

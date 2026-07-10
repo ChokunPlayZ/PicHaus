@@ -1,13 +1,24 @@
 import { eq } from 'drizzle-orm'
 import { users } from '../../../db/schema'
 import { hashPassword, getUnixTimestamp } from '../../../utils/auth'
+import { getRegistrationPolicy } from '../../../utils/registration'
+import { enforceRateLimit } from '../../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
     try {
+        enforceRateLimit(event, { key: 'auth-register', limit: 5, windowMs: 15 * 60 * 1000 })
+        const policy = await getRegistrationPolicy()
+        if (!policy.allowRegistration) {
+            throw createError({ statusCode: 403, statusMessage: 'Public registration is disabled' })
+        }
+
         const body = await readBody(event)
 
         if (!body.email || !body.password) {
             throw createError({ statusCode: 400, statusMessage: 'Email and password are required' })
+        }
+        if (typeof body.password !== 'string' || body.password.length < 8) {
+            throw createError({ statusCode: 400, statusMessage: 'Password must be at least 8 characters' })
         }
 
         const existing = await db.query.users.findFirst({ where: eq(users.email, body.email) })

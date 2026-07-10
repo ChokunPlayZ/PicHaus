@@ -1,8 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { siteSettings } from '../../../../db/schema'
-import { buildMicrosoftAuthUrl } from '../../../../utils/microsoft-oauth'
+import { buildMicrosoftAuthUrl, createMicrosoftOAuthState } from '../../../../utils/microsoft-oauth'
+import { enforceRateLimit } from '../../../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
+    enforceRateLimit(event, { key: 'microsoft-initiate', limit: 20, windowMs: 5 * 60 * 1000 })
     const rows = await db
         .select({
             microsoftOAuthEnabled: siteSettings.microsoftOAuthEnabled,
@@ -23,7 +25,7 @@ export default defineEventHandler(async (event) => {
     const redirect = typeof query.redirect === 'string' ? query.redirect : ''
     const uploadToken = typeof query.uploadToken === 'string' ? query.uploadToken : ''
 
-    const state = Buffer.from(JSON.stringify({ redirect, uploadToken })).toString('base64url')
+    const state = createMicrosoftOAuthState({ redirect, uploadToken })
 
     const requestUrl = getRequestURL(event)
     const redirectUri = `${requestUrl.protocol}//${requestUrl.host}/api/v1/auth/microsoft/callback`

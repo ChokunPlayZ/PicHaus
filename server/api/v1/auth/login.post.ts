@@ -1,9 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { users } from '../../../db/schema'
 import { verifyPassword, createAccessToken } from '../../../utils/auth'
+import { enforceRateLimit } from '../../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
     try {
+        enforceRateLimit(event, { key: 'auth-login', limit: 10, windowMs: 15 * 60 * 1000 })
         const body = await readBody(event)
 
         if (!body.email || !body.password) {

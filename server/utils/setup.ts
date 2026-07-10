@@ -2,7 +2,7 @@ import { count, eq } from 'drizzle-orm'
 import { users } from '../db/schema'
 
 export async function isSetupComplete(): Promise<boolean> {
-    const result = await db.select({ value: count() }).from(users)
+    const result = await db.select({ value: count() }).from(users).where(eq(users.role, 'ADMIN'))
     const value = result[0]?.value ?? 0
     return value > 0
 }

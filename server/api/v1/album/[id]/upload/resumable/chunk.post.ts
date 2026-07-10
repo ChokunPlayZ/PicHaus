@@ -1,12 +1,16 @@
 import { eq, and, inArray } from 'drizzle-orm'
 import { albums, albumCollaborators } from '../../../../../../db/schema'
 import { requireAuth } from '../../../../../../utils/auth'
-import { join } from 'path'
-import fs from 'fs/promises'
-import { generateUniqueFilename, processPhotoBackground, saveFile } from '../../../../../../utils/upload'
+import { join } from 'node:path'
+import fs from 'node:fs/promises'
+import sharp from 'sharp'
+import { calculateFileHash, generateUniqueFilename, processPhotoBackground, saveFile, validateImageFile } from '../../../../../../utils/upload'
+import { configuredChunkLimitBytes, configuredUploadLimitBytes, resumableSessionDir, SHA256_RE } from '../../../../../../utils/resumable-upload'
+import { enforceRateLimit } from '../../../../../../utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
     try {
+        enforceRateLimit(event, { key: 'resumable-chunk', limit: 1000, windowMs: 60 * 60 * 1000 })
         const albumId = getRouterParam(event, 'id')
         if (!albumId) throw createError({ statusCode: 400, statusMessage: 'Album ID is required' })
 
@@ -34,17 +38,27 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, statusMessage: 'Missing uploadId or offset' })
         }
 
-        const storageBaseDir = process.env.STORAGE_DIR || 'storage/uploads'
-        const sessionDir = join(process.cwd(), storageBaseDir, 'resumable', uploadId)
+        const sessionDir = resumableSessionDir(uploadId)
         const metaPath = join(sessionDir, 'meta.json')
         const dataPath = join(sessionDir, 'data.bin')
 
         // Check if session exists
-        let meta = null
+        let meta: { uploadId: string; filename: string; fileSize: number; fileHash: string; mimeType: string; albumId: string; uploaderId: string }
         try {
             meta = JSON.parse(await fs.readFile(metaPath, 'utf8'))
         } catch {
             throw createError({ statusCode: 404, statusMessage: 'Upload session not found or expired' })
+        }
+        if (
+            meta.uploadId !== uploadId ||
+            meta.albumId !== albumId ||
+            meta.uploaderId !== user.id ||
+            !Number.isSafeInteger(meta.fileSize) ||
+            meta.fileSize <= 0 ||
+            meta.fileSize > configuredUploadLimitBytes() ||
+            !SHA256_RE.test(meta.fileHash)
+        ) {
+            throw createError({ statusCode: 403, statusMessage: 'Upload session does not belong to this user and album' })
         }
 
         // Verify offset matches current size of data.bin
@@ -57,22 +71,53 @@ export default defineEventHandler(async (event) => {
         }
 
         // Read chunk data from body
+        const maxChunkSize = configuredChunkLimitBytes()
+        const declaredLength = Number(getRequestHeader(event, 'content-length') || '0')
+        if (declaredLength > maxChunkSize) {
+            throw createError({ statusCode: 413, statusMessage: 'Upload chunk is too large' })
+        }
         const chunkBuffer = await readRawBody(event, false)
         if (!chunkBuffer || chunkBuffer.length === 0) {
             throw createError({ statusCode: 400, statusMessage: 'No chunk data received' })
+        }
+        if (chunkBuffer.length > maxChunkSize) {
+            throw createError({ statusCode: 413, statusMessage: 'Upload chunk is too large' })
+        }
+
+        const newSize = stats.size + chunkBuffer.length
+        if (newSize > meta.fileSize) {
+            throw createError({ statusCode: 413, statusMessage: 'Upload exceeds the declared file size' })
         }
 
         // Append chunk
         await fs.appendFile(dataPath, chunkBuffer)
 
-        const newSize = stats.size + chunkBuffer.length
-
-        if (newSize >= meta.fileSize) {
+        if (newSize === meta.fileSize) {
             // Completed!
             const originalFilename = meta.filename || 'photo.jpg'
-            const filename = generateUniqueFilename(originalFilename, meta.fileHash)
-
             const fileBuffer = await fs.readFile(dataPath)
+            const validation = validateImageFile(fileBuffer)
+            if (!validation.valid) throw createError({ statusCode: 400, statusMessage: validation.error || 'Invalid image file' })
+
+            const actualHash = calculateFileHash(fileBuffer)
+            if (actualHash !== meta.fileHash.toLowerCase()) {
+                throw createError({ statusCode: 400, statusMessage: 'Uploaded file hash does not match' })
+            }
+
+            let trustedMimeType: string
+            try {
+                const metadata = await sharp(fileBuffer).metadata()
+                const mimeTypeByFormat: Record<string, string> = {
+                    jpeg: 'image/jpeg', jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+                    gif: 'image/gif', tiff: 'image/tiff', avif: 'image/avif', heif: 'image/heif', heic: 'image/heic',
+                }
+                trustedMimeType = metadata.format ? (mimeTypeByFormat[metadata.format] ?? '') : ''
+                if (!trustedMimeType) throw new Error('unsupported image')
+            } catch {
+                throw createError({ statusCode: 400, statusMessage: 'Unsupported or invalid image format' })
+            }
+
+            const filename = generateUniqueFilename(originalFilename, actualHash)
             const storagePath = await saveFile(fileBuffer, filename, 'photos')
 
             // Clean up session directory
@@ -83,10 +128,10 @@ export default defineEventHandler(async (event) => {
                 await processPhotoBackground({
                     storagePath,
                     originalFilename,
-                    trustedMimeType: meta.mimeType,
-                    fileHash: meta.fileHash,
-                    albumId: meta.albumId,
-                    uploaderId: meta.uploaderId,
+                    trustedMimeType,
+                    fileHash: actualHash,
+                    albumId,
+                    uploaderId: user.id,
                 })
             })())
 
