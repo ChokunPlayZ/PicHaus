@@ -1,20 +1,24 @@
 <template>
     <div ref="viewerEl"
-        class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#050505] text-white backdrop-blur-md"
+        class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#030303] text-white backdrop-blur-md"
         role="dialog" aria-modal="true" :aria-label="photo.originalName || photo.filename" tabindex="-1"
         @click.self="$emit('close')" style="touch-action: none;">
-        <div class="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/80 to-transparent z-10" />
-        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/70 to-transparent z-10" />
+        <div class="pointer-events-none absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/85 via-black/35 to-transparent z-10" />
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/80 via-black/25 to-transparent z-10" />
 
         <!-- Mobile Top Action Bar -->
         <div
-            class="md:hidden fixed top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent px-3 pb-4 z-50 flex items-center justify-end"
+            class="md:hidden fixed top-0 left-0 right-0 px-4 pb-4 z-50 flex items-center justify-between gap-3"
             style="padding-top: max(0.75rem, env(safe-area-inset-top));">
+            <button @click="$emit('close')" aria-label="Close viewer"
+                class="glass-control flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white transition active:scale-90">
+                <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
+            </button>
             <!-- Actions -->
-            <div class="flex max-w-full gap-2 overflow-x-auto">
+            <div class="flex max-w-full gap-2">
                 <button @click="showInfo = !showInfo" aria-label="Photo information" :aria-pressed="showInfo" :class="[
-                    'w-11 h-11 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm active:scale-90',
-                    showInfo ? 'bg-white/20 hover:bg-white/25' : 'bg-white/10 hover:bg-white/20'
+                    'glass-control w-11 h-11 flex items-center justify-center rounded-full text-white transition active:scale-90',
+                    showInfo ? 'bg-white/20' : ''
                 ]">
                     <Icon name="lucide:info" class="h-6 w-6" :stroke-width="2" />
                 </button>
@@ -62,16 +66,12 @@
                     <Icon v-if="isFavorited" name="lucide:heart" class="h-6 w-6 fill-current" :stroke-width="2" />
                     <Icon v-else name="lucide:heart" class="h-6 w-6" :stroke-width="2" />
                 </button>
-                <button @click="$emit('close')" aria-label="Close viewer"
-                    class="w-11 h-11 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:bg-white/30 transition backdrop-blur-sm active:scale-90">
-                    <Icon name="lucide:x" class="h-6 w-6" :stroke-width="2" />
-                </button>
             </div>
         </div>
 
         <div class="flex flex-col md:flex-row w-full h-full mx-auto md:p-4 md:gap-4 relative z-20">
             <!-- Main Image Area -->
-            <div ref="imageAreaEl" class="flex-1 flex items-center justify-center relative group overflow-hidden px-3 md:px-0 pt-20 pb-5 md:py-0"
+            <div ref="imageAreaEl" class="flex-1 flex items-center justify-center relative group overflow-hidden px-2 md:px-0 pt-20 pb-5 md:py-0"
                 @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd"
                 @wheel.prevent="handleWheel" @dblclick="toggleZoom" @mousedown="handlePanStart">
 
@@ -117,16 +117,14 @@
                     </div>
                 </div>
 
-                <!-- Mobile Navigation Buttons -->
-                <button v-if="hasPrevious && zoomLevel === minZoom" @click="$emit('previous')" aria-label="Previous photo"
-                    class="md:hidden absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white/80 backdrop-blur-sm transition active:scale-90 active:bg-black/70">
-                    <Icon name="lucide:chevron-left" class="h-6 w-6" :stroke-width="2" />
-                </button>
-
-                <button v-if="hasNext && zoomLevel === minZoom" @click="$emit('next')" aria-label="Next photo"
-                    class="md:hidden absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white/80 backdrop-blur-sm transition active:scale-90 active:bg-black/70">
-                    <Icon name="lucide:chevron-right" class="h-6 w-6" :stroke-width="2" />
-                </button>
+                <div v-if="isImageSwiping && imageSwipeOffset > 24 && hasPrevious"
+                    class="pointer-events-none absolute left-4 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-xl transition">
+                    <Icon name="lucide:chevron-left" class="h-5 w-5" :stroke-width="2.5" />
+                </div>
+                <div v-if="isImageSwiping && imageSwipeOffset < -24 && hasNext"
+                    class="pointer-events-none absolute right-4 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-xl transition">
+                    <Icon name="lucide:chevron-right" class="h-5 w-5" :stroke-width="2.5" />
+                </div>
 
                 <!-- Desktop Navigation Buttons -->
                 <button v-if="hasPrevious" @click="$emit('previous')" aria-label="Previous photo"
@@ -139,13 +137,14 @@
                     <Icon name="lucide:chevron-right" class="h-6 w-6" :stroke-width="2" />
                 </button>
 
-                <div class="relative w-full h-full flex items-center justify-center select-none" :style="imageContainerStyle">
-                    <img v-if="photo.blurhash"
-                        :key="`blurhash-${photo.id}`"
-                        :src="getBlurhashUrl(photo.blurhash, photo.width ?? null, photo.height ?? null) || ''"
-                        aria-hidden="true"
-                        class="absolute inset-0 w-full h-full object-contain blur-2xl scale-110 opacity-40" />
+                <div class="relative w-full h-full select-none" :style="imageContainerStyle">
+                    <div class="absolute inset-y-0 flex" :style="carouselTrackStyle">
+                        <div class="flex h-full w-1/3 shrink-0 items-center justify-center px-2 md:px-0">
+                            <img v-if="previousImageSrc" :src="previousImageSrc" alt="" aria-hidden="true"
+                                class="max-h-full max-w-full rounded-md object-contain opacity-90 shadow-2xl md:rounded-lg" draggable="false" />
+                        </div>
 
+                        <div class="relative flex h-full w-1/3 shrink-0 items-center justify-center px-2 md:px-0">
                     <!-- Loading Spinner -->
                     <div v-if="imageLoading" class="absolute inset-0 flex items-center justify-center z-20">
                         <div class="animate-spin rounded-full h-16 w-16 border-4 border-white/20 border-t-white">
@@ -154,10 +153,17 @@
 
                     <img :key="currentImageSrc" :src="currentImageSrc" :alt="photo.filename" @load="onImageLoad" @error="onImageError"
                         decoding="async" fetchpriority="high"
-                        class="relative max-h-full max-w-full object-contain rounded-lg shadow-2xl z-10 transition-opacity duration-200"
+                        class="relative max-h-full max-w-full object-contain rounded-md md:rounded-lg shadow-2xl z-10 transition-opacity duration-200"
                         :class="[imageLoading ? 'opacity-0' : 'opacity-100', zoomLevel > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in']"
                         :style="imageStyle"
                         draggable="false" />
+                        </div>
+
+                        <div class="flex h-full w-1/3 shrink-0 items-center justify-center px-2 md:px-0">
+                            <img v-if="nextImageSrc" :src="nextImageSrc" alt="" aria-hidden="true"
+                                class="max-h-full max-w-full rounded-md object-contain opacity-90 shadow-2xl md:rounded-lg" draggable="false" />
+                        </div>
+                    </div>
                 </div>
 
                 <div class="hidden md:flex absolute bottom-4 left-1/2 -translate-x-1/2 z-30 items-center gap-3 rounded-full bg-black/45 px-4 py-2 text-xs text-white/60 opacity-0 shadow-lg shadow-black/20 backdrop-blur-md transition group-hover:opacity-100">
@@ -170,7 +176,7 @@
 
                 <!-- Mobile Zoom Controls -->
                 <div v-if="!showInfo"
-                    class="md:hidden absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 p-1.5 shadow-lg shadow-black/20 backdrop-blur-md">
+                    class="md:hidden absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/10 bg-black/45 p-1 shadow-lg shadow-black/20 backdrop-blur-xl">
                     <button @click.stop="toggleZoom" aria-label="Zoom" class="flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition active:scale-90 active:bg-white/15">
                         <Icon :name="zoomLevel > minZoom ? 'lucide:zoom-out' : 'lucide:zoom-in'" class="h-5 w-5" :stroke-width="2" />
                     </button>
@@ -332,7 +338,6 @@ const viewerLoadedImageKeys = new Set<string>()
 
 <script setup lang="ts">
 import { buildAssetUrl } from '~/utils/auth-client'
-import { blurhashToDataUrl } from '~/composables/useBlurhash'
 import { t, initLanguage } from '~/utils/i18n'
 
 interface Photo {
@@ -412,6 +417,12 @@ const buildFullImageSrc = (photoId: string, timestamp: number | string | null | 
 
 const currentImageKey = computed(() => getPhotoCacheKey(props.photo.id, props.photo.updatedAt || props.photo.createdAt || ''))
 const fullImageSrc = computed(() => buildFullImageSrc(props.photo.id, props.photo.updatedAt || props.photo.createdAt || ''))
+const previousImageSrc = computed(() => !shouldAvoidFullPreload() && props.previousPhotoId
+    ? buildFullImageSrc(props.previousPhotoId, props.previousPhotoTimestamp)
+    : null)
+const nextImageSrc = computed(() => !shouldAvoidFullPreload() && props.nextPhotoId
+    ? buildFullImageSrc(props.nextPhotoId, props.nextPhotoTimestamp)
+    : null)
 const currentImageSrc = ref(fullImageSrc.value)
 
 // Platform detection
@@ -520,17 +531,22 @@ const mobileTransformStyle = computed(() => {
 
 // Image container style for swipe feedback
 const imageContainerStyle = computed(() => {
-    if (!isImageSwiping.value) {
-        return {
-            transition: 'transform 0.3s ease-out',
-            transform: 'translateX(0)'
-        }
-    }
+    const vertical = gestureAxis.value === 'vertical' ? Math.max(0, imageSwipeOffsetY.value) : 0
+    const progress = Math.min(vertical / 360, 1)
     return {
-        transform: `translateX(${imageSwipeOffset.value}px)`,
-        transition: 'none'
+        transform: `translate3d(0, ${vertical}px, 0) scale(${1 - progress * 0.08})`,
+        opacity: 1 - progress * 0.45,
+        transition: isImageSwiping.value ? 'none' : 'transform 280ms cubic-bezier(.2,.8,.2,1), opacity 220ms ease'
     }
 })
+
+const carouselTrackStyle = computed(() => ({
+    width: '300%',
+    left: '-100%',
+    transform: `translate3d(${imageSwipeOffset.value}px, 0, 0)`,
+    transition: isCarouselSettling.value ? 'transform 240ms cubic-bezier(.22,.75,.25,1)' : 'none',
+    willChange: gestureAxis.value === 'horizontal' ? 'transform' : 'auto'
+}))
 
 const imageStyle = computed(() => ({
     transform: `translate3d(${panX.value}px, ${panY.value}px, 0) scale(${zoomLevel.value})`,
@@ -636,7 +652,11 @@ const touchStartY = ref(0)
 const touchEndY = ref(0)
 const minSwipeDistance = 50 // minimum distance for a swipe
 const imageSwipeOffset = ref(0)
+const imageSwipeOffsetY = ref(0)
 const isImageSwiping = ref(false)
+const isCarouselSettling = ref(false)
+const touchStartTime = ref(0)
+const gestureAxis = ref<'pending' | 'horizontal' | 'vertical'>('pending')
 const pinchStartDistance = ref(0)
 const pinchStartZoom = ref(1)
 
@@ -650,13 +670,17 @@ const resetTouchGesture = () => {
     touchStartY.value = 0
     touchEndY.value = 0
     imageSwipeOffset.value = 0
+    imageSwipeOffsetY.value = 0
     isImageSwiping.value = false
+    isCarouselSettling.value = false
+    gestureAxis.value = 'pending'
     isTouchPanning.value = false
     isPinching.value = false
     pinchStartDistance.value = 0
 }
 
 const handleTouchStart = (e: TouchEvent) => {
+    if (isCarouselSettling.value) return
     if (e.touches.length === 2 && e.touches[0] && e.touches[1]) {
         pinchStartDistance.value = getTouchDistance(e.touches[0], e.touches[1])
         pinchStartZoom.value = zoomLevel.value
@@ -681,6 +705,8 @@ const handleTouchStart = (e: TouchEvent) => {
     touchStartY.value = e.touches[0].clientY
     touchEndX.value = e.touches[0].clientX
     touchEndY.value = e.touches[0].clientY
+    touchStartTime.value = performance.now()
+    gestureAxis.value = 'pending'
     isImageSwiping.value = false
 }
 
@@ -709,8 +735,11 @@ const handleTouchMove = (e: TouchEvent) => {
     const deltaX = touchEndX.value - touchStartX.value
     const deltaY = touchEndY.value - touchStartY.value
 
-    // Only show swipe feedback for horizontal swipes
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+    if (gestureAxis.value === 'pending' && Math.hypot(deltaX, deltaY) > 8) {
+        gestureAxis.value = Math.abs(deltaX) > Math.abs(deltaY) * 1.15 ? 'horizontal' : 'vertical'
+    }
+
+    if (gestureAxis.value === 'horizontal') {
         isImageSwiping.value = true
         // Prevent default browser behavior (like swipe-to-navigate back/forward in Safari)
         if (e.cancelable) {
@@ -722,15 +751,16 @@ const handleTouchMove = (e: TouchEvent) => {
         } else {
             imageSwipeOffset.value = deltaX
         }
-    } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10) {
-        // Prevent browser scrolling during vertical swipes to close
-        if (e.cancelable) {
-            e.preventDefault()
-        }
+    } else if (gestureAxis.value === 'vertical') {
+        if (e.cancelable) e.preventDefault()
+        isImageSwiping.value = true
+        // Down dismisses; upward movement gets firm resistance instead of closing.
+        imageSwipeOffsetY.value = deltaY > 0 ? deltaY : deltaY * 0.12
     }
 }
 
 const handleTouchEnd = (e: TouchEvent) => {
+    if (isCarouselSettling.value) return
     if (isPinching.value || isTouchPanning.value || zoomLevel.value > minZoom) {
         const remainingTouch = e.touches[0]
         resetTouchGesture()
@@ -745,25 +775,37 @@ const handleTouchEnd = (e: TouchEvent) => {
         return
     }
 
-    const deltaX = touchStartX.value - touchEndX.value
-    const deltaY = touchStartY.value - touchEndY.value
+    const deltaX = touchEndX.value - touchStartX.value
+    const deltaY = touchEndY.value - touchStartY.value
+    const elapsed = Math.max(performance.now() - touchStartTime.value, 1)
+    const velocityX = deltaX / elapsed
+    const velocityY = deltaY / elapsed
 
-    // Only trigger swipe if horizontal movement is greater than vertical (to avoid conflict with scrolling)
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
-        if (deltaX > 0 && props.hasNext) {
-            // Swipe left - next photo
-            emit('next')
-        } else if (deltaX < 0 && props.hasPrevious) {
-            // Swipe right - previous photo
-            emit('previous')
+    const commitsHorizontal = Math.abs(deltaX) > minSwipeDistance || Math.abs(velocityX) > 0.45
+    if (gestureAxis.value === 'horizontal' && commitsHorizontal) {
+        const direction = deltaX < 0 ? 'next' : 'previous'
+        const canNavigate = direction === 'next' ? props.hasNext : props.hasPrevious
+        if (canNavigate) {
+            isCarouselSettling.value = true
+            isImageSwiping.value = false
+            const pageWidth = imageAreaEl.value?.clientWidth || window.innerWidth
+            imageSwipeOffset.value = direction === 'next' ? -pageWidth : pageWidth
+            window.setTimeout(() => {
+                emit(direction)
+                resetTouchGesture()
+            }, 240)
+            return
         }
-    } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > minSwipeDistance) {
-        // Swipe up/down - close viewer
+    } else if (gestureAxis.value === 'vertical' && deltaY > 90 && (deltaY > 140 || velocityY > 0.5)) {
+        // Only a deliberate downward gesture dismisses the viewer.
         emit('close')
     }
 
-    // Reset values
-    resetTouchGesture()
+    // Snap incomplete gestures back into place.
+    isCarouselSettling.value = true
+    isImageSwiping.value = false
+    imageSwipeOffset.value = 0
+    window.setTimeout(resetTouchGesture, 240)
 }
 
 // Info panel touch/swipe handling for dismiss
@@ -812,14 +854,6 @@ const handleInfoTouchEnd = () => {
     infoTouchEndY.value = 0
     swipeOffset.value = 0
     isSwiping.value = false
-}
-
-const getBlurhashUrl = (hash: string | null, width: number | null, height: number | null) => {
-    if (!hash || !width || !height) return null
-
-    const w = 32
-    const h = Math.round(w * (height / width))
-    return blurhashToDataUrl(hash, w, h) || null
 }
 
 const formatDate = (timestamp: number) => {
@@ -986,6 +1020,14 @@ const downloadPhoto = async () => {
 </script>
 
 <style scoped>
+.glass-control {
+    background: rgba(24, 24, 24, 0.58);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
 .share-popup-enter-active,
 .share-popup-leave-active {
     transition: opacity 0.2s ease, transform 0.2s ease;
