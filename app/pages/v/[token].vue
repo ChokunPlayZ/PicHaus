@@ -48,7 +48,8 @@
             <!-- Group View -->
             <div v-if="viewMode === 'group'">
                 <div class="text-center mb-12">
-                    <h1 class="text-4xl sm:text-5xl font-bold mb-3 tracking-tight" style="color: var(--text-1);">{{ groupTitle }}</h1>
+                    <p class="eyebrow mb-3">Shared collection</p>
+                    <h1 class="display-title text-4xl sm:text-6xl mb-3" style="color: var(--text-1);">{{ groupTitle }}</h1>
                     <p v-if="groupDescription" class="text-base max-w-2xl mx-auto" style="color: var(--text-2);">{{ groupDescription }}</p>
                     <div class="mt-2 text-sm" style="color: var(--text-3);">{{ t('collectionBy').replace('{owner}', ownerName || '') }}</div>
                     <button @click="viewAllGroupPhotos"
@@ -88,7 +89,8 @@
                                 {{ t('backToGroup').replace('{group}', groupTitle || '') }}
                             </button>
                         </div>
-                        <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold mb-2 tracking-tight" style="color: var(--text-1);">{{ t('allPictures') }}</h1>
+                        <p class="eyebrow mb-2">Contact sheet</p>
+                        <h1 class="display-title text-4xl sm:text-4xl lg:text-5xl mb-2" style="color: var(--text-1);">{{ t('allPictures') }}</h1>
                         <div class="text-sm" style="color: var(--text-2);">
                             <span v-if="groupDescription">{{ groupDescription }}</span>
                         </div>
@@ -146,7 +148,8 @@
                                 {{ t('backToGroup').replace('{group}', groupTitle || '') }}
                             </button>
                         </div>
-                        <h1 class="text-4xl sm:text-4xl lg:text-5xl font-bold mb-2 tracking-tight" style="color: var(--text-1);">{{ albumName }}</h1>
+                        <p class="eyebrow mb-2">Event gallery</p>
+                        <h1 class="display-title text-4xl sm:text-5xl lg:text-6xl mb-2" style="color: var(--text-1);">{{ albumName }}</h1>
                         <div class="text-sm" style="color: var(--text-2);">
                             <span v-if="eventDate">{{ formatDate(eventDate) }}</span>
                             <div v-if="description" class="whitespace-pre-line mt-1" style="color: var(--text-3);">{{ description }}</div>

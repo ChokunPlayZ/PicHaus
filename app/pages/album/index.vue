@@ -4,10 +4,11 @@
 
         <div class="px-4 sm:px-6 lg:px-8 py-8 pb-32">
             <!-- Header -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div class="workspace-header flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 mb-7">
                 <div>
-                    <h2 class="text-3xl font-bold tracking-tight mb-1" style="color: var(--text-1);">My Albums</h2>
-                    <p class="text-sm" style="color: var(--text-2);">Manage your photo collections</p>
+                    <p class="eyebrow mb-2">Your workspace</p>
+                    <h2 class="display-title text-4xl sm:text-5xl mb-2" style="color: var(--text-1);">Event albums</h2>
+                    <p class="text-sm max-w-xl" style="color: var(--text-2);">Create a home for every shoot, invite photographers, and deliver the finished gallery.</p>
                 </div>
                 <div class="flex gap-2 w-full sm:w-auto">
                     <button @click="toggleSelectionMode" v-if="filteredAlbums.length > 0"
@@ -34,8 +35,8 @@
 
             <!-- Filter panel -->
             <div v-if="!loading && !error && albums.length > 0"
-                class="rounded-2xl p-4 mb-6 space-y-3"
-                style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
+                class="rounded-2xl p-4 mb-7 space-y-3"
+                style="background: transparent; border: 1px solid var(--separator);">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <input v-model="searchQuery" type="text"
                         aria-label="Search albums"
@@ -163,7 +164,7 @@
             </div>
 
             <!-- Grid view -->
-            <div v-else-if="albumViewMode === 'grid'" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div v-else-if="albumViewMode === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 <AlbumCard
                     v-for="album in sortedAlbums"
                     :key="album.id"

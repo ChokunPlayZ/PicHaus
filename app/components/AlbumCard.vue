@@ -1,13 +1,13 @@
 <template>
     <div
-        class="rounded-xl overflow-hidden cursor-pointer group relative transition hover:-translate-y-0.5"
+        class="rounded-xl overflow-hidden cursor-pointer group relative transition duration-300 hover:-translate-y-1"
         role="button"
         tabindex="0"
         :aria-label="selectionMode ? `${selected ? 'Deselect' : 'Select'} ${album.name}` : `Open ${album.name}`"
         :aria-pressed="selectionMode ? !!selected : undefined"
         :style="selected
             ? 'background: var(--surface-1); border: 2px solid var(--accent); box-shadow: var(--shadow-md);'
-            : 'background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);'"
+            : 'background: var(--surface-1); border: 1px solid var(--separator); box-shadow: none;'"
         @click="$emit('click', $event)"
         @keydown.enter.prevent="$emit('click', $event)"
         @keydown.space.prevent="$emit('click', $event)"
@@ -26,14 +26,14 @@
         </div>
 
         <!-- Thumbnail -->
-        <div class="aspect-video relative overflow-hidden" style="background: var(--surface-3);">
+        <div class="aspect-[16/10] relative overflow-hidden" style="background: var(--surface-3);">
             <template v-if="album.coverPhoto">
                 <div v-if="album.coverPhoto.blurhash"
                     class="absolute inset-0 bg-cover bg-center"
                     :style="{ backgroundImage: `url(${computeBlurhash(album.coverPhoto.blurhash)})` }" />
                 <img
                     :src="buildAssetUrl(`/api/assets/thumb/${album.coverPhoto.id}`)"
-                    class="absolute inset-0 w-full h-full object-cover transition duration-300 group-hover:scale-105"
+                    class="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-[1.035]"
                     loading="lazy"
                     @load="($event.target as HTMLElement).style.opacity = '1'"
                     style="opacity: 0;"
@@ -45,9 +45,10 @@
         </div>
 
         <!-- Info -->
-        <div class="p-3">
-            <h3 class="font-semibold text-sm mb-0.5 truncate" style="color: var(--text-1);">{{ album.name }}</h3>
-            <p v-if="album.description" class="text-xs mb-1.5 line-clamp-1" style="color: var(--text-2);">
+        <div class="p-4">
+            <div class="eyebrow mb-1.5">{{ album.eventDate ? formatDate(album.eventDate) : 'Album' }}</div>
+            <h3 class="display-title text-xl mb-1 truncate" style="color: var(--text-1);">{{ album.name }}</h3>
+            <p v-if="album.description" class="text-xs mb-3 line-clamp-1" style="color: var(--text-2);">
                 {{ album.description }}
             </p>
             <div v-if="album.tags && album.tags.length > 0" class="flex flex-wrap gap-1 mb-1.5">
@@ -55,9 +56,9 @@
                     class="px-1.5 py-0.5 rounded-full text-[10px]"
                     style="background: var(--surface-3); color: var(--text-2);">#{{ tag }}</span>
             </div>
-            <div class="flex items-center justify-between text-[10px]" style="color: var(--text-3);">
-                <span>{{ photoCount }} photos<template v-if="ownerName"> · {{ ownerName }}</template></span>
-                <span v-if="album.eventDate">{{ formatDate(album.eventDate) }}</span>
+            <div class="flex items-center justify-between text-[11px] pt-3" style="color: var(--text-3); border-top: 1px solid var(--separator);">
+                <span class="inline-flex items-center gap-1.5"><Icon name="lucide:images" class="w-3.5 h-3.5" />{{ photoCount }} photos</span>
+                <span v-if="ownerName">Curated by {{ ownerName }}</span>
             </div>
         </div>
     </div>

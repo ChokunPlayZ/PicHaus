@@ -1,25 +1,25 @@
 :root {
   /* ── Page & Surface ─────────────────────────────────── */
-  --bg-page: #f5f5f7;
-  --surface-1: #ffffff;
-  --surface-2: #f5f5f7;
-  --surface-3: #e8e8ed;
+  --bg-page: #f3f0e9;
+  --surface-1: #fbfaf6;
+  --surface-2: #eeeae1;
+  --surface-3: #e2ddd2;
 
   /* ── Sidebar ────────────────────────────────────────── */
-  --sidebar-bg: rgba(246, 246, 246, 0.85);
-  --sidebar-border: rgba(0, 0, 0, 0.1);
+  --sidebar-bg: rgba(251, 250, 246, 0.9);
+  --sidebar-border: rgba(32, 34, 31, 0.1);
 
   /* ── Text ────────────────────────────────────────────── */
-  --text-1: #1d1d1f;
-  --text-2: #6e6e73;
-  --text-3: #aeaeb2;
-  --text-link: #0071e3;
+  --text-1: #20221f;
+  --text-2: #66675f;
+  --text-3: #96978f;
+  --text-link: #a5472d;
 
   /* ── Accent (Apple blue) ─────────────────────────────── */
-  --accent: #0071e3;
-  --accent-hover: #0077ed;
-  --accent-pressed: #006edc;
-  --accent-light: rgba(0, 113, 227, 0.1);
+  --accent: #c25436;
+  --accent-hover: #aa4329;
+  --accent-pressed: #913923;
+  --accent-light: rgba(194, 84, 54, 0.12);
   --accent-text: #ffffff;
 
   /* ── Separators ─────────────────────────────────────── */
@@ -49,22 +49,22 @@
   --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.08);
 
   /* ── Radii ───────────────────────────────────────────── */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
   --radius-pill: 980px;
 
   /* ── Legacy aliases (album theming + existing templates) */
-  --bg-primary-start: #f5f5f7;
-  --bg-primary-end: #f5f5f7;
-  --btn-primary-start: #0071e3;
-  --btn-primary-end: #0071e3;
-  --btn-primary-hover-start: #0077ed;
-  --btn-primary-hover-end: #0077ed;
-  --btn-primary-active: #006edc;
-  --text-primary: #1d1d1f;
-  --text-secondary: #6e6e73;
-  --text-tertiary: #aeaeb2;
+  --bg-primary-start: #f3f0e9;
+  --bg-primary-end: #f3f0e9;
+  --btn-primary-start: #c25436;
+  --btn-primary-end: #c25436;
+  --btn-primary-hover-start: #aa4329;
+  --btn-primary-hover-end: #aa4329;
+  --btn-primary-active: #913923;
+  --text-primary: #20221f;
+  --text-secondary: #66675f;
+  --text-tertiary: #96978f;
   --text-muted: rgba(60, 60, 67, 0.6);
   --text-subtle: rgba(60, 60, 67, 0.4);
   --text-faint: rgba(60, 60, 67, 0.2);
@@ -73,25 +73,25 @@
   --glass-bg-strong: rgba(255, 255, 255, 0.96);
   --glass-border: rgba(0, 0, 0, 0.1);
   --glass-border-light: rgba(0, 0, 0, 0.06);
-  --shadow-primary: rgba(0, 113, 227, 0.15);
-  --shadow-secondary: rgba(0, 113, 227, 0.10);
+  --shadow-primary: rgba(194, 84, 54, 0.15);
+  --shadow-secondary: rgba(194, 84, 54, 0.10);
 }
 
 :root.dark {
-  --bg-page: #000000;
-  --surface-1: #1c1c1e;
-  --surface-2: #2c2c2e;
-  --surface-3: #3a3a3c;
-  --sidebar-bg: rgba(28, 28, 30, 0.85);
+  --bg-page: #101211;
+  --surface-1: #1a1c1b;
+  --surface-2: #232624;
+  --surface-3: #30332f;
+  --sidebar-bg: rgba(26, 28, 27, 0.92);
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --text-1: #ffffff;
   --text-2: rgba(235, 235, 245, 0.6);
   --text-3: rgba(235, 235, 245, 0.3);
   --text-link: #0a84ff;
-  --accent: #0a84ff;
-  --accent-hover: #409cff;
-  --accent-pressed: #0071e3;
-  --accent-light: rgba(10, 132, 255, 0.15);
+  --accent: #df6a48;
+  --accent-hover: #eb7b59;
+  --accent-pressed: #c25436;
+  --accent-light: rgba(223, 106, 72, 0.16);
   --accent-text: #ffffff;
   --separator: rgba(84, 84, 88, 0.65);
   --separator-strong: rgba(84, 84, 88, 0.85);
@@ -113,11 +113,11 @@
   --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
   --bg-primary-start: #000000;
   --bg-primary-end: #000000;
-  --btn-primary-start: #0a84ff;
-  --btn-primary-end: #0a84ff;
-  --btn-primary-hover-start: #409cff;
-  --btn-primary-hover-end: #409cff;
-  --btn-primary-active: #0071e3;
+  --btn-primary-start: #df6a48;
+  --btn-primary-end: #df6a48;
+  --btn-primary-hover-start: #eb7b59;
+  --btn-primary-hover-end: #eb7b59;
+  --btn-primary-active: #c25436;
   --text-primary: #ffffff;
   --text-secondary: rgba(235, 235, 245, 0.6);
   --text-tertiary: rgba(235, 235, 245, 0.3);
@@ -129,8 +129,8 @@
   --glass-bg-strong: rgba(44, 44, 46, 0.96);
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-border-light: rgba(255, 255, 255, 0.07);
-  --shadow-primary: rgba(10, 132, 255, 0.2);
-  --shadow-secondary: rgba(10, 132, 255, 0.12);
+  --shadow-primary: rgba(223, 106, 72, 0.2);
+  --shadow-secondary: rgba(223, 106, 72, 0.12);
 }
 
 /* ── Base ───────────────────────────────────────────────── */
@@ -154,10 +154,33 @@ body {
   margin: 0;
   background-color: var(--bg-page);
   color: var(--text-1);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
-    'Helvetica Neue', Arial, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.display-title {
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.workspace-header {
+  border-bottom: 1px solid var(--separator);
+  padding-bottom: 1.75rem;
 }
 
 ::selection {

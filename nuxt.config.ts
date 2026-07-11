@@ -20,8 +20,11 @@ export default defineNuxtConfig({
     head: {
       title: 'PicHaus',
       meta: [
-        { name: 'theme-color', content: '#f5f5f7' },
+        { name: 'theme-color', content: '#191b1a' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
+      ],
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg?v=2' }
       ],
       script: [
         {

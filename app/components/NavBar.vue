@@ -4,22 +4,25 @@
         <aside
             class="hidden lg:flex fixed inset-y-0 left-0 w-64 z-50 flex-col"
             aria-label="Primary navigation"
-            style="background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
-            <div class="p-4" style="border-bottom: 1px solid var(--separator);">
-                <div class="font-semibold text-base leading-tight flex items-center gap-2" style="color: var(--text-1);">
+            style="background: #191b1a; border-right: 1px solid rgba(255,255,255,.08);">
+            <div class="px-5 pt-6 pb-5" style="border-bottom: 1px solid rgba(255,255,255,.08);">
+                <div class="font-semibold text-base leading-tight flex items-center gap-2" style="color: #f4f0e8;">
                     <img v-if="effectiveLogoImageUrl" :src="effectiveLogoImageUrl" alt="Logo"
                         class="h-8 max-w-[140px] object-contain" />
                     <template v-else>
-                        <Icon name="lucide:camera" class="w-5 h-5 shrink-0" style="color: var(--accent);" :stroke-width="2" />
-                        <span>{{ effectiveLogoText }}</span>
+                        <span class="w-8 h-8 grid place-items-center" style="background: var(--accent); color: white; border-radius: 3px;">
+                            <Icon name="lucide:aperture" class="w-5 h-5 shrink-0" :stroke-width="1.7" />
+                        </span>
+                        <span class="tracking-tight">{{ effectiveLogoText }}</span>
                     </template>
                 </div>
             </div>
 
-            <div class="p-2 space-y-0.5 flex-1 overflow-y-auto">
+            <div class="px-3 py-4 space-y-1 flex-1 overflow-y-auto">
+                <div class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.15em]" style="color: rgba(255,255,255,.35);">Workspace</div>
                 <button v-if="showBack" @click="handleBack"
                     class="w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center gap-2.5 mb-2"
-                    style="color: var(--text-2); background: transparent;"
+                    style="color: rgba(255,255,255,.58); background: transparent;"
                     @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
                     @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-2)'">
                     <Icon name="lucide:chevron-left" class="w-4 h-4 shrink-0" :stroke-width="2" />
@@ -29,7 +32,7 @@
                 <!-- Search Button -->
                 <button @click="isOpen = true"
                     class="w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center justify-between mb-2 group"
-                    style="color: var(--text-2); background: var(--surface-2); border: 1px solid var(--separator);">
+                    style="color: rgba(255,255,255,.55); background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.08);">
                     <span class="inline-flex items-center gap-2.5">
                         <Icon name="lucide:search" class="w-4 h-4 shrink-0 transition-colors group-hover:text-[var(--text-1)]" :stroke-width="2" />
                         <span class="group-hover:text-[var(--text-1)] transition-colors">Search...</span>
@@ -50,7 +53,7 @@
                 </button>
 
                 <template v-if="user?.role === 'ADMIN'">
-                    <div class="pt-2 pb-1 px-3" style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em;">Admin</div>
+                    <div class="pt-2 pb-1 px-3" style="font-size: 11px; font-weight: 600; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: 0.06em;">Admin</div>
                     <button @click="navigateTo('/admin/users')" :class="sidebarButtonClass('/admin/users')" :style="sidebarButtonStyle('/admin/users')">
                         <span class="inline-flex items-center gap-2.5">
                             <Icon name="lucide:users" class="w-4 h-4" :stroke-width="2" />
@@ -84,11 +87,11 @@
                 </template>
             </div>
 
-            <div class="p-2 space-y-1" style="border-top: 1px solid var(--separator);">
+            <div class="p-3 space-y-1" style="border-top: 1px solid rgba(255,255,255,.08);">
                 <!-- Theme Toggle -->
                 <button @click="toggleTheme"
                     class="w-full text-left text-sm font-medium px-3 py-2 rounded-lg transition flex items-center justify-between"
-                    style="color: var(--text-2); background: transparent;"
+                    style="color: rgba(255,255,255,.58); background: transparent;"
                     @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
                     @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-2)'">
                     <span class="inline-flex items-center gap-2.5">
@@ -269,6 +272,15 @@ const mobileCloseButton = ref<HTMLButtonElement | null>(null)
 let menuTrigger: HTMLElement | null = null
 const isOpen = useState<boolean>('command-palette-open', () => false)
 
+// Apply the desktop workspace offset during SSR as well as client navigation.
+// Adding this class in onMounted caused a full-width first frame followed by a
+// 16rem layout shift once hydration completed.
+useHead({
+    bodyAttrs: {
+        class: 'has-sidebar-nav'
+    }
+})
+
 const props = defineProps<{
     title?: string
     showBack?: boolean
@@ -314,8 +326,8 @@ const sidebarButtonClass = (path: string) => {
 const sidebarButtonStyle = (path: string) => {
     const isActive = isActivePath(path)
     return isActive
-        ? `background: var(--accent); color: var(--accent-text);`
-        : `color: var(--text-2); background: transparent;`
+        ? `background: rgba(255,255,255,.1); color: #fff; box-shadow: inset 3px 0 0 var(--accent);`
+        : `color: rgba(255,255,255,.58); background: transparent;`
 }
 
 const goMobile = async (path: string) => {
@@ -349,8 +361,8 @@ const userInitials = computed(() => {
 
 const getIconName = (icon: string) => {
   const map: Record<string, string> = {
-    'albums': 'lucide:folder',
-    'photos': 'lucide:image',
+    'albums': 'lucide:layout-grid',
+    'photos': 'lucide:images',
     'statistics': 'lucide:bar-chart-3',
     'share-links': 'lucide:link',
     'docs': 'lucide:file-text',
@@ -362,10 +374,6 @@ const getIconName = (icon: string) => {
 const isDark = ref(false)
 
 onMounted(async () => {
-    const win = window as Window & { __picHausSidebarNavCount?: number }
-    win.__picHausSidebarNavCount = (win.__picHausSidebarNavCount || 0) + 1
-    document.body.classList.add('has-sidebar-nav')
-
     // Detect initial theme class
     isDark.value = document.documentElement.classList.contains('dark')
 
@@ -394,12 +402,6 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-    const win = window as Window & { __picHausSidebarNavCount?: number }
-    win.__picHausSidebarNavCount = Math.max((win.__picHausSidebarNavCount || 1) - 1, 0)
-
-    if (win.__picHausSidebarNavCount === 0) {
-        document.body.classList.remove('has-sidebar-nav')
-    }
     if (mobileOpen.value) {
         document.body.style.overflow = ''
     }
