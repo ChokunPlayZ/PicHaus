@@ -1,6 +1,6 @@
 <template>
     <div ref="viewerEl"
-        class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#030303] text-white backdrop-blur-md"
+        class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#030303] text-white"
         role="dialog" aria-modal="true" :aria-label="photo.originalName || photo.filename" tabindex="-1"
         @click.self="$emit('close')" style="touch-action: none;">
         <div class="pointer-events-none absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/85 via-black/35 to-transparent z-10" />
@@ -615,8 +615,20 @@ const handleWheel = (e: WheelEvent) => {
 }
 
 const handlePanStart = (e: MouseEvent) => {
-    if (zoomLevel.value <= minZoom || e.button !== 0) return
+    if (e.button !== 0 || isCarouselSettling.value) return
     e.preventDefault()
+    if (zoomLevel.value === minZoom) {
+        isMouseCarouselDragging.value = true
+        isImageSwiping.value = true
+        gestureAxis.value = 'horizontal'
+        touchStartX.value = e.clientX
+        touchEndX.value = e.clientX
+        touchStartTime.value = performance.now()
+        window.addEventListener('mousemove', handlePanMove)
+        window.addEventListener('mouseup', handlePanEnd)
+        return
+    }
+
     isPanning.value = true
     panStartX.value = e.clientX
     panStartY.value = e.clientY
@@ -627,6 +639,14 @@ const handlePanStart = (e: MouseEvent) => {
 }
 
 const handlePanMove = (e: MouseEvent) => {
+    if (isMouseCarouselDragging.value) {
+        touchEndX.value = e.clientX
+        const deltaX = touchEndX.value - touchStartX.value
+        imageSwipeOffset.value = ((deltaX > 0 && !props.hasPrevious) || (deltaX < 0 && !props.hasNext))
+            ? deltaX * 0.3
+            : deltaX
+        return
+    }
     if (!isPanning.value) return
     const maxPanX = window.innerWidth * 0.45
     const maxPanY = window.innerHeight * 0.45
@@ -635,6 +655,14 @@ const handlePanMove = (e: MouseEvent) => {
 }
 
 const handlePanEnd = () => {
+    if (isMouseCarouselDragging.value) {
+        const deltaX = touchEndX.value - touchStartX.value
+        const velocityX = deltaX / Math.max(performance.now() - touchStartTime.value, 1)
+        isMouseCarouselDragging.value = false
+        finishHorizontalCarouselGesture(deltaX, velocityX)
+        removePanListeners()
+        return
+    }
     isPanning.value = false
     removePanListeners()
 }
@@ -655,6 +683,7 @@ const imageSwipeOffset = ref(0)
 const imageSwipeOffsetY = ref(0)
 const isImageSwiping = ref(false)
 const isCarouselSettling = ref(false)
+const isMouseCarouselDragging = ref(false)
 const touchStartTime = ref(0)
 const gestureAxis = ref<'pending' | 'horizontal' | 'vertical'>('pending')
 const pinchStartDistance = ref(0)
@@ -673,10 +702,38 @@ const resetTouchGesture = () => {
     imageSwipeOffsetY.value = 0
     isImageSwiping.value = false
     isCarouselSettling.value = false
+    isMouseCarouselDragging.value = false
     gestureAxis.value = 'pending'
     isTouchPanning.value = false
     isPinching.value = false
     pinchStartDistance.value = 0
+}
+
+const snapCarouselBack = () => {
+    isCarouselSettling.value = true
+    isImageSwiping.value = false
+    imageSwipeOffset.value = 0
+    window.setTimeout(resetTouchGesture, 240)
+}
+
+const finishHorizontalCarouselGesture = (deltaX: number, velocityX: number) => {
+    const commits = Math.abs(deltaX) > minSwipeDistance || Math.abs(velocityX) > 0.45
+    const direction = deltaX < 0 ? 'next' : 'previous'
+    const canNavigate = direction === 'next' ? props.hasNext : props.hasPrevious
+
+    if (!commits || !canNavigate) {
+        snapCarouselBack()
+        return
+    }
+
+    isCarouselSettling.value = true
+    isImageSwiping.value = false
+    const pageWidth = imageAreaEl.value?.clientWidth || window.innerWidth
+    imageSwipeOffset.value = direction === 'next' ? -pageWidth : pageWidth
+    window.setTimeout(() => {
+        emit(direction)
+        resetTouchGesture()
+    }, 240)
 }
 
 const handleTouchStart = (e: TouchEvent) => {
@@ -781,31 +838,16 @@ const handleTouchEnd = (e: TouchEvent) => {
     const velocityX = deltaX / elapsed
     const velocityY = deltaY / elapsed
 
-    const commitsHorizontal = Math.abs(deltaX) > minSwipeDistance || Math.abs(velocityX) > 0.45
-    if (gestureAxis.value === 'horizontal' && commitsHorizontal) {
-        const direction = deltaX < 0 ? 'next' : 'previous'
-        const canNavigate = direction === 'next' ? props.hasNext : props.hasPrevious
-        if (canNavigate) {
-            isCarouselSettling.value = true
-            isImageSwiping.value = false
-            const pageWidth = imageAreaEl.value?.clientWidth || window.innerWidth
-            imageSwipeOffset.value = direction === 'next' ? -pageWidth : pageWidth
-            window.setTimeout(() => {
-                emit(direction)
-                resetTouchGesture()
-            }, 240)
-            return
-        }
+    if (gestureAxis.value === 'horizontal') {
+        finishHorizontalCarouselGesture(deltaX, velocityX)
+        return
     } else if (gestureAxis.value === 'vertical' && deltaY > 90 && (deltaY > 140 || velocityY > 0.5)) {
         // Only a deliberate downward gesture dismisses the viewer.
         emit('close')
     }
 
     // Snap incomplete gestures back into place.
-    isCarouselSettling.value = true
-    isImageSwiping.value = false
-    imageSwipeOffset.value = 0
-    window.setTimeout(resetTouchGesture, 240)
+    snapCarouselBack()
 }
 
 // Info panel touch/swipe handling for dismiss
