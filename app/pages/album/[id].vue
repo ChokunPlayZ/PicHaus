@@ -86,6 +86,16 @@
                         <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
                     </button>
 
+                    <!-- Instagram Story Export Button -->
+                    <button v-if="photos.length > 0" @click="exportRandomStoryGrid"
+                        :disabled="exportingStoryGrid || loadingPhotos"
+                        class="flex-1 md:flex-none px-4 py-2 rounded-full text-sm font-medium transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
+                        <span>{{ exportingStoryGrid ? 'Generating…' : 'Random Story' }}</span>
+                        <Icon v-if="!exportingStoryGrid" name="lucide:instagram" class="h-4 w-4" :stroke-width="2" />
+                        <Icon v-else name="lucide:loader-2" class="h-4 w-4 animate-spin" />
+                    </button>
+
                     <!-- Collaborators Button -->
                     <button v-if="album.permissions.isOwner" @click="openCollaboratorsModal"
                         class="p-2 rounded-full transition flex items-center justify-center border"
@@ -304,13 +314,6 @@
                     <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
                     <span v-if="downloading">{{ downloadProgress.current }}/{{ downloadProgress.total }}</span>
                     <span v-else>Download</span>
-                </button>
-
-                <button @click="exportSelectedStoryGrid" :disabled="exportingStoryGrid"
-                    class="flex items-center gap-1.5 text-sm font-medium transition disabled:opacity-50" style="color: var(--text-1);">
-                    <Icon v-if="!exportingStoryGrid" name="lucide:instagram" class="h-4 w-4" :stroke-width="2" />
-                    <Icon v-else name="lucide:loader-2" class="h-4 w-4 animate-spin" />
-                    Story
                 </button>
 
                 <template v-if="canManageSelectedPhotos">
@@ -2463,13 +2466,50 @@ const getSafeAlbumFilename = () => {
         .toLowerCase() || 'album'
 }
 
-const exportSelectedStoryGrid = async () => {
-    if (exportingStoryGrid.value || selectedPhotoIds.value.size === 0) return
+const getAllAlbumPhotosForStory = async (): Promise<Photo[]> => {
+    if (!hasMore.value) return photos.value
+
+    const params: Record<string, string> = {
+        page: '1',
+        limit: '100000',
+        sort: sortBy.value,
+        order: sortOrder.value,
+        all: 'true'
+    }
+
+    if (filters.value.camera) params.camera = filters.value.camera
+    if (filters.value.lens) params.lens = filters.value.lens
+    if (filters.value.photographer) params.photographer = filters.value.photographer
+
+    const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/album/${albumId}`, {
+        params
+    })
+
+    return response.data.photos || photos.value
+}
+
+const getRandomStoryPhotos = (availablePhotos: Photo[], limit = 9) => {
+    const shuffled = [...availablePhotos]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!]
+    }
+    return shuffled.slice(0, limit)
+}
+
+const exportRandomStoryGrid = async () => {
+    if (exportingStoryGrid.value || photos.value.length === 0) return
     exportingStoryGrid.value = true
 
     try {
-        const selectedPhotos = photos.value.filter(p => selectedPhotoIds.value.has(p.id)).slice(0, 9)
-        const images = await Promise.all(selectedPhotos.map(loadStoryImage))
+        const allPhotos = await getAllAlbumPhotosForStory()
+        const storyPhotos = getRandomStoryPhotos(allPhotos)
+        if (storyPhotos.length === 0) {
+            toast('No photos to export', 'info')
+            return
+        }
+
+        const images = await Promise.all(storyPhotos.map(loadStoryImage))
         const canvas = document.createElement('canvas')
         canvas.width = 1080
         canvas.height = 1920
@@ -2509,10 +2549,10 @@ const exportSelectedStoryGrid = async () => {
             ctx.stroke()
         })
 
-        if (selectedPhotoIds.value.size > 9) {
+        if (allPhotos.length > storyPhotos.length) {
             ctx.fillStyle = 'rgba(255,255,255,0.82)'
             ctx.font = '500 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-            ctx.fillText(`+${selectedPhotoIds.value.size - 9} more`, canvas.width / 2, 1770)
+            ctx.fillText(`Random ${storyPhotos.length} of ${allPhotos.length}`, canvas.width / 2, 1770)
         }
 
         ctx.fillStyle = 'rgba(255,255,255,0.66)'
