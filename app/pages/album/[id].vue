@@ -2361,12 +2361,23 @@ const downloadSelected = async () => {
     }
 }
 
-const loadStoryImage = (photo: Photo): Promise<HTMLImageElement> => {
+const loadStoryImage = async (photo: Photo): Promise<{ image: HTMLImageElement; objectUrl: string }> => {
+    const response = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`))
+    if (!response.ok) {
+        throw new Error(`Failed to load ${photo.originalName}`)
+    }
+
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+
     return new Promise((resolve, reject) => {
         const img = new Image()
-        img.onload = () => resolve(img)
-        img.onerror = () => reject(new Error(`Failed to load ${photo.originalName}`))
-        img.src = `/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`
+        img.onload = () => resolve({ image: img, objectUrl })
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl)
+            reject(new Error(`Failed to load ${photo.originalName}`))
+        }
+        img.src = objectUrl
     })
 }
 
@@ -2500,6 +2511,7 @@ const getRandomStoryPhotos = (availablePhotos: Photo[], limit = 9) => {
 const exportRandomStoryGrid = async () => {
     if (exportingStoryGrid.value || photos.value.length === 0) return
     exportingStoryGrid.value = true
+    let loadedImages: { image: HTMLImageElement; objectUrl: string }[] = []
 
     try {
         const allPhotos = await getAllAlbumPhotosForStory()
@@ -2509,7 +2521,8 @@ const exportRandomStoryGrid = async () => {
             return
         }
 
-        const images = await Promise.all(storyPhotos.map(loadStoryImage))
+        loadedImages = await Promise.all(storyPhotos.map(loadStoryImage))
+        const images = loadedImages.map(item => item.image)
         const canvas = document.createElement('canvas')
         canvas.width = 1080
         canvas.height = 1920
@@ -2576,6 +2589,7 @@ const exportRandomStoryGrid = async () => {
             toast('Failed to export story image', 'error')
         }
     } finally {
+        loadedImages.forEach(item => URL.revokeObjectURL(item.objectUrl))
         exportingStoryGrid.value = false
     }
 }
