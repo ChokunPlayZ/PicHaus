@@ -5,13 +5,14 @@ import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import fs from 'node:fs/promises'
 import { configuredUploadLimitBytes, resumableSessionDir, SHA256_RE } from '../../../../../../utils/resumable-upload'
-import { enforceRateLimit } from '../../../../../../utils/rate-limit'
+import { enforceRateLimit, refundRateLimit } from '../../../../../../utils/rate-limit'
 
 const VIDEO_FILE_RE = /\.(mp4|m4v|mov|webm|avi|mkv|wmv|flv|mpeg|mpg|3gp|3g2)$/i
+const INITIATE_RATE_LIMIT = { key: 'resumable-initiate', limit: 100, windowMs: 60 * 60 * 1000 }
 
 export default defineEventHandler(async (event) => {
     try {
-        enforceRateLimit(event, { key: 'resumable-initiate', limit: 100, windowMs: 60 * 60 * 1000 })
+        enforceRateLimit(event, INITIATE_RATE_LIMIT)
         const albumId = getRouterParam(event, 'id')
         if (!albumId) throw createError({ statusCode: 400, statusMessage: 'Album ID is required' })
 
@@ -52,6 +53,7 @@ export default defineEventHandler(async (event) => {
             where: and(eq(photos.albumId, albumId), eq(photos.fileHash, fileHash)),
         })
         if (duplicate) {
+            refundRateLimit(event, INITIATE_RATE_LIMIT)
             return {
                 success: true,
                 duplicate: true,
@@ -83,6 +85,7 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 500, statusMessage: 'Failed to initiate upload session' })
         }
 
+        refundRateLimit(event, INITIATE_RATE_LIMIT)
         return {
             success: true,
             uploadId,

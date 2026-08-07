@@ -34,11 +34,15 @@ function prune(now: number): void {
     }
 }
 
+function entryKey(event: any, options: Pick<RateLimitOptions, 'key'>): string {
+    return `${options.key}:${clientAddress(event)}`
+}
+
 export function enforceRateLimit(event: any, options: RateLimitOptions): void {
     const now = Date.now()
     if (entries.size >= MAX_ENTRIES) prune(now)
 
-    const key = `${options.key}:${clientAddress(event)}`
+    const key = entryKey(event, options)
     const current = entries.get(key)
     const entry = !current || current.resetAt <= now
         ? { count: 0, resetAt: now + options.windowMs }
@@ -58,6 +62,23 @@ export function enforceRateLimit(event: any, options: RateLimitOptions): void {
         setResponseHeader(event, 'Retry-After', retryAfter)
         throw createError({ statusCode: 429, statusMessage: 'Too many requests. Please try again later.' })
     }
+}
+
+export function refundRateLimit(event: any, options: Pick<RateLimitOptions, 'key' | 'limit'>): void {
+    const key = entryKey(event, options)
+    const entry = entries.get(key)
+    if (!entry) return
+
+    entry.count -= 1
+    if (entry.count <= 0) {
+        entries.delete(key)
+        setResponseHeader(event, 'X-RateLimit-Remaining', String(options.limit))
+        return
+    }
+
+    entries.delete(key)
+    entries.set(key, entry)
+    setResponseHeader(event, 'X-RateLimit-Remaining', String(Math.max(options.limit - entry.count, 0)))
 }
 
 export function resetRateLimitsForTests(): void {
