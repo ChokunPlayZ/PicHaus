@@ -359,6 +359,26 @@
                 </template>
             </div>
 
+            <Transition name="fade">
+                <div v-if="storyShareTimedOut"
+                    class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md"
+                    style="background: rgba(30,30,30,0.92); border: 1px solid rgba(255,255,255,0.12);">
+                    <template v-if="pendingStoryShareFile">
+                        <Icon name="lucide:check" class="h-5 w-5 flex-shrink-0" style="color: var(--accent);" :stroke-width="2" />
+                        <span class="text-sm text-white font-medium">Story ready</span>
+                        <button @click="retryStoryShare"
+                            class="text-sm font-semibold px-3 py-1 rounded-xl transition active:scale-95"
+                            style="background: var(--accent); color: #fff;">
+                            Tap to share
+                        </button>
+                    </template>
+                    <template v-else>
+                        <Icon name="lucide:loader-2" class="h-5 w-5 flex-shrink-0 animate-spin text-white/60" />
+                        <span class="text-sm text-white/80">Generating story image…</span>
+                    </template>
+                </div>
+            </Transition>
+
             <!-- Infinite Scroll Sentinel -->
             <div ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
                 <div v-if="loadingPhotos" class="flex items-center gap-2">
@@ -2287,6 +2307,7 @@ onUnmounted(() => {
     window.removeEventListener('drop', onWindowDrop)
     window.removeEventListener('resize', handleCropWindowResize)
     window.removeEventListener('scroll', handleCropWindowResize, true)
+    clearStoryShareTimeout()
 })
 
 // Bulk Actions
@@ -2361,92 +2382,6 @@ const downloadSelected = async () => {
     }
 }
 
-const loadStoryImage = async (photo: Photo): Promise<{ image: HTMLImageElement; objectUrl: string }> => {
-    const response = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`))
-    if (!response.ok) {
-        throw new Error(`Failed to load ${photo.originalName}`)
-    }
-
-    const blob = await response.blob()
-    const objectUrl = URL.createObjectURL(blob)
-
-    return new Promise((resolve, reject) => {
-        const img = new Image()
-        img.onload = () => resolve({ image: img, objectUrl })
-        img.onerror = () => {
-            URL.revokeObjectURL(objectUrl)
-            reject(new Error(`Failed to load ${photo.originalName}`))
-        }
-        img.src = objectUrl
-    })
-}
-
-const drawCoverImage = (
-    ctx: CanvasRenderingContext2D,
-    img: HTMLImageElement,
-    x: number,
-    y: number,
-    width: number,
-    height: number
-) => {
-    const sourceRatio = img.naturalWidth / img.naturalHeight
-    const targetRatio = width / height
-    let sx = 0
-    let sy = 0
-    let sw = img.naturalWidth
-    let sh = img.naturalHeight
-
-    if (sourceRatio > targetRatio) {
-        sw = img.naturalHeight * targetRatio
-        sx = (img.naturalWidth - sw) / 2
-    } else {
-        sh = img.naturalWidth / targetRatio
-        sy = (img.naturalHeight - sh) / 2
-    }
-
-    ctx.drawImage(img, sx, sy, sw, sh, x, y, width, height)
-}
-
-const getStoryGridRects = (count: number) => {
-    const storyWidth = 1440
-    const storyHeight = 2560
-    const gap = 8
-    const contentX = 0
-    const contentY = 0
-    const contentWidth = storyWidth
-    const contentHeight = storyHeight
-
-    if (count === 1) {
-        return [{ x: contentX, y: contentY, width: contentWidth, height: contentHeight }]
-    }
-
-    const visibleCount = Math.min(count, 27)
-    const columns = visibleCount <= 4 ? 2 : 3
-    const rows = Math.ceil(visibleCount / columns)
-    const cellWidth = (contentWidth - gap * (columns - 1)) / columns
-    const cellHeight = (contentHeight - gap * (rows - 1)) / rows
-
-    return Array.from({ length: visibleCount }, (_, index) => {
-        const row = Math.floor(index / columns)
-        const col = index % columns
-        return {
-            x: contentX + col * (cellWidth + gap),
-            y: contentY + row * (cellHeight + gap),
-            width: cellWidth,
-            height: cellHeight
-        }
-    })
-}
-
-const canvasToBlob = (canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-        canvas.toBlob(blob => {
-            if (blob) resolve(blob)
-            else reject(new Error('Failed to create story image'))
-        }, type, quality)
-    })
-}
-
 const getSafeAlbumFilename = () => {
     return (album.value?.name || 'album')
         .trim()
@@ -2455,102 +2390,98 @@ const getSafeAlbumFilename = () => {
         .toLowerCase() || 'album'
 }
 
-const getAllAlbumPhotosForStory = async (): Promise<Photo[]> => {
-    if (!hasMore.value) return photos.value
+const storyShareTimedOut = ref(false)
+const pendingStoryShareFile = ref<File | null>(null)
+let storyShareTimeoutId: ReturnType<typeof setTimeout> | null = null
 
-    const params: Record<string, string> = {
-        page: '1',
-        limit: '100000',
-        sort: sortBy.value,
-        order: sortOrder.value,
-        all: 'true'
+const clearStoryShareTimeout = () => {
+    if (storyShareTimeoutId !== null) {
+        clearTimeout(storyShareTimeoutId)
+        storyShareTimeoutId = null
     }
-
-    if (filters.value.camera) params.camera = filters.value.camera
-    if (filters.value.lens) params.lens = filters.value.lens
-    if (filters.value.photographer) params.photographer = filters.value.photographer
-
-    const response = await $fetch<{ success: boolean; data: any }>(`/api/v1/album/${albumId}`, {
-        params
-    })
-
-    return response.data.photos || photos.value
 }
 
-const getRandomStoryPhotos = (availablePhotos: Photo[], limit = 27) => {
-    const shuffled = [...availablePhotos]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!]
+const resetStoryShareState = () => {
+    exportingStoryGrid.value = false
+    storyShareTimedOut.value = false
+    pendingStoryShareFile.value = null
+    clearStoryShareTimeout()
+}
+
+const shareOrDownloadStoryFile = async (file: File): Promise<'shared' | 'downloaded'> => {
+    if (navigator.canShare?.({ files: [file] }) && navigator.share) {
+        await navigator.share({ files: [file], title: file.name })
+        return 'shared'
+    } else {
+        downloadBlob(file, file.name)
+        return 'downloaded'
     }
-    return shuffled.slice(0, limit)
 }
 
 const exportRandomStoryGrid = async () => {
     if (exportingStoryGrid.value || photos.value.length === 0) return
     exportingStoryGrid.value = true
-    let loadedImages: { image: HTMLImageElement; objectUrl: string }[] = []
+    storyShareTimedOut.value = false
+    pendingStoryShareFile.value = null
+
+    storyShareTimeoutId = setTimeout(() => {
+        if (exportingStoryGrid.value) storyShareTimedOut.value = true
+    }, 1500)
 
     try {
-        const allPhotos = await getAllAlbumPhotosForStory()
-        const storyPhotos = getRandomStoryPhotos(allPhotos)
-        if (storyPhotos.length === 0) {
-            toast('No photos to export', 'info')
-            return
-        }
+        const response = await fetch(`/api/v1/album/${albumId}/story-image`, { cache: 'no-store' })
+        if (!response.ok) throw new Error('Failed to generate story image')
 
-        loadedImages = await Promise.all(storyPhotos.map(loadStoryImage))
-        const images = loadedImages.map(item => item.image)
-        const canvas = document.createElement('canvas')
-        canvas.width = 1440
-        canvas.height = 2560
-
-        const ctx = canvas.getContext('2d')
-        if (!ctx) throw new Error('Canvas is not supported')
-
-        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#111827'
-        const background = ctx.createLinearGradient(0, 0, 1440, 2560)
-        background.addColorStop(0, '#111112')
-        background.addColorStop(1, accent)
-        ctx.fillStyle = background
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-        const rects = getStoryGridRects(images.length)
-        images.forEach((img, index) => {
-            const rect = rects[index]
-            if (!rect) return
-
-            ctx.save()
-            ctx.beginPath()
-            ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 0)
-            ctx.clip()
-            drawCoverImage(ctx, img, rect.x, rect.y, rect.width, rect.height)
-            ctx.restore()
-
-            ctx.strokeStyle = 'rgba(255,255,255,0.12)'
-            ctx.lineWidth = 1
-            ctx.strokeRect(rect.x, rect.y, rect.width, rect.height)
-        })
-
-        const blob = await canvasToBlob(canvas, 'image/jpeg', 0.92)
+        const blob = await response.blob()
         const filename = `${getSafeAlbumFilename()}-instagram-story.jpg`
         const file = new File([blob], filename, { type: 'image/jpeg' })
 
-        if (navigator.canShare?.({ files: [file] }) && navigator.share) {
-            await navigator.share({ files: [file], title: filename })
-            toast('Story image ready to post', 'success')
-        } else {
-            downloadBlob(blob, filename)
-            toast('Story image downloaded', 'success')
+        clearStoryShareTimeout()
+
+        if (storyShareTimedOut.value) {
+            pendingStoryShareFile.value = file
+            return
         }
+
+        const shareStart = Date.now()
+        try {
+            const result = await shareOrDownloadStoryFile(file)
+            toast(result === 'shared' ? 'Story image ready to post' : 'Story image downloaded', 'success')
+        } catch (shareErr: any) {
+            const duration = Date.now() - shareStart
+            if (shareErr.name === 'AbortError' && duration > 250) {
+                resetStoryShareState()
+                return
+            }
+
+            pendingStoryShareFile.value = file
+            storyShareTimedOut.value = true
+            return
+        }
+
+        resetStoryShareState()
     } catch (err: any) {
         if (err?.name !== 'AbortError') {
             console.error('Failed to export story grid:', err)
             toast('Failed to export story image', 'error')
         }
+        resetStoryShareState()
     } finally {
-        loadedImages.forEach(item => URL.revokeObjectURL(item.objectUrl))
-        exportingStoryGrid.value = false
+        clearStoryShareTimeout()
+        if (!storyShareTimedOut.value) exportingStoryGrid.value = false
+    }
+}
+
+const retryStoryShare = async () => {
+    const file = pendingStoryShareFile.value
+    if (!file) return
+
+    try {
+        await shareOrDownloadStoryFile(file)
+    } catch (shareErr: any) {
+        if (shareErr.name !== 'AbortError') console.error('Story share failed:', shareErr)
+    } finally {
+        resetStoryShareState()
     }
 }
 
