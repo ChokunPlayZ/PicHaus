@@ -2408,41 +2408,19 @@ const drawCoverImage = (
 }
 
 const getStoryGridRects = (count: number) => {
-    const storyWidth = 1080
-    const storyHeight = 1920
-    const margin = 72
-    const gap = 22
-    const contentX = margin
-    const contentY = 190
-    const contentWidth = storyWidth - margin * 2
-    const contentHeight = storyHeight - 380
+    const storyWidth = 1440
+    const storyHeight = 2560
+    const gap = 8
+    const contentX = 0
+    const contentY = 0
+    const contentWidth = storyWidth
+    const contentHeight = storyHeight
 
     if (count === 1) {
         return [{ x: contentX, y: contentY, width: contentWidth, height: contentHeight }]
     }
 
-    if (count === 2) {
-        const cellHeight = (contentHeight - gap) / 2
-        return [0, 1].map(i => ({
-            x: contentX,
-            y: contentY + i * (cellHeight + gap),
-            width: contentWidth,
-            height: cellHeight
-        }))
-    }
-
-    if (count === 3) {
-        const topHeight = Math.round(contentHeight * 0.58)
-        const bottomHeight = contentHeight - topHeight - gap
-        const bottomWidth = (contentWidth - gap) / 2
-        return [
-            { x: contentX, y: contentY, width: contentWidth, height: topHeight },
-            { x: contentX, y: contentY + topHeight + gap, width: bottomWidth, height: bottomHeight },
-            { x: contentX + bottomWidth + gap, y: contentY + topHeight + gap, width: bottomWidth, height: bottomHeight }
-        ]
-    }
-
-    const visibleCount = Math.min(count, 9)
+    const visibleCount = Math.min(count, 27)
     const columns = visibleCount <= 4 ? 2 : 3
     const rows = Math.ceil(visibleCount / columns)
     const cellWidth = (contentWidth - gap * (columns - 1)) / columns
@@ -2499,7 +2477,7 @@ const getAllAlbumPhotosForStory = async (): Promise<Photo[]> => {
     return response.data.photos || photos.value
 }
 
-const getRandomStoryPhotos = (availablePhotos: Photo[], limit = 9) => {
+const getRandomStoryPhotos = (availablePhotos: Photo[], limit = 27) => {
     const shuffled = [...availablePhotos]
     for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1))
@@ -2524,24 +2502,18 @@ const exportRandomStoryGrid = async () => {
         loadedImages = await Promise.all(storyPhotos.map(loadStoryImage))
         const images = loadedImages.map(item => item.image)
         const canvas = document.createElement('canvas')
-        canvas.width = 1080
-        canvas.height = 1920
+        canvas.width = 1440
+        canvas.height = 2560
 
         const ctx = canvas.getContext('2d')
         if (!ctx) throw new Error('Canvas is not supported')
 
         const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#111827'
-        const background = ctx.createLinearGradient(0, 0, 1080, 1920)
+        const background = ctx.createLinearGradient(0, 0, 1440, 2560)
         background.addColorStop(0, '#111112')
         background.addColorStop(1, accent)
         ctx.fillStyle = background
         ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-        ctx.fillStyle = 'rgba(255,255,255,0.92)'
-        ctx.font = '600 44px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillText(album.value?.name || 'PicHaus', canvas.width / 2, 104, 880)
 
         const rects = getStoryGridRects(images.length)
         images.forEach((img, index) => {
@@ -2550,27 +2522,15 @@ const exportRandomStoryGrid = async () => {
 
             ctx.save()
             ctx.beginPath()
-            ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 26)
+            ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 0)
             ctx.clip()
             drawCoverImage(ctx, img, rect.x, rect.y, rect.width, rect.height)
             ctx.restore()
 
-            ctx.strokeStyle = 'rgba(255,255,255,0.26)'
-            ctx.lineWidth = 3
-            ctx.beginPath()
-            ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 26)
-            ctx.stroke()
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)'
+            ctx.lineWidth = 1
+            ctx.strokeRect(rect.x, rect.y, rect.width, rect.height)
         })
-
-        if (allPhotos.length > storyPhotos.length) {
-            ctx.fillStyle = 'rgba(255,255,255,0.82)'
-            ctx.font = '500 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-            ctx.fillText(`Random ${storyPhotos.length} of ${allPhotos.length}`, canvas.width / 2, 1770)
-        }
-
-        ctx.fillStyle = 'rgba(255,255,255,0.66)'
-        ctx.font = '500 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-        ctx.fillText('PicHaus', canvas.width / 2, 1832)
 
         const blob = await canvasToBlob(canvas, 'image/jpeg', 0.92)
         const filename = `${getSafeAlbumFilename()}-instagram-story.jpg`
