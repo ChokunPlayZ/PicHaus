@@ -306,6 +306,13 @@
                     <span v-else>Download</span>
                 </button>
 
+                <button @click="exportSelectedStoryGrid" :disabled="exportingStoryGrid"
+                    class="flex items-center gap-1.5 text-sm font-medium transition disabled:opacity-50" style="color: var(--text-1);">
+                    <Icon v-if="!exportingStoryGrid" name="lucide:instagram" class="h-4 w-4" :stroke-width="2" />
+                    <Icon v-else name="lucide:loader-2" class="h-4 w-4 animate-spin" />
+                    Story
+                </button>
+
                 <template v-if="canManageSelectedPhotos">
                     <button v-if="selectedPhotoIds.size === 1" @click="openEditPhotoModal"
                         class="flex items-center gap-1.5 text-sm font-medium transition" style="color: var(--text-1);">
@@ -2093,6 +2100,7 @@ const uploadProgress = computed(() => {
 
 const downloading = ref(false)
 const downloadProgress = ref({ current: 0, total: 0 })
+const exportingStoryGrid = ref(false)
 const showDownloadSuccessModal = ref(false)
 const downloadedPhotographers = ref<any[]>([])
 
@@ -2347,6 +2355,188 @@ const downloadSelected = async () => {
     } finally {
         downloading.value = false
         downloadProgress.value = { current: 0, total: 0 }
+    }
+}
+
+const loadStoryImage = (photo: Photo): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => resolve(img)
+        img.onerror = () => reject(new Error(`Failed to load ${photo.originalName}`))
+        img.src = `/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`
+    })
+}
+
+const drawCoverImage = (
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    x: number,
+    y: number,
+    width: number,
+    height: number
+) => {
+    const sourceRatio = img.naturalWidth / img.naturalHeight
+    const targetRatio = width / height
+    let sx = 0
+    let sy = 0
+    let sw = img.naturalWidth
+    let sh = img.naturalHeight
+
+    if (sourceRatio > targetRatio) {
+        sw = img.naturalHeight * targetRatio
+        sx = (img.naturalWidth - sw) / 2
+    } else {
+        sh = img.naturalWidth / targetRatio
+        sy = (img.naturalHeight - sh) / 2
+    }
+
+    ctx.drawImage(img, sx, sy, sw, sh, x, y, width, height)
+}
+
+const getStoryGridRects = (count: number) => {
+    const storyWidth = 1080
+    const storyHeight = 1920
+    const margin = 72
+    const gap = 22
+    const contentX = margin
+    const contentY = 190
+    const contentWidth = storyWidth - margin * 2
+    const contentHeight = storyHeight - 380
+
+    if (count === 1) {
+        return [{ x: contentX, y: contentY, width: contentWidth, height: contentHeight }]
+    }
+
+    if (count === 2) {
+        const cellHeight = (contentHeight - gap) / 2
+        return [0, 1].map(i => ({
+            x: contentX,
+            y: contentY + i * (cellHeight + gap),
+            width: contentWidth,
+            height: cellHeight
+        }))
+    }
+
+    if (count === 3) {
+        const topHeight = Math.round(contentHeight * 0.58)
+        const bottomHeight = contentHeight - topHeight - gap
+        const bottomWidth = (contentWidth - gap) / 2
+        return [
+            { x: contentX, y: contentY, width: contentWidth, height: topHeight },
+            { x: contentX, y: contentY + topHeight + gap, width: bottomWidth, height: bottomHeight },
+            { x: contentX + bottomWidth + gap, y: contentY + topHeight + gap, width: bottomWidth, height: bottomHeight }
+        ]
+    }
+
+    const visibleCount = Math.min(count, 9)
+    const columns = visibleCount <= 4 ? 2 : 3
+    const rows = Math.ceil(visibleCount / columns)
+    const cellWidth = (contentWidth - gap * (columns - 1)) / columns
+    const cellHeight = (contentHeight - gap * (rows - 1)) / rows
+
+    return Array.from({ length: visibleCount }, (_, index) => {
+        const row = Math.floor(index / columns)
+        const col = index % columns
+        return {
+            x: contentX + col * (cellWidth + gap),
+            y: contentY + row * (cellHeight + gap),
+            width: cellWidth,
+            height: cellHeight
+        }
+    })
+}
+
+const canvasToBlob = (canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+            if (blob) resolve(blob)
+            else reject(new Error('Failed to create story image'))
+        }, type, quality)
+    })
+}
+
+const getSafeAlbumFilename = () => {
+    return (album.value?.name || 'album')
+        .trim()
+        .replace(/[^a-z0-9]+/gi, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase() || 'album'
+}
+
+const exportSelectedStoryGrid = async () => {
+    if (exportingStoryGrid.value || selectedPhotoIds.value.size === 0) return
+    exportingStoryGrid.value = true
+
+    try {
+        const selectedPhotos = photos.value.filter(p => selectedPhotoIds.value.has(p.id)).slice(0, 9)
+        const images = await Promise.all(selectedPhotos.map(loadStoryImage))
+        const canvas = document.createElement('canvas')
+        canvas.width = 1080
+        canvas.height = 1920
+
+        const ctx = canvas.getContext('2d')
+        if (!ctx) throw new Error('Canvas is not supported')
+
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#111827'
+        const background = ctx.createLinearGradient(0, 0, 1080, 1920)
+        background.addColorStop(0, '#111112')
+        background.addColorStop(1, accent)
+        ctx.fillStyle = background
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        ctx.fillStyle = 'rgba(255,255,255,0.92)'
+        ctx.font = '600 44px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(album.value?.name || 'PicHaus', canvas.width / 2, 104, 880)
+
+        const rects = getStoryGridRects(images.length)
+        images.forEach((img, index) => {
+            const rect = rects[index]
+            if (!rect) return
+
+            ctx.save()
+            ctx.beginPath()
+            ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 26)
+            ctx.clip()
+            drawCoverImage(ctx, img, rect.x, rect.y, rect.width, rect.height)
+            ctx.restore()
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.26)'
+            ctx.lineWidth = 3
+            ctx.beginPath()
+            ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 26)
+            ctx.stroke()
+        })
+
+        if (selectedPhotoIds.value.size > 9) {
+            ctx.fillStyle = 'rgba(255,255,255,0.82)'
+            ctx.font = '500 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+            ctx.fillText(`+${selectedPhotoIds.value.size - 9} more`, canvas.width / 2, 1770)
+        }
+
+        ctx.fillStyle = 'rgba(255,255,255,0.66)'
+        ctx.font = '500 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+        ctx.fillText('PicHaus', canvas.width / 2, 1832)
+
+        const blob = await canvasToBlob(canvas, 'image/jpeg', 0.92)
+        const filename = `${getSafeAlbumFilename()}-instagram-story.jpg`
+        const file = new File([blob], filename, { type: 'image/jpeg' })
+
+        if (navigator.canShare?.({ files: [file] }) && navigator.share) {
+            await navigator.share({ files: [file], title: filename })
+            toast('Story image ready to post', 'success')
+        } else {
+            downloadBlob(blob, filename)
+            toast('Story image downloaded', 'success')
+        }
+    } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+            console.error('Failed to export story grid:', err)
+            toast('Failed to export story image', 'error')
+        }
+    } finally {
+        exportingStoryGrid.value = false
     }
 }
 
