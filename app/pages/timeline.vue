@@ -81,6 +81,16 @@
                             />
                         </div>
 
+                        <!-- Per-month sentinel: triggers next-page load when scrolled into view -->
+                        <div v-if="monthData.hasMore"
+                            :ref="el => setMonthSentinelRef(monthData.key, el as HTMLElement | null)"
+                            class="h-16 flex items-center justify-center">
+                            <div v-if="monthData.loadingMore" class="flex items-center gap-2 text-xs" style="color: var(--text-3);">
+                                <div class="w-4 h-4 border-2 rounded-full animate-spin"
+                                    style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                                Loading more…
+                            </div>
+                        </div>
 
                     </div>
 
@@ -189,7 +199,10 @@ interface MonthData extends MonthMeta {
     photos: Photo[]
     layout: { containerHeight: number; getPosition: (i: number) => { top: number; left: number; width: number; height: number } } | null
     loading: boolean
+    loadingMore: boolean
     error: string
+    hasMore: boolean
+    page: number
 }
 
 // ── Layout helpers ─────────────────────────────────────────────────────────
@@ -251,10 +264,25 @@ const BATCH_SIZE = 3
 const activeMonthKey = ref<string | null>(null)
 const hoverMonthKey = ref<string | null>(null)
 const monthRefs = ref<Record<string, HTMLElement>>({})
+const monthSentinelRefs = ref<Record<string, HTMLElement>>({})
+let sentinelObserver: IntersectionObserver | null = null
 
 function setMonthRef(key: string, el: HTMLElement | null) {
     if (el) monthRefs.value[key] = el
     else delete monthRefs.value[key]
+}
+
+function setMonthSentinelRef(key: string, el: HTMLElement | null) {
+    if (el) {
+        monthSentinelRefs.value[key] = el
+        // Observe immediately if sentinel observer is already set up
+        if (sentinelObserver) sentinelObserver.observe(el)
+    } else {
+        if (monthSentinelRefs.value[key] && sentinelObserver) {
+            sentinelObserver.unobserve(monthSentinelRefs.value[key]!)
+        }
+        delete monthSentinelRefs.value[key]
+    }
 }
 
 const yearGroups = computed(() => {
@@ -330,7 +358,7 @@ async function fetchMonths() {
     }
 }
 
-async function loadMonthPhotos(key: string) {
+async function loadMonthPhotos(key: string, append = false) {
     let monthData = loadedMonths.value.find(m => m.key === key)
 
     if (!monthData) {
@@ -341,7 +369,10 @@ async function loadMonthPhotos(key: string) {
             photos: [],
             layout: null,
             loading: true,
+            loadingMore: false,
             error: '',
+            hasMore: false,
+            page: 1,
         })
         // Maintain months order (desc)
         const insertIndex = months.value.findIndex(m => m.key === key)
@@ -356,31 +387,29 @@ async function loadMonthPhotos(key: string) {
         loadedMonths.value.splice(loadedInsertIdx, 0, newData)
         loadedMonthKeys.value.add(key)
         monthData = newData
+    } else if (append) {
+        if (!monthData.hasMore || monthData.loadingMore) return
+        monthData.loadingMore = true
     } else {
         monthData.loading = true
         monthData.error = ''
         monthData.photos = []
+        monthData.page = 1
     }
 
     try {
-        // Load ALL photos in this month — page through until hasMore is false
-        const allPhotos: any[] = []
-        let page = 1
-        let hasMore = true
-        while (hasMore) {
-            const res: any = await $fetch('/api/v1/photos/timeline', {
-                params: { mode: 'photos', month: key, page, limit: 100 }
-            })
-            allPhotos.push(...res.photos)
-            hasMore = res.pagination.hasMore
-            page++
-        }
-        monthData.photos = allPhotos
+        const res: any = await $fetch('/api/v1/photos/timeline', {
+            params: { mode: 'photos', month: key, page: monthData.page, limit: 50 }
+        })
+        monthData.photos.push(...res.photos)
+        monthData.hasMore = res.pagination.hasMore
+        if (monthData.hasMore) monthData.page++
         monthData.layout = buildLayout(monthData.photos)
     } catch (e: any) {
         monthData.error = e?.data?.statusMessage || 'Failed to load photos.'
     } finally {
         monthData.loading = false
+        monthData.loadingMore = false
     }
 }
 
@@ -397,7 +426,6 @@ let monthObserver: IntersectionObserver | null = null
 function setupMonthObserver() {
     monthObserver?.disconnect()
     monthObserver = new IntersectionObserver((entries) => {
-        // Find the topmost visible month
         const visible = entries
             .filter(e => e.isIntersecting)
             .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
@@ -415,11 +443,35 @@ function setupMonthObserver() {
     })
 }
 
+function setupSentinelObserver() {
+    sentinelObserver?.disconnect()
+    sentinelObserver = new IntersectionObserver(async (entries) => {
+        for (const entry of entries) {
+            if (!entry.isIntersecting) continue
+            const key = (entry.target as HTMLElement).dataset.sentinelKey
+            if (!key) continue
+            const monthData = loadedMonths.value.find(m => m.key === key)
+            if (monthData?.hasMore && !monthData.loadingMore && !monthData.loading) {
+                await loadMonthPhotos(key, true)
+            }
+        }
+    }, { rootMargin: '400px' })
+
+    // Observe all existing sentinels
+    nextTick(() => {
+        for (const [key, el] of Object.entries(monthSentinelRefs.value)) {
+            el.dataset.sentinelKey = key
+            sentinelObserver!.observe(el)
+        }
+    })
+}
+
 async function jumpToMonth(key: string) {
     if (!loadedMonthKeys.value.has(key)) {
         await loadMonthPhotos(key)
         await nextTick()
         setupMonthObserver()
+        setupSentinelObserver()
     }
     await nextTick()
     const el = monthRefs.value[key]
@@ -428,7 +480,6 @@ async function jumpToMonth(key: string) {
     }
     activeMonthKey.value = key
 }
-
 
 
 // ── Lifecycle ──────────────────────────────────────────────────────────────
@@ -445,6 +496,7 @@ onMounted(async () => {
                 if (remaining.length > 0) {
                     await loadNextBatch()
                     setupMonthObserver()
+                    setupSentinelObserver()
                 }
             }
         }, { rootMargin: '600px' })
@@ -452,11 +504,13 @@ onMounted(async () => {
     }
 
     setupMonthObserver()
+    setupSentinelObserver()
 })
 
 onUnmounted(() => {
     intersectionObserver?.disconnect()
     monthObserver?.disconnect()
+    sentinelObserver?.disconnect()
     resizeObserver?.disconnect()
 })
 </script>
