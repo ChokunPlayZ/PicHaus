@@ -1,7 +1,7 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { albums } from '../../../../db/schema'
 import { requireApiToken } from '../../../../utils/api-token'
-import { sql } from 'drizzle-orm'
+
 
 const parseUnix = (value: unknown): bigint | null => {
     if (typeof value !== 'string' || value.trim() === '') return null
@@ -31,6 +31,7 @@ export default defineEventHandler(async (event) => {
         SELECT p.id, p."filename", p."originalName", p."width", p."height", p."blurhash", p."dateTaken", p."createdAt"
         FROM photos p
         WHERE p."albumId" = ${albumId}::uuid
+            AND (${album.coverPhotoId ?? null}::uuid IS NULL OR p.id != ${album.coverPhotoId ?? null}::uuid)
             AND (
                 ${orientation} = 'any'
                 OR (${orientation} = 'landscape' AND p.width > p.height)

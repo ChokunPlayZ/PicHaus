@@ -1,4 +1,4 @@
-import { eq, and, asc, desc, gte, lte, count } from 'drizzle-orm'
+import { eq, and, asc, desc, gte, lte, count, sql } from 'drizzle-orm'
 import { albums, photos } from '../../../../db/schema'
 import { requireApiToken } from '../../../../utils/api-token'
 
@@ -44,6 +44,7 @@ export default defineEventHandler(async (event) => {
 
     const conditions = [
         eq(photos.albumId, albumId),
+        album.coverPhotoId ? sql`${photos.id} != ${album.coverPhotoId}::uuid` : undefined,
         fromDateTaken ? gte(photos.dateTaken, fromDateTaken) : undefined,
         toDateTaken ? lte(photos.dateTaken, toDateTaken) : undefined,
         targetPhotographer ? eq(photos.uploaderId, targetPhotographer) : undefined,
