@@ -307,6 +307,7 @@ const displayTitle = computed(() => {
 const navItems = [
     { label: 'Albums', path: '/album', icon: 'albums' },
     { label: 'Photos', path: '/photos', icon: 'photos' },
+    { label: 'Timeline', path: '/timeline', icon: 'timeline' },
     { label: 'Statistics', path: '/statistics', icon: 'statistics' },
     { label: 'Share Links', path: '/share-links', icon: 'share-links' },
     { label: 'Docs', path: '/docs', icon: 'docs' },
@@ -363,6 +364,7 @@ const getIconName = (icon: string) => {
   const map: Record<string, string> = {
     'albums': 'lucide:layout-grid',
     'photos': 'lucide:images',
+    'timeline': 'lucide:clock',
     'statistics': 'lucide:bar-chart-3',
     'share-links': 'lucide:link',
     'docs': 'lucide:file-text',
