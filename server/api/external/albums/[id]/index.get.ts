@@ -19,7 +19,6 @@ export default defineEventHandler(async (event) => {
         createdAt: albums.createdAt,
         updatedAt: albums.updatedAt,
         ownerId: albums.ownerId,
-        coverPhotoId: albums.coverPhotoId,
         photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = "albums"."id")`,
         collaboratorCount: sql<number>`(
             SELECT COUNT(*) FROM album_collaborators 
@@ -30,7 +29,6 @@ export default defineEventHandler(async (event) => {
                 AND photos."uploaderId" = album_collaborators."userId"
             )
         )`,
-        coverBlurhash: sql<string | null>`(SELECT blurhash FROM photos WHERE id = "albums"."coverPhotoId"::uuid)`,
     })
         .from(albums)
         .where(and(eq(albums.id, albumId), eq(albums.ownerId, apiToken.userId)))
@@ -52,9 +50,7 @@ export default defineEventHandler(async (event) => {
             updatedAt: Number(album.updatedAt),
             photoCount: Number(album.photoCount),
             collaboratorCount: Number(album.collaboratorCount),
-            coverPhoto: album.coverPhotoId
-                ? { id: album.coverPhotoId, blurhash: album.coverBlurhash, thumbnailUrl: `${baseUrl}/api/assets/thumb/${album.coverPhotoId}`, fullUrl: `${baseUrl}/api/assets/full/${album.coverPhotoId}` }
-                : null,
+            previewImageUrl: `${baseUrl}/api/v1/album/${album.id}/og-image`,
             links: { photos: `${baseUrl}/api/external/albums/${album.id}/photos`, randomPhotos: `${baseUrl}/api/external/albums/${album.id}/random` },
         },
     }

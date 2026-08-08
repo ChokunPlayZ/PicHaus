@@ -14,7 +14,6 @@ export default defineEventHandler(async (event) => {
     const album = await db.query.albums.findFirst({
         where: eq(albums.id, id),
         with: {
-            coverPhoto: { columns: { id: true, storagePath: true, thumbnailStoragePath: true } },
             collaborators: { columns: { userId: true } },
             owner: { columns: { id: true } },
         },
@@ -60,16 +59,7 @@ export default defineEventHandler(async (event) => {
     const width = 1200
     const height = 630
 
-    if (album.coverPhoto?.storagePath) {
-        try {
-            const coverBuffer = await readStorageFile(album.coverPhoto.storagePath)
-            const imageBuffer = await sharp(coverBuffer).resize(width, height, { fit: 'cover', position: 'center' }).png().toBuffer()
-            setHeaders(event, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' })
-            return imageBuffer
-        } catch {}
-    }
-
-    // Fallback collage
+    // Grid collage preview — always used regardless of cover photo setting
     let albumPhotos = await db.select({
         id: photos.id,
         width: photos.width,
