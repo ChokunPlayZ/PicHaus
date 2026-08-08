@@ -23,7 +23,7 @@
                 </div>
 
                 <!-- Timeline month groups -->
-                <div v-else class="px-4 sm:px-6 lg:px-8 py-8 pr-20">
+                <div v-else ref="gridContainerRef" class="px-4 sm:px-6 lg:px-8 py-8 pr-20">
                     <div
                         v-for="monthData in loadedMonths"
                         :key="monthData.key"
@@ -81,18 +81,7 @@
                             />
                         </div>
 
-                        <!-- Load more button for this month -->
-                        <div v-if="monthData.hasMore && !monthData.loading" class="mt-4 flex justify-center">
-                            <button @click="loadMoreMonthPhotos(monthData.key)"
-                                :disabled="monthData.loadingMore"
-                                class="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition"
-                                style="background: var(--surface-1); color: var(--text-2); border: 1px solid var(--separator);">
-                                <div v-if="monthData.loadingMore" class="w-4 h-4 border-2 rounded-full animate-spin"
-                                    style="border-color: var(--separator); border-top-color: var(--accent);"></div>
-                                <span v-if="monthData.loadingMore">Loading…</span>
-                                <span v-else>Load more ({{ monthData.count - monthData.photos.length }} remaining)</span>
-                            </button>
-                        </div>
+
                     </div>
 
                     <!-- Sentinel for lazy-loading more months -->
@@ -200,16 +189,16 @@ interface MonthData extends MonthMeta {
     photos: Photo[]
     layout: { containerHeight: number; getPosition: (i: number) => { top: number; left: number; width: number; height: number } } | null
     loading: boolean
-    loadingMore: boolean
     error: string
-    hasMore: boolean
-    page: number
 }
 
 // ── Layout helpers ─────────────────────────────────────────────────────────
 const scrollContainer = ref<HTMLElement | null>(null)
 const sentinel = ref<HTMLElement | null>(null)
-const containerWidth = ref(typeof window !== 'undefined' ? Math.max(window.innerWidth - 80, 300) : 1200)
+// containerWidth is measured from the actual grid wrapper via ResizeObserver
+const containerWidth = ref(800)
+const gridContainerRef = ref<HTMLElement | null>(null)
+let resizeObserver: ResizeObserver | null = null
 
 function buildLayout(photosArr: Photo[]) {
     if (!photosArr.length) return null
@@ -233,6 +222,22 @@ function buildLayout(photosArr: Photo[]) {
                 : { top: 0, left: 0, width: 0, height: 0 }
         }
     }
+}
+
+function setupResizeObserver() {
+    resizeObserver?.disconnect()
+    if (!gridContainerRef.value) return
+    resizeObserver = new ResizeObserver(entries => {
+        const w = entries[0]?.contentRect.width
+        if (w && w > 0 && w !== containerWidth.value) {
+            containerWidth.value = w
+            // Rebuild all layouts with new width
+            for (const m of loadedMonths.value) {
+                if (m.photos.length) m.layout = buildLayout(m.photos)
+            }
+        }
+    })
+    resizeObserver.observe(gridContainerRef.value)
 }
 
 // ── Data ───────────────────────────────────────────────────────────────────
@@ -325,7 +330,7 @@ async function fetchMonths() {
     }
 }
 
-async function loadMonthPhotos(key: string, append = false) {
+async function loadMonthPhotos(key: string) {
     let monthData = loadedMonths.value.find(m => m.key === key)
 
     if (!monthData) {
@@ -336,14 +341,10 @@ async function loadMonthPhotos(key: string, append = false) {
             photos: [],
             layout: null,
             loading: true,
-            loadingMore: false,
             error: '',
-            hasMore: false,
-            page: 1,
         })
         // Maintain months order (desc)
         const insertIndex = months.value.findIndex(m => m.key === key)
-        // Find correct position among already-loaded months
         let loadedInsertIdx = loadedMonths.value.length
         for (let i = 0; i < loadedMonths.value.length; i++) {
             const existingMonthIdx = months.value.findIndex(m => m.key === loadedMonths.value[i]!.key)
@@ -355,35 +356,32 @@ async function loadMonthPhotos(key: string, append = false) {
         loadedMonths.value.splice(loadedInsertIdx, 0, newData)
         loadedMonthKeys.value.add(key)
         monthData = newData
-    } else if (append) {
-        monthData.loadingMore = true
     } else {
         monthData.loading = true
         monthData.error = ''
+        monthData.photos = []
     }
 
     try {
-        const res: any = await $fetch('/api/v1/photos/timeline', {
-            params: { mode: 'photos', month: key, page: monthData.page, limit: 50 }
-        })
-        if (append) {
-            monthData.photos.push(...res.photos)
-        } else {
-            monthData.photos = res.photos
+        // Load ALL photos in this month — page through until hasMore is false
+        const allPhotos: any[] = []
+        let page = 1
+        let hasMore = true
+        while (hasMore) {
+            const res: any = await $fetch('/api/v1/photos/timeline', {
+                params: { mode: 'photos', month: key, page, limit: 100 }
+            })
+            allPhotos.push(...res.photos)
+            hasMore = res.pagination.hasMore
+            page++
         }
-        monthData.hasMore = res.pagination.hasMore
-        if (monthData.hasMore) monthData.page++
+        monthData.photos = allPhotos
         monthData.layout = buildLayout(monthData.photos)
     } catch (e: any) {
         monthData.error = e?.data?.statusMessage || 'Failed to load photos.'
     } finally {
         monthData.loading = false
-        monthData.loadingMore = false
     }
-}
-
-async function loadMoreMonthPhotos(key: string) {
-    await loadMonthPhotos(key, true)
 }
 
 async function loadNextBatch() {
@@ -431,17 +429,14 @@ async function jumpToMonth(key: string) {
     activeMonthKey.value = key
 }
 
-// ── Resize ─────────────────────────────────────────────────────────────────
-function onResize() {
-    containerWidth.value = Math.max(window.innerWidth - 80, 300)
-    for (const m of loadedMonths.value) {
-        if (m.photos.length) m.layout = buildLayout(m.photos)
-    }
-}
+
 
 // ── Lifecycle ──────────────────────────────────────────────────────────────
 onMounted(async () => {
     await fetchMonths()
+
+    await nextTick()
+    setupResizeObserver()
 
     if (sentinel.value) {
         intersectionObserver = new IntersectionObserver(async (entries) => {
@@ -457,13 +452,12 @@ onMounted(async () => {
     }
 
     setupMonthObserver()
-    window.addEventListener('resize', onResize, { passive: true })
 })
 
 onUnmounted(() => {
     intersectionObserver?.disconnect()
     monthObserver?.disconnect()
-    window.removeEventListener('resize', onResize)
+    resizeObserver?.disconnect()
 })
 </script>
 
