@@ -1,10 +1,10 @@
 <template>
-    <div class="min-h-screen" style="background: var(--bg-page);">
+    <div class="timeline-page" style="background: var(--bg-page);">
         <NavBar title="Timeline" :solid="true" />
 
         <div class="timeline-layout">
             <!-- Main scrollable content -->
-            <div class="timeline-content" ref="scrollContainer">
+            <div class="timeline-content" ref="scrollContainer" @scroll.passive="onScroll">
                 <!-- Loading skeleton -->
                 <div v-if="loadingMonths" class="flex justify-center py-20">
                     <div class="w-10 h-10 rounded-full border-2 animate-spin"
@@ -433,7 +433,7 @@ function setupMonthObserver() {
             const key = (visible[0]!.target as HTMLElement).dataset.monthKey
             if (key) activeMonthKey.value = key
         }
-    }, { threshold: 0.1, rootMargin: '-5% 0px -60% 0px' })
+    }, { root: scrollContainer.value, threshold: 0.1, rootMargin: '-5% 0px -60% 0px' })
 
     nextTick(() => {
         for (const [key, el] of Object.entries(monthRefs.value)) {
@@ -455,7 +455,7 @@ function setupSentinelObserver() {
                 await loadMonthPhotos(key, true)
             }
         }
-    }, { rootMargin: '400px' })
+    }, { root: scrollContainer.value, rootMargin: '400px' })
 
     // Observe all existing sentinels
     nextTick(() => {
@@ -475,14 +475,23 @@ async function jumpToMonth(key: string) {
     }
     await nextTick()
     const el = monthRefs.value[key]
-    if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const container = scrollContainer.value
+    if (el && container) {
+        const elTop = el.getBoundingClientRect().top
+        const containerTop = container.getBoundingClientRect().top
+        const offset = elTop - containerTop + container.scrollTop
+        container.scrollTo({ top: offset, behavior: 'smooth' })
     }
     activeMonthKey.value = key
 }
 
 
 // ── Lifecycle ──────────────────────────────────────────────────────────────
+// Track scroll for active month highlight (fallback / extra robustness)
+function onScroll() {
+    // IntersectionObserver handles it, but keep for potential future use
+}
+
 onMounted(async () => {
     await fetchMonths()
 
@@ -499,7 +508,7 @@ onMounted(async () => {
                     setupSentinelObserver()
                 }
             }
-        }, { rootMargin: '600px' })
+        }, { root: scrollContainer.value, rootMargin: '600px' })
         intersectionObserver.observe(sentinel.value)
     }
 
@@ -517,16 +526,29 @@ onUnmounted(() => {
 
 <style scoped>
 /* ── Layout ──────────────────────────────────────────────────────────────── */
+.timeline-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
 .timeline-layout {
     display: flex;
+    flex: 1;
     position: relative;
-    min-height: 100vh;
+    min-height: 0;
 }
 
 .timeline-content {
     flex: 1;
     min-width: 0;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    /* Hide the browser's native scrollbar */
+    scrollbar-width: none;
 }
+.timeline-content::-webkit-scrollbar { display: none; }
 
 /* ── Right-side scrollbar ─────────────────────────────────────────────────── */
 .timeline-scrollbar {
