@@ -1,6 +1,6 @@
 import { defineEventHandler, getQuery, createError } from 'h3'
-import { eq, and, asc, desc, gte, lte, ilike, sql, count } from 'drizzle-orm'
-import { photos, users } from '../../../db/schema'
+import { eq, and, asc, desc, gte, lte, ilike, sql, count, isNotNull, notInArray } from 'drizzle-orm'
+import { photos, users, albums } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
 
 const SORTABLE_FIELDS = ['dateTaken', 'createdAt', 'updatedAt', 'iso'] as const
@@ -33,6 +33,15 @@ export default defineEventHandler(async (event) => {
         aperture ? ilike(photos.aperture, `%${aperture}%`) : undefined,
         shutterSpeed ? ilike(photos.shutterSpeed, `%${shutterSpeed}%`) : undefined,
     ].filter(Boolean)
+
+    // Exclude photos that are used as cover photos for any album
+    const coverRows = await db.select({ coverPhotoId: albums.coverPhotoId })
+        .from(albums)
+        .where(and(eq(albums.ownerId, user.id), isNotNull(albums.coverPhotoId)))
+    const coverPhotoIds = coverRows.map(r => r.coverPhotoId).filter(Boolean) as string[]
+    if (coverPhotoIds.length > 0) {
+        conditions.push(notInArray(photos.id, coverPhotoIds) as any)
+    }
 
     if (dateFrom) {
         const parsedFrom = Date.parse(dateFrom)
