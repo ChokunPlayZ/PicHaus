@@ -70,6 +70,12 @@
                                 />
                             </div>
 
+                            <!-- Empty month: keep the section measurable -->
+                            <div v-else class="py-8 text-center text-sm rounded-2xl"
+                                style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-3);">
+                                No photos available
+                            </div>
+
                             <!-- Per-month sentinel: triggers next-page load when scrolled into view -->
                             <div v-if="loadedMonths.get(month.key)!.hasMore"
                                 :ref="el => setMonthSentinelRef(month.key, el as HTMLElement | null)"
@@ -355,6 +361,33 @@ const monthSentinelRefs = ref<Record<string, HTMLElement>>({})
 let placeholderObserver: IntersectionObserver | null = null
 let unloadObserver: IntersectionObserver | null = null
 let sentinelObserver: IntersectionObserver | null = null
+// Tracks months that already attempted a load while their placeholder was in
+// view, so a failed fetch does not retry in a tight loop until the section
+// leaves the expanded viewport and comes back.
+const placeholderAttempted: Record<string, boolean> = {}
+
+// A month still needs the placeholder observer when it has never been fetched,
+// or when its last fetch left it with an error or no rendered photos.
+function monthNeedsPlaceholderObserver(key: string): boolean {
+    const monthData = loadedMonths.value.get(key)
+    if (!monthData) return true
+    if (monthData.loading || monthData.loadingMore) return false
+    return monthData.error !== '' || (monthData.photos.length === 0 && !monthData.hasMore)
+}
+
+function ensurePlaceholderObserved(key: string) {
+    const el = monthRefs.value[key]
+    if (!el || !placeholderObserver) return
+    if (monthNeedsPlaceholderObserver(key)) {
+        el.dataset.monthKey = key
+        placeholderRefs.value[key] = el
+        placeholderObserver.observe(el)
+    } else {
+        const oldPlaceholder = placeholderRefs.value[key]
+        if (oldPlaceholder) placeholderObserver.unobserve(oldPlaceholder)
+        delete placeholderRefs.value[key]
+    }
+}
 
 // Every rendered section (loaded or placeholder) is tracked here so the active
 // month observer and the unload observer always see the whole timeline.
@@ -363,10 +396,13 @@ function setMonthSectionRef(key: string, el: HTMLElement | null) {
         monthRefs.value[key] = el
         el.dataset.monthKey = key
         if (unloadObserver) unloadObserver.observe(el)
-        if (!isMonthLoaded(key)) {
+        if (monthNeedsPlaceholderObserver(key)) {
             placeholderRefs.value[key] = el
             if (placeholderObserver) placeholderObserver.observe(el)
         } else {
+            if (placeholderRefs.value[key] && placeholderObserver) {
+                placeholderObserver.unobserve(placeholderRefs.value[key]!)
+            }
             delete placeholderRefs.value[key]
         }
     } else {
@@ -554,6 +590,12 @@ async function onCtxDelete() {
             if (idx !== -1) m.photos.splice(idx, 1)
             m.count = Math.max(0, m.count - 1)
             m.layout = buildLayout(m.photos)
+            if (m.photos.length === 0) {
+                m.hasMore = false
+                m.page = 1
+                delete placeholderAttempted[monthKey!]
+                ensurePlaceholderObserved(monthKey!)
+            }
         }
         // Update months meta count
         if (monthKey) {
@@ -631,6 +673,7 @@ async function loadMonthPhotos(key: string, append = false) {
         monthData.error = ''
         monthData.page = 1
     }
+    if (!append) placeholderAttempted[key] = true
 
     try {
         if (monthData.loading) monthData.photos = []
@@ -645,6 +688,9 @@ async function loadMonthPhotos(key: string, append = false) {
         monthData.hasMore = res.pagination.hasMore
         if (monthData.hasMore) monthData.page++
         monthData.layout = buildLayout(monthData.photos)
+        if (monthData.photos.length > 0 || monthData.hasMore) {
+            delete placeholderAttempted[key]
+        }
     } catch (e: any) {
         monthData.error = e?.data?.statusMessage || 'Failed to load photos.'
     } finally {
@@ -662,6 +708,12 @@ async function loadMonthPhotos(key: string, append = false) {
         if (above < 0) {
             container.scrollTop += delta
         }
+    }
+
+    if (monthNeedsPlaceholderObserver(key)) {
+        ensurePlaceholderObserved(key)
+    } else {
+        delete placeholderAttempted[key]
     }
 }
 
@@ -695,14 +747,26 @@ function setupPlaceholderObserver() {
     if (!scrollContainer.value) return
     placeholderObserver = new IntersectionObserver(async (entries) => {
         for (const entry of entries) {
-            if (!entry.isIntersecting) continue
             const key = (entry.target as HTMLElement).dataset.monthKey
-            if (!key || isMonthLoaded(key)) continue
+            if (!key) continue
+            if (!entry.isIntersecting) {
+                // Leaving the expanded viewport clears the attempt flag so the
+                // next entry into view can retry a failed or empty load.
+                delete placeholderAttempted[key]
+                continue
+            }
+            if (!monthNeedsPlaceholderObserver(key)) {
+                delete placeholderAttempted[key]
+                continue
+            }
+            if (placeholderAttempted[key]) continue
+            placeholderAttempted[key] = true
             placeholderObserver?.unobserve(entry.target)
             await loadMonthPhotos(key)
             setupMonthObserver()
             setupSentinelObserver()
             setupUnloadObserver()
+            ensurePlaceholderObserved(key)
         }
     }, { root: scrollContainer.value, rootMargin: '800px 0px' })
 
@@ -773,13 +837,8 @@ function unloadMonth(key: string) {
     const realHeight = sectionEl?.getBoundingClientRect().height
     if (monthData && realHeight) knownHeights[key] = realHeight
     if (monthData) {
-        monthData.photos = []
-        monthData.layout = null
-        monthData.loading = false
-        monthData.loadingMore = false
-        monthData.error = ''
-        monthData.hasMore = false
-        monthData.page = 1
+        loadedMonths.value.delete(key)
+        delete placeholderAttempted[key]
     }
 
     nextTick(() => {
@@ -792,6 +851,7 @@ function unloadMonth(key: string) {
                 container.scrollTop += newHeight - realHeight
             }
         }
+        ensurePlaceholderObserved(key)
         setupMonthObserver()
         setupSentinelObserver()
         setupUnloadObserver()
@@ -802,7 +862,7 @@ async function jumpToMonth(key: string) {
     const container = scrollContainer.value
     if (!container) return
 
-    if (!isMonthLoaded(key)) {
+    if (!isMonthLoaded(key) || monthNeedsPlaceholderObserver(key)) {
         await loadMonthPhotos(key)
         await nextTick()
         setupMonthObserver()
@@ -815,10 +875,15 @@ async function jumpToMonth(key: string) {
         const metaIndex = months.value.findIndex(m => m.key === key)
         const neighbors = months.value
             .map((m, i) => ({ m, i }))
-            .filter(({ m, i }) => i !== metaIndex && !isMonthLoaded(m.key))
+            .filter(({ m, i }) => i !== metaIndex && monthNeedsPlaceholderObserver(m.key))
             .sort((a, b) => Math.abs(a.i - metaIndex) - Math.abs(b.i - metaIndex))
             .slice(0, 2)
         await Promise.all(neighbors.map(({ m }) => loadMonthPhotos(m.key)))
+        await nextTick()
+        for (const { m } of neighbors) ensurePlaceholderObserved(m.key)
+        setupMonthObserver()
+        setupSentinelObserver()
+        setupUnloadObserver()
     }
 
     await nextTick()
