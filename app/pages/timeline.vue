@@ -25,80 +25,79 @@
                 <!-- Timeline month groups -->
                 <div v-else ref="gridContainerRef" class="px-4 sm:px-6 lg:px-8 py-8 pr-20">
                     <div
-                        v-for="monthData in loadedMonths"
-                        :key="monthData.key"
-                        :ref="el => setMonthRef(monthData.key, el as HTMLElement | null)"
+                        v-for="month in months"
+                        :key="month.key"
+                        :ref="el => setMonthSectionRef(month.key, el as HTMLElement | null)"
                         class="timeline-month-section mb-12"
                     >
-                        <!-- Month header -->
-                        <div class="flex items-center gap-4 mb-5 sticky top-0 z-10 py-2"
-                            style="background: var(--bg-page);">
-                            <div class="flex items-center gap-3">
-                                <div class="w-1 h-8 rounded-full" style="background: var(--accent);"></div>
-                                <div>
-                                    <h2 class="text-xl font-bold tracking-tight" style="color: var(--text-1);">
-                                        {{ monthData.label }}
-                                    </h2>
-                                    <p class="text-xs mt-0.5" style="color: var(--text-3);">
-                                        {{ monthData.count }} {{ monthData.count === 1 ? 'photo' : 'photos' }}
-                                    </p>
+                        <template v-if="isMonthLoaded(month.key)">
+                            <MonthHeader :label="month.label" :count="month.count" />
+
+                            <!-- Loading state for this month's photos -->
+                            <div v-if="loadedMonths.get(month.key)!.loading" class="flex justify-center py-12">
+                                <div class="flex items-center gap-3 text-sm" style="color: var(--text-3);">
+                                    <div class="w-5 h-5 border-2 rounded-full animate-spin"
+                                        style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                                    Loading photos…
                                 </div>
                             </div>
-                            <div class="flex-1 h-px" style="background: var(--separator);"></div>
-                        </div>
 
-                        <!-- Loading state for this month's photos -->
-                        <div v-if="monthData.loading" class="flex justify-center py-12">
-                            <div class="flex items-center gap-3 text-sm" style="color: var(--text-3);">
-                                <div class="w-5 h-5 border-2 rounded-full animate-spin"
-                                    style="border-color: var(--separator); border-top-color: var(--accent);"></div>
-                                Loading photos…
+                            <!-- Error state -->
+                            <div v-else-if="loadedMonths.get(month.key)!.error" class="py-6 text-center rounded-2xl px-4"
+                                style="background: var(--error-bg); border: 1px solid var(--error-border);">
+                                <p class="text-sm mb-3" style="color: var(--error-text);">{{ loadedMonths.get(month.key)!.error }}</p>
+                                <button @click="loadMonthPhotos(month.key)"
+                                    class="text-xs px-4 py-1.5 rounded-full"
+                                    style="background: var(--accent); color: var(--accent-text);">
+                                    Retry
+                                </button>
                             </div>
-                        </div>
 
-                        <!-- Error state -->
-                        <div v-else-if="monthData.error" class="py-6 text-center rounded-2xl px-4"
-                            style="background: var(--error-bg); border: 1px solid var(--error-border);">
-                            <p class="text-sm mb-3" style="color: var(--error-text);">{{ monthData.error }}</p>
-                            <button @click="loadMonthPhotos(monthData.key)"
-                                class="text-xs px-4 py-1.5 rounded-full"
-                                style="background: var(--accent); color: var(--accent-text);">
-                                Retry
-                            </button>
-                        </div>
-
-                        <!-- Justified layout grid -->
-                        <div v-else-if="monthData.photos.length > 0 && monthData.layout"
-                            class="relative w-full"
-                            :style="{ height: `${monthData.layout.containerHeight}px` }">
-                            <PhotoTile
-                                v-for="(photo, idx) in monthData.photos"
-                                :key="photo.id"
-                                :photo="photo"
-                                :position="monthData.layout.getPosition(idx)"
-                                :show-hover-info="true"
-                                :show-action-menu="true"
-                                @click="openViewer(monthData.key, idx)"
-                                @contextmenu="openContextMenu($event, photo)"
-                                @action-menu="openContextMenu($event, photo)"
-                            />
-                        </div>
-
-                        <!-- Per-month sentinel: triggers next-page load when scrolled into view -->
-                        <div v-if="monthData.hasMore"
-                            :ref="el => setMonthSentinelRef(monthData.key, el as HTMLElement | null)"
-                            class="h-16 flex items-center justify-center">
-                            <div v-if="monthData.loadingMore" class="flex items-center gap-2 text-xs" style="color: var(--text-3);">
-                                <div class="w-4 h-4 border-2 rounded-full animate-spin"
-                                    style="border-color: var(--separator); border-top-color: var(--accent);"></div>
-                                Loading more…
+                            <!-- Justified layout grid -->
+                            <div v-else-if="loadedMonths.get(month.key)!.photos.length > 0 && loadedMonths.get(month.key)!.layout"
+                                class="relative w-full"
+                                :style="{ height: `${loadedMonths.get(month.key)!.layout!.containerHeight}px` }">
+                                <PhotoTile
+                                    v-for="(photo, idx) in loadedMonths.get(month.key)!.photos"
+                                    :key="photo.id"
+                                    :photo="photo"
+                                    :position="loadedMonths.get(month.key)!.layout!.getPosition(idx)"
+                                    :show-hover-info="true"
+                                    :show-action-menu="true"
+                                    @click="openViewer(month.key, idx)"
+                                    @contextmenu="openContextMenu($event, photo)"
+                                    @action-menu="openContextMenu($event, photo)"
+                                />
                             </div>
-                        </div>
 
+                            <!-- Per-month sentinel: triggers next-page load when scrolled into view -->
+                            <div v-if="loadedMonths.get(month.key)!.hasMore"
+                                :ref="el => setMonthSentinelRef(month.key, el as HTMLElement | null)"
+                                class="h-16 flex items-center justify-center">
+                                <div v-if="loadedMonths.get(month.key)!.loadingMore" class="flex items-center gap-2 text-xs" style="color: var(--text-3);">
+                                    <div class="w-4 h-4 border-2 rounded-full animate-spin"
+                                        style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                                    Loading more…
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Unloaded month: lightweight placeholder with estimated height -->
+                        <template v-else>
+                            <MonthHeader :label="month.label" :count="month.count" />
+                            <div class="timeline-skeleton" :style="{ height: `${estimateMonthHeight(month)}px` }">
+                                <div class="timeline-skeleton-row">
+                                    <div class="timeline-skeleton-block"></div>
+                                    <div class="timeline-skeleton-block"></div>
+                                    <div class="timeline-skeleton-block"></div>
+                                </div>
+                                <div class="timeline-skeleton-row">
+                                    <div class="timeline-skeleton-block"></div>
+                                    <div class="timeline-skeleton-block"></div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
-
-                    <!-- Sentinel for lazy-loading more months -->
-                    <div ref="sentinel" class="h-4"></div>
                 </div>
             </div>
 
@@ -231,9 +230,45 @@ interface MonthData extends MonthMeta {
     page: number
 }
 
+// Shape emitted by EditPhotoModal's `saved` event.
+interface SavedPhoto {
+    id: string
+    originalName?: string
+    cameraModel?: string | null
+    lens?: string | null
+    focalLength?: string | null
+    aperture?: string | null
+    shutterSpeed?: string | null
+    iso?: number | null
+    dateTaken?: number | null
+}
+
+// Shared header markup so a placeholder and a loaded month never jump visually.
+const MonthHeader = defineComponent({
+    props: {
+        label: { type: String, required: true },
+        count: { type: Number, required: true },
+    },
+    setup(props) {
+        return () => h(
+            'div',
+            { class: 'flex items-center gap-4 mb-5 sticky top-0 z-10 py-2', style: { background: 'var(--bg-page)' } },
+            [
+                h('div', { class: 'flex items-center gap-3' }, [
+                    h('div', { class: 'w-1 h-8 rounded-full', style: { background: 'var(--accent)' } }),
+                    h('div', null, [
+                        h('h2', { class: 'text-xl font-bold tracking-tight', style: { color: 'var(--text-1)' } }, props.label),
+                        h('p', { class: 'text-xs mt-0.5', style: { color: 'var(--text-3)' } }, `${props.count} ${props.count === 1 ? 'photo' : 'photos'}`),
+                    ]),
+                ]),
+                h('div', { class: 'flex-1 h-px', style: { background: 'var(--separator)' } }),
+            ],
+        )
+    },
+})
+
 // ── Layout helpers ─────────────────────────────────────────────────────────
 const scrollContainer = ref<HTMLElement | null>(null)
-const sentinel = ref<HTMLElement | null>(null)
 // containerWidth is measured from the actual grid wrapper via ResizeObserver
 const containerWidth = ref(800)
 const gridContainerRef = ref<HTMLElement | null>(null)
@@ -263,6 +298,20 @@ function buildLayout(photosArr: Photo[]) {
     }
 }
 
+// Rough height for an unloaded month so the page can lay out the full timeline.
+// Assumes justified rows near the same rowHeight/spacing as buildLayout(), with
+// photos averaging ~3:2, plus ~80px of header space.
+function estimateMonthHeight(month: MonthMeta): number {
+    const known = knownHeights[month.key]
+    if (known) return known
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
+    const rowHeight = isMobile ? 120 : 190
+    const spacing = isMobile ? 8 : 12
+    const photosPerRow = Math.max(1, Math.floor(containerWidth.value / (rowHeight * 1.5 + spacing)))
+    const rows = Math.ceil(month.count / photosPerRow)
+    return rows * (rowHeight + spacing) + 80
+}
+
 function setupResizeObserver() {
     resizeObserver?.disconnect()
     if (!gridContainerRef.value) return
@@ -270,8 +319,12 @@ function setupResizeObserver() {
         const w = entries[0]?.contentRect.width
         if (w && w > 0 && w !== containerWidth.value) {
             containerWidth.value = w
+            // Width changed: recompute estimates for never-measured placeholders.
+            for (const key of Object.keys(knownHeights)) {
+                if (!loadedMonths.value.has(key)) delete knownHeights[key]
+            }
             // Rebuild all layouts with new width
-            for (const m of loadedMonths.value) {
+            for (const [, m] of loadedMonths.value) {
                 if (m.photos.length) m.layout = buildLayout(m.photos)
             }
         }
@@ -282,20 +335,48 @@ function setupResizeObserver() {
 // ── Data ───────────────────────────────────────────────────────────────────
 const loadingMonths = ref(true)
 const months = ref<MonthMeta[]>([])
-const loadedMonths = ref<MonthData[]>([])
-const loadedMonthKeys = ref<Set<string>>(new Set())
-const BATCH_SIZE = 3
+// Months that have been fetched, keyed by month key. Render order always comes
+// from `months`; this map only stores the data for the loaded subset.
+const loadedMonths = ref<Map<string, MonthData>>(new Map())
+// Real measured section heights for months that were loaded at least once, so
+// unloading and re-loading keeps the scroll position stable.
+const knownHeights: Record<string, number> = {}
+
+function isMonthLoaded(key: string): boolean {
+    return loadedMonths.value.has(key)
+}
 
 // ── Scrollbar ──────────────────────────────────────────────────────────────
 const activeMonthKey = ref<string | null>(null)
 const hoverMonthKey = ref<string | null>(null)
 const monthRefs = ref<Record<string, HTMLElement>>({})
+const placeholderRefs = ref<Record<string, HTMLElement>>({})
 const monthSentinelRefs = ref<Record<string, HTMLElement>>({})
+let placeholderObserver: IntersectionObserver | null = null
+let unloadObserver: IntersectionObserver | null = null
 let sentinelObserver: IntersectionObserver | null = null
 
-function setMonthRef(key: string, el: HTMLElement | null) {
-    if (el) monthRefs.value[key] = el
-    else delete monthRefs.value[key]
+// Every rendered section (loaded or placeholder) is tracked here so the active
+// month observer and the unload observer always see the whole timeline.
+function setMonthSectionRef(key: string, el: HTMLElement | null) {
+    if (el) {
+        monthRefs.value[key] = el
+        el.dataset.monthKey = key
+        if (unloadObserver) unloadObserver.observe(el)
+        if (!isMonthLoaded(key)) {
+            placeholderRefs.value[key] = el
+            if (placeholderObserver) placeholderObserver.observe(el)
+        } else {
+            delete placeholderRefs.value[key]
+        }
+    } else {
+        const old = monthRefs.value[key]
+        if (old && unloadObserver) unloadObserver.unobserve(old)
+        const oldPlaceholder = placeholderRefs.value[key]
+        if (oldPlaceholder && placeholderObserver) placeholderObserver.unobserve(oldPlaceholder)
+        delete monthRefs.value[key]
+        delete placeholderRefs.value[key]
+    }
 }
 
 function setMonthSentinelRef(key: string, el: HTMLElement | null) {
@@ -330,12 +411,21 @@ const viewerOpen = ref(false)
 const viewerMonthKey = ref<string | null>(null)
 const viewerPhotoIdx = ref(0)
 
-const flatPhotos = computed(() => loadedMonths.value.flatMap(m => m.photos))
+const loadedMonthList = computed(() => {
+    const list: MonthData[] = []
+    for (const m of months.value) {
+        const data = loadedMonths.value.get(m.key)
+        if (data) list.push(data)
+    }
+    return list
+})
+
+const flatPhotos = computed(() => loadedMonthList.value.flatMap(m => m.photos))
 
 const viewerFlatIndex = computed(() => {
     if (!viewerMonthKey.value) return 0
     let offset = 0
-    for (const m of loadedMonths.value) {
+    for (const m of loadedMonthList.value) {
         if (m.key === viewerMonthKey.value) break
         offset += m.photos.length
     }
@@ -354,7 +444,7 @@ function navigateViewer(delta: number) {
     const newFlat = viewerFlatIndex.value + delta
     if (newFlat < 0 || newFlat >= flatPhotos.value.length) return
     let offset = 0
-    for (const m of loadedMonths.value) {
+    for (const m of loadedMonthList.value) {
         if (newFlat < offset + m.photos.length) {
             viewerMonthKey.value = m.key
             viewerPhotoIdx.value = newFlat - offset
@@ -385,7 +475,7 @@ function onCtxView() {
     ctxVisible.value = false
     if (!ctxPhoto.value) return
     // Find the photo in loaded months
-    for (const m of loadedMonths.value) {
+    for (const m of loadedMonthList.value) {
         const idx = m.photos.findIndex(p => p.id === ctxPhoto.value!.id)
         if (idx !== -1) {
             openViewer(m.key, idx)
@@ -445,36 +535,44 @@ async function onCtxDelete() {
     if (!ok) return
     const photoId = ctxPhoto.value.id
     const albumId = ctxPhoto.value.albumId
+    // Capture the containing month before splicing so the meta lookup cannot miss.
+    let monthKey: string | null = null
+    for (const m of loadedMonthList.value) {
+        if (m.photos.some(p => p.id === photoId)) {
+            monthKey = m.key
+            break
+        }
+    }
     try {
         await $fetch(`/api/v1/album/${albumId}/photos/batch-delete`, {
             method: 'POST',
             body: { ids: [photoId] },
         })
-        // Remove from loaded months
-        for (const m of loadedMonths.value) {
+        const m = monthKey ? loadedMonths.value.get(monthKey) : undefined
+        if (m) {
             const idx = m.photos.findIndex(p => p.id === photoId)
-            if (idx !== -1) {
-                m.photos.splice(idx, 1)
-                m.count = Math.max(0, m.count - 1)
-                if (m.photos.length > 0) m.layout = buildLayout(m.photos)
-                break
-            }
+            if (idx !== -1) m.photos.splice(idx, 1)
+            m.count = Math.max(0, m.count - 1)
+            m.layout = buildLayout(m.photos)
         }
         // Update months meta count
-        const meta = months.value.find(m => m.key === loadedMonths.value.find(lm => lm.photos.findIndex(p => p.id === photoId) !== -1)?.key)
-        if (meta) meta.count = Math.max(0, meta.count - 1)
+        if (monthKey) {
+            const meta = months.value.find(mm => mm.key === monthKey)
+            if (meta) meta.count = Math.max(0, meta.count - 1)
+        }
+        if (viewerMonthKey.value === monthKey) viewerOpen.value = false
         toast('Photo deleted', 'success')
     } catch (e: any) {
         toast(e?.data?.statusMessage || 'Failed to delete photo', 'error')
     }
 }
 
-function onPhotoSaved(updatedPhoto: Photo) {
+function onPhotoSaved(updatedPhoto: SavedPhoto) {
     // Update photo in loaded months
-    for (const m of loadedMonths.value) {
+    for (const m of loadedMonthList.value) {
         const idx = m.photos.findIndex(p => p.id === updatedPhoto.id)
         if (idx !== -1) {
-            m.photos[idx] = { ...m.photos[idx], ...updatedPhoto }
+            m.photos[idx] = { ...m.photos[idx]!, ...updatedPhoto } as Photo
             break
         }
     }
@@ -491,7 +589,9 @@ async function fetchMonths() {
         }))
         if (months.value.length > 0) {
             activeMonthKey.value = months.value[0]!.key
-            await loadNextBatch()
+            // Only the newest month loads up front; the placeholder observer
+            // loads the rest as the user scrolls.
+            await loadMonthPhotos(months.value[0]!.key)
         }
     } catch (e: any) {
         console.error(e)
@@ -501,7 +601,11 @@ async function fetchMonths() {
 }
 
 async function loadMonthPhotos(key: string, append = false) {
-    let monthData = loadedMonths.value.find(m => m.key === key)
+    const container = scrollContainer.value
+    const oldHeight = container
+        ? monthRefs.value[key]?.getBoundingClientRect().height ?? knownHeights[key]
+        : undefined
+    let monthData = loadedMonths.value.get(key)
 
     if (!monthData) {
         const meta = months.value.find(m => m.key === key)
@@ -516,34 +620,28 @@ async function loadMonthPhotos(key: string, append = false) {
             hasMore: false,
             page: 1,
         })
-        // Maintain months order (desc)
-        const insertIndex = months.value.findIndex(m => m.key === key)
-        let loadedInsertIdx = loadedMonths.value.length
-        for (let i = 0; i < loadedMonths.value.length; i++) {
-            const existingMonthIdx = months.value.findIndex(m => m.key === loadedMonths.value[i]!.key)
-            if (existingMonthIdx > insertIndex) {
-                loadedInsertIdx = i
-                break
-            }
-        }
-        loadedMonths.value.splice(loadedInsertIdx, 0, newData)
-        loadedMonthKeys.value.add(key)
+        loadedMonths.value.set(key, newData)
         monthData = newData
     } else if (append) {
         if (!monthData.hasMore || monthData.loadingMore) return
         monthData.loadingMore = true
     } else {
+        if (monthData.loading || monthData.loadingMore) return
         monthData.loading = true
         monthData.error = ''
-        monthData.photos = []
         monthData.page = 1
     }
 
     try {
+        if (monthData.loading) monthData.photos = []
         const res: any = await $fetch('/api/v1/photos/timeline', {
             params: { mode: 'photos', month: key, page: monthData.page, limit: 50 }
         })
-        monthData.photos.push(...res.photos)
+        if (monthData.loading) {
+            monthData.photos = res.photos
+        } else {
+            monthData.photos.push(...res.photos)
+        }
         monthData.hasMore = res.pagination.hasMore
         if (monthData.hasMore) monthData.page++
         monthData.layout = buildLayout(monthData.photos)
@@ -553,20 +651,26 @@ async function loadMonthPhotos(key: string, append = false) {
         monthData.loading = false
         monthData.loadingMore = false
     }
-}
 
-async function loadNextBatch() {
-    const unloaded = months.value.filter(m => !loadedMonthKeys.value.has(m.key))
-    const toLoad = unloaded.slice(0, BATCH_SIZE)
-    await Promise.all(toLoad.map(m => loadMonthPhotos(m.key)))
+    await nextTick()
+    const newHeight = monthRefs.value[key]?.getBoundingClientRect().height
+    if (container && oldHeight !== undefined && newHeight) {
+        // A placeholder above the viewport was replaced by real content with a
+        // different height; keep the visible content from jumping.
+        const delta = newHeight - oldHeight
+        const above = (monthRefs.value[key]?.getBoundingClientRect().bottom ?? 0) - container.getBoundingClientRect().top
+        if (above < 0) {
+            container.scrollTop += delta
+        }
+    }
 }
 
 // ── Scroll tracking ────────────────────────────────────────────────────────
-let intersectionObserver: IntersectionObserver | null = null
 let monthObserver: IntersectionObserver | null = null
 
 function setupMonthObserver() {
     monthObserver?.disconnect()
+    if (!scrollContainer.value) return
     monthObserver = new IntersectionObserver((entries) => {
         const visible = entries
             .filter(e => e.isIntersecting)
@@ -585,14 +689,67 @@ function setupMonthObserver() {
     })
 }
 
+// Loads placeholder months shortly before they enter the viewport.
+function setupPlaceholderObserver() {
+    placeholderObserver?.disconnect()
+    if (!scrollContainer.value) return
+    placeholderObserver = new IntersectionObserver(async (entries) => {
+        for (const entry of entries) {
+            if (!entry.isIntersecting) continue
+            const key = (entry.target as HTMLElement).dataset.monthKey
+            if (!key || isMonthLoaded(key)) continue
+            placeholderObserver?.unobserve(entry.target)
+            await loadMonthPhotos(key)
+            setupMonthObserver()
+            setupSentinelObserver()
+            setupUnloadObserver()
+        }
+    }, { root: scrollContainer.value, rootMargin: '800px 0px' })
+
+    nextTick(() => {
+        if (!placeholderObserver) return
+        for (const el of Object.values(placeholderRefs.value)) {
+            placeholderObserver.observe(el)
+        }
+    })
+}
+
+// Discards months far outside the viewport so hundreds of tiles don't stay in
+// the DOM. The per-month sentinel handles pagination when a month is reloaded;
+// a reloaded month simply refetches page 1.
+function setupUnloadObserver() {
+    unloadObserver?.disconnect()
+    if (!scrollContainer.value) return
+    unloadObserver = new IntersectionObserver((entries) => {
+        if (viewerOpen.value) return
+        for (const entry of entries) {
+            if (entry.isIntersecting) continue
+            const key = (entry.target as HTMLElement).dataset.monthKey
+            if (!key) continue
+            const monthData = loadedMonths.value.get(key)
+            if (!monthData || monthData.loading || monthData.loadingMore) continue
+            if (key === activeMonthKey.value) continue
+            unloadMonth(key)
+        }
+    }, { root: scrollContainer.value, rootMargin: '-300% 0px -300% 0px' })
+
+    nextTick(() => {
+        if (!unloadObserver) return
+        for (const el of Object.values(monthRefs.value)) {
+            unloadObserver.observe(el)
+        }
+    })
+}
+
 function setupSentinelObserver() {
     sentinelObserver?.disconnect()
+    if (!scrollContainer.value) return
     sentinelObserver = new IntersectionObserver(async (entries) => {
         for (const entry of entries) {
             if (!entry.isIntersecting) continue
             const key = (entry.target as HTMLElement).dataset.sentinelKey
             if (!key) continue
-            const monthData = loadedMonths.value.find(m => m.key === key)
+            const monthData = loadedMonths.value.get(key)
             if (monthData?.hasMore && !monthData.loadingMore && !monthData.loading) {
                 await loadMonthPhotos(key, true)
             }
@@ -608,21 +765,71 @@ function setupSentinelObserver() {
     })
 }
 
+// Revert a loaded month back to its placeholder, preserving its measured
+// height as the new estimate so the layout and scroll position stay stable.
+function unloadMonth(key: string) {
+    const monthData = loadedMonths.value.get(key)
+    const sectionEl = monthRefs.value[key]
+    const realHeight = sectionEl?.getBoundingClientRect().height
+    if (monthData && realHeight) knownHeights[key] = realHeight
+    if (monthData) {
+        monthData.photos = []
+        monthData.layout = null
+        monthData.loading = false
+        monthData.loadingMore = false
+        monthData.error = ''
+        monthData.hasMore = false
+        monthData.page = 1
+    }
+
+    nextTick(() => {
+        const container = scrollContainer.value
+        const newHeight = monthRefs.value[key]?.getBoundingClientRect().height
+        if (container && realHeight && newHeight) {
+            // Only compensate when the section is entirely above the viewport.
+            const above = (monthRefs.value[key]?.getBoundingClientRect().bottom ?? 0) - container.getBoundingClientRect().top
+            if (above < 0) {
+                container.scrollTop += newHeight - realHeight
+            }
+        }
+        setupMonthObserver()
+        setupSentinelObserver()
+        setupUnloadObserver()
+    })
+}
+
 async function jumpToMonth(key: string) {
-    if (!loadedMonthKeys.value.has(key)) {
+    const container = scrollContainer.value
+    if (!container) return
+
+    if (!isMonthLoaded(key)) {
         await loadMonthPhotos(key)
         await nextTick()
         setupMonthObserver()
+        setupPlaceholderObserver()
         setupSentinelObserver()
+        setupUnloadObserver()
+
+        // Proactively load the nearest unloaded neighbors so scrolling past the
+        // target does not stall on the next placeholder.
+        const metaIndex = months.value.findIndex(m => m.key === key)
+        const neighbors = months.value
+            .map((m, i) => ({ m, i }))
+            .filter(({ m, i }) => i !== metaIndex && !isMonthLoaded(m.key))
+            .sort((a, b) => Math.abs(a.i - metaIndex) - Math.abs(b.i - metaIndex))
+            .slice(0, 2)
+        await Promise.all(neighbors.map(({ m }) => loadMonthPhotos(m.key)))
     }
+
     await nextTick()
     const el = monthRefs.value[key]
-    const container = scrollContainer.value
     if (el && container) {
         const elTop = el.getBoundingClientRect().top
         const containerTop = container.getBoundingClientRect().top
-        const offset = elTop - containerTop + container.scrollTop
-        container.scrollTo({ top: offset, behavior: 'smooth' })
+        const stickyHeaderOffset = typeof window !== 'undefined' && window.innerWidth < 640 ? 52 : 48
+        const offset = Math.max(0, elTop - containerTop + container.scrollTop - stickyHeaderOffset)
+        const distance = Math.abs(offset - container.scrollTop)
+        container.scrollTo({ top: offset, behavior: distance <= container.clientHeight * 2 ? 'smooth' : 'auto' })
     }
     activeMonthKey.value = key
 }
@@ -639,29 +846,17 @@ onMounted(async () => {
 
     await nextTick()
     setupResizeObserver()
-
-    if (sentinel.value) {
-        intersectionObserver = new IntersectionObserver(async (entries) => {
-            if (entries[0]?.isIntersecting) {
-                const remaining = months.value.filter(m => !loadedMonthKeys.value.has(m.key))
-                if (remaining.length > 0) {
-                    await loadNextBatch()
-                    setupMonthObserver()
-                    setupSentinelObserver()
-                }
-            }
-        }, { root: scrollContainer.value, rootMargin: '600px' })
-        intersectionObserver.observe(sentinel.value)
-    }
-
+    setupPlaceholderObserver()
     setupMonthObserver()
     setupSentinelObserver()
+    setupUnloadObserver()
 })
 
 onUnmounted(() => {
-    intersectionObserver?.disconnect()
+    placeholderObserver?.disconnect()
     monthObserver?.disconnect()
     sentinelObserver?.disconnect()
+    unloadObserver?.disconnect()
     resizeObserver?.disconnect()
 })
 </script>
@@ -843,6 +1038,41 @@ onUnmounted(() => {
     transform: translateX(4px);
 }
 
+/* ── Month placeholders ──────────────────────────────────────────────────── */
+.timeline-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--surface-1);
+    border: 1px solid var(--separator);
+    padding: 16px;
+}
+
+.timeline-skeleton-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    flex: 1;
+    min-height: 120px;
+}
+
+.timeline-skeleton-row:nth-child(2) {
+    grid-template-columns: 1.4fr 1fr 1.2fr;
+}
+
+.timeline-skeleton-block {
+    border-radius: 10px;
+    background: var(--surface-2);
+    animation: timeline-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes timeline-shimmer {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .timeline-scrollbar {
@@ -850,6 +1080,14 @@ onUnmounted(() => {
     }
     .scrollbar-tooltip {
         display: none;
+    }
+    .timeline-skeleton {
+        gap: 8px;
+        padding: 10px;
+    }
+    .timeline-skeleton-row {
+        gap: 8px;
+        min-height: 96px;
     }
 }
 </style>
