@@ -77,7 +77,10 @@
                                 :photo="photo"
                                 :position="monthData.layout.getPosition(idx)"
                                 :show-hover-info="true"
+                                :show-action-menu="true"
                                 @click="openViewer(monthData.key, idx)"
+                                @contextmenu="openContextMenu($event, photo)"
+                                @action-menu="openContextMenu($event, photo)"
                             />
                         </div>
 
@@ -157,6 +160,28 @@
             @previous="navigateViewer(-1)"
             @next="navigateViewer(1)"
         />
+
+        <!-- Context Menu -->
+        <PhotoContextMenu
+            :photo="ctxPhoto"
+            :visible="ctxVisible"
+            :x="ctxX"
+            :y="ctxY"
+            @close="ctxVisible = false"
+            @view="onCtxView"
+            @download="onCtxDownload"
+            @share="onCtxShare"
+            @go-to-album="onCtxGoToAlbum"
+            @edit="onCtxEdit"
+            @delete="onCtxDelete"
+        />
+
+        <!-- Edit Modal -->
+        <EditPhotoModal
+            v-model="editModalOpen"
+            :photo="ctxPhoto"
+            @saved="onPhotoSaved"
+        />
     </div>
 </template>
 
@@ -180,6 +205,7 @@ interface Photo {
     aperture?: string | null
     shutterSpeed?: string | null
     iso?: number | null
+    albumId?: string | null
     uploader: {
         name: string | null
         instagram?: string | null
@@ -335,6 +361,122 @@ function navigateViewer(delta: number) {
             return
         }
         offset += m.photos.length
+    }
+}
+
+// ── Context menu ───────────────────────────────────────────────────────────
+const { confirm, toast } = useDialog()
+const ctxVisible = ref(false)
+const ctxX = ref(0)
+const ctxY = ref(0)
+const ctxPhoto = ref<Photo | null>(null)
+const editModalOpen = ref(false)
+const router = useRouter()
+
+function openContextMenu(e: MouseEvent, photo: Photo) {
+    e.preventDefault()
+    ctxPhoto.value = photo
+    ctxX.value = e.clientX
+    ctxY.value = e.clientY
+    ctxVisible.value = true
+}
+
+function onCtxView() {
+    ctxVisible.value = false
+    if (!ctxPhoto.value) return
+    // Find the photo in loaded months
+    for (const m of loadedMonths.value) {
+        const idx = m.photos.findIndex(p => p.id === ctxPhoto.value!.id)
+        if (idx !== -1) {
+            openViewer(m.key, idx)
+            return
+        }
+    }
+}
+
+function onCtxEdit() {
+    ctxVisible.value = false
+    editModalOpen.value = true
+}
+
+async function onCtxDownload() {
+    ctxVisible.value = false
+    if (!ctxPhoto.value) return
+    try {
+        const { buildAssetUrl } = await import('~/utils/auth-client')
+        const url = buildAssetUrl(`/api/assets/original/${ctxPhoto.value.id}`)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = ctxPhoto.value.originalName || ctxPhoto.value.filename
+        a.click()
+    } catch {
+        toast('Failed to download photo', 'error')
+    }
+}
+
+async function onCtxShare() {
+    ctxVisible.value = false
+    if (!ctxPhoto.value?.albumId) {
+        toast('This photo is not in an album', 'info')
+        return
+    }
+    const albumUrl = `${window.location.origin}/album/${ctxPhoto.value.albumId}`
+    try {
+        await navigator.clipboard.writeText(albumUrl)
+        toast('Album link copied to clipboard', 'success')
+    } catch {
+        toast('Could not copy link', 'error')
+    }
+}
+
+function onCtxGoToAlbum() {
+    ctxVisible.value = false
+    if (!ctxPhoto.value?.albumId) return
+    router.push(`/album/${ctxPhoto.value.albumId}`)
+}
+
+async function onCtxDelete() {
+    ctxVisible.value = false
+    if (!ctxPhoto.value) return
+    const ok = await confirm(
+        `Delete "${ctxPhoto.value.originalName}"? This cannot be undone.`,
+        { title: 'Delete Photo', danger: true }
+    )
+    if (!ok) return
+    const photoId = ctxPhoto.value.id
+    const albumId = ctxPhoto.value.albumId
+    try {
+        await $fetch(`/api/v1/album/${albumId}/photos/batch-delete`, {
+            method: 'POST',
+            body: { ids: [photoId] },
+        })
+        // Remove from loaded months
+        for (const m of loadedMonths.value) {
+            const idx = m.photos.findIndex(p => p.id === photoId)
+            if (idx !== -1) {
+                m.photos.splice(idx, 1)
+                m.count = Math.max(0, m.count - 1)
+                if (m.photos.length > 0) m.layout = buildLayout(m.photos)
+                break
+            }
+        }
+        // Update months meta count
+        const meta = months.value.find(m => m.key === loadedMonths.value.find(lm => lm.photos.findIndex(p => p.id === photoId) !== -1)?.key)
+        if (meta) meta.count = Math.max(0, meta.count - 1)
+        toast('Photo deleted', 'success')
+    } catch (e: any) {
+        toast(e?.data?.statusMessage || 'Failed to delete photo', 'error')
+    }
+}
+
+function onPhotoSaved(updatedPhoto: Photo) {
+    // Update photo in loaded months
+    for (const m of loadedMonths.value) {
+        const idx = m.photos.findIndex(p => p.id === updatedPhoto.id)
+        if (idx !== -1) {
+            m.photos[idx] = { ...m.photos[idx], ...updatedPhoto }
+            break
+        }
     }
 }
 

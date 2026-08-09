@@ -97,7 +97,10 @@
                         :photo="photo"
                         :position="picturesLayout.getPosition(index)"
                         :show-hover-info="true"
+                        :show-action-menu="true"
                         @click="openViewer(index)"
+                        @contextmenu="openContextMenu($event, photo)"
+                        @action-menu="openContextMenu($event, photo)"
                     />
                 </div>
 
@@ -117,13 +120,34 @@
             :next-photo-id="nextPhotoId" :previous-photo-timestamp="previousPhotoTimestamp"
             :next-photo-timestamp="nextPhotoTimestamp" @close="viewerOpen = false" @previous="viewerIndex--"
             @next="viewerIndex++" />
+
+        <!-- Context Menu -->
+        <PhotoContextMenu
+            :photo="ctxPhoto"
+            :visible="ctxVisible"
+            :x="ctxX"
+            :y="ctxY"
+            @close="ctxVisible = false"
+            @view="onCtxView"
+            @download="onCtxDownload"
+            @share="onCtxShare"
+            @go-to-album="onCtxGoToAlbum"
+            @edit="onCtxEdit"
+            @delete="onCtxDelete"
+        />
+
+        <!-- Edit Modal -->
+        <EditPhotoModal
+            v-model="editModalOpen"
+            :photo="ctxPhoto"
+            @saved="onPhotoSaved"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import { debounce } from 'lodash-es'
 
-// Create proper interface for our photo object
 interface Photo {
     id: string
     filename: string
@@ -137,9 +161,11 @@ interface Photo {
     updatedAt?: number | null
     cameraModel?: string | null
     lens?: string | null
+    focalLength?: string | null
     aperture?: string | null
     iso?: number | null
     shutterSpeed?: string | null
+    albumId?: string | null
     uploader: {
         id: string
         name: string | null
@@ -310,6 +336,103 @@ watch(() => route.query, (newQuery) => {
 const openViewer = (index: number) => {
     viewerIndex.value = index
     viewerOpen.value = true
+}
+
+// ── Context menu ──────────────────────────────────────────────────────────
+const { confirm, toast } = useDialog()
+const ctxVisible = ref(false)
+const ctxX = ref(0)
+const ctxY = ref(0)
+const ctxPhoto = ref<Photo | null>(null)
+const editModalOpen = ref(false)
+
+function openContextMenu(e: MouseEvent, photo: Photo) {
+    e.preventDefault()
+    ctxPhoto.value = photo
+    ctxX.value = e.clientX
+    ctxY.value = e.clientY
+    ctxVisible.value = true
+}
+
+function onCtxView() {
+    ctxVisible.value = false
+    if (!ctxPhoto.value) return
+    const idx = photos.value.findIndex(p => p.id === ctxPhoto.value!.id)
+    if (idx !== -1) openViewer(idx)
+}
+
+function onCtxEdit() {
+    ctxVisible.value = false
+    editModalOpen.value = true
+}
+
+async function onCtxDownload() {
+    ctxVisible.value = false
+    if (!ctxPhoto.value) return
+    try {
+        const { buildAssetUrl } = await import('~/utils/auth-client')
+        const url = buildAssetUrl(`/api/assets/original/${ctxPhoto.value.id}`)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = ctxPhoto.value.originalName || ctxPhoto.value.filename
+        a.click()
+    } catch {
+        toast('Failed to download photo', 'error')
+    }
+}
+
+async function onCtxShare() {
+    ctxVisible.value = false
+    if (!ctxPhoto.value?.albumId) {
+        toast('This photo is not in an album', 'info')
+        return
+    }
+    const albumUrl = `${window.location.origin}/album/${ctxPhoto.value.albumId}`
+    try {
+        await navigator.clipboard.writeText(albumUrl)
+        toast('Album link copied to clipboard', 'success')
+    } catch {
+        toast('Could not copy link', 'error')
+    }
+}
+
+function onCtxGoToAlbum() {
+    ctxVisible.value = false
+    if (!ctxPhoto.value?.albumId) return
+    router.push(`/album/${ctxPhoto.value.albumId}`)
+}
+
+async function onCtxDelete() {
+    ctxVisible.value = false
+    if (!ctxPhoto.value) return
+    const ok = await confirm(
+        `Delete "${ctxPhoto.value.originalName}"? This cannot be undone.`,
+        { title: 'Delete Photo', danger: true }
+    )
+    if (!ok) return
+    const photoId = ctxPhoto.value.id
+    const albumId = ctxPhoto.value.albumId
+    try {
+        await $fetch(`/api/v1/album/${albumId}/photos/batch-delete`, {
+            method: 'POST',
+            body: { ids: [photoId] },
+        })
+        const idx = photos.value.findIndex(p => p.id === photoId)
+        if (idx !== -1) {
+            photos.value.splice(idx, 1)
+            total.value = Math.max(0, total.value - 1)
+        }
+        toast('Photo deleted', 'success')
+    } catch (e: any) {
+        toast(e?.data?.statusMessage || 'Failed to delete photo', 'error')
+    }
+}
+
+function onPhotoSaved(updatedPhoto: Photo) {
+    const idx = photos.value.findIndex(p => p.id === updatedPhoto.id)
+    if (idx !== -1) {
+        photos.value[idx] = { ...photos.value[idx], ...updatedPhoto }
+    }
 }
 
 // Lifecycle

@@ -46,12 +46,20 @@
                     <span v-if="photo.cameraModel">{{ photo.cameraModel }}</span>
                 </div>
             </div>
-            <div class="flex flex-col items-end gap-1">
+            <div class="flex items-center gap-1.5">
                 <span v-if="photo.aperture"
                     class="text-xs font-mono bg-black/40 px-1.5 py-0.5 rounded text-white backdrop-blur-md">
                     f/{{ photo.aperture }}
                 </span>
-                <span v-if="photo.iso" class="text-[10px] text-white/60">ISO {{ photo.iso }}</span>
+                <!-- Three-dot action button -->
+                <button
+                    v-if="showActionMenu"
+                    class="action-menu-btn"
+                    aria-label="Photo actions"
+                    @click.stop="$emit('action-menu', $event)"
+                >
+                    <Icon name="lucide:more-vertical" class="w-3.5 h-3.5" :stroke-width="2.5" />
+                </button>
             </div>
         </div>
 
@@ -99,12 +107,14 @@ const props = defineProps<{
     showHoverInfo?: boolean
     showFavorite?: boolean
     favorited?: boolean
+    showActionMenu?: boolean
 }>()
 
 defineEmits<{
     click: [event: MouseEvent]
     contextmenu: [event: MouseEvent]
     'toggle-favorite': []
+    'action-menu': [event: MouseEvent]
 }>()
 
 const blurhashUrl = computed(() => {
@@ -115,3 +125,27 @@ const blurhashUrl = computed(() => {
     return blurhashToDataUrl(blurhash, w, h) || null
 })
 </script>
+
+<style scoped>
+.action-menu-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+    backdrop-filter: blur(4px);
+}
+.action-menu-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+.action-menu-btn:active {
+    transform: scale(0.92);
+}
+</style>
