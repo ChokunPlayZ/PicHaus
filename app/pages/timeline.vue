@@ -308,8 +308,6 @@ function buildLayout(photosArr: Photo[]) {
 // Assumes justified rows near the same rowHeight/spacing as buildLayout(), with
 // photos averaging ~3:2, plus ~80px of header space.
 function estimateMonthHeight(month: MonthMeta): number {
-    const known = knownHeights[month.key]
-    if (known) return known
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
     const rowHeight = isMobile ? 120 : 190
     const spacing = isMobile ? 8 : 12
@@ -325,10 +323,6 @@ function setupResizeObserver() {
         const w = entries[0]?.contentRect.width
         if (w && w > 0 && w !== containerWidth.value) {
             containerWidth.value = w
-            // Width changed: recompute estimates for never-measured placeholders.
-            for (const key of Object.keys(knownHeights)) {
-                if (!loadedMonths.value.has(key)) delete knownHeights[key]
-            }
             // Rebuild all layouts with new width
             for (const [, m] of loadedMonths.value) {
                 if (m.photos.length) m.layout = buildLayout(m.photos)
@@ -344,13 +338,15 @@ const months = ref<MonthMeta[]>([])
 // Months that have been fetched, keyed by month key. Render order always comes
 // from `months`; this map only stores the data for the loaded subset.
 const loadedMonths = ref<Map<string, MonthData>>(new Map())
-// Real measured section heights for months that were loaded at least once, so
-// unloading and re-loading keeps the scroll position stable.
-const knownHeights: Record<string, number> = {}
 
 function isMonthLoaded(key: string): boolean {
     return loadedMonths.value.has(key)
 }
+
+// Non-zero while a programmatic jump is awaiting loads and scrolling, so
+// observer callbacks and mid-swap compensation don't shift the user's current
+// viewport before the jump lands.
+let programmaticJumpDepth = 0
 
 // ── Scrollbar ──────────────────────────────────────────────────────────────
 const activeMonthKey = ref<string | null>(null)
@@ -645,7 +641,7 @@ async function fetchMonths() {
 async function loadMonthPhotos(key: string, append = false) {
     const container = scrollContainer.value
     const oldHeight = container
-        ? monthRefs.value[key]?.getBoundingClientRect().height ?? knownHeights[key]
+        ? monthRefs.value[key]?.getBoundingClientRect().height
         : undefined
     let monthData = loadedMonths.value.get(key)
 
@@ -700,7 +696,7 @@ async function loadMonthPhotos(key: string, append = false) {
 
     await nextTick()
     const newHeight = monthRefs.value[key]?.getBoundingClientRect().height
-    if (container && oldHeight !== undefined && newHeight) {
+    if (container && programmaticJumpDepth === 0 && oldHeight !== undefined && newHeight) {
         // A placeholder above the viewport was replaced by real content with a
         // different height; keep the visible content from jumping.
         const delta = newHeight - oldHeight
@@ -759,6 +755,7 @@ function setupPlaceholderObserver() {
                 delete placeholderAttempted[key]
                 continue
             }
+            if (programmaticJumpDepth > 0) continue
             if (placeholderAttempted[key]) continue
             placeholderAttempted[key] = true
             placeholderObserver?.unobserve(entry.target)
@@ -787,6 +784,7 @@ function setupUnloadObserver() {
     unloadObserver = new IntersectionObserver((entries) => {
         if (viewerOpen.value) return
         for (const entry of entries) {
+            if (programmaticJumpDepth > 0) continue
             if (entry.isIntersecting) continue
             const key = (entry.target as HTMLElement).dataset.monthKey
             if (!key) continue
@@ -829,13 +827,11 @@ function setupSentinelObserver() {
     })
 }
 
-// Revert a loaded month back to its placeholder, preserving its measured
-// height as the new estimate so the layout and scroll position stay stable.
+// Revert a loaded month back to its compact estimated-height placeholder.
 function unloadMonth(key: string) {
     const monthData = loadedMonths.value.get(key)
     const sectionEl = monthRefs.value[key]
     const realHeight = sectionEl?.getBoundingClientRect().height
-    if (monthData && realHeight) knownHeights[key] = realHeight
     if (monthData) {
         loadedMonths.value.delete(key)
         delete placeholderAttempted[key]
@@ -844,7 +840,7 @@ function unloadMonth(key: string) {
     nextTick(() => {
         const container = scrollContainer.value
         const newHeight = monthRefs.value[key]?.getBoundingClientRect().height
-        if (container && realHeight && newHeight) {
+        if (container && programmaticJumpDepth === 0 && realHeight && newHeight) {
             // Only compensate when the section is entirely above the viewport.
             const above = (monthRefs.value[key]?.getBoundingClientRect().bottom ?? 0) - container.getBoundingClientRect().top
             if (above < 0) {
@@ -859,44 +855,59 @@ function unloadMonth(key: string) {
 }
 
 async function jumpToMonth(key: string) {
+    programmaticJumpDepth++
     const container = scrollContainer.value
-    if (!container) return
-
-    if (!isMonthLoaded(key) || monthNeedsPlaceholderObserver(key)) {
-        await loadMonthPhotos(key)
-        await nextTick()
-        setupMonthObserver()
-        setupPlaceholderObserver()
-        setupSentinelObserver()
-        setupUnloadObserver()
-
-        // Proactively load the nearest unloaded neighbors so scrolling past the
-        // target does not stall on the next placeholder.
-        const metaIndex = months.value.findIndex(m => m.key === key)
-        const neighbors = months.value
-            .map((m, i) => ({ m, i }))
-            .filter(({ m, i }) => i !== metaIndex && monthNeedsPlaceholderObserver(m.key))
-            .sort((a, b) => Math.abs(a.i - metaIndex) - Math.abs(b.i - metaIndex))
-            .slice(0, 2)
-        await Promise.all(neighbors.map(({ m }) => loadMonthPhotos(m.key)))
-        await nextTick()
-        for (const { m } of neighbors) ensurePlaceholderObserved(m.key)
-        setupMonthObserver()
-        setupSentinelObserver()
-        setupUnloadObserver()
+    if (!container) {
+        programmaticJumpDepth--
+        return
     }
 
-    await nextTick()
-    const el = monthRefs.value[key]
-    if (el && container) {
-        const elTop = el.getBoundingClientRect().top
-        const containerTop = container.getBoundingClientRect().top
-        const stickyHeaderOffset = typeof window !== 'undefined' && window.innerWidth < 640 ? 52 : 48
-        const offset = Math.max(0, elTop - containerTop + container.scrollTop - stickyHeaderOffset)
-        const distance = Math.abs(offset - container.scrollTop)
-        container.scrollTo({ top: offset, behavior: distance <= container.clientHeight * 2 ? 'smooth' : 'auto' })
+    try {
+        if (!isMonthLoaded(key) || monthNeedsPlaceholderObserver(key)) {
+            await loadMonthPhotos(key)
+            await nextTick()
+            setupMonthObserver()
+            setupPlaceholderObserver()
+            setupSentinelObserver()
+            setupUnloadObserver()
+
+            // Preload only sections below the target in the scroll direction.
+            // They cannot shift the user's current viewport, while sections
+            // between the current position and the target would.
+            const metaIndex = months.value.findIndex(m => m.key === key)
+            const neighbors: MonthMeta[] = []
+            for (const i of [metaIndex + 1, metaIndex + 2]) {
+                const m = months.value[i]
+                if (m && monthNeedsPlaceholderObserver(m.key)) neighbors.push(m)
+            }
+            if (neighbors.length < 2) {
+                for (const i of [metaIndex - 1, metaIndex - 2]) {
+                    const m = months.value[i]
+                    if (m && monthNeedsPlaceholderObserver(m.key) && !neighbors.includes(m)) neighbors.push(m)
+                }
+            }
+            await Promise.all(neighbors.map(({ key }) => loadMonthPhotos(key)))
+            await nextTick()
+            for (const m of neighbors) ensurePlaceholderObserved(m.key)
+            setupMonthObserver()
+            setupSentinelObserver()
+            setupUnloadObserver()
+        }
+
+        await nextTick()
+        const el = monthRefs.value[key]
+        if (el && container) {
+            const elTop = el.getBoundingClientRect().top
+            const containerTop = container.getBoundingClientRect().top
+            const stickyHeaderOffset = typeof window !== 'undefined' && window.innerWidth < 640 ? 52 : 48
+            const offset = Math.max(0, elTop - containerTop + container.scrollTop - stickyHeaderOffset)
+            const distance = Math.abs(offset - container.scrollTop)
+            container.scrollTo({ top: offset, behavior: distance <= container.clientHeight * 2 ? 'smooth' : 'auto' })
+        }
+        activeMonthKey.value = key
+    } finally {
+        programmaticJumpDepth--
     }
-    activeMonthKey.value = key
 }
 
 
