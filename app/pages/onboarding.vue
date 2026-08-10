@@ -24,7 +24,7 @@
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="Your Full Name"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
@@ -35,7 +35,7 @@
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="your@email.com"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
@@ -46,7 +46,7 @@
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="••••••••"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
@@ -56,7 +56,7 @@
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="••••••••"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
@@ -68,7 +68,7 @@
                             class="w-full pl-7 pr-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="username"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <p class="text-xs mt-2" style="color: var(--text-3);">
@@ -83,7 +83,7 @@
                         @mouseover="!saving && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
                         <div v-if="saving" class="w-4 h-4 rounded-full border-2 animate-spin"
-                            style="border-color: rgba(255,255,255,0.3); border-top-color: white;"></div>
+                            style="border-color: color-mix(in srgb, var(--accent-text) 30%, transparent); border-top-color: var(--accent-text);"></div>
                         <span>{{ saving ? 'Saving…' : 'Save & Continue' }}</span>
                     </button>
                     

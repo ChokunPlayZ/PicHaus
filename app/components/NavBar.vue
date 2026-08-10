@@ -264,6 +264,7 @@
 
 <script setup lang="ts">
 import { clearAuthToken } from '~/utils/auth-client'
+import { applyThemeClass, setThemePreference, type ThemePreference } from '~/utils/theme'
 
 const route = useRoute()
 const mobileOpen = ref(false)
@@ -383,18 +384,19 @@ onMounted(async () => {
         const response = await $fetch<{ success: boolean; data: any }>('/api/v1/auth/me')
         if (response?.data) {
             user.value = response.data
-            // Sync theme preference across machines
-            if (response.data.themePreference) {
-                const isPrefDark = response.data.themePreference === 'dark'
-                isDark.value = isPrefDark
-                if (isPrefDark) {
-                    document.documentElement.classList.add('dark')
-                    localStorage.setItem('theme', 'dark')
-                    document.cookie = 'theme=dark; path=/; max-age=31536000; SameSite=Lax'
-                } else {
-                    document.documentElement.classList.remove('dark')
-                    localStorage.setItem('theme', 'light')
-                    document.cookie = 'theme=light; path=/; max-age=31536000; SameSite=Lax'
+
+            // The head script already painted the first-paint theme. If the DB
+            // preference differs, reconcile silently by pushing the painted
+            // local value up; never mutate the html class after hydration.
+            const appliedTheme: ThemePreference = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+            if (response.data.themePreference !== appliedTheme) {
+                try {
+                    await $fetch('/api/v1/users/me', {
+                        method: 'PATCH',
+                        body: { themePreference: appliedTheme }
+                    })
+                } catch (e) {
+                    console.error('Failed to reconcile theme preference', e)
                 }
             }
         }
@@ -447,16 +449,9 @@ const handleLogout = async () => {
 const toggleTheme = async () => {
     const nextDark = !isDark.value
     isDark.value = nextDark
-    const themeStr = nextDark ? 'dark' : 'light'
-
-    if (nextDark) {
-        document.documentElement.classList.add('dark')
-    } else {
-        document.documentElement.classList.remove('dark')
-    }
-
-    localStorage.setItem('theme', themeStr)
-    document.cookie = `theme=${themeStr}; path=/; max-age=31536000; SameSite=Lax`
+    const themeStr: ThemePreference = nextDark ? 'dark' : 'light'
+    applyThemeClass(themeStr)
+    setThemePreference(themeStr)
 
     if (user.value) {
         try {

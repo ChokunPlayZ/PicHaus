@@ -1,3 +1,5 @@
+import { applyAccentVars } from '~/utils/theme'
+
 export interface SiteSettings {
     siteName: string
     accentColor: string | null
@@ -14,21 +16,7 @@ export interface SiteSettings {
 }
 
 function applyAccent(color: string | null) {
-    if (import.meta.server) return
-    if (!color) {
-        document.documentElement.style.removeProperty('--accent')
-        document.documentElement.style.removeProperty('--accent-hover')
-        document.documentElement.style.removeProperty('--accent-pressed')
-        document.documentElement.style.removeProperty('--accent-light')
-        return
-    }
-    const r = parseInt(color.slice(1, 3), 16)
-    const g = parseInt(color.slice(3, 5), 16)
-    const b = parseInt(color.slice(5, 7), 16)
-    document.documentElement.style.setProperty('--accent', color)
-    document.documentElement.style.setProperty('--accent-hover', `rgba(${r},${g},${b},0.85)`)
-    document.documentElement.style.setProperty('--accent-pressed', `rgba(${r},${g},${b},0.75)`)
-    document.documentElement.style.setProperty('--accent-light', `rgba(${r},${g},${b},0.12)`)
+    applyAccentVars(color)
 }
 
 export const useSiteSettings = () => {

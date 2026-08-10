@@ -26,7 +26,7 @@
                 <button v-if="isIOS" @click="sharePhoto"
                     :disabled="isSharing"
                     aria-label="Download photo"
-                    class="w-11 h-11 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
+                    class="w-11 h-11 flex items-center justify-center rounded-full text-accent-text transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
                     <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                     <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                 </button>
@@ -42,7 +42,7 @@
                     <button @click="downloadPhoto"
                         :disabled="isSharing"
                         aria-label="Download photo"
-                        class="w-11 h-11 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
+                        class="w-11 h-11 flex items-center justify-center rounded-full text-accent-text transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
                         <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                         <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                     </button>
@@ -51,7 +51,7 @@
                 <button v-else @click="downloadPhoto"
                     :disabled="isSharing"
                     aria-label="Download photo"
-                    class="w-11 h-11 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
+                    class="w-11 h-11 flex items-center justify-center rounded-full text-accent-text transition backdrop-blur-sm shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
                     <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                     <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                 </button>
@@ -60,7 +60,7 @@
                     :class="[
                         'w-11 h-11 flex items-center justify-center rounded-full text-white transition backdrop-blur-sm active:scale-90',
                         isFavorited
-                            ? 'bg-red-500/30 text-red-300 hover:bg-red-500/40 active:bg-red-500/50'
+                            ? 'favorite-btn-active'
                             : 'bg-white/10 hover:bg-white/20 active:bg-white/30'
                     ]">
                     <Icon v-if="isFavorited" name="lucide:heart" class="h-6 w-6 fill-current" :stroke-width="2" />
@@ -97,7 +97,7 @@
                         aria-label="Toggle favorite" :aria-pressed="isFavorited"
                         class="w-10 h-10 flex items-center justify-center rounded-full transition backdrop-blur-sm active:scale-90"
                         :class="isFavorited
-                            ? 'bg-red-500/80 text-white opacity-100 hover:bg-red-500/90'
+                            ? 'favorite-solid opacity-100'
                             : 'bg-black/50 text-white/75 opacity-0 group-hover:opacity-100 hover:bg-black/70 hover:text-white'">
                         <Icon v-if="isFavorited" name="lucide:heart" class="h-6 w-6 fill-current" :stroke-width="2" />
                         <Icon v-else name="lucide:heart" class="h-6 w-6" :stroke-width="2" />
@@ -106,7 +106,7 @@
                         @touchmove.stop.prevent
                         :disabled="isSharing"
                         title="Download" aria-label="Download photo"
-                        class="w-10 h-10 flex items-center justify-center rounded-full text-white transition shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
+                        class="w-10 h-10 flex items-center justify-center rounded-full text-accent-text transition shadow-lg active:scale-90 disabled:opacity-50" style="background: var(--accent);">
                         <Icon v-if="!isSharing" name="lucide:download" class="h-6 w-6" :stroke-width="2" />
                         <Icon v-else name="lucide:loader-2" class="h-6 w-6 animate-spin" />
                     </button>
@@ -228,7 +228,7 @@
                                 class="w-10 h-10 rounded-full object-cover flex-shrink-0"
                                 style="border: 1px solid rgba(255,255,255,0.15);" />
                             <div v-else
-                                class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                class="w-10 h-10 rounded-full flex items-center justify-center text-accent-text font-bold text-sm flex-shrink-0"
                                 style="background: var(--accent);">
                                 {{ photo.uploader?.name?.charAt(0) || '?' }}
                             </div>
@@ -318,7 +318,7 @@
                     <span class="text-sm text-white font-medium">{{ t('photoReady') }}</span>
                     <button @click="retryShare"
                         class="text-sm font-semibold px-3 py-1 rounded-xl transition active:scale-95"
-                        style="background: var(--accent); color: #fff;">
+                        style="background: var(--accent); color: var(--accent-text);">
                         {{ t('tapToShare') }}
                     </button>
                 </template>
@@ -1062,6 +1062,23 @@ const downloadPhoto = async () => {
 </script>
 
 <style scoped>
+.favorite-btn-active {
+    background: color-mix(in srgb, var(--error) 30%, transparent);
+    color: color-mix(in srgb, var(--error) 65%, var(--accent-text));
+}
+.favorite-btn-active:hover {
+    background: color-mix(in srgb, var(--error) 40%, transparent);
+}
+.favorite-btn-active:active {
+    background: color-mix(in srgb, var(--error) 50%, transparent);
+}
+.favorite-solid {
+    background: color-mix(in srgb, var(--error) 80%, transparent);
+    color: var(--accent-text);
+}
+.favorite-solid:hover {
+    background: color-mix(in srgb, var(--error) 90%, transparent);
+}
 .glass-control {
     background: rgba(24, 24, 24, 0.58);
     border: 1px solid rgba(255, 255, 255, 0.12);

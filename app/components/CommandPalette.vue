@@ -11,10 +11,9 @@
       <!-- Palette panel -->
       <div
         class="relative w-full max-w-lg overflow-hidden flex flex-col bg-surface-1 border border-separator rounded-2xl shadow-2xl transition-all"
-        style="background-color: var(--surface-1); border-color: var(--separator); box-shadow: var(--shadow-xl);"
       >
         <!-- Search field -->
-        <div class="flex items-center gap-3 px-4 py-3 border-b border-separator" style="border-color: var(--separator);">
+        <div class="flex items-center gap-3 px-4 py-3 border-b border-separator">
           <!-- Search Icon (magnifying glass) -->
           <Icon
             name="lucide:search"
@@ -29,7 +28,7 @@
             type="text"
             placeholder="Search pages, albums, actions..."
             class="w-full bg-transparent text-text-1 placeholder-text-3 outline-none text-sm border-none focus:ring-0 p-0"
-            style="color: var(--text-1); outline: none;"
+            style="outline: none;"
             @keydown.down.prevent="navigateDown"
             @keydown.up.prevent="navigateUp"
             @keydown.enter.prevent="selectItem"
@@ -50,7 +49,6 @@
             :key="item.id"
             class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors text-sm"
             :class="index === selectedIndex ? 'bg-surface-3' : 'hover:bg-surface-2'"
-            :style="index === selectedIndex ? 'background-color: var(--surface-3);' : ''"
             @click="executeItem(item)"
             @mouseenter="selectedIndex = index"
           >
@@ -62,8 +60,8 @@
 
               <!-- Label & Subtitle -->
               <div class="flex flex-col min-w-0">
-                <span class="font-medium truncate text-text-1" style="color: var(--text-1);">{{ item.label }}</span>
-                <span v-if="item.subtitle" class="text-xs truncate text-text-3" style="color: var(--text-3);">{{ item.subtitle }}</span>
+                <span class="font-medium truncate text-text-1">{{ item.label }}</span>
+                <span v-if="item.subtitle" class="text-xs truncate text-text-3">{{ item.subtitle }}</span>
               </div>
             </div>
 
@@ -78,11 +76,11 @@
 
         <!-- No results state -->
         <div v-else class="p-8 text-center text-sm animate-fade-in" style="color: var(--text-2);">
-          No results found for "<span class="font-medium text-text-1" style="color: var(--text-1);">{{ searchQuery }}</span>"
+          No results found for "<span class="font-medium text-text-1">{{ searchQuery }}</span>"
         </div>
 
         <!-- Footer / Shortcuts guide -->
-        <div class="flex items-center justify-between px-4 py-2 border-t border-separator text-xs" style="border-color: var(--separator); color: var(--text-3);">
+        <div class="flex items-center justify-between px-4 py-2 border-t border-separator text-xs" style="color: var(--text-3);">
           <div class="flex items-center gap-3">
             <span><kbd class="px-1 py-0.5 rounded border" style="background-color: var(--surface-2); border-color: var(--separator);">↑↓</kbd> to navigate</span>
             <span><kbd class="px-1 py-0.5 rounded border" style="background-color: var(--surface-2); border-color: var(--separator);">↵</kbd> to select</span>

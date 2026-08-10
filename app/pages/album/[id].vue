@@ -16,8 +16,8 @@
 
         <!-- Error State -->
         <div v-else-if="error" class="px-4 sm:px-6 lg:px-8 py-12">
-            <div class="bg-red-500/20 border border-red-500/50 rounded-lg p-4">
-                <p class="text-red-200">{{ error }}</p>
+            <div class="rounded-lg p-4" style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
+                <p>{{ error }}</p>
             </div>
         </div>
 
@@ -362,19 +362,19 @@
             <Transition name="fade">
                 <div v-if="storyShareTimedOut"
                     class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md"
-                    style="background: rgba(30,30,30,0.92); border: 1px solid rgba(255,255,255,0.12);">
+                    style="background: var(--surface-1); border: 1px solid var(--separator);">
                     <template v-if="pendingStoryShareFile">
                         <Icon name="lucide:check" class="h-5 w-5 flex-shrink-0" style="color: var(--accent);" :stroke-width="2" />
-                        <span class="text-sm text-white font-medium">Story ready</span>
+                        <span class="text-sm text-text-1 font-medium">Story ready</span>
                         <button @click="retryStoryShare"
                             class="text-sm font-semibold px-3 py-1 rounded-xl transition active:scale-95"
-                            style="background: var(--accent); color: #fff;">
+                            style="background: var(--accent); color: var(--accent-text);">
                             Tap to share
                         </button>
                     </template>
                     <template v-else>
-                        <Icon name="lucide:loader-2" class="h-5 w-5 flex-shrink-0 animate-spin text-white/60" />
-                        <span class="text-sm text-white/80">Generating story image…</span>
+                        <Icon name="lucide:loader-2" class="h-5 w-5 flex-shrink-0 animate-spin text-text-3" />
+                        <span class="text-sm text-text-2">Generating story image…</span>
                     </template>
                 </div>
             </Transition>
@@ -416,8 +416,8 @@
                         Target Photographer
                     </label>
                     <select v-model="targetTransferUploaderId"
-                        class="w-full px-4 py-2.5 rounded-xl text-sm transition focus:outline-none focus:ring-2"
-                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator); focus-ring-color: var(--accent);">
+                        class="w-full px-4 py-2.5 rounded-xl text-sm transition focus:outline-none focus:ring-2 focus:ring-accent"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
                         <option value="" disabled>Select a photographer...</option>
                         <option v-for="photographer in allPhotographers" :key="photographer.id" :value="photographer.id">
                             {{ photographer.name }} ({{ photographer.role }})
@@ -435,7 +435,7 @@
                     </button>
                     <button @click="transferPhotos"
                         :disabled="!targetTransferUploaderId || transferringPhotos"
-                        class="px-5 py-2 rounded-full text-sm font-medium text-white transition flex items-center gap-1.5 disabled:opacity-50"
+                        class="px-5 py-2 rounded-full text-sm font-medium text-accent-text transition flex items-center gap-1.5 disabled:opacity-50"
                         style="background: var(--accent);"
                         @mouseover="!transferringPhotos && targetTransferUploaderId && (($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')"
                         @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
@@ -473,7 +473,7 @@
                                 class="w-10 h-10 rounded-full object-cover flex-shrink-0"
                                 style="border: 1px solid var(--separator);" />
                             <div v-else
-                                class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                class="w-10 h-10 rounded-full flex items-center justify-center text-accent-text font-bold text-sm flex-shrink-0"
                                 style="background: var(--accent);">
                                 {{ photographer.name?.charAt(0) || '?' }}
                             </div>
@@ -483,7 +483,7 @@
                                 <div v-if="photographer.instagram" class="flex items-center gap-2 mt-1">
                                     <span class="text-xs" style="color: var(--text-2);">@{{ photographer.instagram }}</span>
                                     <a :href="`https://instagram.com/${photographer.instagram || ''}`" target="_blank"
-                                        rel="noopener noreferrer" class="text-pink-400 hover:text-pink-300 transition">
+                                        rel="noopener noreferrer" class="text-accent hover:text-accent-hover transition">
                                         <Icon name="lucide:instagram" class="w-4 h-4" />
                                     </a>
                                 </div>
@@ -519,7 +519,7 @@
                     <input v-model="editPhotoForm.dateTaken" type="datetime-local"
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
@@ -529,7 +529,7 @@
                         <input v-model="editPhotoForm.cameraModel" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
@@ -537,7 +537,7 @@
                         <input v-model="editPhotoForm.lens" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                 </div>
@@ -548,7 +548,7 @@
                         <input v-model="editPhotoForm.focalLength" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
@@ -556,7 +556,7 @@
                         <input v-model="editPhotoForm.aperture" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                 </div>
@@ -567,7 +567,7 @@
                         <input v-model="editPhotoForm.shutterSpeed" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
@@ -575,7 +575,7 @@
                         <input v-model="editPhotoForm.iso" type="number"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                 </div>
@@ -900,7 +900,7 @@
                     <input v-model="editForm.name" type="text" required
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
@@ -909,7 +909,7 @@
                     <textarea v-model="editForm.description" rows="3"
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition resize-none"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'"></textarea>
                 </div>
 
@@ -919,7 +919,7 @@
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="wedding, portrait, night"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     <p class="text-xs mt-1" style="color: var(--text-3);">Separate tags with commas</p>
                 </div>
@@ -929,7 +929,7 @@
                     <input v-model="editForm.eventDate" type="date"
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
@@ -1023,7 +1023,7 @@
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="e.g. TNI Open Day 2026"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     <p class="text-xs mt-1" style="color: var(--text-3);">Text shown in the header (used when no logo image is set)</p>
                 </div>
@@ -1138,7 +1138,7 @@
                             <input v-model="newLink.label" type="text" placeholder="e.g. Family Group"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
                     </div>
@@ -1151,7 +1151,7 @@
                             :placeholder="isEditing ? 'Leave empty to keep current password' : 'Leave empty for no password'"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
 
                         <div v-if="isEditing && editingLinkHasPassword" class="mt-2 flex items-center gap-2">
@@ -1173,7 +1173,7 @@
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition resize-none"
                             style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="e.g. Ensure images are culled, please don't dump raws"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'"></textarea>
                         <p class="text-xs mt-1" style="color: var(--text-3);">Shown as a banner to uploaders when they open the link.</p>
                     </div>
@@ -1322,7 +1322,7 @@
                                 <input v-model="newCollaboratorEmail" type="email" required placeholder="user@email.com"
                                     class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                     style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                    @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                    @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                                     @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                             </div>
                             <div>
@@ -1372,7 +1372,7 @@
                                     class="w-10 h-10 rounded-full object-cover flex-shrink-0"
                                     style="border: 1px solid var(--separator);" />
                                 <div v-else
-                                    class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                    class="w-10 h-10 rounded-full flex items-center justify-center text-accent-text font-bold text-sm flex-shrink-0"
                                     style="background: var(--accent);">
                                     {{ collab.user.name?.charAt(0) || '?' }}
                                 </div>
@@ -1390,7 +1390,7 @@
                                     <option value="admin">Admin</option>
                                 </select>
                                 <button @click="removeCollaborator(collab)"
-                                    class="p-2 rounded-lg transition hover:bg-red-500/10 text-red-500"
+                                    class="p-2 rounded-lg transition hover:bg-[var(--error-bg)] text-[var(--error-text)]"
                                     title="Remove Collaborator">
                                     <Icon name="lucide:trash-2" class="w-4 h-4" :stroke-width="2" />
                                 </button>
@@ -1509,7 +1509,7 @@
                                 class="w-10 h-10 rounded-full object-cover flex-shrink-0"
                                 style="border: 1px solid var(--separator);" />
                             <div v-else
-                                class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                class="w-10 h-10 rounded-full flex items-center justify-center text-accent-text font-bold text-sm flex-shrink-0"
                                 style="background: var(--accent);">
                                 {{ photographer.name?.charAt(0) || '?' }}
                             </div>
@@ -1523,7 +1523,7 @@
                             target="_blank"
                             rel="noopener noreferrer"
                             class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0"
-                            style="background: var(--accent); color: white;"
+                            style="background: var(--accent); color: var(--accent-text);"
                             @mouseover="($event.currentTarget as HTMLElement).style.opacity = '0.9'"
                             @mouseout="($event.currentTarget as HTMLElement).style.opacity = '1'">
                             <Icon name="lucide:instagram" class="w-3.5 h-3.5" />

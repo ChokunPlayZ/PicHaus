@@ -34,7 +34,7 @@
         <div v-if="selected"
             class="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
             style="background: var(--accent);">
-            <Icon name="lucide:check" class="h-4 w-4 text-white" :stroke-width="2.5" />
+            <Icon name="lucide:check" class="h-4 w-4 text-accent-text" :stroke-width="2.5" />
         </div>
 
         <!-- Hover info (My Gallery) -->
@@ -68,7 +68,7 @@
             @click.stop="$emit('toggle-favorite')"
             class="absolute bottom-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-full transition-all duration-200"
             :class="favorited
-                ? 'bg-red-500/80 text-white opacity-100'
+                ? 'favorite-active opacity-100'
                 : 'bg-black/40 text-white/60 opacity-100 md:opacity-0 md:group-hover:opacity-100'">
             <Icon v-if="favorited" name="lucide:heart" class="h-3.5 w-3.5 fill-current" :stroke-width="2" />
             <Icon v-else name="lucide:heart" class="h-3.5 w-3.5" :stroke-width="2" />
@@ -127,6 +127,10 @@ const blurhashUrl = computed(() => {
 </script>
 
 <style scoped>
+.favorite-active {
+    background: color-mix(in srgb, var(--error) 80%, transparent);
+    color: var(--accent-text);
+}
 .action-menu-btn {
     width: 26px;
     height: 26px;

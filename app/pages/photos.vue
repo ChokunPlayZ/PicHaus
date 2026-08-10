@@ -39,12 +39,75 @@
                         <option v-for="l in options.lenses" :key="l" :value="l">{{ l }}</option>
                     </select>
 
+                    <select v-model="filters.aperture" @change="applyFilters"
+                        aria-label="Filter by aperture"
+                        class="px-3 py-2 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'">
+                        <option value="">All Apertures</option>
+                        <option v-for="a in options.apertures" :key="a" :value="a">f/{{ a }}</option>
+                    </select>
+
+                    <select v-model="filters.iso" @change="applyFilters"
+                        aria-label="Filter by ISO"
+                        class="px-3 py-2 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'">
+                        <option value="">All ISO</option>
+                        <option v-for="i in options.isos" :key="i" :value="i">ISO {{ i }}</option>
+                    </select>
+
+                    <select v-model="filters.shutterSpeed" @change="applyFilters"
+                        aria-label="Filter by shutter speed"
+                        class="px-3 py-2 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'">
+                        <option value="">All Shutter Speeds</option>
+                        <option v-for="s in options.shutterSpeeds" :key="s" :value="s">{{ s }}</option>
+                    </select>
+
+                    <span class="text-sm font-medium ml-1" style="color: var(--text-2);">Date:</span>
+
                     <input v-model="filters.dateFrom" @change="applyFilters" type="date"
                         aria-label="Filter from date"
                         class="px-3 py-2 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+
+                    <span class="text-sm" style="color: var(--text-3);">–</span>
+
+                    <input v-model="filters.dateTo" @change="applyFilters" type="date"
+                        aria-label="Filter to date"
+                        class="px-3 py-2 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'" />
+
+                    <!-- Sort Controls -->
+                    <span class="text-sm font-medium ml-1" style="color: var(--text-2);">Sort:</span>
+
+                    <select v-model="sorting.field" @change="applyFilters"
+                        aria-label="Sort by"
+                        class="px-3 py-2 text-sm rounded-xl transition"
+                        style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'"
+                        @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'">
+                        <option value="dateTaken">Date Taken</option>
+                        <option value="createdAt">Date Added</option>
+                        <option value="updatedAt">Last Updated</option>
+                        <option value="iso">ISO</option>
+                    </select>
+
+                    <button @click="toggleSortOrder" class="px-3 py-2 rounded-full text-sm transition"
+                        :title="sorting.order === 'asc' ? 'Switch to descending' : 'Switch to ascending'"
+                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);">
+                        <Icon v-if="sorting.order === 'asc'" name="lucide:arrow-up" class="w-4 h-4" :stroke-width="2" />
+                        <Icon v-else name="lucide:arrow-down" class="w-4 h-4" :stroke-width="2" />
+                    </button>
 
                     <button v-if="hasActiveFilters" @click="clearFilters"
                         class="px-3 py-2 rounded-full text-sm transition"
@@ -194,7 +257,10 @@ const { containerRef, picturesLayout } = useJustifiedLayout(photos)
 
 const options = reactive({
     cameras: [] as string[],
-    lenses: [] as string[]
+    lenses: [] as string[],
+    apertures: [] as string[],
+    isos: [] as number[],
+    shutterSpeeds: [] as string[]
 })
 
 const filters = ref({
@@ -205,6 +271,11 @@ const filters = ref({
     shutterSpeed: (route.query.shutterSpeed as string) || '',
     dateFrom: (route.query.dateFrom as string) || '',
     dateTo: (route.query.dateTo as string) || ''
+})
+
+const sorting = reactive({
+    field: (route.query.sort as string) || 'dateTaken',
+    order: ((route.query.order as string) || 'desc') as 'asc' | 'desc'
 })
 
 // Computed for selected photo to ensure safety
@@ -236,8 +307,15 @@ const nextPhotoTimestamp = computed(() => {
 })
 
 const hasActiveFilters = computed(() => {
-    return Object.values(filters.value).some(v => v !== '')
+    return Object.values(filters.value).some(v => v !== '') ||
+        sorting.field !== 'dateTaken' ||
+        sorting.order !== 'desc'
 })
+
+function toggleSortOrder() {
+    sorting.order = sorting.order === 'asc' ? 'desc' : 'asc'
+    applyFilters()
+}
 
 // Fetch initial data logic
 const fetchPhotos = async (reset = false) => {
@@ -253,11 +331,10 @@ const fetchPhotos = async (reset = false) => {
     }
 
     try {
-        const query = {
-            page: page.value,
-            limit: 50,
-            ...Object.fromEntries(Object.entries(filters.value).filter(([_, v]) => v !== ''))
-        }
+        const query: Record<string, any> = { page: page.value, limit: 50, sort: sorting.field, order: sorting.order }
+        Object.entries(filters.value).forEach(([k, v]) => {
+            if (v) query[k] = v
+        })
 
         const res: any = await $fetch('/api/v1/photos', { params: query })
 
@@ -286,20 +363,21 @@ const fetchOptions = async () => {
         const stats: any = await $fetch('/api/v1/stats')
         if (stats?.cameras) options.cameras = stats.cameras.map((c: any) => c.model)
         if (stats?.lenses) options.lenses = stats.lenses.map((l: any) => l.model)
+        if (stats?.technical?.aperture) options.apertures = stats.technical.aperture.map((a: any) => a.value)
+        if (stats?.technical?.iso) options.isos = stats.technical.iso.map((i: any) => Number(i.value))
+        if (stats?.technical?.shutterSpeed) options.shutterSpeeds = stats.technical.shutterSpeed.map((s: any) => s.value)
     } catch (e) {
         console.error('Failed to fetch stats', e)
     }
 }
 
 const applyFilters = () => {
-    const query = { ...route.query }
+    const query: Record<string, any> = { ...route.query }
     Object.entries(filters.value).forEach(([k, v]) => {
-        if (v) {
-            query[k] = v
-        } else {
-            delete query[k]
-        }
+        if (v) query[k] = v; else delete query[k]
     })
+    query.sort = sorting.field
+    query.order = sorting.order
     router.replace({ query })
     fetchPhotos(true)
 }
@@ -315,12 +393,21 @@ const clearFilters = () => {
         dateFrom: '',
         dateTo: ''
     }
+    sorting.field = 'dateTaken'
+    sorting.order = 'desc'
     applyFilters()
 }
 
 // Watch route.query to handle browser back/forward navigation
 watch(() => route.query, (newQuery) => {
     let changed = false
+    const nextSort = (newQuery.sort as string) || 'dateTaken'
+    const nextOrder = ((newQuery.order as string) || 'desc') as 'asc' | 'desc'
+    if (nextSort !== sorting.field || nextOrder !== sorting.order) {
+        sorting.field = nextSort
+        sorting.order = nextOrder
+        changed = true
+    }
     Object.keys(filters.value).forEach((key) => {
         const nextVal = (newQuery[key] as string) || ''
         if (nextVal !== (filters.value as any)[key]) {
@@ -428,10 +515,10 @@ async function onCtxDelete() {
     }
 }
 
-function onPhotoSaved(updatedPhoto: Photo) {
+function onPhotoSaved(updatedPhoto: { id: string; [key: string]: any }) {
     const idx = photos.value.findIndex(p => p.id === updatedPhoto.id)
     if (idx !== -1) {
-        photos.value[idx] = { ...photos.value[idx], ...updatedPhoto }
+        photos.value[idx] = { ...photos.value[idx], ...updatedPhoto } as Photo
     }
 }
 

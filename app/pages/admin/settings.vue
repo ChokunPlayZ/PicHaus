@@ -23,7 +23,7 @@
                             <input v-model="form.siteName" type="text" placeholder="PicHaus"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                             <p class="text-xs mt-1" style="color: var(--text-3);">Appears in the navbar and browser tab title</p>
                         </div>
@@ -37,10 +37,10 @@
                                         class="w-10 h-10 rounded-xl cursor-pointer border-0 p-0.5"
                                         style="background: var(--surface-2); border: 1px solid var(--separator);" />
                                 </div>
-                                <input v-model="form.accentColor" type="text" placeholder="#0071e3" maxlength="7"
+                                <input v-model="form.accentColor" type="text" placeholder="#c25436" maxlength="7"
                                     class="w-32 px-3 py-2 text-sm rounded-xl transition font-mono"
                                     style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                    @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                    @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                     @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                                 <button v-if="form.accentColor" @click="form.accentColor = ''"
                                     class="px-3 py-2 rounded-xl text-xs font-medium transition"
@@ -50,7 +50,7 @@
                                 <div class="w-10 h-10 rounded-xl border flex-shrink-0"
                                     :style="{ background: form.accentColor || 'var(--accent)', borderColor: 'var(--separator)' }"></div>
                             </div>
-                            <p class="text-xs mt-1" style="color: var(--text-3);">Leave empty for the default Apple blue (#0071e3)</p>
+                            <p class="text-xs mt-1" style="color: var(--text-3);">Leave empty for the default terracotta (#c25436)</p>
                         </div>
 
                         <!-- Site Logo -->
@@ -109,7 +109,7 @@
                     </p>
 
                     <div v-if="!googleClientIdConfigured" class="rounded-xl px-4 py-3 text-sm mb-4"
-                        style="background: #fef3c7; border: 1px solid #fcd34d; color: #92400e;">
+                        style="background: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text);">
                         GOOGLE_CLIENT_ID is not set. Configure the env vars to enable Google sign-in.
                     </div>
 
@@ -128,7 +128,7 @@
                             <input v-model="form.googleOAuthAllowedDomain" type="text" placeholder="e.g. tni.ac.th"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                             <p class="text-xs mt-1" style="color: var(--text-3);">Leave empty to allow any Google account. Set to e.g. <code>tni.ac.th</code> to restrict to one domain.</p>
                         </div>
@@ -147,7 +147,7 @@
                             <input v-model="form.googleButtonText" type="text" placeholder="Sign in with Google"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                             <p class="text-xs mt-1" style="color: var(--text-3);">Shown on login and upload pages. E.g. "Login with TNI ID".</p>
                         </div>
@@ -192,7 +192,7 @@
                     </p>
 
                     <div v-if="!microsoftClientIdConfigured" class="rounded-xl px-4 py-3 text-sm mb-4"
-                        style="background: #fef3c7; border: 1px solid #fcd34d; color: #92400e;">
+                        style="background: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text);">
                         MICROSOFT_CLIENT_ID is not set. Configure the env vars to enable Microsoft sign-in.
                     </div>
 
@@ -211,7 +211,7 @@
                             <input v-model="form.microsoftOAuthTenantId" type="text" placeholder="e.g. tni.ac.th or xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                             <p class="text-xs mt-1" style="color: var(--text-3);">Leave empty to allow any Microsoft account. Set to your Entra ID tenant domain or GUID to restrict to your organization.</p>
                         </div>
@@ -221,7 +221,7 @@
                             <input v-model="form.microsoftButtonText" type="text" placeholder="Sign in with Microsoft"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
@@ -353,7 +353,7 @@ const save = async () => {
     saveSuccess.value = false
 
     if (form.value.accentColor && !/^#[0-9a-fA-F]{6}$/.test(form.value.accentColor)) {
-        saveError.value = 'Accent color must be a 6-digit hex like #0071e3'
+        saveError.value = 'Accent color must be a 6-digit hex like #c25436'
         return
     }
 

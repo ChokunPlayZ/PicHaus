@@ -15,8 +15,9 @@
   --text-3: #96978f;
   --text-link: #a5472d;
 
-  /* ── Accent (Apple blue) ─────────────────────────────── */
+  /* ── Accent (terracotta) ─────────────────────────────── */
   --accent: #c25436;
+  --accent-rgb: 194, 84, 54;
   --accent-hover: #aa4329;
   --accent-pressed: #913923;
   --accent-light: rgba(194, 84, 54, 0.12);
@@ -89,6 +90,7 @@
   --text-3: rgba(235, 235, 245, 0.3);
   --text-link: #0a84ff;
   --accent: #df6a48;
+  --accent-rgb: 223, 106, 72;
   --accent-hover: #eb7b59;
   --accent-pressed: #c25436;
   --accent-light: rgba(223, 106, 72, 0.16);
@@ -284,27 +286,8 @@ input[class*="bg-white/5"][class*="border-white/10"]:focus,
 select[class*="bg-white/5"][class*="border-white/10"]:focus,
 textarea[class*="bg-white/5"][class*="border-white/10"]:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
   outline: none;
-}
-
-/* ── Primary action buttons (gradient or plain) ─────────── */
-button[class*="bg-gradient-to-r"] {
-  border-radius: var(--radius-pill) !important;
-  font-weight: 400;
-  background: var(--accent) !important;
-  background-image: none !important;
-  color: var(--accent-text) !important;
-  transition: filter 0.15s ease, transform 0.1s ease;
-  box-shadow: none !important;
-}
-
-button[class*="bg-gradient-to-r"]:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-
-button[class*="bg-gradient-to-r"]:active:not(:disabled) {
-  transform: scale(0.97);
 }
 
 /* ── Secondary ghost buttons ────────────────────────────── */

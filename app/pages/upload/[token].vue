@@ -230,7 +230,7 @@
                             <!-- Done -->
                             <div v-else-if="item.status === 'done'"
                                 class="w-7 h-7 rounded-full flex items-center justify-center"
-                                style="background: rgba(34,197,94,0.9);">
+                                style="background: var(--success);">
                                 <Icon name="lucide:check" class="w-4 h-4 text-white" :stroke-width="2.5" />
                             </div>
 
@@ -238,7 +238,7 @@
                             <div v-else-if="item.status === 'duplicate'"
                                 class="w-7 h-7 rounded-full flex items-center justify-center"
                                 title="Already in album"
-                                style="background: rgba(234,179,8,0.9);">
+                                style="background: var(--warning);">
                                 <Icon name="lucide:copy" class="w-4 h-4 text-white" :stroke-width="2" />
                             </div>
 
@@ -246,7 +246,7 @@
                             <div v-else-if="item.status === 'error'"
                                 class="w-7 h-7 rounded-full flex items-center justify-center"
                                 :title="item.error"
-                                style="background: rgba(239,68,68,0.9);">
+                                style="background: var(--error);">
                                 <Icon name="lucide:x" class="w-4 h-4 text-white" :stroke-width="2" />
                             </div>
                         </div>
@@ -254,7 +254,7 @@
                         <!-- Duplicate label -->
                         <div v-if="item.status === 'duplicate'"
                             class="absolute bottom-0 inset-x-0 py-0.5 text-center text-[10px] font-medium text-white"
-                            style="background: rgba(234,179,8,0.85);">
+                            style="background: var(--warning);">
                             duplicate
                         </div>
                     </div>
