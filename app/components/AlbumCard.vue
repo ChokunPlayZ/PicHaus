@@ -20,8 +20,8 @@
             <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center"
                 :style="selected
                     ? 'background: var(--accent); border-color: var(--accent);'
-                    : 'background: rgba(255,255,255,0.9); border-color: rgba(0,0,0,0.2);'">
-                <Icon v-if="selected" name="lucide:check" class="w-3.5 h-3.5 text-white" :stroke-width="3" />
+                    : 'background: var(--surface-1); border-color: var(--separator-strong);'">
+                <Icon v-if="selected" name="lucide:check" class="w-3.5 h-3.5 text-accent-text" :stroke-width="3" />
             </div>
         </div>
 

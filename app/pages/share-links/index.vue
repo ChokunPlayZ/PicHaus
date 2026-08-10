@@ -145,7 +145,7 @@
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 placeholder="Public Link"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
@@ -162,7 +162,7 @@
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition resize-none"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 placeholder="e.g. Ensure images are culled, please don't dump raws"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'"></textarea>
                             <p class="text-xs mt-1" style="color: var(--text-3);">Shown as a banner to uploaders when they open the link.</p>
                         </div>
@@ -173,7 +173,7 @@
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 placeholder="Set new password (leave empty to keep current)"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                             <div v-if="editForm.hasPassword" class="flex items-center gap-2 mt-2">
                                 <input v-model="editForm.removePassword" type="checkbox" id="removePass"
@@ -192,7 +192,7 @@
                             <input v-model="editForm.groupTitle" type="text"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
@@ -201,7 +201,7 @@
                             <textarea v-model="editForm.groupDescription" rows="2"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition resize-none"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'"></textarea>
                         </div>
 
@@ -212,7 +212,7 @@
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 placeholder="wedding, portrait (comma-separated)"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
@@ -261,7 +261,7 @@
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 placeholder="e.g. Wedding Collection 2025"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
@@ -285,7 +285,7 @@
                                     </div>
                                     <div class="w-5 h-5 rounded-full flex items-center justify-center ml-2 shrink-0"
                                         :style="editForm.groupAlbumIds.includes(album.id) ? 'background: var(--accent);' : 'background: transparent; border: 1.5px solid var(--separator);'">
-                                        <Icon v-if="editForm.groupAlbumIds.includes(album.id)" name="lucide:check" class="w-3 h-3" style="color: white;" :stroke-width="3" />
+                                        <Icon v-if="editForm.groupAlbumIds.includes(album.id)" name="lucide:check" class="w-3 h-3" style="color: var(--accent-text);" :stroke-width="3" />
                                     </div>
                                 </div>
                             </div>
@@ -333,7 +333,7 @@
                     </button>
                     <button @click="handleDelete" :disabled="deleting"
                         class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-50"
-                        style="background: var(--error); color: white;">
+                        style="background: var(--error); color: var(--accent-text);">
                         {{ deleting ? 'Deleting…' : 'Delete' }}
                     </button>
                 </div>

@@ -11,7 +11,7 @@
                     <input v-model="searchQuery" @input="handleSearch" type="text" placeholder="Search users…"
                         class="pl-9 pr-4 py-2 text-sm rounded-xl transition w-64"
                         style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     <Icon
                         name="lucide:search"
@@ -154,7 +154,7 @@
                         <input v-model="editForm.name" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
@@ -162,7 +162,7 @@
                         <input v-model="editForm.email" type="email" required
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
@@ -170,7 +170,7 @@
                         <input v-model="editForm.instagram" type="text"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
@@ -244,7 +244,7 @@
                     <div class="flex items-center gap-3">
                         <img v-if="mergeSource?.avatar" :src="mergeSource.avatar" class="h-8 w-8 rounded-full object-cover shrink-0" style="border: 1px solid var(--separator);" />
                         <div v-else class="h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
-                            style="background: var(--error); color: #fff;">
+                            style="background: var(--error); color: var(--accent-text);">
                             {{ mergeSource?.name?.[0]?.toUpperCase() || '?' }}
                         </div>
                         <div>
@@ -273,7 +273,7 @@
                         placeholder="Search by name, email, or instagram…"
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
@@ -332,7 +332,7 @@
                     </button>
                     <button @click="handleMergeSubmit" :disabled="!mergeTarget || merging"
                         class="flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed"
-                        style="background: var(--error); color: #fff;"
+                        style="background: var(--error); color: var(--accent-text);"
                         @mouseover="mergeTarget && !merging && (($event.currentTarget as HTMLElement).style.opacity = '0.85')"
                         @mouseout="($event.currentTarget as HTMLElement).style.opacity = '1'">
                         {{ merging ? 'Merging…' : 'Merge &amp; Delete Duplicate' }}

@@ -18,7 +18,7 @@
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="e.g., My Website Integration"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
@@ -67,7 +67,7 @@
                     </code>
                     <button @click="copyToken"
                         class="px-4 py-2.5 rounded-full text-sm font-medium transition whitespace-nowrap"
-                        :style="copied ? 'background: var(--success-text); color: white;' : 'background: var(--accent); color: var(--accent-text);'">
+                        :style="copied ? 'background: var(--success-text); color: var(--accent-text);' : 'background: var(--accent); color: var(--accent-text);'">
                         {{ copied ? '✓ Copied' : 'Copy' }}
                     </button>
                 </div>

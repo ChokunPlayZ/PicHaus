@@ -26,7 +26,7 @@
                             <input v-model="password" type="password" required :placeholder="t('passwordPlaceholder')"
                                 class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
 
@@ -227,7 +227,7 @@
                                     class="w-10 h-10 rounded-full object-cover flex-shrink-0"
                                     style="border: 1px solid var(--separator);" />
                                 <div v-else
-                                    class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                    class="w-10 h-10 rounded-full flex items-center justify-center text-accent-text font-bold text-sm flex-shrink-0"
                                     style="background: var(--accent);">
                                     {{ photographer.name?.charAt(0) || '?' }}
                                 </div>
@@ -259,7 +259,7 @@
                 class="fixed bottom-8 left-1/2 -translate-x-1/2 rounded-full px-5 py-3 flex items-center gap-4 z-40 whitespace-nowrap"
                 style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
                 <div class="text-sm font-medium pr-4 flex items-center gap-2" style="color: var(--text-1); border-right: 1px solid var(--separator);">
-                    <Icon name="lucide:heart" class="h-4.5 w-4.5 text-red-500 flex-shrink-0" style="fill: currentColor;" />
+                    <Icon name="lucide:heart" class="h-4.5 w-4.5 text-error flex-shrink-0" style="fill: currentColor;" />
                     <span>{{ t('selectedCount').replace('{count}', String(favorites.size)).replace('{plural}', favorites.size === 1 ? t('photo') : t('photos')) }}</span>
                 </div>
 
@@ -300,10 +300,10 @@
                     <div class="flex flex-col gap-2">
                         <button @click="shareFavorites"
                             :disabled="isSharing"
-                            class="w-full py-3 rounded-xl text-sm font-semibold transition active:scale-95 text-white flex items-center justify-center gap-2 disabled:opacity-50"
+                            class="w-full py-3 rounded-xl text-sm font-semibold transition active:scale-95 text-accent-text flex items-center justify-center gap-2 disabled:opacity-50"
                             style="background: var(--accent);">
                             <span v-if="isSharing" class="w-4 h-4 rounded-full border-2 animate-spin"
-                                style="border-color: rgba(255,255,255,0.3); border-top-color: white;"></span>
+                                style="border-color: color-mix(in srgb, var(--accent-text) 30%, transparent); border-top-color: var(--accent-text);"></span>
                             {{ isSharing ? t('saving').replace('...', '') : t('shareSaveNow') }}
                         </button>
                         <button @click="downloadFavoritesAsZip"
@@ -377,7 +377,7 @@
                                 class="w-10 h-10 rounded-full object-cover flex-shrink-0"
                                 style="border: 1px solid var(--separator);" />
                             <div v-else
-                                class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                class="w-10 h-10 rounded-full flex items-center justify-center text-accent-text font-bold text-sm flex-shrink-0"
                                 style="background: var(--accent);">
                                 {{ photographer.name?.charAt(0) || '?' }}
                             </div>
@@ -391,7 +391,7 @@
                             target="_blank"
                             rel="noopener noreferrer"
                             class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0"
-                            style="background: var(--accent); color: white;"
+                            style="background: var(--accent); color: var(--accent-text);"
                             @mouseover="($event.currentTarget as HTMLElement).style.opacity = '0.9'"
                             @mouseout="($event.currentTarget as HTMLElement).style.opacity = '1'">
                             <Icon name="lucide:instagram" class="w-3.5 h-3.5" />

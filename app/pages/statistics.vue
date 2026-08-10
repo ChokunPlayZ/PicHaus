@@ -165,6 +165,27 @@ const stats = ref<any>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+// Chart.js needs resolved colors at runtime; these follow the theme tokens.
+const chartAccent = ref('')
+const chartTick = ref('')
+const chartGrid = ref('')
+let chartThemeObserver: MutationObserver | null = null
+
+const resolveChartTheme = () => {
+  if (!process.client) return
+  const styles = getComputedStyle(document.documentElement)
+  chartAccent.value = styles.getPropertyValue('--accent').trim()
+  chartTick.value = styles.getPropertyValue('--text-3').trim()
+  chartGrid.value = styles.getPropertyValue('--separator').trim()
+}
+
+const hexToRgba = (hex: string, alpha: number) => {
+  const clean = hex.trim().replace(/^#/, '')
+  if (clean.length !== 6) return hex
+  const int = parseInt(clean, 16)
+  return `rgba(${(int >> 16) & 255}, ${(int >> 8) & 255}, ${int & 255}, ${alpha})`
+}
+
 // Format bytes to human readable string
 const formatBytes = (bytes: number, decimals = 2) => {
   if (!+bytes) return '0 Bytes'
@@ -219,10 +240,10 @@ const timelineChartData = computed(() => {
       {
         label: 'Photos',
         data: timelineCounts.value,
-        borderColor: '#0071e3',
-        backgroundColor: 'rgba(0, 113, 227, 0.08)',
-        pointBackgroundColor: '#0071e3',
-        pointBorderColor: '#0071e3',
+        borderColor: chartAccent.value,
+        backgroundColor: hexToRgba(chartAccent.value, 0.08),
+        pointBackgroundColor: chartAccent.value,
+        pointBorderColor: chartAccent.value,
         pointRadius: 4,
         pointHoverRadius: 5,
         borderWidth: 3,
@@ -254,22 +275,22 @@ const timelineChartOptions = computed(() => {
     scales: {
       x: {
         ticks: {
-          color: 'rgba(60,60,67,0.5)',
+          color: chartTick.value,
           maxRotation: 45,
           minRotation: 45,
         },
         grid: {
-          color: 'rgba(60,60,67,0.06)',
+          color: chartGrid.value,
         },
       },
       y: {
         beginAtZero: true,
         ticks: {
-          color: 'rgba(60,60,67,0.5)',
+          color: chartTick.value,
           precision: 0,
         },
         grid: {
-          color: 'rgba(60,60,67,0.08)',
+          color: chartGrid.value,
         },
       },
     },
@@ -277,6 +298,9 @@ const timelineChartOptions = computed(() => {
 })
 
 onMounted(async () => {
+  resolveChartTheme()
+  chartThemeObserver = new MutationObserver(resolveChartTheme)
+  chartThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
   try {
     loading.value = true
     const data = await $fetch('/api/v1/stats')
@@ -286,5 +310,10 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+})
+
+onUnmounted(() => {
+  chartThemeObserver?.disconnect()
+  chartThemeObserver = null
 })
 </script>

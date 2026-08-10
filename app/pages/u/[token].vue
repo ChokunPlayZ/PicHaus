@@ -34,7 +34,7 @@
                         <input v-model="uploadPassword" type="password" required placeholder="Enter password"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <button type="submit" :disabled="verifying"
@@ -77,7 +77,7 @@
                             <img v-if="!googleLoading && siteSettings.googleButtonLogoUrl" :src="siteSettings.googleButtonLogoUrl" class="w-5 h-5 object-contain" />
                             <Icon v-else-if="!googleLoading" name="logos:google-icon" class="w-5 h-5" />
                             <div v-else class="w-4 h-4 rounded-full border-2 animate-spin"
-                                style="border-color: #e5e7eb; border-top-color: #4285F4;"></div>
+                                style="border-color: var(--separator); border-top-color: #4285F4;"></div>
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold" style="color: var(--text-1);">{{ siteSettings.googleButtonText || 'Sign in with Google' }}</p>
@@ -98,7 +98,7 @@
                             <img v-if="!microsoftLoading && siteSettings.microsoftButtonLogoUrl" :src="siteSettings.microsoftButtonLogoUrl" class="w-5 h-5 object-contain" />
                             <Icon v-else-if="!microsoftLoading" name="logos:microsoft-icon" class="w-5 h-5" />
                             <div v-else class="w-4 h-4 rounded-full border-2 animate-spin"
-                                style="border-color: #e5e7eb; border-top-color: #00a4ef;"></div>
+                                style="border-color: var(--separator); border-top-color: #00a4ef;"></div>
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold" style="color: var(--text-1);">{{ siteSettings.microsoftButtonText || 'Sign in with Microsoft' }}</p>
@@ -124,8 +124,8 @@
                         @mouseover="($event.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--separator)'">
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style="background: rgba(34,197,94,0.12);">
-                            <Icon name="lucide:user-plus" class="w-5 h-5" style="color: #22c55e;" :stroke-width="1.75" />
+                            style="background: var(--success-bg);">
+                            <Icon name="lucide:user-plus" class="w-5 h-5" style="color: var(--success-text);" :stroke-width="1.75" />
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold" style="color: var(--text-1);">Create Account</p>
@@ -141,7 +141,7 @@
                         @mouseover="($event.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'"
                         @mouseout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--separator)'">
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style="background: rgba(156,163,175,0.15);">
+                            style="background: var(--surface-3);">
                             <Icon name="lucide:user" class="w-5 h-5" style="color: var(--text-2);" :stroke-width="1.75" />
                         </div>
                         <div class="flex-1 min-w-0">
@@ -167,7 +167,7 @@
                         <input v-model="signupForm.name" type="text" required placeholder="Your Name"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
@@ -175,7 +175,7 @@
                         <input v-model="signupForm.email" type="email" required placeholder="your@email.com"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
@@ -183,7 +183,7 @@
                         <input v-model="signupForm.password" type="password" required placeholder="••••••••" minlength="8"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
@@ -191,7 +191,7 @@
                         <input v-model="signupForm.confirmPassword" type="password" required placeholder="••••••••"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <p v-if="signupError" class="text-xs rounded-xl px-3.5 py-2.5"
@@ -222,7 +222,7 @@
                         <input v-model="guestForm.name" type="text" required placeholder="Your Name"
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
                     <div>
@@ -232,7 +232,7 @@
                             <input v-model="guestForm.instagram" type="text" placeholder="username"
                                 class="w-full pl-7 pr-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
                     </div>

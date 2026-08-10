@@ -38,7 +38,7 @@
                             class="max-w-full max-h-full object-contain" style="max-height: 96px;" />
                         <button @click="confirmDelete(logo)"
                             class="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            style="background: var(--error); color: #fff;"
+                            style="background: var(--error); color: var(--accent-text);"
                             title="Delete logo">
                             <Icon name="lucide:trash-2" class="h-3.5 w-3.5" :stroke-width="2" />
                         </button>

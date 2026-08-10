@@ -22,7 +22,7 @@
                         </div>
                         <button type="button"
                             class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition"
-                            style="background: var(--accent); color: white; box-shadow: var(--shadow-sm);"
+                            style="background: var(--accent); color: var(--accent-text); box-shadow: var(--shadow-sm);"
                             @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
                             @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'"
                             @click="avatarFileInput?.click()"
@@ -36,7 +36,7 @@
                         <p class="font-medium text-sm mb-0.5" style="color: var(--text-1);">Profile Photo</p>
                         <p class="text-xs" style="color: var(--text-3);">JPEG, PNG, WebP or GIF · Max 5 MB</p>
                         <div v-if="avatarUploading" class="text-xs mt-1.5 flex items-center gap-1.5" style="color: var(--accent);">
-                            <div class="w-3 h-3 rounded-full border animate-spin" style="border-color: rgba(0,113,227,0.3); border-top-color: var(--accent);"></div>
+                            <div class="w-3 h-3 rounded-full border animate-spin" style="border-color: color-mix(in srgb, var(--accent) 30%, transparent); border-top-color: var(--accent);"></div>
                             Uploading…
                         </div>
                         <div v-else-if="avatarError" class="text-xs mt-1.5" style="color: var(--error);">{{ avatarError }}</div>
@@ -50,7 +50,7 @@
                         <input v-model="form.name" type="text" required
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
@@ -59,7 +59,7 @@
                         <input v-model="form.email" type="email" required
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
@@ -71,7 +71,7 @@
                                 class="w-full pl-7 pr-3.5 py-2.5 text-sm rounded-xl transition"
                                 style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                                 placeholder="username"
-                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                                @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                                 @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                         </div>
                     </div>
@@ -83,7 +83,7 @@
                             class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                             placeholder="••••••••"
-                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                            @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
@@ -137,7 +137,7 @@
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-1); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="e.g. YubiKey 5, MacBook Touch ID"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'"
                         @keydown.enter.prevent="confirmRegister"
                         @keydown.escape="showNamePrompt = false" />

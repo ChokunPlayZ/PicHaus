@@ -93,7 +93,7 @@
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
                         placeholder="e.g. Photography club 2026 intake"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
@@ -103,7 +103,7 @@
                     <input v-model="userSearch" type="text" placeholder="Search by name or email…"
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl transition mb-2"
                         style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
-                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(0,113,227,0.15)'"
+                        @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)'"
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     <div class="max-h-48 overflow-y-auto space-y-1 rounded-xl p-1"
                         style="background: var(--surface-2); border: 1px solid var(--separator);">

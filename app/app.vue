@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import { setAuthToken } from '~/utils/auth-client'
+import { getThemePreference, syncThemeToClass } from '~/utils/theme'
 
 const IMPERSONATE_RETURN_KEY = 'pichaus_impersonate_return_token'
 
@@ -83,30 +84,20 @@ const syncImpersonating = () => {
 onMounted(() => {
     loadSettings()
     syncImpersonating()
+})
 
-    // Initialize/sync light/dark mode class on client hydration
-    const syncTheme = () => {
-        const theme = localStorage.getItem('theme') || document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1]
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-        if (theme === 'dark' || (!theme && prefersDark)) {
-            document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
+// The head script in nuxt.config.ts paints the correct theme before first paint.
+// Only follow system preference changes when no explicit choice is saved.
+if (import.meta.client) {
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const onSystemThemeChange = () => {
+        if (!getThemePreference()) {
+            syncThemeToClass()
         }
     }
-    syncTheme()
-
-    // Also listen for system-wide color scheme changes
-    if (window.matchMedia) {
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            // Only follow system changes if there is no explicit user preference saved
-            const theme = localStorage.getItem('theme') || document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1]
-            if (!theme) {
-                syncTheme()
-            }
-        })
-    }
-})
+    onMounted(() => media.addEventListener('change', onSystemThemeChange))
+    onUnmounted(() => media.removeEventListener('change', onSystemThemeChange))
+}
 
 watch(() => route.fullPath, syncImpersonating)
 
