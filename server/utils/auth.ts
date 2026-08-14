@@ -101,7 +101,10 @@ export function getAuthUserId(event: any): string | null {
     }
 
     const requestPath = getRequestURL(event).pathname
-    if (!requestPath.startsWith('/api/assets/')) return null
+    const isQueryTokenPath =
+        requestPath.startsWith('/api/assets/') ||
+        requestPath.startsWith('/api/v1/faces/')
+    if (!isQueryTokenPath) return null
 
     const tokenFromQuery = getQuery(event).access_token
     if (typeof tokenFromQuery !== 'string' || !tokenFromQuery) return null

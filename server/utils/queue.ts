@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { count, sql } from 'drizzle-orm'
+import { and, count, eq, inArray, sql } from 'drizzle-orm'
 import { jobs } from '../db/schema'
 import { db } from './db'
 import { getUnixTimestamp } from './auth'
@@ -253,4 +253,24 @@ export async function getQueueStats(): Promise<{ byType: Record<string, { pendin
     }
 
     return { byType }
+}
+
+export async function retryFailedJobs(jobIds?: string[]): Promise<number> {
+    const now = getUnixTimestamp()
+    const conditions = [eq(jobs.status, 'failed')]
+    if (jobIds && jobIds.length > 0) {
+        conditions.push(inArray(jobs.id, jobIds))
+    }
+
+    const updated = await db.update(jobs).set({
+        status: 'pending',
+        attempts: 0,
+        error: null,
+        runAt: now,
+        lockedAt: null,
+        lockedBy: null,
+        updatedAt: now,
+    }).where(and(...conditions)).returning({ id: jobs.id })
+
+    return updated.length
 }

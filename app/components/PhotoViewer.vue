@@ -520,11 +520,11 @@ async function fetchFaces() {
     const controller = new AbortController()
     facesAbortController = controller
     try {
-        const res = await $fetch<{ faces: FaceOverlay[] }>(`/api/v1/photos/${props.photo.id}/faces`, {
+        const res = await $fetch<{ success: boolean; data: FaceOverlay[] }>(`/api/v1/photos/${props.photo.id}/faces`, {
             signal: controller.signal
         })
         if (controller.signal.aborted) return
-        faces.value = Array.isArray(res?.faces) ? res.faces : []
+        faces.value = Array.isArray(res?.data) ? res.data : []
         facesAvailable.value = faces.value.length > 0
         updateFaceOverlayGeometry()
     } catch {

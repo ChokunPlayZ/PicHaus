@@ -151,7 +151,18 @@
                     style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
                     <div class="flex items-center justify-between gap-4 mb-4">
                         <h2 class="text-base font-semibold" style="color: var(--text-1);">Failed Jobs</h2>
-                        <span v-if="failedJobs.length > 0" class="text-xs shrink-0" style="color: var(--text-3);">Last {{ failedJobs.length }} failures</span>
+                        <div class="flex items-center gap-3">
+                            <span v-if="failedJobs.length > 0" class="text-xs shrink-0" style="color: var(--text-3);">Last {{ failedJobs.length }} failures</span>
+                            <button v-if="failedJobs.length > 0" @click="retryAllFailedJobs"
+                                :disabled="retryingAllFailed"
+                                class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition disabled:opacity-50"
+                                style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                                title="Retry all failed jobs">
+                                <Icon :name="retryingAllFailed ? 'lucide:loader-2' : 'lucide:rotate-ccw'"
+                                    class="w-4 h-4" :class="{ 'animate-spin': retryingAllFailed }" :stroke-width="2" />
+                                Retry all
+                            </button>
+                        </div>
                     </div>
                     <div v-if="failedJobs.length === 0" class="py-6 text-center text-sm rounded-xl"
                         style="color: var(--text-3); border: 1px dashed var(--separator);">
@@ -165,6 +176,7 @@
                                     <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide" style="color: var(--text-3);">Error</th>
                                     <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-right" style="color: var(--text-3);">Attempts</th>
                                     <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-right" style="color: var(--text-3);">Updated</th>
+                                    <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-right" style="color: var(--text-3);">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -177,6 +189,16 @@
                                     </td>
                                     <td class="px-4 py-3 text-sm text-right" style="color: var(--text-2);">{{ job.attempts }}</td>
                                     <td class="px-4 py-3 text-sm text-right whitespace-nowrap" style="color: var(--text-3);">{{ formatJobDate(job.updatedAt) }}</td>
+                                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                                        <button @click="retryFailedJob(job.id)" :disabled="retryingJobId === job.id"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition disabled:opacity-50"
+                                            style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                                            title="Retry this job">
+                                            <Icon :name="retryingJobId === job.id ? 'lucide:loader-2' : 'lucide:rotate-ccw'"
+                                                class="w-3.5 h-3.5" :class="{ 'animate-spin': retryingJobId === job.id }" :stroke-width="2" />
+                                            Retry
+                                        </button>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -256,6 +278,8 @@ const queueStatus = ref<QueueStatus | null>(null)
 const queueLoading = ref(false)
 const queueError = ref<string | null>(null)
 const reprocessing = ref<string | null>(null)
+const retryingJobId = ref<string | null>(null)
+const retryingAllFailed = ref(false)
 let queueTimer: ReturnType<typeof setInterval> | null = null
 
 const jobTypes = [
@@ -349,6 +373,43 @@ async function reprocess(scope: ReprocessScope) {
         toast(err?.data?.statusMessage || 'Failed to enqueue reprocessing jobs', 'error')
     } finally {
         reprocessing.value = null
+    }
+}
+
+async function retryFailedJob(jobId: string) {
+    retryingJobId.value = jobId
+    try {
+        const res = await $fetch<{ retried: number }>('/api/v1/admin/queue/retry', {
+            method: 'POST',
+            body: { jobIds: [jobId] }
+        })
+        const count = res?.retried ?? 0
+        toast(`Retried ${count} job${count === 1 ? '' : 's'}`, 'success')
+        await refreshQueue()
+    } catch (err: any) {
+        toast(err?.data?.statusMessage || 'Failed to retry job', 'error')
+    } finally {
+        retryingJobId.value = null
+    }
+}
+
+async function retryAllFailedJobs() {
+    const ok = await confirm('Retry all failed jobs?', { title: 'Retry Failed Jobs' })
+    if (!ok) return
+
+    retryingAllFailed.value = true
+    try {
+        const res = await $fetch<{ retried: number }>('/api/v1/admin/queue/retry', {
+            method: 'POST',
+            body: {}
+        })
+        const count = res?.retried ?? 0
+        toast(`Retried ${count} failed job${count === 1 ? '' : 's'}`, 'success')
+        await refreshQueue()
+    } catch (err: any) {
+        toast(err?.data?.statusMessage || 'Failed to retry failed jobs', 'error')
+    } finally {
+        retryingAllFailed.value = false
     }
 }
 

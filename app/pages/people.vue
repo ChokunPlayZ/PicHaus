@@ -131,8 +131,8 @@ async function loadPeople() {
     loading.value = true
     fetchError.value = null
     try {
-        const res = await $fetch<{ people: Person[] }>('/api/v1/people')
-        people.value = Array.isArray(res?.people) ? res.people : []
+        const res = await $fetch<{ success: boolean; data: Person[] }>('/api/v1/people')
+        people.value = Array.isArray(res?.data) ? res.data : []
     } catch (err: any) {
         fetchError.value = err?.data?.statusMessage ?? 'Failed to load people'
     } finally {

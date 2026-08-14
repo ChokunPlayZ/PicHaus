@@ -3,6 +3,7 @@ import { detectFaces, type DetectedFace } from './machine-learning'
 import { readStorageFile } from './storage'
 import { faces, people, photos } from '../db/schema'
 import { db } from './db'
+import { and, eq, isNull } from 'drizzle-orm'
 
 interface FaceDetectionJobPayload {
     photoId: string
@@ -131,7 +132,29 @@ async function handleFaceDetectionJob(job: JobRecord): Promise<void> {
         faceRows.push(toFaceRow(face, photo.id, personId, now))
     }
 
-    await db.insert(faces).values(faceRows)
+    const inserted = await db.insert(faces).values(faceRows).returning({
+        id: faces.id,
+        personId: faces.personId,
+    })
+
+    // Ensure every person has a representative face so the People UI can render
+    // a thumbnail. New people are created without one and need this backfill.
+    const firstFaceByPerson = new Map<string, string>()
+    for (const row of inserted) {
+        if (row.personId && !firstFaceByPerson.has(row.personId)) {
+            firstFaceByPerson.set(row.personId, row.id)
+        }
+    }
+    if (firstFaceByPerson.size > 0) {
+        const now = BigInt(Math.floor(Date.now() / 1000))
+        await db.transaction(async (tx) => {
+            for (const [personId, faceId] of firstFaceByPerson) {
+                await tx.update(people)
+                    .set({ representativeFaceId: faceId, updatedAt: now })
+                    .where(and(eq(people.id, personId), isNull(people.representativeFaceId)))
+            }
+        })
+    }
 }
 
 function toFaceRow(

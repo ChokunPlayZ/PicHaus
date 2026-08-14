@@ -213,11 +213,14 @@ async function loadPerson() {
     loading.value = true
     fetchError.value = null
     try {
-        const res = await $fetch<{ id: string; name: string | null; faces: Face[] }>(`/api/v1/people/${personId}`)
+        const res = await $fetch<{
+            success: boolean
+            data: { person: { id: string; name: string | null }; faces: Face[] }
+        }>(`/api/v1/people/${personId}`)
         person.value = {
-            id: res.id,
-            name: res.name,
-            faces: Array.isArray(res.faces) ? res.faces : []
+            id: res.data.person.id,
+            name: res.data.person.name,
+            faces: Array.isArray(res.data.faces) ? res.data.faces : []
         }
     } catch (err: any) {
         fetchError.value = err?.data?.statusMessage ?? 'Failed to load person'
@@ -267,8 +270,8 @@ async function openMergeModal() {
     mergeSearch.value = ''
     mergePeopleLoading.value = true
     try {
-        const res = await $fetch<{ people: PersonSummary[] }>('/api/v1/people')
-        mergePeople.value = (res?.people || []).filter(p => p.id !== personId)
+        const res = await $fetch<{ success: boolean; data: PersonSummary[] }>('/api/v1/people')
+        mergePeople.value = (res?.data || []).filter(p => p.id !== personId)
     } catch (err: any) {
         mergePeople.value = []
         toast(err?.data?.statusMessage || 'Failed to load people', 'error')
