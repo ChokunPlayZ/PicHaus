@@ -45,7 +45,7 @@
                         </template>
                         <p class="text-sm mt-2 flex items-center gap-1.5" style="color: var(--text-3);">
                             <Icon name="lucide:scan-face" class="w-4 h-4" :stroke-width="2" />
-                            {{ person.faces.length }} {{ person.faces.length === 1 ? 'face' : 'faces' }}
+                            {{ photosLabel }}
                         </p>
                     </div>
 
@@ -59,29 +59,32 @@
                     </button>
                 </div>
 
-                <h2 class="text-base font-semibold mb-4" style="color: var(--text-1);">Faces</h2>
-                <div v-if="person.faces.length === 0" class="text-center py-12 rounded-2xl"
+                <h2 class="text-base font-semibold mb-4" style="color: var(--text-1);">Photos</h2>
+                <div v-if="personPhotos.length === 0" class="text-center py-12 rounded-2xl"
                     style="background: var(--surface-1); border: 1px solid var(--separator);">
-                    <p class="text-sm" style="color: var(--text-2);">No faces found for this person.</p>
+                    <p class="text-sm" style="color: var(--text-2);">No photos found for this person.</p>
                 </div>
-                <div v-else class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-                    <button v-for="face in person.faces" :key="face.id"
-                        class="aspect-square rounded-lg overflow-hidden relative group cursor-pointer"
-                        :style="face.albumId ? 'background: var(--surface-3);' : 'cursor: default;'"
-                        :aria-label="face.albumId ? `Open photo in album` : 'Face thumbnail'"
-                        @click="openFacePhoto(face)">
-                        <img v-if="!isThumbBroken(face.id)" :src="faceThumb(face.id)" :alt="displayName"
+                <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    <button v-for="photo in personPhotos" :key="photo.photoId"
+                        class="aspect-square rounded-xl overflow-hidden relative group cursor-pointer"
+                        style="background: var(--surface-3);"
+                        :aria-label="`Open photo in album`"
+                        @click="openPersonPhoto(photo)">
+                        <img v-if="!isPhotoBroken(photo.photoId)" :src="photo.thumbUrl" :alt="displayName"
                             loading="lazy" decoding="async"
-                            class="absolute inset-0 w-full h-full object-cover transition group-hover:scale-[1.04]"
-                            @error="onThumbError(face.id)" />
+                            class="absolute inset-0 w-full h-full object-cover transition group-hover:scale-[1.03]"
+                            @error="onPhotoError(photo.photoId)" />
                         <div v-else class="absolute inset-0 flex items-center justify-center">
-                            <Icon name="lucide:user" class="w-6 h-6" style="color: var(--text-3);" :stroke-width="1.5" />
+                            <Icon name="lucide:image" class="w-8 h-8" style="color: var(--text-3);" :stroke-width="1.5" />
                         </div>
-                        <div v-if="face.albumId"
-                            class="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300 flex items-end justify-end">
-                            <Icon name="lucide:external-link" class="w-4 h-4 m-2 text-white opacity-0 group-hover:opacity-100 transition"
-                                :stroke-width="2" />
-                        </div>
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300"></div>
+                        <span
+                            class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium backdrop-blur-md"
+                            style="background: rgba(0,0,0,0.55); color: #fff;"
+                            :title="`${photo.faceCount} ${photo.faceCount === 1 ? 'face' : 'faces'} in this photo`">
+                            <Icon name="lucide:scan-face" class="w-3 h-3 inline-block -mt-0.5 mr-1" :stroke-width="2" />
+                            {{ photo.faceCount }}
+                        </span>
                     </button>
                 </div>
             </template>
@@ -158,10 +161,19 @@ interface Face {
     id: string
     photoId: string
     albumId: string | null
+    photoUpdatedAt: number
+    photoCreatedAt: number
     x1: number
     y1: number
     x2: number
     y2: number
+}
+
+interface PersonPhoto {
+    photoId: string
+    albumId: string | null
+    faceCount: number
+    thumbUrl: string
 }
 
 interface Person {
@@ -186,6 +198,7 @@ const person = ref<Person | null>(null)
 const loading = ref(true)
 const fetchError = ref<string | null>(null)
 const failedThumbs = ref(new Set<string>())
+const failedPhotos = ref(new Set<string>())
 const editing = ref(false)
 const renameDraft = ref('')
 const showMergeModal = ref(false)
@@ -199,6 +212,31 @@ const headerFaceId = computed(() => person.value?.faces[0]?.id || null)
 const isAdmin = computed(() => currentUser.value?.role === 'ADMIN')
 
 const faceThumb = (id: string | null) => (id ? buildAssetUrl(`/api/v1/faces/${id}/thumb`) : '')
+const photosLabel = computed(() => {
+    if (!person.value) return ''
+    const photoCount = personPhotos.value.length
+    const faceCount = person.value.faces.length
+    const parts = [`${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}`]
+    parts.push(`${faceCount} ${faceCount === 1 ? 'face' : 'faces'}`)
+    return parts.join(' · ')
+})
+const personPhotos = computed<PersonPhoto[]>(() => {
+    const byPhoto = new Map<string, PersonPhoto>()
+    for (const face of person.value?.faces || []) {
+        const existing = byPhoto.get(face.photoId)
+        if (existing) {
+            existing.faceCount++
+        } else {
+            byPhoto.set(face.photoId, {
+                photoId: face.photoId,
+                albumId: face.albumId,
+                faceCount: 1,
+                thumbUrl: buildAssetUrl(`/api/assets/thumb/${face.photoId}?t=${face.photoUpdatedAt || face.photoCreatedAt || ''}`),
+            })
+        }
+    }
+    return [...byPhoto.values()]
+})
 const displayNameOf = (target: PersonSummary) => target.name?.trim() || 'Unnamed person'
 const countLabelOf = (target: PersonSummary) =>
     `${target.faceCount} ${target.faceCount === 1 ? 'face' : 'faces'}`
@@ -207,6 +245,12 @@ const isThumbBroken = (id: string | null) => !id || failedThumbs.value.has(id)
 
 function onThumbError(id: string | null) {
     if (id) failedThumbs.value.add(id)
+}
+
+const isPhotoBroken = (id: string | null) => !id || failedPhotos.value.has(id)
+
+function onPhotoError(id: string | null) {
+    if (id) failedPhotos.value.add(id)
 }
 
 async function loadPerson() {
@@ -254,9 +298,9 @@ async function saveRename() {
     }
 }
 
-function openFacePhoto(face: Face) {
-    if (!face.albumId) return
-    navigateTo(`/album/${face.albumId}?photo=${face.photoId}`)
+function openPersonPhoto(photo: PersonPhoto) {
+    if (!photo.albumId) return
+    navigateTo(`/album/${photo.albumId}?photo=${photo.photoId}`)
 }
 
 const filteredMergePeople = computed(() => {
