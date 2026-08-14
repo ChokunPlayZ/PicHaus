@@ -3,10 +3,12 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "backup": "bun run tools/backup.ts",
     "build": "nuxt build",
     "dev": "nuxt dev --host 0.0.0.0",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "restore": "bun run tools/restore.ts",
     "postinstall": "nuxt prepare",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",

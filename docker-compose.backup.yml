@@ -1,0 +1,47 @@
+# Backup/restore profile for Docker deployments.
+#
+# One-command backup (writes ./backups/pichaus-backup-*.tar.gz):
+#   docker compose -f docker-compose.yml -f docker-compose.backup.yml \
+#     --profile backup run --rm backup
+#
+# Restore an archive from ./backups into the empty pichaus-storage volume:
+#   docker compose -f docker-compose.yml -f docker-compose.backup.yml \
+#     --profile backup run --rm restore \
+#     /backups/pichaus-backup-20260814-120000.tar.gz \
+#     --yes --db-url "$DATABASE_URL" --storage-dir /app/storage --no-env
+#
+# The production image ships pg_dump/pg_restore/psql/gpg and the tools/ TS
+# sources; the services run them with plain Node (type stripping).
+
+services:
+  backup:
+    profiles: ["backup"]
+    build: .
+    image: pichaus-backup:local
+    environment:
+      # The tools read /app/.env first; these values are fallbacks.
+      DATABASE_URL: "${DATABASE_URL:-postgresql://pichaus:pichaus@db:5432/pichaus}"
+      STORAGE_DRIVER: "${STORAGE_DRIVER:-local}"
+      STORAGE_DIR: "${STORAGE_DIR:-/app/storage}"
+    volumes:
+      - ./package.json:/app/package.json:ro # repo-root detection
+      - ./.env:/app/.env:ro # tool config, never written by --no-env
+      - pichaus-storage:/app/storage:ro # uploads, read-only
+      - ./backups:/backups # archive output on the host
+    depends_on:
+      - db
+    entrypoint: ["node", "/app/tools/backup.ts"]
+    command: ["--yes", "--output", "/backups", "--no-env"]
+
+  restore:
+    profiles: ["backup"]
+    build: .
+    image: pichaus-backup:local
+    environment:
+      DATABASE_URL: "${DATABASE_URL:-postgresql://pichaus:pichaus@db:5432/pichaus}"
+    volumes:
+      - pichaus-storage:/app/storage
+      - ./backups:/backups
+    depends_on:
+      - db
+    entrypoint: ["node", "/app/tools/restore.ts"]
