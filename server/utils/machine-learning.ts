@@ -74,15 +74,22 @@ function logUnavailableOnce(error: unknown): void {
 }
 
 function buildPredictEntriesJson(): string {
-    const descriptor: Record<string, unknown> = {
-        'facial-recognition': {
-            modelName: getFaceModelName(),
-        },
+    const recognition: Record<string, unknown> = {
+        modelName: getFaceModelName(),
     }
     const minScore = getFaceMinScore()
     if (minScore !== null) {
-        const recognition = descriptor['facial-recognition'] as Record<string, unknown>
         recognition.options = { minScore }
+    }
+
+    const descriptor: Record<string, unknown> = {
+        'facial-recognition': {
+            detection: {
+                modelName: getFaceModelName(),
+                ...(minScore !== null ? { options: { minScore } } : {}),
+            },
+            recognition,
+        },
     }
     return JSON.stringify(descriptor)
 }
@@ -120,17 +127,19 @@ function parseFacesResponse(json: unknown): DetectedFace[] {
     const container = (json as Record<string, unknown>)['facial-recognition']
     const rawFaces = Array.isArray(json)
         ? json
-        : container && typeof container === 'object' && Array.isArray((container as Record<string, unknown>).faces)
-            ? (container as Record<string, unknown>).faces as unknown[]
-            : []
+        : Array.isArray(container)
+            ? container
+            : container && typeof container === 'object' && Array.isArray((container as Record<string, unknown>).faces)
+                ? (container as Record<string, unknown>).faces as unknown[]
+                : []
 
     const faces: DetectedFace[] = []
     for (const raw of rawFaces) {
         if (!raw || typeof raw !== 'object') continue
         const face = raw as Record<string, unknown>
         const box = (face.boundingBox ?? face.box) as Record<string, unknown> | undefined
-        const embedding = face.embedding
-        if (!box || !Array.isArray(embedding) || embedding.length === 0) continue
+        const embedding = normalizeEmbedding(face.embedding)
+        if (!box || embedding.length === 0) continue
 
         faces.push({
             boundingBox: {
@@ -140,11 +149,24 @@ function parseFacesResponse(json: unknown): DetectedFace[] {
                 y2: toFiniteNumber(box.y2 ?? box.bottom),
             },
             score: toFiniteNumber(face.score),
-            embedding: embedding.map(value => toFiniteNumber(value)),
+            embedding,
         })
     }
 
     return faces
+}
+
+function normalizeEmbedding(value: unknown): number[] {
+    let parsed = value
+    if (typeof parsed === 'string') {
+        try {
+            parsed = JSON.parse(parsed)
+        } catch {
+            return []
+        }
+    }
+    if (!Array.isArray(parsed)) return []
+    return parsed.map(item => toFiniteNumber(item))
 }
 
 export async function detectFaces(imageBuffer: Buffer): Promise<DetectedFace[]> {
