@@ -18,6 +18,15 @@ export class MachineLearningUnavailableError extends Error {
     }
 }
 
+export class MachineLearningRequestError extends Error {
+    readonly retryable = false
+
+    constructor(message: string, options?: ErrorOptions) {
+        super(message, options)
+        this.name = 'MachineLearningRequestError'
+    }
+}
+
 const HEALTH_TIMEOUT_MS = 5000
 const UNAVAILABLE_LOG_INTERVAL_MS = 60_000
 
@@ -36,8 +45,25 @@ function getFaceModelName(): string {
     return process.env.MACHINE_LEARNING_FACE_MODEL || 'buffalo_l'
 }
 
+function getFaceMinScore(): number | null {
+    const configured = process.env.MACHINE_LEARNING_FACE_MIN_SCORE
+    if (configured === undefined || configured.trim() === '') return null
+    const value = parseFloat(configured)
+    return Number.isFinite(value) ? value : 0.5
+}
+
 function getApiStyle(): 'predict' | 'legacy' {
     return process.env.MACHINE_LEARNING_API_STYLE === 'legacy' ? 'legacy' : 'predict'
+}
+
+function getBasicAuthHeaders(): Record<string, string> {
+    const user = process.env.MACHINE_LEARNING_BASIC_AUTH_USER || ''
+    const password = process.env.MACHINE_LEARNING_BASIC_AUTH_PASSWORD || ''
+    if (!user || !password) return {}
+
+    return {
+        authorization: `Basic ${Buffer.from(`${user}:${password}`).toString('base64')}`,
+    }
 }
 
 function logUnavailableOnce(error: unknown): void {
@@ -45,6 +71,28 @@ function logUnavailableOnce(error: unknown): void {
     if (now - lastUnavailableLogAt < UNAVAILABLE_LOG_INTERVAL_MS) return
     lastUnavailableLogAt = now
     console.error('[machine-learning] unavailable:', error instanceof Error ? error.message : String(error))
+}
+
+function buildPredictEntriesJson(): string {
+    const descriptor: Record<string, unknown> = {
+        'facial-recognition': {
+            modelName: getFaceModelName(),
+        },
+    }
+    const minScore = getFaceMinScore()
+    if (minScore !== null) {
+        const recognition = descriptor['facial-recognition'] as Record<string, unknown>
+        recognition.options = { minScore }
+    }
+    return JSON.stringify(descriptor)
+}
+
+async function readErrorBody(response: Response): Promise<string> {
+    try {
+        return (await response.text()).slice(0, 500)
+    } catch {
+        return ''
+    }
 }
 
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
@@ -101,29 +149,48 @@ function parseFacesResponse(json: unknown): DetectedFace[] {
 
 export async function detectFaces(imageBuffer: Buffer): Promise<DetectedFace[]> {
     const baseUrl = getMachineLearningBaseUrl()
-    const endpoint = getApiStyle() === 'legacy' ? '/facial-recognition' : '/predict'
+    const apiStyle = getApiStyle()
 
     const form = new FormData()
-    form.append('entries', new Blob([new Uint8Array(imageBuffer)], { type: 'image/jpeg' }), 'image.jpg')
-    form.append('tasks', JSON.stringify({
-        'facial-recognition': { modelName: getFaceModelName() },
-    }))
+    if (apiStyle === 'legacy') {
+        form.append('entries', new Blob([new Uint8Array(imageBuffer)], { type: 'image/jpeg' }), 'image.jpg')
+        form.append('tasks', JSON.stringify({
+            'facial-recognition': { modelName: getFaceModelName() },
+        }))
+    } else {
+        form.append('entries', buildPredictEntriesJson())
+        form.append('image', new Blob([new Uint8Array(imageBuffer)], { type: 'image/jpeg' }), 'image.jpg')
+    }
 
     try {
+        const endpoint = apiStyle === 'legacy' ? '/facial-recognition' : '/predict'
         const response = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
             method: 'POST',
-            headers: { accept: 'application/json' },
+            headers: {
+                accept: 'application/json',
+                ...getBasicAuthHeaders(),
+            },
             body: form,
         }, getTimeoutMs())
 
         if (!response.ok) {
+            const errorBody = await readErrorBody(response)
+            const detail = errorBody ? `: ${errorBody}` : ''
+            if (response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429) {
+                throw new MachineLearningRequestError(
+                    `Machine learning API returned ${response.status} ${response.statusText}${detail}`
+                )
+            }
             throw new MachineLearningUnavailableError(
-                `Machine learning API returned ${response.status} ${response.statusText}`
+                `Machine learning API returned ${response.status} ${response.statusText}${detail}`
             )
         }
 
         return parseFacesResponse(await response.json())
     } catch (error) {
+        if (error instanceof MachineLearningRequestError) {
+            throw error
+        }
         if (error instanceof MachineLearningUnavailableError) {
             logUnavailableOnce(error)
             throw error
@@ -143,7 +210,10 @@ export async function checkMachineLearningHealth(): Promise<{
     const started = Date.now()
 
     const isHealthy = async (path: string): Promise<boolean> => {
-        const response = await fetchWithTimeout(`${baseUrl}${path}`, { method: 'GET' }, HEALTH_TIMEOUT_MS)
+        const response = await fetchWithTimeout(`${baseUrl}${path}`, {
+            method: 'GET',
+            headers: getBasicAuthHeaders(),
+        }, HEALTH_TIMEOUT_MS)
         return response.ok
     }
 

@@ -164,7 +164,11 @@ async function processJob(job: JobRecord): Promise<void> {
     } catch (error) {
         const attempts = job.attempts + 1
         const errorMessage = error instanceof Error ? error.message : String(error)
-        if (attempts < job.maxAttempts) {
+        const nonRetryable = (error as { retryable?: boolean } | null)?.retryable === false
+        if (nonRetryable) {
+            await failJob(job.id, attempts, errorMessage)
+            console.error(`[queue] Job ${type} ${job.id} failed permanently: ${errorMessage}`)
+        } else if (attempts < job.maxAttempts) {
             const backoffSeconds = Math.min(Math.pow(2, attempts) * 5, MAX_BACKOFF_SECONDS)
             await retryJob(job.id, attempts, getUnixTimestamp() + BigInt(Math.floor(backoffSeconds)))
             console.error(`[queue] Job ${type} ${job.id} failed on attempt ${attempts}, retrying in ${Math.floor(backoffSeconds)}s: ${errorMessage}`)
