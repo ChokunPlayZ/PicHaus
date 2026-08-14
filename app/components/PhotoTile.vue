@@ -30,6 +30,17 @@
         <!-- Hover overlay -->
         <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
 
+        <!-- Processing overlay -->
+        <div v-if="isProcessing"
+            class="absolute inset-0 z-20 flex items-center justify-center bg-black/25">
+            <Icon name="lucide:loader-2" class="w-6 h-6 text-white animate-spin" :stroke-width="2" />
+        </div>
+        <div v-if="photo.processingStatus === 'failed'"
+            class="absolute top-2 left-2 z-20 w-6 h-6 rounded-full flex items-center justify-center"
+            style="background: var(--error);" title="Processing failed">
+            <Icon name="lucide:triangle-alert" class="w-3.5 h-3.5 text-white" :stroke-width="2.5" />
+        </div>
+
         <!-- Selection badge -->
         <div v-if="selected"
             class="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
@@ -91,6 +102,7 @@ interface Photo {
     iso?: number | null
     createdAt?: number | null
     updatedAt?: number | null
+    processingStatus?: string | null
 }
 
 interface Position {
@@ -124,6 +136,10 @@ const blurhashUrl = computed(() => {
     const h = Math.round(w * (height / width))
     return blurhashToDataUrl(blurhash, w, h) || null
 })
+
+const isProcessing = computed(() =>
+    props.photo.processingStatus === 'pending' || props.photo.processingStatus === 'processing'
+)
 </script>
 
 <style scoped>

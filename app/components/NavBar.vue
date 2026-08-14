@@ -305,15 +305,21 @@ const displayTitle = computed(() => {
     return value
 })
 
-const navItems = [
-    { label: 'Albums', path: '/album', icon: 'albums' },
-    { label: 'Photos', path: '/photos', icon: 'photos' },
-    { label: 'Timeline', path: '/timeline', icon: 'timeline' },
-    { label: 'Statistics', path: '/statistics', icon: 'statistics' },
-    { label: 'Share Links', path: '/share-links', icon: 'share-links' },
-    { label: 'Docs', path: '/docs', icon: 'docs' },
-    { label: 'API Keys', path: '/api-tokens', icon: 'api-keys' },
-]
+const user = useState<any>('navbar-user', () => null)
+
+const navItems = computed(() => {
+    const items = [
+        { label: 'Albums', path: '/album', icon: 'albums' },
+        { label: 'People', path: '/people', icon: 'people' },
+        { label: 'Photos', path: '/photos', icon: 'photos' },
+        { label: 'Timeline', path: '/timeline', icon: 'timeline' },
+        { label: 'Statistics', path: '/statistics', icon: 'statistics' },
+        { label: 'Share Links', path: '/share-links', icon: 'share-links' },
+        { label: 'Docs', path: '/docs', icon: 'docs' },
+        { label: 'API Keys', path: '/api-tokens', icon: 'api-keys' },
+    ]
+    return user.value ? items : items.filter(item => item.path !== '/people')
+})
 
 const isActivePath = (path: string) => route.path === path || route.path.startsWith(`${path}/`)
 
@@ -342,8 +348,6 @@ const goMobileSearch = () => {
     isOpen.value = true
 }
 
-const user = useState<any>('navbar-user', () => null)
-
 const userAvatarUrl = computed(() => {
     const avatar = user.value?.avatar
     return typeof avatar === 'string' && avatar.trim().length > 0 ? avatar : ''
@@ -369,7 +373,8 @@ const getIconName = (icon: string) => {
     'statistics': 'lucide:bar-chart-3',
     'share-links': 'lucide:link',
     'docs': 'lucide:file-text',
-    'api-keys': 'lucide:key'
+    'api-keys': 'lucide:key',
+    'people': 'lucide:users'
   }
   return map[icon] || 'lucide:chevron-right'
 }

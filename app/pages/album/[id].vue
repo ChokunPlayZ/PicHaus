@@ -1585,6 +1585,7 @@ interface Photo {
     dateTaken: number | null
     createdAt: number
     updatedAt?: number
+    processingStatus?: string | null
     uploader: {
         id: string
         name: string | null
@@ -2561,6 +2562,10 @@ onUnmounted(() => {
     window.removeEventListener('keydown', handleKeydown)
     resetTheme()
     applyAccent(siteSettings.value.accentColor)
+    if (processingPollTimer) {
+        clearInterval(processingPollTimer)
+        processingPollTimer = null
+    }
 })
 
 // Check authentication (don't redirect if failed, just set user to null)
@@ -2573,11 +2578,30 @@ const checkAuth = async () => {
     }
 }
 
+// Processing status polling
+let processingPollTimer: ReturnType<typeof setInterval> | null = null
+const hasActiveProcessing = computed(() =>
+    photos.value.some(p => p.processingStatus === 'pending' || p.processingStatus === 'processing')
+)
+
+function syncProcessingPoll() {
+    if (hasActiveProcessing.value && !processingPollTimer) {
+        processingPollTimer = setInterval(() => { fetchAlbum(true) }, 5000)
+    } else if (!hasActiveProcessing.value && processingPollTimer) {
+        clearInterval(processingPollTimer)
+        processingPollTimer = null
+    }
+}
+
+watch(hasActiveProcessing, () => syncProcessingPoll())
+
 // Fetch album (initial load)
-const fetchAlbum = async () => {
+const fetchAlbum = async (silent = false) => {
     try {
-        loading.value = page.value === 1
-        loadingPhotos.value = page.value > 1
+        if (!silent) {
+            loading.value = page.value === 1
+            loadingPhotos.value = page.value > 1
+        }
 
         // Build query params with filters and sorting
         const params = new URLSearchParams({
@@ -2628,6 +2652,7 @@ const fetchAlbum = async () => {
             if (_mounted) applyTheme(album.value.themePreset, album.value.customTheme)
         }
     } catch (err: any) {
+        if (silent) return
         // If 403 and not logged in, redirect to login
         if (err.statusCode === 403 && !user.value) {
             return navigateTo(`/login?redirect=${route.fullPath}`)
@@ -2636,6 +2661,7 @@ const fetchAlbum = async () => {
     } finally {
         loading.value = false
         loadingPhotos.value = false
+        syncProcessingPoll()
     }
 }
 
@@ -3983,8 +4009,24 @@ const openPhotoViewer = (index: number) => {
     selectedPhotoIndex.value = index
 }
 
+const openPhotoByQuery = () => {
+    const photoId = typeof route.query.photo === 'string' ? route.query.photo : ''
+    if (!photoId) return
+    const index = photos.value.findIndex(p => p.id === photoId)
+    if (index >= 0) openPhotoViewer(index)
+}
+
+watch(() => route.query.photo, () => {
+    nextTick(() => openPhotoByQuery())
+})
+
 const closePhotoViewer = () => {
     selectedPhotoIndex.value = null
+    if (route.query.photo) {
+        const query = { ...route.query }
+        delete query.photo
+        router.replace({ query })
+    }
 }
 
 const nextPhoto = async () => {
@@ -4012,6 +4054,7 @@ const previousPhoto = () => {
 onMounted(async () => {
     await checkAuth()
     await fetchAlbum()
+    openPhotoByQuery()
 
     if (route.query.edit === '1' && album.value?.permissions?.canEdit) {
         showEditModal.value = true

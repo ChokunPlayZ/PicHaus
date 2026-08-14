@@ -45,6 +45,7 @@ const isImpersonating = ref(false)
 
 const routeToTitle: Record<string, string> = {
     '/album': 'Albums',
+    '/people': 'People',
     '/photos': 'All Photos',
     '/timeline': 'Timeline',
     '/settings': 'Settings',
