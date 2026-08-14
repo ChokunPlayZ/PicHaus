@@ -303,4 +303,63 @@ ON CONFLICT ("id") DO NOTHING`,
             `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "themePreference" TEXT`,
         ],
     },
+    {
+        name: '0013_job_queue.sql',
+        statements: [
+            `CREATE TABLE IF NOT EXISTS "jobs" (
+    "id"          UUID    NOT NULL DEFAULT gen_random_uuid(),
+    "type"        TEXT    NOT NULL,
+    "payload"     JSONB   NOT NULL,
+    "priority"    INTEGER NOT NULL DEFAULT 0,
+    "status"      TEXT    NOT NULL DEFAULT 'pending',
+    "attempts"    INTEGER NOT NULL DEFAULT 0,
+    "maxAttempts" INTEGER NOT NULL DEFAULT 3,
+    "runAt"       BIGINT  NOT NULL,
+    "lockedAt"    BIGINT,
+    "lockedBy"    TEXT,
+    "error"       TEXT,
+    "createdAt"   BIGINT  NOT NULL,
+    "updatedAt"   BIGINT  NOT NULL,
+    CONSTRAINT "jobs_pkey" PRIMARY KEY ("id")
+)`,
+            `CREATE INDEX IF NOT EXISTS "jobs_status_runAt_priority_idx"
+    ON "jobs"("status", "runAt", "priority") WHERE "status" = 'pending'`,
+            `CREATE INDEX IF NOT EXISTS "jobs_type_idx" ON "jobs"("type")`,
+            `ALTER TABLE "photos" ADD COLUMN IF NOT EXISTS "processingStatus" TEXT`,
+            `ALTER TABLE "photos" ALTER COLUMN "thumbnailStoragePath" SET DEFAULT ''`,
+            `ALTER TABLE "photos" ALTER COLUMN "blurhash" SET DEFAULT ''`,
+        ],
+    },
+    {
+        name: '0014_faces_people.sql',
+        statements: [
+            `CREATE TABLE IF NOT EXISTS "people" (
+    "id"                   UUID   NOT NULL DEFAULT gen_random_uuid(),
+    "name"                 TEXT,
+    "representativeFaceId" UUID,
+    "createdAt"            BIGINT NOT NULL,
+    "updatedAt"            BIGINT NOT NULL,
+    CONSTRAINT "people_pkey" PRIMARY KEY ("id")
+)`,
+            `CREATE TABLE IF NOT EXISTS "faces" (
+    "id"        UUID    NOT NULL DEFAULT gen_random_uuid(),
+    "photoId"   UUID    NOT NULL,
+    "personId"  UUID,
+    "x1"        REAL    NOT NULL,
+    "y1"        REAL    NOT NULL,
+    "x2"        REAL    NOT NULL,
+    "y2"        REAL    NOT NULL,
+    "score"     REAL,
+    "embedding" REAL[]  NOT NULL,
+    "createdAt" BIGINT  NOT NULL,
+    CONSTRAINT "faces_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "faces_photoId_fkey" FOREIGN KEY ("photoId")
+        REFERENCES "photos"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "faces_personId_fkey" FOREIGN KEY ("personId")
+        REFERENCES "people"("id") ON DELETE SET NULL ON UPDATE CASCADE
+)`,
+            `CREATE INDEX IF NOT EXISTS "faces_photoId_idx" ON "faces"("photoId")`,
+            `CREATE INDEX IF NOT EXISTS "faces_personId_idx" ON "faces"("personId")`,
+        ],
+    },
 ]

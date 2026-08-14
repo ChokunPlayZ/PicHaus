@@ -1,8 +1,8 @@
 import {
-    pgTable, pgEnum, uuid, text, boolean, integer, bigint,
+    pgTable, pgEnum, uuid, text, boolean, integer, bigint, jsonb, real,
     primaryKey, index, uniqueIndex,
 } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 
 export const roleEnum = pgEnum('Role', ['USER', 'ADMIN'])
 
@@ -67,8 +67,9 @@ export const photos = pgTable('photos', {
     filename: text('filename').notNull(),
     originalName: text('originalName').notNull(),
     storagePath: text('storagePath').notNull(),
-    thumbnailStoragePath: text('thumbnailStoragePath').notNull(),
-    blurhash: text('blurhash').notNull(),
+    thumbnailStoragePath: text('thumbnailStoragePath').default('').notNull(),
+    blurhash: text('blurhash').default('').notNull(),
+    processingStatus: text('processingStatus'),
     size: integer('size').notNull(),
     width: integer('width').notNull(),
     height: integer('height').notNull(),
@@ -89,6 +90,25 @@ export const photos = pgTable('photos', {
     index('photos_albumId_idx').on(t.albumId),
     index('photos_uploaderId_idx').on(t.uploaderId),
     index('photos_fileHash_idx').on(t.fileHash),
+])
+
+export const jobs = pgTable('jobs', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    type: text('type').notNull(),
+    payload: jsonb('payload').notNull(),
+    priority: integer('priority').default(0).notNull(),
+    status: text('status').default('pending').notNull(),
+    attempts: integer('attempts').default(0).notNull(),
+    maxAttempts: integer('maxAttempts').default(3).notNull(),
+    runAt: bigint('runAt', { mode: 'bigint' }).notNull(),
+    lockedAt: bigint('lockedAt', { mode: 'bigint' }),
+    lockedBy: text('lockedBy'),
+    error: text('error'),
+    createdAt: bigint('createdAt', { mode: 'bigint' }).notNull(),
+    updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
+}, (t) => [
+    index('jobs_status_runAt_priority_idx').on(t.status, t.runAt, t.priority).where(sql`status = 'pending'`),
+    index('jobs_type_idx').on(t.type),
 ])
 
 export const shareGroups = pgTable('share_groups', {
@@ -242,4 +262,39 @@ export const inviteTokensRelations = relations(inviteTokens, ({ one }) => ({
 
 export const logosRelations = relations(logos, ({ one }) => ({
     uploadedBy: one(users, { fields: [logos.uploadedById], references: [users.id] }),
+}))
+
+// Faces & People
+
+export const people = pgTable('people', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name'),
+    representativeFaceId: uuid('representativeFaceId'),
+    createdAt: bigint('createdAt', { mode: 'bigint' }).notNull(),
+    updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
+})
+
+export const faces = pgTable('faces', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    photoId: uuid('photoId').notNull().references(() => photos.id, { onDelete: 'cascade' }),
+    personId: uuid('personId').references(() => people.id, { onDelete: 'set null' }),
+    x1: real('x1').notNull(),
+    y1: real('y1').notNull(),
+    x2: real('x2').notNull(),
+    y2: real('y2').notNull(),
+    score: real('score'),
+    embedding: real('embedding').array().notNull(),
+    createdAt: bigint('createdAt', { mode: 'bigint' }).notNull(),
+}, (t) => [
+    index('faces_photoId_idx').on(t.photoId),
+    index('faces_personId_idx').on(t.personId),
+])
+
+export const peopleRelations = relations(people, ({ many }) => ({
+    faces: many(faces),
+}))
+
+export const facesRelations = relations(faces, ({ one }) => ({
+    photo: one(photos, { fields: [faces.photoId], references: [photos.id] }),
+    person: one(people, { fields: [faces.personId], references: [people.id] }),
 }))
