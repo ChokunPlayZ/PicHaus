@@ -4009,15 +4009,26 @@ const openPhotoViewer = (index: number) => {
     selectedPhotoIndex.value = index
 }
 
-const openPhotoByQuery = () => {
+const openPhotoByQuery = async () => {
     const photoId = typeof route.query.photo === 'string' ? route.query.photo : ''
     if (!photoId) return
-    const index = photos.value.findIndex(p => p.id === photoId)
+
+    const findPhoto = () => photos.value.findIndex(p => p.id === photoId)
+    let index = findPhoto()
+
+    // The target photo may sit on a later page; page through until it is found.
+    let pagesSearched = 0
+    while (index < 0 && hasMore.value && pagesSearched < 20) {
+        await loadMorePhotos()
+        index = findPhoto()
+        pagesSearched++
+    }
+
     if (index >= 0) openPhotoViewer(index)
 }
 
 watch(() => route.query.photo, () => {
-    nextTick(() => openPhotoByQuery())
+    nextTick(() => { void openPhotoByQuery() })
 })
 
 const closePhotoViewer = () => {
@@ -4054,7 +4065,7 @@ const previousPhoto = () => {
 onMounted(async () => {
     await checkAuth()
     await fetchAlbum()
-    openPhotoByQuery()
+    await openPhotoByQuery()
 
     if (route.query.edit === '1' && album.value?.permissions?.canEdit) {
         showEditModal.value = true

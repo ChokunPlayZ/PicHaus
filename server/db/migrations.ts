@@ -362,4 +362,23 @@ ON CONFLICT ("id") DO NOTHING`,
             `CREATE INDEX IF NOT EXISTS "faces_personId_idx" ON "faces"("personId")`,
         ],
     },
+    {
+        name: '0015_normalize_face_coordinates.sql',
+        statements: [
+            // Face coordinates were previously stored as source-image pixels,
+            // but the UI and thumbnail endpoint expect normalized 0..1 values.
+            // Only touch rows still in pixel space (any coordinate above 1), so
+            // re-running is harmless after the ingestion code has been fixed.
+            `UPDATE faces f
+SET x1 = f.x1 / p.width,
+    y1 = f.y1 / p.height,
+    x2 = f.x2 / p.width,
+    y2 = f.y2 / p.height
+FROM photos p
+WHERE f."photoId" = p.id
+  AND p.width > 0
+  AND p.height > 0
+  AND (f.x1 > 1 OR f.y1 > 1 OR f.x2 > 1 OR f.y2 > 1)`,
+        ],
+    },
 ]

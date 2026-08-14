@@ -107,7 +107,7 @@ async function handleFaceDetectionJob(job: JobRecord): Promise<void> {
     const photoId = payload.photoId
 
     const photo = await db.query.photos.findFirst({
-        columns: { id: true, storagePath: true },
+        columns: { id: true, storagePath: true, width: true, height: true },
         where: (photosColumns, { eq }) => eq(photosColumns.id, photoId),
     })
     if (!photo) return
@@ -129,7 +129,7 @@ async function handleFaceDetectionJob(job: JobRecord): Promise<void> {
     const faceRows: Array<typeof faces.$inferInsert> = []
     for (const face of detectedFaces) {
         const personId = await assignPerson(face.embedding)
-        faceRows.push(toFaceRow(face, photo.id, personId, now))
+        faceRows.push(toFaceRow(face, photo.id, personId, now, photo.width, photo.height))
     }
 
     const inserted = await db.insert(faces).values(faceRows).returning({
@@ -162,14 +162,21 @@ function toFaceRow(
     photoId: string,
     personId: string,
     createdAt: bigint,
+    photoWidth: number | null,
+    photoHeight: number | null,
 ): typeof faces.$inferInsert {
+    // The ML API reports bounding boxes in source-image pixels, while the rest
+    // of the app (face thumbnails, photo overlays) expects normalized 0..1.
+    const normalize = (value: number, size: number | null) =>
+        size && size > 0 ? Math.min(Math.max(value / size, 0), 1) : value
+
     return {
         photoId,
         personId,
-        x1: face.boundingBox.x1,
-        y1: face.boundingBox.y1,
-        x2: face.boundingBox.x2,
-        y2: face.boundingBox.y2,
+        x1: normalize(face.boundingBox.x1, photoWidth),
+        y1: normalize(face.boundingBox.y1, photoHeight),
+        x2: normalize(face.boundingBox.x2, photoWidth),
+        y2: normalize(face.boundingBox.y2, photoHeight),
         score: face.score,
         embedding: face.embedding,
         createdAt,
