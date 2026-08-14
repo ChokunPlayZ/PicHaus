@@ -76,12 +76,12 @@ async function recoverStaleLocks(): Promise<void> {
     await db.execute(sql`
         UPDATE jobs
         SET status = 'pending',
-            lockedAt = NULL,
-            lockedBy = NULL,
-            updatedAt = ${now}
+            "lockedAt" = NULL,
+            "lockedBy" = NULL,
+            "updatedAt" = ${now}
         WHERE status = 'running'
-          AND lockedAt IS NOT NULL
-          AND lockedAt <= ${now - BigInt(STALE_LOCK_SECONDS)}
+          AND "lockedAt" IS NOT NULL
+          AND "lockedAt" <= ${now - BigInt(STALE_LOCK_SECONDS)}
     `)
 }
 
@@ -93,16 +93,16 @@ async function claimJobs(type: JobType, limit: number): Promise<JobRecord[]> {
         return tx.execute(sql`
             UPDATE jobs
             SET status = 'running',
-                lockedAt = ${now},
-                lockedBy = ${instanceId},
-                updatedAt = ${now}
+                "lockedAt" = ${now},
+                "lockedBy" = ${instanceId},
+                "updatedAt" = ${now}
             WHERE id IN (
                 SELECT id
                 FROM jobs
                 WHERE status = 'pending'
                   AND type = ${type}
-                  AND runAt <= ${now}
-                ORDER BY priority DESC, createdAt ASC
+                  AND "runAt" <= ${now}
+                ORDER BY priority DESC, "createdAt" ASC
                 LIMIT ${limit}
                 FOR UPDATE SKIP LOCKED
             )
@@ -117,9 +117,9 @@ async function markJobCompleted(jobId: string): Promise<void> {
     await db.execute(sql`
         UPDATE jobs
         SET status = 'completed',
-            lockedAt = NULL,
-            lockedBy = NULL,
-            updatedAt = ${getUnixTimestamp()}
+            "lockedAt" = NULL,
+            "lockedBy" = NULL,
+            "updatedAt" = ${getUnixTimestamp()}
         WHERE id = ${jobId}
     `)
 }
@@ -129,10 +129,10 @@ async function retryJob(jobId: string, attempts: number, runAt: bigint): Promise
         UPDATE jobs
         SET status = 'pending',
             attempts = ${attempts},
-            runAt = ${runAt},
-            lockedAt = NULL,
-            lockedBy = NULL,
-            updatedAt = ${getUnixTimestamp()}
+            "runAt" = ${runAt},
+            "lockedAt" = NULL,
+            "lockedBy" = NULL,
+            "updatedAt" = ${getUnixTimestamp()}
         WHERE id = ${jobId}
     `)
 }
@@ -143,9 +143,9 @@ async function failJob(jobId: string, attempts: number, errorMessage: string): P
         SET status = 'failed',
             attempts = ${attempts},
             error = ${errorMessage},
-            lockedAt = NULL,
-            lockedBy = NULL,
-            updatedAt = ${getUnixTimestamp()}
+            "lockedAt" = NULL,
+            "lockedBy" = NULL,
+            "updatedAt" = ${getUnixTimestamp()}
         WHERE id = ${jobId}
     `)
 }
