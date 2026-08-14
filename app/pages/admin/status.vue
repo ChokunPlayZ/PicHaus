@@ -313,7 +313,14 @@ async function refreshQueue() {
     queueLoading.value = true
     queueError.value = null
     try {
-        queueStatus.value = await $fetch<QueueStatus>('/api/v1/admin/queue-status')
+        const res = await $fetch<{
+            success: boolean
+            data: {
+                stats: { byType: Record<string, Partial<QueueCounts>> }
+                recentFailed: FailedJob[]
+            }
+        }>('/api/v1/admin/queue-status')
+        queueStatus.value = { byType: res.data.stats.byType, failedJobs: res.data.recentFailed }
     } catch (err: any) {
         queueError.value = err?.data?.statusMessage ?? 'Failed to load job queue'
     } finally {
