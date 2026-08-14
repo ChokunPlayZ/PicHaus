@@ -196,6 +196,15 @@ const allCommands = computed(() => {
   })
 
   items.push({
+    id: 'nav-people',
+    label: 'People',
+    subtitle: 'Browse recognized people in your library',
+    icon: 'people',
+    section: 'Pages',
+    action: () => navigateTo('/people')
+  })
+
+  items.push({
     id: 'nav-statistics',
     label: 'Statistics',
     subtitle: 'View server statistics and storage usage',
@@ -411,6 +420,7 @@ const getIconName = (icon: string) => {
   const map: Record<string, string> = {
     'albums': 'lucide:folder',
     'photos': 'lucide:image',
+    'people': 'lucide:users',
     'statistics': 'lucide:bar-chart-3',
     'share-links': 'lucide:link',
     'docs': 'lucide:file-text',

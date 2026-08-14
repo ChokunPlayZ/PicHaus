@@ -8,7 +8,7 @@ import {
     deleteFile,
     validateImageFile,
     generateUniqueFilename,
-    processPhotoBackground,
+    createPhotoWithJobs,
 } from '../../../../utils/upload'
 
 export default defineEventHandler(async (event) => {
@@ -72,21 +72,20 @@ export default defineEventHandler(async (event) => {
         // Save original file to disk immediately
         storagePath = await saveFile(fileData.data, filename, 'photos')
 
-        // Process file in the background (exif, compression, thumbnail, blurhash, DB insert)
-        event.waitUntil((async () => {
-            await processPhotoBackground({
-                storagePath: storagePath!,
-                originalFilename,
-                trustedMimeType,
-                fileHash,
-                albumId,
-                uploaderId: user.id,
-            })
-        })())
+        // Insert the photo row and enqueue background processing
+        const photoId = await createPhotoWithJobs({
+            storagePath: storagePath!,
+            originalFilename,
+            trustedMimeType,
+            fileHash,
+            albumId,
+            uploaderId: user.id,
+        })
 
         return {
             success: true,
             message: 'Photo uploaded successfully',
+            photoId,
         }
     } catch (error: any) {
         if (storagePath) await deleteFile(storagePath).catch(() => {})

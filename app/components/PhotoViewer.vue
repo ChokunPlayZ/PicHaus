@@ -102,6 +102,13 @@
                         <Icon v-if="isFavorited" name="lucide:heart" class="h-6 w-6 fill-current" :stroke-width="2" />
                         <Icon v-else name="lucide:heart" class="h-6 w-6" :stroke-width="2" />
                     </button>
+                    <button v-if="canUseFaceOverlays" @click.stop="showFaces = !showFaces"
+                        :title="showFaces ? 'Hide faces' : 'Show faces'"
+                        :aria-label="showFaces ? 'Hide faces' : 'Show faces'" :aria-pressed="showFaces"
+                        class="w-10 h-10 flex items-center justify-center rounded-full text-white/75 transition backdrop-blur-sm active:scale-90 hover:bg-black/70 hover:text-white"
+                        :class="showFaces ? 'bg-white/20' : 'bg-black/50'">
+                        <Icon name="lucide:scan-face" class="h-5 w-5" :stroke-width="2" />
+                    </button>
                     <button @click.stop="isIOS ? sharePhoto() : downloadPhoto()" @touchstart.stop
                         @touchmove.stop.prevent
                         :disabled="isSharing"
@@ -144,19 +151,39 @@
                                 class="max-h-full max-w-full rounded-md object-contain opacity-90 shadow-2xl md:rounded-lg" draggable="false" />
                         </div>
 
-                        <div class="relative flex h-full w-1/3 shrink-0 items-center justify-center px-2 md:px-0">
+                        <div ref="currentImageStageEl" class="relative flex h-full w-1/3 shrink-0 items-center justify-center px-2 md:px-0">
                     <!-- Loading Spinner -->
                     <div v-if="imageLoading" class="absolute inset-0 flex items-center justify-center z-20">
                         <div class="animate-spin rounded-full h-16 w-16 border-4 border-white/20 border-t-white">
                         </div>
                     </div>
 
-                    <img :key="currentImageSrc" :src="currentImageSrc" :alt="photo.filename" @load="onImageLoad" @error="onImageError"
+                    <img ref="mainImageEl" :key="currentImageSrc" :src="currentImageSrc" :alt="photo.filename" @load="onImageLoad" @error="onImageError"
                         decoding="async" fetchpriority="high"
                         class="relative max-h-full max-w-full object-contain rounded-md md:rounded-lg shadow-2xl z-10 transition-opacity duration-200"
                         :class="[imageLoading ? 'opacity-0' : 'opacity-100', zoomLevel > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in']"
                         :style="imageStyle"
                         draggable="false" />
+                        <div v-if="canShowFaceOverlays && faceOverlayStyle" class="absolute z-20 pointer-events-none"
+                            :style="faceOverlayStyle">
+                            <div v-for="face in faces" :key="face.id"
+                                class="absolute pointer-events-auto" :style="faceBoxStyle(face)"
+                                @mousedown.stop>
+                                <button v-if="face.personId && face.personName"
+                                    @click.stop="navigateToPerson(face.personId)"
+                                    :aria-label="`Open ${face.personName}`" :title="face.personName"
+                                    class="absolute inset-0 rounded-[3px] border-2 transition hover:bg-white/15"
+                                    style="border-color: rgba(255,255,255,0.85);"></button>
+                                <div v-else class="absolute inset-0 rounded-[3px] border-2"
+                                    style="border-color: rgba(255,255,255,0.55);"></div>
+                                <button v-if="face.personId && face.personName"
+                                    @click.stop="navigateToPerson(face.personId)" @mousedown.stop
+                                    class="absolute -bottom-7 left-0 max-w-[180px] flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
+                                    style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
+                                    <span class="truncate">{{ face.personName }}</span>
+                                </button>
+                            </div>
+                        </div>
                         </div>
 
                         <div class="flex h-full w-1/3 shrink-0 items-center justify-center px-2 md:px-0">
@@ -339,6 +366,7 @@ const viewerLoadedImageKeys = new Set<string>()
 <script setup lang="ts">
 import { buildAssetUrl } from '~/utils/auth-client'
 import { t, initLanguage } from '~/utils/i18n'
+import { getAuthToken } from '~/utils/auth-client'
 
 interface Photo {
     id: string
@@ -395,6 +423,8 @@ const shareTimedOut = ref(false)
 const pendingShareFile = ref<File | null>(null)
 const viewerEl = ref<HTMLElement | null>(null)
 const imageAreaEl = ref<HTMLElement | null>(null)
+const currentImageStageEl = ref<HTMLElement | null>(null)
+const mainImageEl = ref<HTMLImageElement | null>(null)
 const zoomLevel = ref(1)
 const panX = ref(0)
 const panY = ref(0)
@@ -409,6 +439,105 @@ let shareTimeoutId: ReturnType<typeof setTimeout> | null = null
 const failedImageKeys = new Set<string>()
 const minZoom = 1
 const maxZoom = 4
+
+interface FaceOverlay {
+    id: string
+    x1: number
+    y1: number
+    x2: number
+    y2: number
+    score?: number
+    personId?: string | null
+    personName?: string | null
+}
+
+const isAuthenticated = () => !!getAuthToken()
+const isDesktop = ref(false)
+const facesAvailable = ref(false)
+const showFaces = ref(false)
+const faces = ref<FaceOverlay[]>([])
+const faceOverlayRect = ref<{ left: number; top: number; width: number; height: number } | null>(null)
+let facesAbortController: AbortController | null = null
+let faceResizeObserver: ResizeObserver | null = null
+let hasMountedFaceSupport = false
+let desktopSyncListener: (() => void) | null = null
+
+const canUseFaceOverlays = computed(() => isAuthenticated() && isDesktop.value && facesAvailable.value)
+const canShowFaceOverlays = computed(() => canUseFaceOverlays.value && showFaces.value && zoomLevel.value <= 1)
+
+const faceOverlayStyle = computed(() => {
+    const rect = faceOverlayRect.value
+    if (!rect) return null
+    return {
+        left: `${rect.left}px`,
+        top: `${rect.top}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`
+    }
+})
+
+const faceBoxStyle = (face: FaceOverlay) => {
+    const rect = faceOverlayRect.value
+    if (!rect) return null
+    return {
+        left: `${face.x1 * 100}%`,
+        top: `${face.y1 * 100}%`,
+        width: `${Math.max(0, face.x2 - face.x1) * 100}%`,
+        height: `${Math.max(0, face.y2 - face.y1) * 100}%`
+    }
+}
+
+function updateFaceOverlayGeometry() {
+    if (!hasMountedFaceSupport) return
+    const img = mainImageEl.value
+    const stage = currentImageStageEl.value
+    if (!img || !stage) {
+        faceOverlayRect.value = null
+        return
+    }
+    const imgRect = img.getBoundingClientRect()
+    const stageRect = stage.getBoundingClientRect()
+    if (imgRect.width <= 0 || imgRect.height <= 0) {
+        faceOverlayRect.value = null
+        return
+    }
+    faceOverlayRect.value = {
+        left: imgRect.left - stageRect.left,
+        top: imgRect.top - stageRect.top,
+        width: imgRect.width,
+        height: imgRect.height
+    }
+}
+
+async function fetchFaces() {
+    facesAvailable.value = false
+    showFaces.value = false
+    faces.value = []
+    faceOverlayRect.value = null
+    if (!isAuthenticated()) return
+
+    facesAbortController?.abort()
+    const controller = new AbortController()
+    facesAbortController = controller
+    try {
+        const res = await $fetch<{ faces: FaceOverlay[] }>(`/api/v1/photos/${props.photo.id}/faces`, {
+            signal: controller.signal
+        })
+        if (controller.signal.aborted) return
+        faces.value = Array.isArray(res?.faces) ? res.faces : []
+        facesAvailable.value = faces.value.length > 0
+        updateFaceOverlayGeometry()
+    } catch {
+        // Face overlays are optional; public viewers and offline states simply hide them.
+    } finally {
+        if (facesAbortController === controller) facesAbortController = null
+    }
+}
+
+function navigateToPerson(personId: string) {
+    if (!personId) return
+    navigateTo(`/people/${personId}`)
+}
 
 const getPhotoCacheKey = (photoId: string, timestamp: number | string | null | undefined) => `${photoId}:${timestamp || ''}`
 const buildFullImageSrc = (photoId: string, timestamp: number | string | null | undefined) => {
@@ -441,6 +570,7 @@ const isAndroid = computed(() => {
 const onImageLoad = () => {
     viewerLoadedImageKeys.add(currentImageKey.value)
     imageLoading.value = false
+    updateFaceOverlayGeometry()
 }
 
 const onImageError = () => {
@@ -480,8 +610,24 @@ watch(watchedPhoto, async (current, previous) => {
         if (!shouldAvoidFullPreload() && props.nextPhotoId) {
             preloadImage(props.nextPhotoId)
         }
+        fetchFaces()
+        updateFaceOverlayGeometry()
     })
 }, { immediate: true })
+
+watch(zoomLevel, (next, previous) => {
+    if (next <= 1 && previous > 1) {
+        window.setTimeout(updateFaceOverlayGeometry, 220)
+    } else {
+        updateFaceOverlayGeometry()
+    }
+})
+
+watch(showFaces, () => {
+    if (showFaces.value) {
+        nextTick(updateFaceOverlayGeometry)
+    }
+})
 
 // Preload image function
 const preloadImage = (photoId: string) => {
@@ -511,12 +657,33 @@ const shouldAvoidFullPreload = () => {
 onMounted(() => {
     document.body.style.overflow = 'hidden'
     nextTick(() => viewerEl.value?.focus())
+    hasMountedFaceSupport = true
+    isDesktop.value = window.innerWidth >= 768
+    desktopSyncListener = () => {
+        isDesktop.value = window.innerWidth >= 768
+        if (isDesktop.value) updateFaceOverlayGeometry()
+    }
+    window.addEventListener('resize', desktopSyncListener)
+    faceResizeObserver = new ResizeObserver(() => updateFaceOverlayGeometry())
+    if (imageAreaEl.value) faceResizeObserver.observe(imageAreaEl.value)
+    nextTick(() => {
+        fetchFaces()
+        updateFaceOverlayGeometry()
+    })
 })
 
 onUnmounted(() => {
     failedImageKeys.clear()
     document.body.style.overflow = ''
     removePanListeners()
+    facesAbortController?.abort()
+    facesAbortController = null
+    faceResizeObserver?.disconnect()
+    faceResizeObserver = null
+    if (desktopSyncListener) {
+        window.removeEventListener('resize', desktopSyncListener)
+        desktopSyncListener = null
+    }
 })
 
 // Computed style for mobile transform (desktop should not have transform)

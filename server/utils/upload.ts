@@ -2,15 +2,15 @@ import sharp from 'sharp'
 import { createHash, randomUUID } from 'crypto'
 import exifr from 'exifr'
 import { encode } from 'blurhash'
+import { eq } from 'drizzle-orm'
 import { db } from './db'
 import { photos } from '../db/schema'
 import { getUnixTimestamp } from './auth'
+import { enqueueJob } from './queue'
 import {
     deleteStorageFile,
     getLocalAbsoluteFilePath,
-    readStorageFile,
     saveStorageFile,
-    writeStorageFile,
 } from './storage'
 
 export { getLocalAbsoluteFilePath as getAbsoluteFilePath }
@@ -222,7 +222,58 @@ export async function deleteFile(storagePath: string): Promise<boolean> {
 }
 
 /**
- * Processes the uploaded photo in the background (compresses, extracts metadata/exif, generates thumbnail & blurhash, and inserts into DB)
+ * Inserts the photo row immediately and enqueues background jobs for metadata
+ * extraction, thumbnail generation, and optional face detection.
+ */
+export async function createPhotoWithJobs(options: {
+    storagePath: string
+    originalFilename: string
+    trustedMimeType: string
+    fileHash: string
+    albumId: string
+    uploaderId: string | null
+}): Promise<string> {
+    const now = getUnixTimestamp()
+    const photoId = randomUUID()
+
+    await db.insert(photos).values({
+        id: photoId,
+        filename: options.storagePath.split('/').pop()!,
+        originalName: options.originalFilename,
+        storagePath: options.storagePath,
+        thumbnailStoragePath: '',
+        blurhash: '',
+        size: 0,
+        width: 0,
+        height: 0,
+        mimeType: options.trustedMimeType,
+        fileHash: options.fileHash,
+        albumId: options.albumId,
+        uploaderId: options.uploaderId,
+        processingStatus: 'pending',
+        createdAt: now,
+        updatedAt: now,
+    })
+
+    try {
+        await enqueueJob('metadata', {
+            photoId,
+            storagePath: options.storagePath,
+            originalFilename: options.originalFilename,
+            trustedMimeType: options.trustedMimeType,
+        })
+    } catch (error) {
+        try {
+            await db.delete(photos).where(eq(photos.id, photoId))
+        } catch {}
+        throw error
+    }
+
+    return photoId
+}
+
+/**
+ * Backwards-compatible wrapper around createPhotoWithJobs.
  */
 export async function processPhotoBackground(options: {
     storagePath: string
@@ -232,64 +283,5 @@ export async function processPhotoBackground(options: {
     albumId: string
     uploaderId: string | null
 }): Promise<void> {
-    let thumbnailStoragePath: string | null = null
-    try {
-        let fileBuffer: Buffer = await readStorageFile(options.storagePath)
-
-        const exifData = await extractExifData(fileBuffer)
-        let storedWidth = exifData.width ?? 0
-        let storedHeight = exifData.height ?? 0
-
-        // Compress if needed
-        if (shouldAutoCompress(fileBuffer, exifData.software, storedWidth, storedHeight)) {
-            const format = options.trustedMimeType.split('/')[1] ?? 'jpeg'
-            fileBuffer = await compressImage(fileBuffer, format)
-            await writeStorageFile(options.storagePath, fileBuffer)
-            
-            const compressedMeta = await sharp(fileBuffer).metadata()
-            storedWidth = compressedMeta.width ?? storedWidth
-            storedHeight = compressedMeta.height ?? storedHeight
-        }
-
-        const thumbnailBuffer = await generateThumbnail(fileBuffer)
-        const blurhash = await generateBlurhash(fileBuffer)
-
-        const thumbnailFilename = generateUniqueFilename(options.originalFilename, options.fileHash, true)
-        thumbnailStoragePath = await saveFile(thumbnailBuffer, thumbnailFilename, 'thumbnails')
-
-        const now = getUnixTimestamp()
-        const photoId = randomUUID()
-
-        await db.insert(photos).values({
-            id: photoId,
-            filename: options.storagePath.split('/').pop()!,
-            originalName: options.originalFilename,
-            storagePath: options.storagePath,
-            thumbnailStoragePath,
-            blurhash,
-            size: fileBuffer.length,
-            mimeType: options.trustedMimeType,
-            fileHash: options.fileHash,
-            albumId: options.albumId,
-            uploaderId: options.uploaderId,
-            cameraModel: exifData.cameraModel || null,
-            lens: exifData.lens || null,
-            focalLength: exifData.focalLength || null,
-            iso: exifData.iso || null,
-            aperture: exifData.aperture || null,
-            shutterSpeed: exifData.shutterSpeed || null,
-            dateTaken: exifData.dateTaken ? BigInt(exifData.dateTaken) : null,
-            width: storedWidth,
-            height: storedHeight,
-            createdAt: now,
-            updatedAt: now,
-        })
-    } catch (error) {
-        console.error('Failed to process photo in background:', error)
-        // Clean up files
-        await deleteFile(options.storagePath).catch(() => {})
-        if (thumbnailStoragePath) {
-            await deleteFile(thumbnailStoragePath).catch(() => {})
-        }
-    }
+    await createPhotoWithJobs(options)
 }

@@ -4,7 +4,7 @@ import { requireAuth } from '../../../../../../utils/auth'
 import { join } from 'node:path'
 import fs from 'node:fs/promises'
 import sharp from 'sharp'
-import { calculateFileHash, generateUniqueFilename, processPhotoBackground, saveFile, validateImageFile } from '../../../../../../utils/upload'
+import { calculateFileHash, generateUniqueFilename, createPhotoWithJobs, saveFile, validateImageFile } from '../../../../../../utils/upload'
 import { configuredChunkLimitBytes, configuredUploadLimitBytes, resumableSessionDir, SHA256_RE } from '../../../../../../utils/resumable-upload'
 import { enforceRateLimit } from '../../../../../../utils/rate-limit'
 
@@ -123,22 +123,21 @@ export default defineEventHandler(async (event) => {
             // Clean up session directory
             await fs.rm(sessionDir, { recursive: true, force: true })
 
-            // Run processing in background
-            event.waitUntil((async () => {
-                await processPhotoBackground({
-                    storagePath,
-                    originalFilename,
-                    trustedMimeType,
-                    fileHash: actualHash,
-                    albumId,
-                    uploaderId: user.id,
-                })
-            })())
+            // Insert the photo row and enqueue background processing
+            const photoId = await createPhotoWithJobs({
+                storagePath,
+                originalFilename,
+                trustedMimeType,
+                fileHash: actualHash,
+                albumId,
+                uploaderId: user.id,
+            })
 
             return {
                 success: true,
                 completed: true,
                 nextOffset: newSize,
+                photoId,
             }
         }
 
