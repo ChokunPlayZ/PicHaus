@@ -12,7 +12,7 @@
 
                 <!-- Selection toggle (span with role so it doesn't nest a button inside the tile button) -->
                 <span
-                    class="absolute top-1.5 right-1.5 z-10 flex items-center justify-center w-6 h-6 rounded-full transition-transform active:scale-90"
+                    class="absolute top-1.5 right-1.5 z-10 flex items-center justify-center w-6 h-6 min-h-0 rounded-full transition-transform active:scale-90"
                     :style="isSelected(match.photo.id)
                         ? { background: 'var(--accent)', boxShadow: '0 0 0 2px rgba(255,255,255,0.45)' }
                         : { background: 'rgba(0,0,0,0.45)', boxShadow: '0 0 0 1.5px rgba(255,255,255,0.35)' }"
