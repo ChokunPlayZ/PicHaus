@@ -23,6 +23,7 @@ export default defineEventHandler(async (event) => {
         id: faces.id,
         personId: faces.personId,
         personName: people.name,
+        personInstagram: people.instagram,
         x1: faces.x1,
         y1: faces.y1,
         x2: faces.x2,

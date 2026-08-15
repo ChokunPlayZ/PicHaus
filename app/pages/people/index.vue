@@ -7,7 +7,7 @@
                 <div class="min-w-0">
                     <h1 class="text-3xl font-bold tracking-tight" style="color: var(--text-1);">People</h1>
                     <p class="text-sm mt-1" style="color: var(--text-2);">
-                        {{ people.length }} {{ people.length === 1 ? 'person' : 'people' }} found in your library
+                        {{ totalPeople }} {{ totalPeople === 1 ? 'person' : 'people' }} found in your library
                     </p>
                 </div>
                 <button @click="loadPeople" :disabled="loading"
@@ -91,6 +91,14 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Infinite Scroll Sentinel -->
+            <div ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
+                <div v-if="loadingMore" class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded-full border-2 animate-spin" style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                    <span class="text-xs" style="color: var(--text-3);">Loading more…</span>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -111,12 +119,18 @@ interface Person {
 const { toast } = useDialog()
 
 const people = ref<Person[]>([])
+const totalPeople = ref(0)
 const loading = ref(true)
+const loadingMore = ref(false)
+const hasMore = ref(false)
+const page = ref(1)
+const PAGE_SIZE = 50
 const fetchError = ref<string | null>(null)
 const failedThumbs = ref(new Set<string>())
 const editingId = ref<string | null>(null)
 const renameDraft = ref('')
 const savingName = ref<string | null>(null)
+const sentinelRef = ref<HTMLElement | null>(null)
 
 const faceThumb = (id: string | null) => (id ? buildAssetUrl(`/api/v1/faces/${id}/thumb`) : '')
 const displayName = (person: Person) => person.name?.trim() || 'Unnamed person'
@@ -131,15 +145,84 @@ function onThumbError(id: string | null) {
 async function loadPeople() {
     loading.value = true
     fetchError.value = null
+    page.value = 1
     try {
-        const res = await $fetch<{ success: boolean; data: Person[] }>('/api/v1/people')
+        const res = await $fetch<{ success: boolean; data: Person[]; pagination?: { total: number; hasMore: boolean } }>('/api/v1/people', {
+            params: { page: 1, limit: PAGE_SIZE }
+        })
         people.value = Array.isArray(res?.data) ? res.data : []
+        totalPeople.value = res?.pagination?.total ?? people.value.length
+        hasMore.value = res?.pagination?.hasMore ?? false
     } catch (err: any) {
         fetchError.value = err?.data?.statusMessage ?? 'Failed to load people'
     } finally {
         loading.value = false
+        fillViewportIfNeeded()
     }
 }
+
+async function loadMorePeople() {
+    if (loading.value || loadingMore.value || !hasMore.value) return
+    loadingMore.value = true
+    try {
+        const res = await $fetch<{ success: boolean; data: Person[]; pagination?: { total: number; hasMore: boolean } }>('/api/v1/people', {
+            params: { page: page.value + 1, limit: PAGE_SIZE }
+        })
+        const next = Array.isArray(res?.data) ? res.data : []
+        const seen = new Set(people.value.map(p => p.id))
+        for (const person of next) {
+            if (!seen.has(person.id)) {
+                seen.add(person.id)
+                people.value.push(person)
+            }
+        }
+        if (next.length > 0) page.value += 1
+        hasMore.value = res?.pagination?.hasMore ?? false
+    } catch (err: any) {
+        toast(err?.data?.statusMessage || 'Failed to load more people', 'error')
+    } finally {
+        loadingMore.value = false
+        fillViewportIfNeeded()
+    }
+}
+
+// Large screens: if the first page(s) don't fill the viewport, the sentinel is
+// already visible and IntersectionObserver fires once (before hasMore is set)
+// and never again — check manually after every load.
+let fillViewportTimer: ReturnType<typeof setTimeout> | null = null
+function fillViewportIfNeeded() {
+    if (fillViewportTimer) clearTimeout(fillViewportTimer)
+    fillViewportTimer = setTimeout(() => {
+        const el = sentinelRef.value
+        if (!el || loading.value || loadingMore.value || !hasMore.value) return
+        const rect = el.getBoundingClientRect()
+        const inView = rect.top <= window.innerHeight && rect.bottom >= 0
+        if (inView) loadMorePeople()
+    }, 150)
+}
+
+let peopleObserver: IntersectionObserver | null = null
+onMounted(() => {
+    loadPeople()
+    peopleObserver = new IntersectionObserver((entries) => {
+        if (entries[0]?.isIntersecting && hasMore.value && !loading.value && !loadingMore.value) {
+            loadMorePeople()
+        }
+    }, { rootMargin: '300px' })
+    if (sentinelRef.value) peopleObserver.observe(sentinelRef.value)
+})
+
+watch(sentinelRef, (el) => {
+    if (!peopleObserver) return
+    if (el) {
+        peopleObserver.observe(el)
+    }
+})
+
+onUnmounted(() => {
+    peopleObserver?.disconnect()
+    if (fillViewportTimer) clearTimeout(fillViewportTimer)
+})
 
 function startRename(person: Person) {
     editingId.value = person.id
@@ -177,6 +260,4 @@ async function saveRename(person: Person) {
         savingName.value = null
     }
 }
-
-onMounted(loadPeople)
 </script>

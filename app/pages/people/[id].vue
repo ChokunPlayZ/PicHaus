@@ -390,7 +390,9 @@ async function openMergeModal() {
     mergeSearch.value = ''
     mergePeopleLoading.value = true
     try {
-        const res = await $fetch<{ success: boolean; data: PersonSummary[] }>('/api/v1/people')
+        const res = await $fetch<{ success: boolean; data: PersonSummary[] }>('/api/v1/people', {
+            params: { page: 1, limit: 200 }
+        })
         mergePeople.value = (res?.data || []).filter(p => p.id !== personId)
     } catch (err: any) {
         mergePeople.value = []

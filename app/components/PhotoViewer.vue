@@ -171,7 +171,8 @@
                                 @mousedown.stop @touchstart.stop @touchmove.stop>
                                 <button v-if="face.personId"
                                     @click.stop="navigateToPerson(face.personId)" @mousedown.stop @touchstart.stop @touchmove.stop
-                                    :aria-label="`Open ${face.personName || 'person'}`" :title="face.personName || 'Open person'"
+                                    :aria-label="`Open ${face.personName || (face.personInstagram ? `@${face.personInstagram}` : 'person')}`"
+                                    :title="face.personName || (face.personInstagram ? `@${face.personInstagram}` : 'Open person')"
                                     class="absolute inset-0 rounded-[3px] border-2 transition hover:bg-white/15"
                                     style="border-color: rgba(255,255,255,0.85);"></button>
                                 <div v-else class="absolute inset-0 rounded-[3px] border-2"
@@ -180,7 +181,7 @@
                                     @click.stop="navigateToPerson(face.personId)" @mousedown.stop @touchstart.stop @touchmove.stop
                                     class="absolute -bottom-7 left-0 max-w-[180px] flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
                                     style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
-                                    <span class="truncate">{{ face.personName || 'Unnamed person' }}</span>
+                                    <span class="truncate">{{ face.personName || (face.personInstagram ? `@${face.personInstagram}` : 'Unnamed person') }}</span>
                                 </button>
                             </div>
                         </div>
@@ -296,9 +297,10 @@
                                     <Icon name="lucide:user" class="w-5 h-5" :stroke-width="1.5" />
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-white font-medium truncate">{{ person.name || 'Unnamed person' }}</p>
-                                    <p class="text-xs flex items-center gap-1.5" style="color: var(--accent);">
-                                        <Icon name="lucide:instagram" class="w-3.5 h-3.5" :stroke-width="2" />
+                                    <p v-if="person.name" class="text-white font-medium truncate">{{ person.name }}</p>
+                                    <p class="text-xs flex items-center gap-1.5 truncate"
+                                        :class="person.name ? 'mt-0.5' : ''" style="color: var(--accent);">
+                                        <Icon name="lucide:instagram" class="w-3.5 h-3.5 shrink-0" :stroke-width="2" />
                                         <span class="truncate">@{{ person.instagram }}</span>
                                     </p>
                                 </div>
@@ -486,6 +488,7 @@ interface FaceOverlay {
     score?: number
     personId?: string | null
     personName?: string | null
+    personInstagram?: string | null
 }
 
 interface PeopleWithHandle {
