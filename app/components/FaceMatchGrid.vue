@@ -5,27 +5,32 @@
                 class="absolute overflow-hidden group cursor-pointer rounded-lg"
                 :style="boxStyle(index)"
                 @mouseover="($event.currentTarget as HTMLElement).style.outline = '2px solid var(--accent)'"
-                @mouseout="($event.currentTarget as HTMLElement).style.outline = isSelected(match.photo.id) ? '3px solid var(--accent)' : 'none'">
+                @mouseout="($event.currentTarget as HTMLElement).style.outline = isFavorited(match.photo.id) ? '2px solid var(--accent)' : 'none'">
                 <img :src="thumbUrl(match.photo)" :alt="match.photo.originalName || match.photo.id"
                     loading="lazy" decoding="async"
                     class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" />
 
-                <!-- Selection toggle (span with role so it doesn't nest a button inside the tile button).
-                     Inline min-height: 0 beats variables.css's mobile [role="button"] min-height
-                     (same specificity, order-dependent) — keeps it a circle on phones. -->
+                <!-- Favorite button — same layout/placement as the gallery tiles
+                     (bottom-right, circle, heart). Span with role so it doesn't
+                     nest a button inside the tile button; inline min-height: 0
+                     beats the mobile [role="button"] min-height rule so it stays
+                     a circle on phones. -->
                 <span
-                    class="absolute top-1.5 right-1.5 z-10 flex items-center justify-center w-6 h-6 rounded-full transition-transform active:scale-90"
+                    class="absolute bottom-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer"
                     :style="{
                         minHeight: '0',
-                        ...(isSelected(match.photo.id)
-                            ? { background: 'var(--accent)', boxShadow: '0 0 0 2px rgba(255,255,255,0.45)' }
-                            : { background: 'rgba(0,0,0,0.45)', boxShadow: '0 0 0 1.5px rgba(255,255,255,0.35)' })
+                        ...(isFavorited(match.photo.id)
+                            ? { background: 'color-mix(in srgb, var(--error) 80%, transparent)', color: 'var(--accent-text)' }
+                            : { background: 'rgba(0,0,0,0.4)', color: 'rgba(255,255,255,0.6)' })
                     }"
                     role="button"
-                    :aria-pressed="isSelected(match.photo.id)"
-                    :aria-label="`Select ${match.photo.originalName || match.photo.id}`"
-                    @click.stop="toggleSelect(match.photo.id)">
-                    <Icon v-if="isSelected(match.photo.id)" name="lucide:check" class="h-3.5 w-3.5 text-white" :stroke-width="3" />
+                    :aria-pressed="isFavorited(match.photo.id)"
+                    :aria-label="isFavorited(match.photo.id) ? 'Remove favorite' : 'Add favorite'"
+                    @click.stop="toggleFavorite(match.photo.id)"
+                    @mouseover="($event.currentTarget as HTMLElement).style.opacity = '1'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.opacity = isFavorited(match.photo.id) ? '1' : ''">
+                    <Icon v-if="isFavorited(match.photo.id)" name="lucide:heart" class="h-3.5 w-3.5 fill-current" :stroke-width="2" />
+                    <Icon v-else name="lucide:heart" class="h-3.5 w-3.5" :stroke-width="2" />
                 </span>
             </button>
         </div>
@@ -58,12 +63,12 @@ interface FaceSearchPhoto {
 
 const props = defineProps<{
     matches: { photo: FaceSearchPhoto; similarity: number }[]
-    selectedMap?: Record<string, boolean>
+    favoritedMap?: Record<string, boolean>
 }>()
 
 const emit = defineEmits<{
     open: [photo: FaceSearchPhoto]
-    'toggle-select': [id: string]
+    'toggle-favorite': [id: string]
 }>()
 
 const photoDims = computed(() => props.matches.map(m => ({ width: m.photo.width, height: m.photo.height })))
@@ -80,10 +85,9 @@ const boxStyle = (index: number) => {
         height: `${box.height}px`,
         background: 'var(--surface-3)',
     }
-    // Persistent selected outline (hover outline is handled by mouseover/out)
-    if (match && isSelected(match.photo.id)) {
-        style.outline = '3px solid var(--accent)'
-        style.outlineOffset = '2px'
+    // Persistent accent ring on favorited tiles
+    if (match && isFavorited(match.photo.id)) {
+        style.outline = '2px solid var(--accent)'
     }
     return style
 }
@@ -95,6 +99,6 @@ const thumbUrl = (photo: FaceSearchPhoto) => {
 
 const openMatch = (photo: FaceSearchPhoto) => emit('open', photo)
 
-const isSelected = (id: string) => !!props.selectedMap?.[id]
-const toggleSelect = (id: string) => emit('toggle-select', id)
+const isFavorited = (id: string) => !!props.favoritedMap?.[id]
+const toggleFavorite = (id: string) => emit('toggle-favorite', id)
 </script>

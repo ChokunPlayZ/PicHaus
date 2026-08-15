@@ -71,8 +71,8 @@
                     </div>
 
                     <div v-if="face.matches.length > 0">
-                        <FaceMatchGrid :matches="face.matches" :selected-map="selectedMap" @open="openMatch"
-                            @toggle-select="toggleSelect" />
+                        <FaceMatchGrid :matches="face.matches" :favorited-map="favoritedMap" @open="openMatch"
+                            @toggle-favorite="emit('toggle-favorite', $event)" />
                     </div>
                     <p v-else class="text-xs" style="color: var(--text-3);">{{ t('searchByFaceNoMatches') }}</p>
                 </div>
@@ -89,111 +89,9 @@
     <PhotoViewer v-if="viewerPhoto" :photo="viewerPhoto" :has-previous="hasPreviousMatch"
         :has-next="hasNextMatch" :show-metadata="true" @close="viewerIndex = null" @previous="previousMatch"
         @next="nextMatch" />
-
-    <!-- Selected results download bar -->
-    <Transition name="slide-up">
-        <div v-if="selectedCount > 0 && !viewerPhoto"
-            class="fixed bottom-8 left-1/2 -translate-x-1/2 rounded-full px-5 py-3 flex items-center gap-4 z-40 whitespace-nowrap"
-            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
-            <div class="text-sm font-medium pr-4 flex items-center gap-2" style="color: var(--text-1); border-right: 1px solid var(--separator);">
-                <Icon name="lucide:check-square" class="h-4 w-4 text-accent flex-shrink-0" :stroke-width="2" />
-                <span>{{ t('selectedCount').replace('{count}', String(selectedCount)).replace('{plural}', selectedCount === 1 ? t('photo') : t('photos')) }}</span>
-            </div>
-            <button @click="clearSelection" class="text-sm transition" style="color: var(--text-2);">
-                {{ t('clear') }}
-            </button>
-            <div class="h-4 w-px" style="background: var(--separator);"></div>
-            <button @click="downloadSelected" :disabled="downloading"
-                class="flex items-center gap-1.5 text-sm font-medium transition disabled:opacity-45" style="color: var(--text-1);">
-                <Icon name="lucide:download" class="h-4 w-4" :stroke-width="2" />
-                <span v-if="downloading">{{ downloadProgress.current }}/{{ downloadProgress.total }}</span>
-                <span v-else>{{ t('download') }}</span>
-            </button>
-        </div>
-    </Transition>
-
-    <!-- Download Progress Modal -->
-    <div v-if="downloading"
-        class="fixed inset-0 flex items-center justify-center p-4 z-50"
-        style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);">
-        <div class="rounded-2xl p-6 max-w-sm w-full"
-            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
-            <h3 class="text-base font-bold mb-4 text-center" style="color: var(--text-1);">
-                {{ t('downloadingPhotos') }}
-            </h3>
-            <div class="mb-2 flex justify-between text-sm">
-                <span style="color: var(--text-2);">{{ t('progress') }}</span>
-                <span style="color: var(--accent); font-weight: 600;">{{ Math.round((downloadProgress.current / downloadProgress.total) * 100) }}%</span>
-            </div>
-            <div class="w-full rounded-full h-2 mb-4 overflow-hidden" style="background: var(--surface-3);">
-                <div class="h-full rounded-full transition-all duration-300 ease-out"
-                    style="background: var(--accent);"
-                    :style="{ width: `${(downloadProgress.current / downloadProgress.total) * 100}%` }">
-                </div>
-            </div>
-            <p class="text-center text-xs" style="color: var(--text-3);">
-                {{ downloadProgress.current }} / {{ downloadProgress.total }} {{ t('filesProcessed') }}
-            </p>
-        </div>
-    </div>
-
-    <!-- Download Success Support Modal -->
-    <div v-if="showDownloadSuccessModal"
-        class="fixed inset-0 flex items-center justify-center p-4 z-[60]"
-        style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);"
-        @click.self="showDownloadSuccessModal = false">
-        <div class="rounded-2xl p-6 max-w-md w-full text-center"
-            style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-xl);">
-            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
-                style="background: rgba(var(--accent-rgb), 0.1); color: var(--accent);">
-                <Icon name="lucide:arrow-down-to-line" class="h-6 w-6" :stroke-width="2.5" />
-            </div>
-            <h3 class="text-xl font-bold mb-1" style="color: var(--text-1);">{{ t('downloadComplete') }}</h3>
-            <p class="text-sm mb-6" style="color: var(--text-3);">{{ t('supportPhotographers') }}</p>
-            <div class="space-y-3 text-left max-h-60 overflow-y-auto pr-1 mb-6">
-                <div v-for="photographer in downloadedPhotographers" :key="photographer.id"
-                    class="p-3 rounded-xl flex items-center justify-between gap-3"
-                    style="background: var(--surface-2); border: 1px solid var(--separator);">
-                    <div class="flex items-center gap-3 flex-1 min-w-0">
-                        <img v-if="photographer.avatar" :src="photographer.avatar"
-                            class="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                            style="border: 1px solid var(--separator);" />
-                        <div v-else
-                            class="w-10 h-10 rounded-full flex items-center justify-center text-accent-text font-bold text-sm flex-shrink-0"
-                            style="background: var(--accent);">
-                            {{ photographer.name?.charAt(0) || '?' }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="font-medium text-sm break-words" style="color: var(--text-1);">{{ photographer.name }}</p>
-                            <p v-if="photographer.instagram" class="text-xs mt-0.5 break-words" style="color: var(--text-3);">@{{ photographer.instagram }}</p>
-                        </div>
-                    </div>
-                    <a v-if="photographer.instagram"
-                        :href="`https://instagram.com/${photographer.instagram}`"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0"
-                        style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="($event.currentTarget as HTMLElement).style.opacity = '0.9'"
-                        @mouseout="($event.currentTarget as HTMLElement).style.opacity = '1'">
-                        <Icon name="lucide:instagram" class="w-3.5 h-3.5" />
-                        Follow
-                    </a>
-                </div>
-            </div>
-            <button @click="showDownloadSuccessModal = false"
-                class="w-full py-2.5 rounded-xl font-medium transition"
-                style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1);"
-                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
-                @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                {{ t('done') }}
-            </button>
-        </div>
-    </div>
 </template>
 
 <script setup lang="ts">
-import JSZip from 'jszip'
 import { buildAssetUrl } from '~/utils/auth-client'
 import { t, initLanguage } from '~/utils/i18n'
 
@@ -237,6 +135,14 @@ interface FaceGroup {
 
 const props = defineProps<{
     albumIds: string[]
+    // The share page's favorites map (photoId -> true), same one the gallery
+    // tiles use — hearts in the results share the exact favorite state.
+    favoritedMap?: Record<string, boolean>
+}>()
+
+const emit = defineEmits<{
+    'results-change': [hasResults: boolean]
+    'toggle-favorite': [id: string]
 }>()
 
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -292,9 +198,6 @@ const reset = () => {
     resultFaces.value = []
     viewerIndex.value = null
     picking.value = false
-    clearSelection()
-    showDownloadSuccessModal.value = false
-    downloadedPhotographers.value = []
     if (fileInput.value) fileInput.value.value = ''
 }
 
@@ -464,144 +367,4 @@ defineExpose({ startOver })
 watch([done, searching, resultFaces], () => {
     emit('results-change', !searching.value && done.value && resultFaces.value.length > 0)
 }, { immediate: true })
-const emit = defineEmits<{
-    'results-change': [hasResults: boolean]
-}>()
-
-// ── Selection + download of matched photos ──────────────────────────────
-const dialog = useDialog()
-const MAX_ZIP_SIZE = 100 * 1024 * 1024 // 100 MB
-
-// Reactive map so toggling one tile doesn't re-render every tile.
-const selectedMap = reactive<Record<string, boolean>>({})
-const selectedCount = computed(() => Object.keys(selectedMap).filter(k => selectedMap[k]).length)
-
-const toggleSelect = (id: string) => {
-    if (selectedMap[id]) {
-        delete selectedMap[id]
-    } else {
-        selectedMap[id] = true
-    }
-}
-
-const clearSelection = () => {
-    Object.keys(selectedMap).forEach(k => delete selectedMap[k])
-}
-
-// Dedupe by id — the same photo can match several faces (appears multiple
-// times in the flattened match list).
-const selectedPhotos = computed<FaceSearchPhoto[]>(() => {
-    const seen = new Set<string>()
-    const result: FaceSearchPhoto[] = []
-    for (const p of viewerPhotos.value) {
-        if (selectedMap[p.id] && !seen.has(p.id)) {
-            seen.add(p.id)
-            result.push(p)
-        }
-    }
-    return result
-})
-
-const downloading = ref(false)
-const downloadProgress = ref({ current: 0, total: 0 })
-const downloadedPhotographers = ref<Array<{ id: string; name: string | null; instagram: string | null; avatar: string | null }>>([])
-const showDownloadSuccessModal = ref(false)
-
-const downloadBlob = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
-
-const showSupportPopup = (downloadedPhotos: FaceSearchPhoto[]) => {
-    const map = new Map<string, NonNullable<FaceSearchPhoto['uploader']>>()
-    downloadedPhotos.forEach(photo => {
-        if (photo.uploader?.id && !map.has(photo.uploader.id)) {
-            map.set(photo.uploader.id, photo.uploader)
-        }
-    })
-    downloadedPhotographers.value = Array.from(map.values())
-    if (downloadedPhotographers.value.length > 0) {
-        showDownloadSuccessModal.value = true
-    }
-}
-
-// Downloads the selected result photos as one or more zips (batched by size,
-// same flow as the album/share-page download).
-const downloadSelected = async () => {
-    if (downloading.value || selectedCount.value === 0) return
-
-    const photos = selectedPhotos.value
-    if (photos.length === 0) return
-
-    downloading.value = true
-    downloadProgress.value = { current: 0, total: photos.length }
-
-    try {
-        const files: { blob: Blob; name: string }[] = []
-        const downloaded: FaceSearchPhoto[] = []
-        for (const photo of photos) {
-            try {
-                const res = await fetch(buildAssetUrl(`/api/assets/full/${photo.id}?t=${photo.updatedAt || photo.createdAt || ''}`))
-                const blob = await res.blob()
-                files.push({ blob, name: photo.originalName })
-                downloaded.push(photo)
-                downloadProgress.value.current++
-            } catch (err) {
-                console.error(`Failed to download ${photo.originalName}`, err)
-            }
-        }
-
-        if (files.length === 0) {
-            downloading.value = false
-            downloadProgress.value = { current: 0, total: 0 }
-            return
-        }
-
-        // Batch zipping
-        const batches: { blob: Blob; name: string }[][] = []
-        let currentBatch: { blob: Blob; name: string }[] = []
-        let currentBatchSize = 0
-        for (const file of files) {
-            if (currentBatchSize + file.blob.size > MAX_ZIP_SIZE && currentBatch.length > 0) {
-                batches.push(currentBatch)
-                currentBatch = []
-                currentBatchSize = 0
-            }
-            currentBatch.push(file)
-            currentBatchSize += file.blob.size
-        }
-        if (currentBatch.length > 0) {
-            batches.push(currentBatch)
-        }
-
-        const folderName = 'face-search-results'
-        for (let i = 0; i < batches.length; i++) {
-            const batch = batches[i]!
-            const zip = new JSZip()
-            const folder = zip.folder(folderName)
-            batch.forEach(f => folder?.file(f.name, f.blob))
-            const content = await zip.generateAsync({ type: 'blob' })
-            const partSuffix = batches.length > 1 ? `-part${i + 1}` : ''
-            downloadBlob(content, `${folderName}${partSuffix}.zip`)
-
-            if (i < batches.length - 1) {
-                await new Promise(r => setTimeout(r, 600))
-            }
-        }
-
-        showSupportPopup(downloaded)
-    } catch (err) {
-        console.error('Failed to download selected photos', err)
-        dialog.toast('Failed to download selected photos')
-    } finally {
-        downloading.value = false
-        downloadProgress.value = { current: 0, total: 0 }
-    }
-}
 </script>

@@ -73,6 +73,7 @@
                 </div>
 
                 <FaceSearch v-if="showFaceSearch && faceSearchEnabled" ref="faceSearchRef" :album-ids="faceSearchAlbumIds"
+                    :favorited-map="favoritesMap" @toggle-favorite="toggleFavorite($event)"
                     @results-change="faceSearchHasResults = $event" />
 
                 <div v-if="!faceSearchHasResults" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -121,6 +122,7 @@
                 </div>
 
                 <FaceSearch v-if="showFaceSearch && faceSearchEnabled" ref="faceSearchRef" :album-ids="faceSearchAlbumIds"
+                    :favorited-map="favoritesMap" @toggle-favorite="toggleFavorite($event)"
                     @results-change="faceSearchHasResults = $event" />
 
                 <!-- Loading Photos State -->
@@ -201,6 +203,7 @@
                 </div>
 
                 <FaceSearch v-if="showFaceSearch && faceSearchEnabled" ref="faceSearchRef" :album-ids="faceSearchAlbumIds"
+                    :favorited-map="favoritesMap" @toggle-favorite="toggleFavorite($event)"
                     @results-change="faceSearchHasResults = $event" />
 
                 <!-- Loading Photos State -->
