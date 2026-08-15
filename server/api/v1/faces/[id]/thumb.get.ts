@@ -74,10 +74,19 @@ export default defineEventHandler(async (event) => {
         if (!hasAccess) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
 
         const imageBuffer = await readStorageFile(photo.storagePath)
-        const left = clamp(Math.round(face.x1 * photo.width), 0, Math.max(photo.width - 1, 0))
-        const top = clamp(Math.round(face.y1 * photo.height), 0, Math.max(photo.height - 1, 0))
-        const right = clamp(Math.round(face.x2 * photo.width), left + 1, Math.max(photo.width, 1))
-        const bottom = clamp(Math.round(face.y2 * photo.height), top + 1, Math.max(photo.height, 1))
+
+        // Expand the face box outward by PAD on each side so the thumbnail has
+        // some headroom around the face (a tight crop looks weird).
+        const PAD = 0.35
+        const faceW = Math.max((face.x2 - face.x1) * photo.width, 1)
+        const faceH = Math.max((face.y2 - face.y1) * photo.height, 1)
+        const centerX = (face.x1 + face.x2) / 2 * photo.width
+        const centerY = (face.y1 + face.y2) / 2 * photo.height
+
+        const left = clamp(Math.round(centerX - faceW * (0.5 + PAD)), 0, Math.max(photo.width - 1, 0))
+        const top = clamp(Math.round(centerY - faceH * (0.5 + PAD)), 0, Math.max(photo.height - 1, 0))
+        const right = clamp(Math.round(centerX + faceW * (0.5 + PAD)), left + 1, Math.max(photo.width, 1))
+        const bottom = clamp(Math.round(centerY + faceH * (0.5 + PAD)), top + 1, Math.max(photo.height, 1))
 
         const thumbBuffer = await sharp(imageBuffer)
             .rotate()
