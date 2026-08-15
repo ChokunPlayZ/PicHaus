@@ -168,16 +168,16 @@
                             :style="faceOverlayStyle">
                             <div v-for="face in faces" :key="face.id"
                                 class="absolute pointer-events-auto" :style="faceBoxStyle(face)"
-                                @mousedown.stop>
+                                @mousedown.stop @touchstart.stop @touchmove.stop>
                                 <button v-if="face.personId && face.personName"
-                                    @click.stop="navigateToPerson(face.personId)"
+                                    @click.stop="navigateToPerson(face.personId)" @mousedown.stop @touchstart.stop @touchmove.stop
                                     :aria-label="`Open ${face.personName}`" :title="face.personName"
                                     class="absolute inset-0 rounded-[3px] border-2 transition hover:bg-white/15"
                                     style="border-color: rgba(255,255,255,0.85);"></button>
                                 <div v-else class="absolute inset-0 rounded-[3px] border-2"
                                     style="border-color: rgba(255,255,255,0.55);"></div>
                                 <button v-if="face.personId && face.personName"
-                                    @click.stop="navigateToPerson(face.personId)" @mousedown.stop
+                                    @click.stop="navigateToPerson(face.personId)" @mousedown.stop @touchstart.stop @touchmove.stop
                                     class="absolute -bottom-7 left-0 max-w-[180px] flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
                                     style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
                                     <span class="truncate">{{ face.personName }}</span>
@@ -454,7 +454,7 @@ interface FaceOverlay {
 const isAuthenticated = () => !!getAuthToken()
 const isDesktop = ref(false)
 const facesAvailable = ref(false)
-const showFaces = ref(false)
+const showFaces = ref(true)
 const faces = ref<FaceOverlay[]>([])
 const faceOverlayRect = ref<{ left: number; top: number; width: number; height: number } | null>(null)
 let facesAbortController: AbortController | null = null
@@ -462,7 +462,7 @@ let faceResizeObserver: ResizeObserver | null = null
 let hasMountedFaceSupport = false
 let desktopSyncListener: (() => void) | null = null
 
-const canUseFaceOverlays = computed(() => isAuthenticated() && isDesktop.value && facesAvailable.value)
+const canUseFaceOverlays = computed(() => isAuthenticated() && facesAvailable.value)
 const canShowFaceOverlays = computed(() => canUseFaceOverlays.value && showFaces.value && zoomLevel.value <= 1)
 
 const faceOverlayStyle = computed(() => {
