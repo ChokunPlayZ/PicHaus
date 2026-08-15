@@ -47,6 +47,73 @@ export interface FaceMatchGroup {
 export interface FaceMatchOptions {
     threshold: number
     maxMatchesPerFace?: number
+    /**
+     * When true (default), reference faces that are BOTH embedding-similar AND
+     * spatially overlapping are treated as duplicate detections of the same
+     * face and dropped, keeping only the highest-scoring detection. The ML
+     * engine can return the same face twice with slightly different boxes.
+     *
+     * A person who legitimately appears multiple times in the reference photo
+     * (mirror, collage, double exposure, twins standing apart) has NON-
+     * overlapping boxes, so those groups are preserved — dedup only fires for
+     * overlapping boxes, which cannot be a real second occurrence.
+     */
+    deduplicate?: boolean
+    /**
+     * Similarity at or above which two reference face embeddings are
+     * considered the same person. Defaults to `options.threshold`.
+     */
+    duplicateThreshold?: number
+    /**
+     * Minimum intersection-over-union of the two face boxes for them to count
+     * as duplicate detections of the same face. Defaults to 0.3.
+     */
+    duplicateIoU?: number
+}
+
+// Intersection-over-union of two normalized boxes.
+function boxIoU(a: { x1: number; y1: number; x2: number; y2: number }, b: { x1: number; y1: number; x2: number; y2: number }): number {
+    const x1 = Math.max(a.x1, b.x1)
+    const y1 = Math.max(a.y1, b.y1)
+    const x2 = Math.min(a.x2, b.x2)
+    const y2 = Math.min(a.y2, b.y2)
+    const intersection = Math.max(0, x2 - x1) * Math.max(0, y2 - y1)
+    const areaA = Math.max(0, a.x2 - a.x1) * Math.max(0, a.y2 - a.y1)
+    const areaB = Math.max(0, b.x2 - b.x1) * Math.max(0, b.y2 - b.y1)
+    const union = areaA + areaB - intersection
+    if (union <= 0) return 0
+    return intersection / union
+}
+
+// Greedy duplicate removal: accepts faces in descending detection score order
+// and drops any face that is BOTH embedding-similar AND box-overlapping with
+// an already-accepted one. This merges the ML engine's repeated detections of
+// the same face in the same spot while preserving legitimate repeated
+// appearances of a person in different parts of the reference photo.
+export function deduplicateReferenceFaces(
+    referenceFaces: ReferenceFaceInput[],
+    threshold: number,
+    iouThreshold = 0.3,
+): ReferenceFaceInput[] {
+    if (referenceFaces.length <= 1) return referenceFaces
+
+    const accepted: ReferenceFaceInput[] = []
+    // Highest score first so the strongest detection of a face wins.
+    const byScoreDesc = [...referenceFaces].sort((a, b) => b.score - a.score)
+
+    for (const face of byScoreDesc) {
+        const isDuplicate = accepted.some(
+            (existing) =>
+                cosineSimilarity(face.embedding, existing.embedding) >= threshold &&
+                boxIoU(face.box, existing.box) >= iouThreshold,
+        )
+        if (!isDuplicate) accepted.push(face)
+    }
+
+    // Restore the original index order so group numbers match the boxes drawn
+    // on the reference photo (accepted faces are a subset of the input).
+    const acceptedIds = new Set(accepted)
+    return referenceFaces.filter((face) => acceptedIds.has(face))
 }
 
 // Matches every face found in a reference photo against the stored face
@@ -58,8 +125,15 @@ export function matchReferenceFaces(
     options: FaceMatchOptions,
 ): FaceMatchGroup[] {
     const maxMatchesPerFace = options.maxMatchesPerFace ?? Number.POSITIVE_INFINITY
+    const deduplicate = options.deduplicate ?? true
+    const duplicateThreshold = options.duplicateThreshold ?? options.threshold
+    const duplicateIoU = options.duplicateIoU ?? 0.3
 
-    return referenceFaces.map((reference, index) => {
+    const uniqueFaces = deduplicate
+        ? deduplicateReferenceFaces(referenceFaces, duplicateThreshold, duplicateIoU)
+        : referenceFaces
+
+    return uniqueFaces.map((reference, index) => {
         const bestByPhoto = new Map<string, FaceMatchResult>()
 
         for (const candidate of candidates) {

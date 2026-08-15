@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { matchReferenceFaces, type FaceSearchCandidate, type ReferenceFaceInput } from '../server/utils/face-search'
+import { matchReferenceFaces, deduplicateReferenceFaces, type FaceSearchCandidate, type ReferenceFaceInput } from '../server/utils/face-search'
 
 function candidate(photoId: string, embedding: number[]): FaceSearchCandidate {
     return {
@@ -22,10 +22,10 @@ function candidate(photoId: string, embedding: number[]): FaceSearchCandidate {
     }
 }
 
-function referenceFace(embedding: number[]): ReferenceFaceInput {
+function referenceFace(embedding: number[], box?: { x1: number; y1: number; x2: number; y2: number }, score = 0.9): ReferenceFaceInput {
     return {
-        box: { x1: 0.1, y1: 0.1, x2: 0.4, y2: 0.5 },
-        score: 0.9,
+        box: box ?? { x1: 0.1, y1: 0.1, x2: 0.4, y2: 0.5 },
+        score,
         embedding,
     }
 }
@@ -94,5 +94,77 @@ describe('matchReferenceFaces', () => {
         const groups = matchReferenceFaces([referenceFace([1, 0, 0])], [], { threshold: 0.5 })
         expect(groups).toHaveLength(1)
         expect(groups[0].matches).toEqual([])
+    })
+
+    it('merges duplicate detections of the same face in the same spot', () => {
+        // Same embedding AND overlapping boxes → one group (the ML double-detected).
+        const same = [1, 0, 0]
+        const candidates = [candidate('alice-photo', same)]
+
+        const groups = matchReferenceFaces(
+            [
+                referenceFace(same, { x1: 0.1, y1: 0.1, x2: 0.4, y2: 0.5 }, 0.9),
+                referenceFace(same, { x1: 0.12, y1: 0.12, x2: 0.42, y2: 0.52 }, 0.7),
+            ],
+            candidates,
+            { threshold: 0.5 },
+        )
+
+        expect(groups).toHaveLength(1)
+        // Highest-scoring detection wins.
+        expect(groups[0].score).toBe(0.9)
+    })
+
+    it('keeps legitimate repeated appearances of the same person in different spots', () => {
+        // Same embedding but NON-overlapping boxes (mirror/collage/double
+        // exposure/twins standing apart) → separate groups, both preserved.
+        const same = [1, 0, 0]
+        const candidates = [candidate('alice-photo', same)]
+
+        const groups = matchReferenceFaces(
+            [
+                referenceFace(same, { x1: 0.05, y1: 0.05, x2: 0.35, y2: 0.45 }),
+                referenceFace(same, { x1: 0.6, y1: 0.55, x2: 0.9, y2: 0.95 }),
+            ],
+            candidates,
+            { threshold: 0.5 },
+        )
+
+        expect(groups).toHaveLength(2)
+        expect(groups[0].matches).toHaveLength(1)
+        expect(groups[1].matches).toHaveLength(1)
+    })
+
+    it('keeps similar-looking but different people when boxes do not overlap', () => {
+        // Twins / lookalikes: near-identical embeddings but distinct spots.
+        const twinA = [0.98, 0.2, 0]
+        const twinB = [0.97, 0.21, 0.01]
+        const candidates = [candidate('twin-a-photo', twinA), candidate('twin-b-photo', twinB)]
+
+        const groups = matchReferenceFaces(
+            [
+                referenceFace(twinA, { x1: 0.05, y1: 0.05, x2: 0.35, y2: 0.45 }),
+                referenceFace(twinB, { x1: 0.6, y1: 0.55, x2: 0.9, y2: 0.95 }),
+            ],
+            candidates,
+            { threshold: 0.5 },
+        )
+
+        expect(groups).toHaveLength(2)
+        expect(groups[0].matches[0].photo.id).toBe('twin-a-photo')
+        expect(groups[1].matches[0].photo.id).toBe('twin-b-photo')
+    })
+
+    it('can disable deduplication', () => {
+        const same = [1, 0, 0]
+        const groups = matchReferenceFaces(
+            [
+                referenceFace(same, { x1: 0.1, y1: 0.1, x2: 0.4, y2: 0.5 }),
+                referenceFace(same, { x1: 0.12, y1: 0.12, x2: 0.42, y2: 0.52 }),
+            ],
+            [candidate('alice-photo', same)],
+            { threshold: 0.5, deduplicate: false },
+        )
+        expect(groups).toHaveLength(2)
     })
 })
