@@ -47,7 +47,7 @@
                     :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)"
                     :aria-current="isActivePath(item.path) ? 'page' : undefined">
                     <span class="inline-flex items-center gap-2.5">
-                        <Icon :name="getIconName(item.icon)" class="w-4 h-4" :stroke-width="2" />
+                        <SidebarIcon :name="getIconName(item.icon)" :size="17" />
                         <span>{{ item.label }}</span>
                     </span>
                 </button>
@@ -56,31 +56,31 @@
                     <div class="pt-2 pb-1 px-3" style="font-size: 11px; font-weight: 600; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: 0.06em;">Admin</div>
                     <button @click="navigateTo('/admin/users')" :class="sidebarButtonClass('/admin/users')" :style="sidebarButtonStyle('/admin/users')">
                         <span class="inline-flex items-center gap-2.5">
-                            <Icon name="lucide:users" class="w-4 h-4" :stroke-width="2" />
+                            <SidebarIcon name="users" :size="17" />
                             <span>Users</span>
                         </span>
                     </button>
                     <button @click="navigateTo('/admin/status')" :class="sidebarButtonClass('/admin/status')" :style="sidebarButtonStyle('/admin/status')">
                         <span class="inline-flex items-center gap-2.5">
-                            <Icon name="lucide:activity" class="w-4 h-4" :stroke-width="2" />
+                            <SidebarIcon name="status" :size="17" />
                             <span>Server Status</span>
                         </span>
                     </button>
                     <button @click="navigateTo('/admin/invites')" :class="sidebarButtonClass('/admin/invites')" :style="sidebarButtonStyle('/admin/invites')">
                         <span class="inline-flex items-center gap-2.5">
-                            <Icon name="lucide:mail" class="w-4 h-4" :stroke-width="2" />
+                            <SidebarIcon name="invites" :size="17" />
                             <span>Invites</span>
                         </span>
                     </button>
                     <button @click="navigateTo('/admin/logos')" :class="sidebarButtonClass('/admin/logos')" :style="sidebarButtonStyle('/admin/logos')">
                         <span class="inline-flex items-center gap-2.5">
-                            <Icon name="lucide:image" class="w-4 h-4" :stroke-width="2" />
+                            <SidebarIcon name="logos" :size="17" />
                             <span>Logos</span>
                         </span>
                     </button>
                     <button @click="navigateTo('/admin/settings')" :class="sidebarButtonClass('/admin/settings')" :style="sidebarButtonStyle('/admin/settings')">
                         <span class="inline-flex items-center gap-2.5">
-                            <Icon name="lucide:settings" class="w-4 h-4" :stroke-width="2" />
+                            <SidebarIcon name="settings" :size="17" />
                             <span>Site Settings</span>
                         </span>
                     </button>
@@ -189,7 +189,7 @@
                         :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)"
                         :aria-current="isActivePath(item.path) ? 'page' : undefined">
                         <span class="inline-flex items-center gap-2.5">
-                            <Icon :name="getIconName(item.icon)" class="w-4 h-4" :stroke-width="2" />
+                            <SidebarIcon :name="getIconName(item.icon)" :size="17" />
                             <span>{{ item.label }}</span>
                         </span>
                     </button>
@@ -198,31 +198,31 @@
                         <div class="pt-2 pb-1 px-3" style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em;">Admin</div>
                         <button @click="goMobile('/admin/users')" :class="sidebarButtonClass('/admin/users')" :style="sidebarButtonStyle('/admin/users')">
                             <span class="inline-flex items-center gap-2.5">
-                                <Icon name="lucide:users" class="w-4 h-4" :stroke-width="2" />
+                                <SidebarIcon name="users" :size="17" />
                                 <span>Users</span>
                             </span>
                         </button>
                         <button @click="goMobile('/admin/status')" :class="sidebarButtonClass('/admin/status')" :style="sidebarButtonStyle('/admin/status')">
                             <span class="inline-flex items-center gap-2.5">
-                                <Icon name="lucide:activity" class="w-4 h-4" :stroke-width="2" />
+                                <SidebarIcon name="status" :size="17" />
                                 <span>Server Status</span>
                             </span>
                         </button>
                         <button @click="goMobile('/admin/invites')" :class="sidebarButtonClass('/admin/invites')" :style="sidebarButtonStyle('/admin/invites')">
                             <span class="inline-flex items-center gap-2.5">
-                                <Icon name="lucide:mail" class="w-4 h-4" :stroke-width="2" />
+                                <SidebarIcon name="invites" :size="17" />
                                 <span>Invites</span>
                             </span>
                         </button>
                         <button @click="goMobile('/admin/logos')" :class="sidebarButtonClass('/admin/logos')" :style="sidebarButtonStyle('/admin/logos')">
                             <span class="inline-flex items-center gap-2.5">
-                                <Icon name="lucide:image" class="w-4 h-4" :stroke-width="2" />
+                                <SidebarIcon name="logos" :size="17" />
                                 <span>Logos</span>
                             </span>
                         </button>
                         <button @click="goMobile('/admin/settings')" :class="sidebarButtonClass('/admin/settings')" :style="sidebarButtonStyle('/admin/settings')">
                             <span class="inline-flex items-center gap-2.5">
-                                <Icon name="lucide:settings" class="w-4 h-4" :stroke-width="2" />
+                                <SidebarIcon name="settings" :size="17" />
                                 <span>Site Settings</span>
                             </span>
                         </button>
@@ -368,16 +368,16 @@ const userInitials = computed(() => {
 
 const getIconName = (icon: string) => {
   const map: Record<string, string> = {
-    'albums': 'lucide:layout-grid',
-    'photos': 'lucide:images',
-    'timeline': 'lucide:clock',
-    'statistics': 'lucide:bar-chart-3',
-    'share-links': 'lucide:link',
-    'docs': 'lucide:file-text',
-    'api-keys': 'lucide:key',
-    'people': 'lucide:users'
+    'albums': 'albums',
+    'photos': 'photos',
+    'timeline': 'timeline',
+    'statistics': 'statistics',
+    'share-links': 'share-links',
+    'docs': 'docs',
+    'api-keys': 'api-keys',
+    'people': 'people'
   }
-  return map[icon] || 'lucide:chevron-right'
+  return map[icon] || 'photos'
 }
 
 const isDark = ref(false)
