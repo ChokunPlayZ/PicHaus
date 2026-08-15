@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
     const rows = await db.select({
         id: people.id,
         name: people.name,
+        instagram: people.instagram,
         representativeFaceId: people.representativeFaceId,
         faceCount: count(faces.id),
         createdAt: people.createdAt,
@@ -31,6 +32,7 @@ export default defineEventHandler(async (event) => {
         data: rows.map(row => ({
             id: row.id,
             name: row.name,
+            instagram: row.instagram,
             representativeFaceId: row.representativeFaceId,
             representativeFaceUrl: row.representativeFaceId
                 ? `/api/v1/faces/${row.representativeFaceId}/thumb`

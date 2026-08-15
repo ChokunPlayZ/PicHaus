@@ -387,4 +387,10 @@ WHERE f."photoId" = p.id
             `ALTER TABLE "share_links" ADD COLUMN IF NOT EXISTS "faceSearchEnabled" BOOLEAN NOT NULL DEFAULT true`,
         ],
     },
+    {
+        name: '0017_people_instagram.sql',
+        statements: [
+            `ALTER TABLE "people" ADD COLUMN IF NOT EXISTS "instagram" TEXT`,
+        ],
+    },
 ]

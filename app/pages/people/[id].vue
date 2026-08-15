@@ -47,6 +47,39 @@
                             <Icon name="lucide:scan-face" class="w-4 h-4" :stroke-width="2" />
                             {{ photosLabel }}
                         </p>
+                        <div class="mt-2">
+                            <form v-if="editingInstagram" @submit.prevent="saveInstagram">
+                                <div class="inline-flex items-center gap-1 rounded-lg px-2 py-1"
+                                    style="background: var(--surface-2); border: 1px solid var(--separator);">
+                                    <Icon name="lucide:instagram" class="w-4 h-4 shrink-0" style="color: var(--text-3);" :stroke-width="2" />
+                                    <span class="text-sm" style="color: var(--text-3);">@</span>
+                                    <input data-person-instagram v-model="instagramDraft" type="text" maxlength="30"
+                                        placeholder="handle"
+                                        class="w-36 text-sm rounded transition"
+                                        style="background: transparent; border: none; color: var(--text-1); outline: none;"
+                                        @blur="saveInstagram" @keydown.esc.stop="editingInstagram = false" />
+                                </div>
+                            </form>
+                            <template v-else>
+                                <a v-if="person.instagram" :href="`https://instagram.com/${person.instagram}`" target="_blank" rel="noopener noreferrer"
+                                    class="inline-flex items-center gap-1.5 text-sm transition"
+                                    style="color: var(--text-link); text-decoration: none;"
+                                    @mouseover="($event.currentTarget as HTMLElement).style.textDecoration = 'underline'"
+                                    @mouseout="($event.currentTarget as HTMLElement).style.textDecoration = 'none'"
+                                    @click.stop>
+                                    <Icon name="lucide:instagram" class="w-4 h-4" :stroke-width="2" />
+                                    @{{ person.instagram }}
+                                </a>
+                                <button v-else @click="startEditInstagram"
+                                    class="inline-flex items-center gap-1.5 text-sm transition"
+                                    style="color: var(--text-3); background: transparent; border: none; cursor: pointer; padding: 0;"
+                                    @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-link)'"
+                                    @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
+                                    <Icon name="lucide:instagram" class="w-4 h-4" :stroke-width="2" />
+                                    <span>Add Instagram</span>
+                                </button>
+                            </template>
+                        </div>
                     </div>
 
                     <button v-if="isAdmin" @click="openMergeModal" :disabled="mergingTargetId !== null"
@@ -179,6 +212,7 @@ interface PersonPhoto {
 interface Person {
     id: string
     name: string | null
+    instagram: string | null
     faces: Face[]
 }
 
@@ -201,6 +235,8 @@ const failedThumbs = ref(new Set<string>())
 const failedPhotos = ref(new Set<string>())
 const editing = ref(false)
 const renameDraft = ref('')
+const editingInstagram = ref(false)
+const instagramDraft = ref('')
 const showMergeModal = ref(false)
 const mergeSearch = ref('')
 const mergePeople = ref<PersonSummary[]>([])
@@ -259,11 +295,12 @@ async function loadPerson() {
     try {
         const res = await $fetch<{
             success: boolean
-            data: { person: { id: string; name: string | null }; faces: Face[] }
+            data: { person: { id: string; name: string | null; instagram: string | null }; faces: Face[] }
         }>(`/api/v1/people/${personId}`)
         person.value = {
             id: res.data.person.id,
             name: res.data.person.name,
+            instagram: res.data.person.instagram ?? null,
             faces: Array.isArray(res.data.faces) ? res.data.faces : []
         }
     } catch (err: any) {
@@ -295,6 +332,35 @@ async function saveRename() {
         toast('Name updated', 'success')
     } catch (err: any) {
         toast(err?.data?.statusMessage || 'Failed to update name', 'error')
+    }
+}
+
+function startEditInstagram() {
+    editingInstagram.value = true
+    instagramDraft.value = person.value?.instagram || ''
+    nextTick(() => {
+        document.querySelector<HTMLInputElement>('[data-person-instagram]')?.focus()
+    })
+}
+
+async function saveInstagram() {
+    if (!editingInstagram.value || !person.value) return
+    const handle = instagramDraft.value.trim().replace(/^@/, '')
+    editingInstagram.value = false
+    if (handle === (person.value.instagram || '')) return
+    try {
+        await $fetch(`/api/v1/people/${personId}`, {
+            method: 'PATCH',
+            body: { instagram: handle || null }
+        })
+        person.value.instagram = handle || null
+        toast('Instagram updated', 'success')
+    } catch (err: any) {
+        toast(err?.data?.statusMessage || 'Failed to update Instagram', 'error')
+        editingInstagram.value = true
+        nextTick(() => {
+            document.querySelector<HTMLInputElement>('[data-person-instagram]')?.focus()
+        })
     }
 }
 

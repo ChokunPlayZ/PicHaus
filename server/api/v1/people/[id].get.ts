@@ -48,6 +48,7 @@ export default defineEventHandler(async (event) => {
             person: {
                 id: person.id,
                 name: person.name,
+                instagram: person.instagram,
                 representativeFaceId: person.representativeFaceId,
                 representativeFaceUrl: person.representativeFaceId
                     ? `/api/v1/faces/${person.representativeFaceId}/thumb`

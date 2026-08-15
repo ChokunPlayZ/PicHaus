@@ -38,6 +38,27 @@ export default defineEventHandler(async (event) => {
         updateData.name = body.name.trim() || null
     }
 
+    if (body?.instagram !== undefined) {
+        if (body.instagram === null) {
+            updateData.instagram = null
+        } else {
+            if (typeof body.instagram !== 'string') {
+                throw createError({ statusCode: 400, statusMessage: 'instagram must be a string' })
+            }
+            // Normalize: strip leading @, whitespace, and URL prefixes.
+            const raw = body.instagram.trim()
+            const cleaned = raw
+                .replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')
+                .replace(/^@/, '')
+                .replace(/\/.*$/, '')
+                .trim()
+            if (cleaned.length > 0 && !/^[a-zA-Z0-9._]{1,30}$/.test(cleaned)) {
+                throw createError({ statusCode: 400, statusMessage: 'Instagram handle contains invalid characters' })
+            }
+            updateData.instagram = cleaned || null
+        }
+    }
+
     if (body?.representativeFaceId !== undefined) {
         if (body.representativeFaceId === null) {
             updateData.representativeFaceId = null

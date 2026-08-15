@@ -270,6 +270,7 @@ export const logosRelations = relations(logos, ({ one }) => ({
 export const people = pgTable('people', {
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name'),
+    instagram: text('instagram'),
     representativeFaceId: uuid('representativeFaceId'),
     createdAt: bigint('createdAt', { mode: 'bigint' }).notNull(),
     updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
