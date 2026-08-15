@@ -1,110 +1,86 @@
 <template>
     <div class="mb-8 rounded-2xl p-4 sm:p-6"
         style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
-        <!-- Upload dropzone -->
-        <div v-if="!previewUrl" @dragover.prevent="dragActive = true" @dragleave.prevent="dragActive = false"
-            @drop.prevent="onDrop" @click="fileInput?.click()"
-            class="rounded-xl border-2 border-dashed p-6 sm:p-10 flex flex-col items-center justify-center text-center transition cursor-pointer"
-            :style="dragActive
-                ? 'border-color: var(--accent); background: var(--accent-light);'
-                : 'border-color: var(--separator-strong); background: var(--surface-2);'">
-            <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3"
-                style="background: var(--accent-light); color: var(--accent);">
-                <Icon name="lucide:scan-face" class="h-6 w-6" :stroke-width="2" />
-            </div>
-            <p class="text-sm font-medium mb-1" style="color: var(--text-1);">{{ t('searchByFacePrompt') }}</p>
-            <p class="text-xs" style="color: var(--text-3);">JPEG, PNG, WebP</p>
-            <button @click.stop="fileInput?.click()"
-                class="mt-4 px-5 py-2 rounded-full text-sm font-semibold transition active:scale-95 text-accent-text"
+        <!-- Hidden file input: opened automatically on mount -->
+        <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden"
+            @change="onFileChange" />
+
+        <!-- Picker failed to auto-open (or user cancelled): minimal fallback -->
+        <div v-if="!previewUrl && !picking"
+            class="flex items-center justify-center gap-3 py-6 text-center">
+            <button @click="openPicker"
+                class="px-5 py-2.5 rounded-full text-sm font-semibold transition active:scale-95 text-accent-text inline-flex items-center gap-2"
                 style="background: var(--accent);"
                 @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
                 @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                <Icon name="lucide:upload" class="h-4 w-4 -mt-0.5 mr-1.5" :stroke-width="2" />
+                <Icon name="lucide:scan-face" class="h-4 w-4" :stroke-width="2" />
                 {{ t('searchByFaceChoose') }}
             </button>
-            <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden"
-                @change="onFileChange" />
+            <p v-if="error" class="text-sm max-w-xs" style="color: var(--error-text);">{{ error }}</p>
         </div>
 
-        <!-- Reference selected: compact action bar (no big photo) -->
-        <div v-else>
-            <div class="flex flex-wrap items-center gap-3">
-                <img v-if="previewUrl" :src="previewUrl" alt="Reference photo"
-                    class="w-12 h-12 rounded-xl object-cover flex-shrink-0"
-                    style="border: 1px solid var(--separator); background: var(--surface-2);" />
+        <!-- Searching -->
+        <div v-else-if="searching" class="flex items-center justify-center gap-2.5 py-6">
+            <div class="w-5 h-5 rounded-full border-2 animate-spin"
+                style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+            <span class="text-sm" style="color: var(--text-2);">{{ t('searchByFaceSearching') }}</span>
+        </div>
 
-                <div v-if="searching" class="flex items-center gap-2.5">
-                    <div class="w-5 h-5 rounded-full border-2 animate-spin"
-                        style="border-color: var(--separator); border-top-color: var(--accent);"></div>
-                    <span class="text-sm" style="color: var(--text-2);">{{ t('searchByFaceSearching') }}</span>
-                </div>
-                <button v-else-if="!done" @click="runSearch"
-                    class="px-5 py-2.5 rounded-full text-sm font-semibold transition active:scale-95 text-accent-text inline-flex items-center gap-2"
-                    style="background: var(--accent);"
-                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
-                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                    <Icon name="lucide:search" class="h-4 w-4" :stroke-width="2" />
-                    {{ t('searchByFaceRun') }}
-                </button>
-                <button v-else @click="reset()"
-                    class="px-5 py-2.5 rounded-full text-sm font-semibold transition active:scale-95 inline-flex items-center gap-2"
-                    style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
-                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
-                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                    <Icon name="lucide:refresh-cw" class="h-4 w-4" :stroke-width="2" />
-                    {{ t('searchByFaceNewSearch') }}
-                </button>
-                <button @click="reset()"
-                    class="text-sm transition inline-flex items-center gap-1.5"
+        <!-- Results (file bar hidden once done) -->
+        <template v-else-if="done">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <p v-if="resultFaces.length > 0" class="text-sm font-medium" style="color: var(--text-2);">{{ foundSummary }}</p>
+                <button @click="startOver"
+                    class="text-sm transition inline-flex items-center gap-1.5 ml-auto"
                     style="color: var(--text-3);"
                     @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
                     @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
-                    <Icon name="lucide:x" class="h-3.5 w-3.5" :stroke-width="2" />
-                    {{ t('clear') }}
+                    <Icon name="lucide:refresh-cw" class="h-3.5 w-3.5" :stroke-width="2" />
+                    {{ t('searchByFaceNewSearch') }}
                 </button>
-                <p v-if="error" class="text-sm max-w-xs" style="color: var(--error-text);">{{ error }}</p>
             </div>
 
-            <!-- Results -->
-            <template v-if="done && !searching">
-                <div v-if="resultFaces.length === 0" class="mt-6 text-center py-8 rounded-xl"
+            <div v-if="resultFaces.length === 0" class="text-center py-8 rounded-xl"
+                style="background: var(--surface-2); border: 1px solid var(--separator);">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2"
+                    style="background: var(--surface-3); color: var(--text-3);">
+                    <Icon name="lucide:user-round" class="h-5 w-5" :stroke-width="2" />
+                </div>
+                <p class="text-sm font-medium" style="color: var(--text-2);">{{ t('searchByFaceNoFaces') }}</p>
+            </div>
+
+            <div v-else class="space-y-4">
+                <div v-for="face in resultFaces" :key="face.index"
+                    class="rounded-xl p-4"
                     style="background: var(--surface-2); border: 1px solid var(--separator);">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2"
-                        style="background: var(--surface-3); color: var(--text-3);">
-                        <Icon name="lucide:user-round" class="h-5 w-5" :stroke-width="2" />
-                    </div>
-                    <p class="text-sm font-medium" style="color: var(--text-2);">{{ t('searchByFaceNoFaces') }}</p>
-                </div>
-
-                <div v-else class="mt-6 space-y-4">
-                    <p class="text-sm font-medium" style="color: var(--text-2);">{{ foundSummary }}</p>
-                    <div v-for="face in resultFaces" :key="face.index"
-                        class="rounded-xl p-4"
-                        style="background: var(--surface-2); border: 1px solid var(--separator);">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-14 h-14 rounded-full overflow-hidden relative flex-shrink-0"
-                                style="border: 1px solid var(--separator); background: var(--surface-3);">
-                                <img v-if="previewUrl" :src="previewUrl" alt="" aria-hidden="true"
-                                    class="absolute"
-                                    :style="faceCropStyle(face.box)" />
-                            </div>
-                            <div class="min-w-0">
-                                <p class="font-semibold text-sm leading-tight truncate" style="color: var(--text-1);">
-                                    {{ t('searchByFacePerson').replace('{n}', String(face.index + 1)) }}
-                                </p>
-                                <p class="text-xs mt-0.5" style="color: var(--text-3);">
-                                    {{ matchCountLabel(face.matches.length) }}
-                                </p>
-                            </div>
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-14 h-14 rounded-full overflow-hidden relative flex-shrink-0"
+                            style="border: 1px solid var(--separator); background: var(--surface-3);">
+                            <img v-if="previewUrl" :src="previewUrl" alt="" aria-hidden="true"
+                                class="absolute"
+                                :style="faceCropStyle(face.box)" />
                         </div>
-
-                        <div v-if="face.matches.length > 0">
-                            <FaceMatchGrid :matches="face.matches" @open="openMatch" />
+                        <div class="min-w-0">
+                            <p class="font-semibold text-sm leading-tight truncate" style="color: var(--text-1);">
+                                {{ t('searchByFacePerson').replace('{n}', String(face.index + 1)) }}
+                            </p>
+                            <p class="text-xs mt-0.5" style="color: var(--text-3);">
+                                {{ matchCountLabel(face.matches.length) }}
+                            </p>
                         </div>
-                        <p v-else class="text-xs" style="color: var(--text-3);">{{ t('searchByFaceNoMatches') }}</p>
                     </div>
+
+                    <div v-if="face.matches.length > 0">
+                        <FaceMatchGrid :matches="face.matches" @open="openMatch" />
+                    </div>
+                    <p v-else class="text-xs" style="color: var(--text-3);">{{ t('searchByFaceNoMatches') }}</p>
                 </div>
-            </template>
+            </div>
+        </template>
+
+        <!-- File selected, about to run -->
+        <div v-else class="flex items-center justify-center gap-2.5 py-6">
+            <span class="text-sm" style="color: var(--text-2);">{{ t('searchByFaceSearching') }}</span>
         </div>
     </div>
 
@@ -160,10 +136,7 @@ const props = defineProps<{
     albumIds: string[]
 }>()
 
-onMounted(() => initLanguage())
-
 const fileInput = ref<HTMLInputElement | null>(null)
-const dragActive = ref(false)
 const previewUrl = ref<string | null>(null)
 // Natural dimensions of the reference photo, used to correct the circle crop
 // for object-fit: cover's aspect-cropping (a landscape photo crops
@@ -174,11 +147,36 @@ const searching = ref(false)
 const done = ref(false)
 const error = ref('')
 const resultFaces = ref<FaceGroup[]>([])
+// True while the native file picker is open (fallback button hidden).
+const picking = ref(false)
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 watch(() => props.albumIds, () => reset(), { deep: true })
+
+const openPicker = () => {
+    picking.value = true
+    // Some browsers block programmatic click outside a user gesture; when that
+    // happens the change event never fires, so reveal the fallback button.
+    setTimeout(() => {
+        if (!previewUrl.value && !searching.value && !done.value) {
+            picking.value = false
+        }
+    }, 3000)
+    fileInput.value?.click()
+}
+
+const startOver = () => {
+    reset()
+    openPicker()
+}
+
+onMounted(() => {
+    initLanguage()
+    // Pull up the file selector right away when the panel appears.
+    nextTick(() => openPicker())
+})
 
 const reset = () => {
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
@@ -190,6 +188,7 @@ const reset = () => {
     error.value = ''
     resultFaces.value = []
     viewerIndex.value = null
+    picking.value = false
     if (fileInput.value) fileInput.value.value = ''
 }
 
@@ -197,10 +196,12 @@ const acceptFile = (file: File | undefined) => {
     if (!file) return
     if (!ALLOWED_TYPES.has(file.type)) {
         error.value = t('searchByFaceBadType')
+        picking.value = false
         return
     }
     if (file.size > MAX_FILE_BYTES) {
         error.value = t('searchByFaceTooLarge')
+        picking.value = false
         return
     }
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
@@ -210,6 +211,7 @@ const acceptFile = (file: File | undefined) => {
     done.value = false
     resultFaces.value = []
     viewerIndex.value = null
+    picking.value = false
 
     // Load natural dimensions so faceCropStyle can correct for object-fit:
     // cover's aspect cropping (the circle crop must land on the face box).
@@ -218,7 +220,9 @@ const acceptFile = (file: File | undefined) => {
         if (probe.naturalWidth > 0 && probe.naturalHeight > 0) {
             previewDims.value = { width: probe.naturalWidth, height: probe.naturalHeight }
         }
+        runSearch()
     }
+    probe.onerror = () => runSearch()
     probe.src = previewUrl.value
 }
 
@@ -228,16 +232,7 @@ const onFileChange = (event: Event) => {
     if (files.length > 1) {
         error.value = t('searchByFaceSingleOnly')
         input.value = ''
-        return
-    }
-    acceptFile(files[0])
-}
-
-const onDrop = (event: DragEvent) => {
-    dragActive.value = false
-    const files = Array.from(event.dataTransfer?.files || [])
-    if (files.length > 1) {
-        error.value = t('searchByFaceSingleOnly')
+        picking.value = false
         return
     }
     acceptFile(files[0])
