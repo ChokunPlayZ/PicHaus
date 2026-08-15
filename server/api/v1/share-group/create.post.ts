@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     try {
         const user = await requireAuth(event)
         const body = await readBody(event)
-        const { title, description, albumIds, tags, password, type, label, themePreset, customTheme, logoText, logoImageId } = body
+        const { title, description, albumIds, tags, password, type, label, themePreset, customTheme, logoText, logoImageId, faceSearchEnabled } = body
 
         if (!title) throw createError({ statusCode: 400, statusMessage: 'Title is required' })
 
@@ -57,6 +57,7 @@ export default defineEventHandler(async (event) => {
             type: type || 'view',
             label: label || 'Public Link',
             views: 0,
+            faceSearchEnabled: faceSearchEnabled !== undefined ? !!faceSearchEnabled : true,
             shareGroupId: shareGroup.id,
             createdAt: now,
         }

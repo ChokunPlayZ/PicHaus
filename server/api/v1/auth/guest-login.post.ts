@@ -122,6 +122,7 @@ export default defineEventHandler(async (event) => {
                             : (fallbackMap.get(album.id) ?? null),
                     })),
                     showMetadata: shareLink.showMetadata,
+                    faceSearchEnabled: shareLink.faceSearchEnabled,
                 },
             }
         }
@@ -140,10 +141,11 @@ export default defineEventHandler(async (event) => {
             return {
                 success: true,
                 data: {
+                    type: 'view',
                     albumId: shareLink.albumId,
                     albumName: shareLink.album.title,
-                    type: 'view',
                     showMetadata: shareLink.showMetadata,
+                    faceSearchEnabled: shareLink.faceSearchEnabled,
                 },
             }
         }

@@ -1166,6 +1166,11 @@
                                 class="w-4 h-4 rounded" style="accent-color: var(--accent);" />
                             <label for="showMetadata" class="text-sm" style="color: var(--text-2);">Show photo metadata (date, camera, etc.)</label>
                         </div>
+                        <div class="flex items-center gap-2">
+                            <input v-model="newLink.faceSearchEnabled" type="checkbox" id="faceSearchEnabled"
+                                class="w-4 h-4 rounded" style="accent-color: var(--accent);" />
+                            <label for="faceSearchEnabled" class="text-sm" style="color: var(--text-2);">Allow visitors to search photos by face</label>
+                        </div>
                     </div>
                     <div v-if="newLink.type === 'upload'">
                         <label class="block text-sm font-medium mb-1.5" style="color: var(--text-2);">Upload Announcement <span style="color: var(--text-3);">(optional)</span></label>
@@ -1212,6 +1217,10 @@
                                 <span v-if="!link.showMetadata" class="text-xs px-2 py-0.5 rounded-full"
                                     style="background: var(--surface-3); color: var(--text-3);">
                                     No Metadata
+                                </span>
+                                <span v-if="(link as any).faceSearchEnabled === false" class="text-xs px-2 py-0.5 rounded-full"
+                                    style="background: var(--surface-3); color: var(--text-3);">
+                                    No Face Search
                                 </span>
                             </div>
                             <div class="flex items-center gap-2 text-sm">
@@ -1674,6 +1683,7 @@ interface ShareLink {
     label: string | null
     password: boolean // Backend returns boolean if password exists
     showMetadata: boolean
+    faceSearchEnabled?: boolean
     views: number
     createdAt: number
     copied?: boolean
@@ -2534,6 +2544,7 @@ const newLink = ref({
     label: '',
     password: '',
     showMetadata: true,
+    faceSearchEnabled: true,
     uploadMessage: '',
 })
 
@@ -3236,7 +3247,7 @@ const createShareLink = async () => {
             method: 'POST',
             body: newLink.value
         })
-        newLink.value = { type: 'view', label: '', password: '', showMetadata: true, uploadMessage: '' }
+        newLink.value = { type: 'view', label: '', password: '', showMetadata: true, faceSearchEnabled: true, uploadMessage: '' }
         await fetchShareLinks()
         toast('Link created', 'success')
         const created = shareLinks.value.find(l => l.id === response.data?.id)
@@ -3255,6 +3266,7 @@ const startEditing = (link: ShareLink) => {
         label: link.label || '',
         password: '',
         showMetadata: link.showMetadata,
+        faceSearchEnabled: (link as any).faceSearchEnabled !== undefined ? (link as any).faceSearchEnabled : true,
         uploadMessage: (link as any).uploadMessage || '',
     }
     editingLinkHasPassword.value = link.password
@@ -3263,7 +3275,7 @@ const startEditing = (link: ShareLink) => {
 
 const cancelEditing = () => {
     editingLinkId.value = null
-    newLink.value = { type: 'view', label: '', password: '', showMetadata: true, uploadMessage: '' }
+    newLink.value = { type: 'view', label: '', password: '', showMetadata: true, faceSearchEnabled: true, uploadMessage: '' }
     removePassword.value = false
     editingLinkHasPassword.value = false
 }
@@ -3276,6 +3288,7 @@ const updateShareLink = async () => {
         const body: any = {
             label: newLink.value.label,
             showMetadata: newLink.value.showMetadata,
+            faceSearchEnabled: newLink.value.faceSearchEnabled,
             uploadMessage: newLink.value.uploadMessage || null,
         }
 

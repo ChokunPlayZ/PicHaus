@@ -52,15 +52,27 @@
                     <h1 class="display-title text-4xl sm:text-6xl mb-3" style="color: var(--text-1);">{{ groupTitle }}</h1>
                     <p v-if="groupDescription" class="text-base max-w-2xl mx-auto" style="color: var(--text-2);">{{ groupDescription }}</p>
                     <div class="mt-2 text-sm" style="color: var(--text-3);">{{ t('collectionBy').replace('{owner}', ownerName || '') }}</div>
-                    <button @click="viewAllGroupPhotos"
-                        class="mt-6 px-6 py-2.5 rounded-full text-sm font-semibold transition inline-flex items-center gap-2"
-                        style="background: var(--accent); color: var(--accent-text);"
-                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
-                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                        <Icon name="lucide:image" class="h-4 w-4" :stroke-width="2" />
-                        {{ t('viewAllPictures') }}
-                    </button>
+                    <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+                        <button @click="viewAllGroupPhotos"
+                            class="px-6 py-2.5 rounded-full text-sm font-semibold transition inline-flex items-center gap-2"
+                            style="background: var(--accent); color: var(--accent-text);"
+                            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
+                            <Icon name="lucide:image" class="h-4 w-4" :stroke-width="2" />
+                            {{ t('viewAllPictures') }}
+                        </button>
+                        <button v-if="faceSearchEnabled" @click="showFaceSearch = !showFaceSearch" :aria-pressed="showFaceSearch"
+                            class="px-6 py-2.5 rounded-full text-sm font-semibold transition inline-flex items-center gap-2"
+                            :style="showFaceSearch
+                                ? 'background: var(--accent); color: var(--accent-text);'
+                                : 'background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);'">
+                            <Icon name="lucide:scan-face" class="h-4 w-4" :stroke-width="2" />
+                            {{ t('searchByFace') }}
+                        </button>
+                    </div>
                 </div>
+
+                <FaceSearch v-if="showFaceSearch && faceSearchEnabled" :album-ids="faceSearchAlbumIds" />
 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     <AlbumCard
@@ -95,7 +107,19 @@
                             <span v-if="groupDescription">{{ groupDescription }}</span>
                         </div>
                     </div>
+                    <div v-if="faceSearchEnabled" class="flex items-center gap-3">
+                        <button v-if="faceSearchEnabled" @click="showFaceSearch = !showFaceSearch" :aria-pressed="showFaceSearch"
+                            class="px-5 py-2.5 rounded-full text-sm font-semibold transition inline-flex items-center gap-2"
+                            :style="showFaceSearch
+                                ? 'background: var(--accent); color: var(--accent-text);'
+                                : 'background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);'">
+                            <Icon name="lucide:scan-face" class="h-4 w-4" :stroke-width="2" />
+                            {{ t('searchByFace') }}
+                        </button>
+                    </div>
                 </div>
+
+                <FaceSearch v-if="showFaceSearch && faceSearchEnabled" :album-ids="faceSearchAlbumIds" />
 
                 <!-- Loading Photos State -->
                 <div v-if="loadingPhotos && photos.length === 0" class="flex justify-center py-12">
@@ -162,7 +186,19 @@
                             </div>
                         </div>
                     </div>
+                    <div v-if="faceSearchEnabled" class="flex items-center gap-3">
+                        <button v-if="faceSearchEnabled" @click="showFaceSearch = !showFaceSearch" :aria-pressed="showFaceSearch"
+                            class="px-5 py-2.5 rounded-full text-sm font-semibold transition inline-flex items-center gap-2"
+                            :style="showFaceSearch
+                                ? 'background: var(--accent); color: var(--accent-text);'
+                                : 'background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);'">
+                            <Icon name="lucide:scan-face" class="h-4 w-4" :stroke-width="2" />
+                            {{ t('searchByFace') }}
+                        </button>
+                    </div>
                 </div>
+
+                <FaceSearch v-if="showFaceSearch && faceSearchEnabled" :album-ids="faceSearchAlbumIds" />
 
                 <!-- Loading Photos State -->
                 <div v-if="loadingPhotos && photos.length === 0" class="flex justify-center py-12">
@@ -473,6 +509,8 @@ const password = ref('')
 const saving = ref(false)
 const isAuthenticated = ref(false)
 const showMetadata = ref(true)
+const faceSearchEnabled = ref(false)
+const showFaceSearch = ref(false)
 
 // View Mode
 const viewMode = ref<'album' | 'group' | 'all-group-photos'>('album')
@@ -489,6 +527,12 @@ const albumName = ref('')
 const ownerName = ref('')
 const description = ref('')
 const eventDate = ref<number | null>(null)
+
+// Face search scope: the current album, or every album in a share group.
+const faceSearchAlbumIds = computed(() => {
+    if (viewMode.value === 'album' && albumId.value) return [albumId.value]
+    return groupAlbums.value.map((album: any) => album.id).filter(Boolean)
+})
 
 const pageTitle = computed(() => {
     if (viewMode.value === 'all-group-photos') return `All Pictures from ${groupTitle.value}`
@@ -1127,6 +1171,7 @@ if (linkData.value?.data) {
     if (data.isPublicAlbum) isPublicAlbum.value = true
     requiresPassword.value = !!data.requiresPassword
     ownerName.value = data.ownerName || ''
+    faceSearchEnabled.value = data.faceSearchEnabled !== undefined ? data.faceSearchEnabled : true
 
     if (data.type === 'group') {
         viewMode.value = 'group'
@@ -1218,6 +1263,7 @@ const handleAccess = async () => {
         }
 
         const data = response.data
+        faceSearchEnabled.value = data.faceSearchEnabled !== undefined ? data.faceSearchEnabled : faceSearchEnabled.value
         if (data.type === 'group') {
             groupTitle.value = data.title || groupTitle.value
             groupDescription.value = data.description || groupDescription.value
@@ -1247,6 +1293,7 @@ const openAlbum = async (album: any) => {
     albumName.value = album.name
     description.value = album.description
     eventDate.value = album.eventDate
+    showFaceSearch.value = false
 
     // Reset photos, restore selection for this album
     photos.value = []
@@ -1266,6 +1313,7 @@ const viewAllGroupPhotos = async () => {
     page.value = 1
     hasMore.value = false
     loadFavoritesForContext('all')
+    showFaceSearch.value = false
 
     viewMode.value = 'all-group-photos'
 

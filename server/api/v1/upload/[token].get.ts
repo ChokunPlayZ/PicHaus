@@ -46,6 +46,7 @@ export default defineEventHandler(async (event) => {
                         type: 'group',
                         requiresPassword: true,
                         showMetadata: shareLink.showMetadata,
+                        faceSearchEnabled: shareLink.faceSearchEnabled,
                         themePreset: group.themePreset,
                         customTheme: group.customTheme,
                         logoText: group.logoText,
@@ -71,6 +72,7 @@ export default defineEventHandler(async (event) => {
                     logoImageId: group.logoImageId,
                     albums: groupAlbumRows,
                     showMetadata: shareLink.showMetadata,
+                    faceSearchEnabled: shareLink.faceSearchEnabled,
                 },
             }
         }
@@ -86,7 +88,16 @@ export default defineEventHandler(async (event) => {
         }))
 
         if (shareLink.password && !hasAlbumCookieAccess && !hasUserAdminAccess && !hasAlbumOwnerAccess && !hasAlbumCollaboratorAccess) {
-            return { success: true, data: { type: 'album', requiresPassword: true, shareType: shareLink.type, showMetadata: shareLink.showMetadata } }
+            return {
+                success: true,
+                data: {
+                    type: 'album',
+                    requiresPassword: true,
+                    shareType: shareLink.type,
+                    showMetadata: shareLink.showMetadata,
+                    faceSearchEnabled: shareLink.faceSearchEnabled,
+                },
+            }
         }
 
         const countResult = await db.select({ photoCount: sql<number>`COUNT(*)` })
@@ -108,6 +119,7 @@ export default defineEventHandler(async (event) => {
                 requiresPassword: !!shareLink.password,
                 shareType: shareLink.type,
                 showMetadata: shareLink.showMetadata,
+                faceSearchEnabled: shareLink.faceSearchEnabled,
                 uploadMessage: shareLink.uploadMessage || null,
                 themePreset: shareLink.album.themePreset,
                 customTheme: shareLink.album.customTheme,

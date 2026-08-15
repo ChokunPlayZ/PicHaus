@@ -31,6 +31,7 @@ export default defineEventHandler(async (event) => {
             requiresPassword: false,
             shareType: 'view',
             showMetadata: true,
+            faceSearchEnabled: true,
             themePreset: album.themePreset,
             customTheme: album.customTheme,
             logoText: album.logoText,

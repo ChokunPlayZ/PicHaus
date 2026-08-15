@@ -412,6 +412,12 @@
                             @focus="($event.target as HTMLElement).style.borderColor = 'var(--accent)'; ($event.target as HTMLElement).style.boxShadow = '0 0 0 3px rgba(var(--accent-rgb), 0.15)'"
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
+                    <div class="flex items-center gap-2.5 p-3 rounded-xl"
+                        style="background: var(--surface-2); border: 1px solid var(--separator);">
+                        <input v-model="newShareGroup.faceSearchEnabled" type="checkbox" id="groupFaceSearchEnabled"
+                            class="w-4 h-4 rounded" style="accent-color: var(--accent);" />
+                        <label for="groupFaceSearchEnabled" class="text-sm" style="color: var(--text-1);">Allow visitors to search photos by face</label>
+                    </div>
 
                     <div v-if="shareGroupError" class="rounded-xl px-4 py-3 text-sm"
                         style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
@@ -627,6 +633,7 @@ const newShareGroup = ref({
     password: '',
     label: '',
     tags: '',
+    faceSearchEnabled: true,
     themePreset: '',
     customTheme: { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' },
     logoText: '',
@@ -1002,6 +1009,7 @@ const handleCreateShareGroup = async () => {
                 tags,
                 password: newShareGroup.value.password || undefined,
                 label: newShareGroup.value.label || undefined,
+                faceSearchEnabled: newShareGroup.value.faceSearchEnabled,
                 themePreset: newShareGroup.value.themePreset || undefined,
                 customTheme,
                 logoText: newShareGroup.value.logoText || undefined,
@@ -1009,7 +1017,7 @@ const handleCreateShareGroup = async () => {
         })
 
         showShareGroupModal.value = false
-        newShareGroup.value = { title: '', description: '', password: '', label: '', tags: '', themePreset: '', customTheme: { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' }, logoText: '' }
+        newShareGroup.value = { title: '', description: '', password: '', label: '', tags: '', faceSearchEnabled: true, themePreset: '', customTheme: { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' }, logoText: '' }
         createdShareLink.value = `${window.location.origin}${response.data.link.url}`
     } catch (err: any) {
         shareGroupError.value = err.data?.statusMessage || 'Failed to create share group'

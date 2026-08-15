@@ -381,4 +381,10 @@ WHERE f."photoId" = p.id
   AND (f.x1 > 1 OR f.y1 > 1 OR f.x2 > 1 OR f.y2 > 1)`,
         ],
     },
+    {
+        name: '0016_share_link_face_search.sql',
+        statements: [
+            `ALTER TABLE "share_links" ADD COLUMN IF NOT EXISTS "faceSearchEnabled" BOOLEAN NOT NULL DEFAULT true`,
+        ],
+    },
 ]

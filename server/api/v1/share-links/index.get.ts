@@ -15,6 +15,7 @@ export default defineEventHandler(async (event) => {
         expiresAt: shareLinks.expiresAt,
         password: shareLinks.password,
         showMetadata: shareLinks.showMetadata,
+        faceSearchEnabled: shareLinks.faceSearchEnabled,
         albumId: shareLinks.albumId,
         albumTitle: albums.title,
         albumOwnerId: albums.ownerId,
@@ -46,6 +47,7 @@ export default defineEventHandler(async (event) => {
                 expiresAt: link.expiresAt ? Number(link.expiresAt) : null,
                 hasPassword: !!link.password,
                 showMetadata: link.showMetadata,
+                faceSearchEnabled: link.faceSearchEnabled,
                 url,
             }
         }),

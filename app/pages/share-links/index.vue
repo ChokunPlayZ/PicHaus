@@ -72,6 +72,11 @@
                                             style="background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border);">
                                             No Metadata
                                         </span>
+                                        <span v-if="link.faceSearchEnabled === false"
+                                            class="text-[10px] px-1.5 py-0.5 rounded-full"
+                                            style="background: var(--surface-3); color: var(--text-3);">
+                                            No Face Search
+                                        </span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
@@ -154,6 +159,13 @@
                             <input v-model="editForm.showMetadata" type="checkbox" id="editShowMetadata"
                                 class="w-4 h-4 rounded" style="accent-color: var(--accent);" />
                             <label for="editShowMetadata" class="text-sm" style="color: var(--text-1);">Show photo metadata (date, camera, etc.)</label>
+                        </div>
+
+                        <div class="flex items-center gap-2.5 p-3 rounded-xl"
+                            style="background: var(--surface-2); border: 1px solid var(--separator);">
+                            <input v-model="editForm.faceSearchEnabled" type="checkbox" id="editFaceSearchEnabled"
+                                class="w-4 h-4 rounded" style="accent-color: var(--accent);" />
+                            <label for="editFaceSearchEnabled" class="text-sm" style="color: var(--text-1);">Allow visitors to search photos by face</label>
                         </div>
 
                         <div v-if="editForm.type === 'upload'">
@@ -359,6 +371,7 @@ interface ShareLink {
     expiresAt: number | null
     hasPassword: boolean
     showMetadata: boolean
+    faceSearchEnabled: boolean
     url: string
 }
 
@@ -393,6 +406,7 @@ const editForm = reactive({
     hasPassword: false,
     removePassword: false,
     showMetadata: true,
+    faceSearchEnabled: true,
     type: '',
     uploadMessage: '',
     isGroup: false,
@@ -453,6 +467,7 @@ const openEditModal = async (link: ShareLink) => {
         editForm.hasPassword = data.hasPassword
         editForm.removePassword = false
         editForm.showMetadata = data.showMetadata !== undefined ? data.showMetadata : true
+        editForm.faceSearchEnabled = data.faceSearchEnabled !== undefined ? data.faceSearchEnabled : true
         editForm.type = data.type || ''
         editForm.uploadMessage = data.uploadMessage || ''
         editForm.isGroup = data.isGroup
@@ -506,6 +521,7 @@ const handleUpdateLink = async () => {
             body: {
                 label: editForm.label,
                 showMetadata: editForm.showMetadata,
+                faceSearchEnabled: editForm.faceSearchEnabled,
                 uploadMessage: editForm.uploadMessage || null,
                 password: editForm.password || undefined,
                 removePassword: editForm.removePassword,

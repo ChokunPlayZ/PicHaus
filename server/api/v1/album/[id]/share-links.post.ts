@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
     const password = body.password || null
     const passwordHash = password ? await argon2.hash(password) : null
     const token = nanoid(32)
+    const faceSearchEnabled = body.faceSearchEnabled !== undefined ? !!body.faceSearchEnabled : true
 
     const [link] = await db.insert(shareLinks).values({
         token,
@@ -25,6 +26,7 @@ export default defineEventHandler(async (event) => {
         label,
         password: passwordHash,
         showMetadata: body.showMetadata !== undefined ? body.showMetadata : true,
+        faceSearchEnabled,
         uploadMessage: type === 'upload' ? (body.uploadMessage || null) : null,
         albumId: albumId!,
         createdAt: getUnixTimestamp(),

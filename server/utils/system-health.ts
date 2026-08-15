@@ -37,7 +37,7 @@ const REQUIRED_COLUMNS: Record<string, string[]> = {
     albums: ['id', 'title', 'createdAt', 'updatedAt', 'ownerId', 'themePreset', 'customTheme', 'logoText', 'logoImageId'],
     photos: ['id', 'filename', 'storagePath', 'thumbnailStoragePath', 'blurhash', 'size', 'albumId'],
     share_groups: ['id', 'title', 'createdAt', 'updatedAt', 'ownerId', 'themePreset', 'customTheme', 'logoText', 'logoImageId', 'tags'],
-    share_links: ['id', 'token', 'type', 'views', 'createdAt', 'showMetadata', 'uploadMessage', 'albumId', 'shareGroupId'],
+    share_links: ['id', 'token', 'type', 'views', 'createdAt', 'showMetadata', 'faceSearchEnabled', 'uploadMessage', 'albumId', 'shareGroupId'],
     invite_tokens: ['id', 'token', 'type', 'expiresAt', 'createdAt'],
     logos: ['id', 'storagePath', 'originalName', 'mimeType', 'uploadedAt'],
     site_settings: ['id', 'siteName', 'updatedAt', 'allowRegistration', 'googleOAuthEnabled', 'microsoftOAuthEnabled'],
