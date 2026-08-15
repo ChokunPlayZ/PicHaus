@@ -406,8 +406,8 @@ const editForm = reactive({
     password: '',
     hasPassword: false,
     removePassword: false,
-    showMetadata: true,
-    faceSearchEnabled: true,
+    showMetadata: false,
+    faceSearchEnabled: false,
     type: '',
     uploadMessage: '',
     isGroup: false,
@@ -467,8 +467,8 @@ const openEditModal = async (link: ShareLink) => {
         editForm.password = ''
         editForm.hasPassword = data.hasPassword
         editForm.removePassword = false
-        editForm.showMetadata = data.showMetadata !== undefined ? data.showMetadata : true
-        editForm.faceSearchEnabled = data.faceSearchEnabled !== undefined ? data.faceSearchEnabled : true
+        editForm.showMetadata = data.showMetadata !== undefined ? data.showMetadata : false
+        editForm.faceSearchEnabled = data.faceSearchEnabled !== undefined ? data.faceSearchEnabled : false
         editForm.type = data.type || ''
         editForm.uploadMessage = data.uploadMessage || ''
         editForm.isGroup = data.isGroup

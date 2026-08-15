@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
             type: type || 'view',
             label: label || 'Public Link',
             views: 0,
-            faceSearchEnabled: faceSearchEnabled !== undefined ? !!faceSearchEnabled : true,
+            faceSearchEnabled: faceSearchEnabled !== undefined ? !!faceSearchEnabled : false,
             shareGroupId: shareGroup.id,
             createdAt: now,
         }

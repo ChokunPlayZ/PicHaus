@@ -1172,7 +1172,7 @@ if (linkData.value?.data) {
     if (data.isPublicAlbum) isPublicAlbum.value = true
     requiresPassword.value = !!data.requiresPassword
     ownerName.value = data.ownerName || ''
-    faceSearchEnabled.value = data.faceSearchEnabled !== undefined ? data.faceSearchEnabled : true
+    faceSearchEnabled.value = data.faceSearchEnabled !== undefined ? data.faceSearchEnabled : false
 
     if (data.type === 'group') {
         viewMode.value = 'group'
@@ -1180,7 +1180,7 @@ if (linkData.value?.data) {
         groupTitle.value = data.title || ''
         groupDescription.value = data.description || ''
         groupAlbums.value = Array.isArray(data.albums) ? data.albums : []
-        showMetadata.value = data.showMetadata !== undefined ? data.showMetadata : true
+        showMetadata.value = data.showMetadata !== undefined ? data.showMetadata : false
     } else {
         viewMode.value = 'album'
         shareType.value = data.shareType || 'view' // 'view' or 'upload'
@@ -1188,7 +1188,7 @@ if (linkData.value?.data) {
         albumName.value = data.albumName || ''
         description.value = data.description || ''
         eventDate.value = data.eventDate || null
-        showMetadata.value = data.showMetadata !== undefined ? data.showMetadata : true
+        showMetadata.value = data.showMetadata !== undefined ? data.showMetadata : false
     }
 
     loading.value = false

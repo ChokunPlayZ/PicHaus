@@ -3271,7 +3271,7 @@ const createShareLink = async () => {
             method: 'POST',
             body: newLink.value
         })
-        newLink.value = { type: 'view', label: '', password: '', showMetadata: true, faceSearchEnabled: true, uploadMessage: '' }
+        newLink.value = { type: 'view', label: '', password: '', showMetadata: false, faceSearchEnabled: false, uploadMessage: '' }
         await fetchShareLinks()
         toast('Link created', 'success')
         const created = shareLinks.value.find(l => l.id === response.data?.id)
@@ -3290,7 +3290,7 @@ const startEditing = (link: ShareLink) => {
         label: link.label || '',
         password: '',
         showMetadata: link.showMetadata,
-        faceSearchEnabled: (link as any).faceSearchEnabled !== undefined ? (link as any).faceSearchEnabled : true,
+        faceSearchEnabled: (link as any).faceSearchEnabled !== undefined ? (link as any).faceSearchEnabled : false,
         uploadMessage: (link as any).uploadMessage || '',
     }
     editingLinkHasPassword.value = link.password
@@ -3299,7 +3299,7 @@ const startEditing = (link: ShareLink) => {
 
 const cancelEditing = () => {
     editingLinkId.value = null
-    newLink.value = { type: 'view', label: '', password: '', showMetadata: true, faceSearchEnabled: true, uploadMessage: '' }
+    newLink.value = { type: 'view', label: '', password: '', showMetadata: false, faceSearchEnabled: false, uploadMessage: '' }
     removePassword.value = false
     editingLinkHasPassword.value = false
 }

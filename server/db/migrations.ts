@@ -393,4 +393,15 @@ WHERE f."photoId" = p.id
             `ALTER TABLE "people" ADD COLUMN IF NOT EXISTS "instagram" TEXT`,
         ],
     },
+    {
+        name: '0018_share_link_toggles_default_off.sql',
+        statements: [
+            // Flip existing links to the opt-in defaults.
+            `UPDATE "share_links" SET "showMetadata" = false WHERE "showMetadata" = true`,
+            `UPDATE "share_links" SET "faceSearchEnabled" = false WHERE "faceSearchEnabled" = true`,
+            // New links default to OFF; the creator toggles them on.
+            `ALTER TABLE "share_links" ALTER COLUMN "showMetadata" SET DEFAULT false`,
+            `ALTER TABLE "share_links" ALTER COLUMN "faceSearchEnabled" SET DEFAULT false`,
+        ],
+    },
 ]

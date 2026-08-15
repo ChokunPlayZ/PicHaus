@@ -634,7 +634,7 @@ const newShareGroup = ref({
     password: '',
     label: '',
     tags: '',
-    faceSearchEnabled: true,
+    faceSearchEnabled: false,
     themePreset: '',
     customTheme: { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' },
     logoText: '',
@@ -1018,7 +1018,7 @@ const handleCreateShareGroup = async () => {
         })
 
         showShareGroupModal.value = false
-        newShareGroup.value = { title: '', description: '', password: '', label: '', tags: '', faceSearchEnabled: true, themePreset: '', customTheme: { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' }, logoText: '' }
+        newShareGroup.value = { title: '', description: '', password: '', label: '', tags: '', faceSearchEnabled: false, themePreset: '', customTheme: { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' }, logoText: '' }
         createdShareLink.value = `${window.location.origin}${response.data.link.url}`
     } catch (err: any) {
         shareGroupError.value = err.data?.statusMessage || 'Failed to create share group'
