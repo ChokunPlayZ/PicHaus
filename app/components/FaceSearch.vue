@@ -348,4 +348,17 @@ const nextMatch = () => {
 onUnmounted(() => {
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
 })
+
+// Exposed so the parent can trigger a fresh search when the user re-clicks
+// the "Search by face" button while the panel is already open.
+defineExpose({ startOver })
+
+// Notify the parent when the search state changes (has faces or not), so it
+// can decide whether to keep the album grid visible.
+watch([done, searching, resultFaces], () => {
+    emit('results-change', !searching.value && done.value && resultFaces.value.length > 0)
+}, { immediate: true })
+const emit = defineEmits<{
+    'results-change': [hasResults: boolean]
+}>()
 </script>

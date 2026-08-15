@@ -61,7 +61,7 @@
                             <Icon name="lucide:image" class="h-4 w-4" :stroke-width="2" />
                             {{ t('viewAllPictures') }}
                         </button>
-                        <button v-if="faceSearchEnabled" @click="showFaceSearch = !showFaceSearch" :aria-pressed="showFaceSearch"
+                        <button v-if="faceSearchEnabled" @click="toggleFaceSearch" :aria-pressed="showFaceSearch"
                             class="px-6 py-2.5 rounded-full text-sm font-semibold transition inline-flex items-center gap-2"
                             :style="showFaceSearch
                                 ? 'background: var(--accent); color: var(--accent-text);'
@@ -72,9 +72,10 @@
                     </div>
                 </div>
 
-                <FaceSearch v-if="showFaceSearch && faceSearchEnabled" :album-ids="faceSearchAlbumIds" />
+                <FaceSearch v-if="showFaceSearch && faceSearchEnabled" ref="faceSearchRef" :album-ids="faceSearchAlbumIds"
+                    @results-change="faceSearchHasResults = $event" />
 
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div v-if="!faceSearchHasResults" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     <AlbumCard
                         v-for="album in groupAlbums"
                         :key="album.id"
@@ -108,7 +109,7 @@
                         </div>
                     </div>
                     <div v-if="faceSearchEnabled" class="flex items-center gap-3">
-                        <button v-if="faceSearchEnabled" @click="showFaceSearch = !showFaceSearch" :aria-pressed="showFaceSearch"
+                        <button v-if="faceSearchEnabled" @click="toggleFaceSearch" :aria-pressed="showFaceSearch"
                             class="px-5 py-2.5 rounded-full text-sm font-semibold transition inline-flex items-center gap-2"
                             :style="showFaceSearch
                                 ? 'background: var(--accent); color: var(--accent-text);'
@@ -119,23 +120,24 @@
                     </div>
                 </div>
 
-                <FaceSearch v-if="showFaceSearch && faceSearchEnabled" :album-ids="faceSearchAlbumIds" />
+                <FaceSearch v-if="showFaceSearch && faceSearchEnabled" ref="faceSearchRef" :album-ids="faceSearchAlbumIds"
+                    @results-change="faceSearchHasResults = $event" />
 
                 <!-- Loading Photos State -->
-                <div v-if="loadingPhotos && photos.length === 0" class="flex justify-center py-12">
+                <div v-if="!faceSearchHasResults && loadingPhotos && photos.length === 0" class="flex justify-center py-12">
                     <div class="w-8 h-8 rounded-full border-2 animate-spin"
                         style="border-color: var(--separator); border-top-color: var(--accent);"></div>
                 </div>
 
                 <!-- Empty State -->
-                <div v-else-if="photos.length === 0" class="text-center py-12 rounded-2xl"
+                <div v-else-if="!faceSearchHasResults && photos.length === 0" class="text-center py-12 rounded-2xl"
                     style="background: var(--surface-1); border: 1px solid var(--separator);">
                     <div class="text-5xl sm:text-6xl mb-4">📷</div>
                     <h3 class="text-lg sm:text-xl font-bold mb-2" style="color: var(--text-1);">{{ t('noPhotosYet') }}</h3>
                 </div>
 
                 <!-- Photo Grid -->
-                <div v-else-if="picturesLayout" ref="containerRef" class="relative w-full"
+                <div v-else-if="!faceSearchHasResults && picturesLayout" ref="containerRef" class="relative w-full"
                     :style="{ height: `${picturesLayout.containerHeight}px` }">
                     <PhotoTile
                         v-for="(photo, index) in photos"
@@ -150,7 +152,7 @@
                 </div>
 
                 <!-- Infinite Scroll Sentinel -->
-                <div ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
+                <div v-if="!faceSearchHasResults" ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
                     <div v-if="loadingMore" class="w-6 h-6 rounded-full border-2 animate-spin"
                         style="border-color: var(--separator); border-top-color: var(--accent);"></div>
                 </div>
@@ -187,7 +189,7 @@
                         </div>
                     </div>
                     <div v-if="faceSearchEnabled" class="flex items-center gap-3">
-                        <button v-if="faceSearchEnabled" @click="showFaceSearch = !showFaceSearch" :aria-pressed="showFaceSearch"
+                        <button v-if="faceSearchEnabled" @click="toggleFaceSearch" :aria-pressed="showFaceSearch"
                             class="px-5 py-2.5 rounded-full text-sm font-semibold transition inline-flex items-center gap-2"
                             :style="showFaceSearch
                                 ? 'background: var(--accent); color: var(--accent-text);'
@@ -198,23 +200,24 @@
                     </div>
                 </div>
 
-                <FaceSearch v-if="showFaceSearch && faceSearchEnabled" :album-ids="faceSearchAlbumIds" />
+                <FaceSearch v-if="showFaceSearch && faceSearchEnabled" ref="faceSearchRef" :album-ids="faceSearchAlbumIds"
+                    @results-change="faceSearchHasResults = $event" />
 
                 <!-- Loading Photos State -->
-                <div v-if="loadingPhotos && photos.length === 0" class="flex justify-center py-12">
+                <div v-if="!faceSearchHasResults && loadingPhotos && photos.length === 0" class="flex justify-center py-12">
                     <div class="w-8 h-8 rounded-full border-2 animate-spin"
                         style="border-color: var(--separator); border-top-color: var(--accent);"></div>
                 </div>
 
                 <!-- Empty State -->
-                <div v-else-if="photos.length === 0" class="text-center py-12 rounded-2xl"
+                <div v-else-if="!faceSearchHasResults && photos.length === 0" class="text-center py-12 rounded-2xl"
                     style="background: var(--surface-1); border: 1px solid var(--separator);">
                     <div class="text-5xl sm:text-6xl mb-4">📷</div>
                     <h3 class="text-lg sm:text-xl font-bold mb-2" style="color: var(--text-1);">{{ t('noPhotosYet') }}</h3>
                 </div>
 
                 <!-- Photo Grid -->
-                <div v-else-if="picturesLayout" ref="containerRef" class="relative w-full"
+                <div v-else-if="!faceSearchHasResults && picturesLayout" ref="containerRef" class="relative w-full"
                     :style="{ height: `${picturesLayout.containerHeight}px` }">
                     <PhotoTile
                         v-for="(photo, index) in photos"
@@ -229,7 +232,7 @@
                 </div>
 
                 <!-- Infinite Scroll Sentinel -->
-                <div ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
+                <div v-if="!faceSearchHasResults" ref="sentinelRef" class="h-20 flex justify-center items-center mt-4">
                     <div v-if="loadingMore" class="w-6 h-6 rounded-full border-2 animate-spin"
                         style="border-color: var(--separator); border-top-color: var(--accent);"></div>
                 </div>
@@ -512,6 +515,19 @@ const isAuthenticated = ref(false)
 const showMetadata = ref(true)
 const faceSearchEnabled = ref(false)
 const showFaceSearch = ref(false)
+const faceSearchRef = ref<{ startOver: () => void } | null>(null)
+// Becomes true once a search actually finds faces, so the parent can hide the
+// album grid only when there are results to show.
+const faceSearchHasResults = ref(false)
+
+const toggleFaceSearch = () => {
+    if (showFaceSearch.value) {
+        // Already open: re-click runs a fresh search (re-opens the picker).
+        faceSearchRef.value?.startOver()
+    } else {
+        showFaceSearch.value = true
+    }
+}
 
 // View Mode
 const viewMode = ref<'album' | 'group' | 'all-group-photos'>('album')
