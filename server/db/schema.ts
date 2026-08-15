@@ -190,6 +190,7 @@ export const siteSettings = pgTable('site_settings', {
     microsoftOAuthTenantId: text('microsoftOAuthTenantId'),
     microsoftButtonText: text('microsoftButtonText'),
     microsoftButtonLogoId: uuid('microsoftButtonLogoId').references(() => logos.id, { onDelete: 'set null' }),
+    queueConcurrency: jsonb('queueConcurrency'),
     updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
 })
 

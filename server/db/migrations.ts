@@ -404,4 +404,10 @@ WHERE f."photoId" = p.id
             `ALTER TABLE "share_links" ALTER COLUMN "faceSearchEnabled" SET DEFAULT false`,
         ],
     },
+    {
+        name: '0019_queue_concurrency.sql',
+        statements: [
+            `ALTER TABLE "site_settings" ADD COLUMN IF NOT EXISTS "queueConcurrency" JSONB`,
+        ],
+    },
 ]

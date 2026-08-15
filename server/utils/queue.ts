@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import { and, count, eq, inArray, sql } from 'drizzle-orm'
-import { jobs } from '../db/schema'
+import { jobs, siteSettings } from '../db/schema'
 import { db } from './db'
 import { getUnixTimestamp } from './auth'
 
@@ -41,7 +41,41 @@ let intervalId: ReturnType<typeof setInterval> | null = null
 let started = false
 let stopping = false
 
-function concurrencyFor(type: JobType): number {
+// DB-backed concurrency settings (admin-configurable, no redeploy needed).
+// Shape: { metadata: 4, thumbnail: 4, 'face-detection': 2 }
+let dbConcurrency: Partial<Record<JobType, number>> | null = null
+let dbConcurrencyLoadedAt = 0
+const DB_CONCURRENCY_TTL_MS = 30_000
+
+async function loadDbConcurrency(): Promise<void> {
+    const now = Date.now()
+    if (dbConcurrency !== null && now - dbConcurrencyLoadedAt < DB_CONCURRENCY_TTL_MS) return
+    try {
+        const rows = await db.select({ queueConcurrency: siteSettings.queueConcurrency })
+            .from(siteSettings)
+            .where(eq(siteSettings.id, 1))
+            .limit(1)
+        const raw = rows[0]?.queueConcurrency
+        const parsed: Partial<Record<JobType, number>> = {}
+        if (raw && typeof raw === 'object') {
+            for (const type of JOB_TYPES) {
+                const value = (raw as Record<string, unknown>)[type]
+                const num = typeof value === 'number' ? value : typeof value === 'string' ? parseInt(value, 10) : NaN
+                if (Number.isFinite(num) && num > 0) parsed[type] = Math.floor(num)
+            }
+        }
+        dbConcurrency = parsed
+        dbConcurrencyLoadedAt = now
+    } catch (error) {
+        console.error('[queue] Failed to load concurrency settings:', error)
+    }
+}
+
+// Priority: DB setting (admin UI) > env var > built-in default.
+async function concurrencyFor(type: JobType): Promise<number> {
+    await loadDbConcurrency()
+    if (dbConcurrency?.[type] !== undefined) return dbConcurrency[type] as number
+
     const configured = parseInt(process.env[CONCURRENCY_ENV[type]] || '', 10)
     if (!Number.isFinite(configured) || configured <= 0) return DEFAULT_CONCURRENCY[type]
     return Math.floor(configured)
@@ -197,7 +231,7 @@ async function pollOnce(): Promise<void> {
             if (!handlers.has(type) || claiming[type]) return
             claiming[type] = true
             try {
-                const limit = Math.max(0, concurrencyFor(type) - inFlight[type])
+                const limit = Math.max(0, await concurrencyFor(type) - inFlight[type])
                 const claimed = await claimJobs(type, limit)
                 if (claimed.length > 0) {
                     void processClaimedJobs(type, claimed)

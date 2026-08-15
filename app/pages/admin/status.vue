@@ -122,6 +122,7 @@
                             <thead>
                                 <tr style="border-bottom: 1px solid var(--separator); background: var(--surface-2);">
                                     <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide" style="color: var(--text-3);">Job Type</th>
+                                    <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-right" style="color: var(--text-3);">Concurrency</th>
                                     <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-right" style="color: var(--text-3);">Pending</th>
                                     <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-right" style="color: var(--text-3);">Running</th>
                                     <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-right" style="color: var(--text-3);">Failed</th>
@@ -130,11 +131,18 @@
                             </thead>
                             <tbody>
                                 <tr v-if="queueLoading && !queueStatus">
-                                    <td colspan="5" class="px-4 py-8 text-center text-sm animate-pulse" style="color: var(--text-3);">Loading queue…</td>
+                                    <td colspan="6" class="px-4 py-8 text-center text-sm animate-pulse" style="color: var(--text-3);">Loading queue…</td>
                                 </tr>
                                 <tr v-for="job in jobTypes" :key="job.key"
                                     style="border-top: 1px solid var(--separator);">
                                     <td class="px-4 py-3 text-sm font-medium" style="color: var(--text-1);">{{ job.label }}</td>
+                                    <td class="px-4 py-3 text-right">
+                                        <input :value="concurrencyDraft[job.key] ?? ''" type="number" min="1" max="32"
+                                            @input="concurrencyDraft[job.key] = ($event.target as HTMLInputElement).value"
+                                            class="w-16 px-2 py-1 text-sm text-right rounded-lg transition"
+                                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;"
+                                            :title="`Concurrent ${job.label.toLowerCase()} jobs`" />
+                                    </td>
                                     <td class="px-4 py-3 text-sm text-right" style="color: var(--text-2);">{{ queueCount(job.key, 'pending') }}</td>
                                     <td class="px-4 py-3 text-sm text-right" style="color: var(--text-2);">{{ queueCount(job.key, 'running') }}</td>
                                     <td class="px-4 py-3 text-sm text-right" :style="queueCount(job.key, 'failed') > 0 ? 'color: var(--error-text);' : 'color: var(--text-2);'">{{ queueCount(job.key, 'failed') }}</td>
@@ -142,6 +150,19 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="flex items-center gap-3 mt-4">
+                        <button @click="saveConcurrency" :disabled="savingConcurrency || !concurrencyDirty"
+                            class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition disabled:opacity-50 shrink-0"
+                            style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                            @mouseover="!savingConcurrency && (($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)')"
+                            @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                            <Icon :name="savingConcurrency ? 'lucide:loader-2' : 'lucide:save'" class="w-4 h-4"
+                                :class="{ 'animate-spin': savingConcurrency }" :stroke-width="2" />
+                            {{ savingConcurrency ? 'Saving…' : 'Save concurrency' }}
+                        </button>
+                        <span v-if="concurrencyDirty" class="text-xs" style="color: var(--text-3);">Changes apply within ~30s, no redeploy needed</span>
+                        <span v-if="concurrencySaved" class="text-xs" style="color: var(--success-text);">Saved — worker picks it up on the next poll</span>
                     </div>
                     <p v-if="queueError" class="mt-3 text-xs" style="color: var(--error-text);">{{ queueError }}</p>
                 </div>
@@ -288,6 +309,58 @@ const jobTypes = [
     { key: 'face-detection', label: 'Face Detection' },
 ]
 
+// Queue concurrency settings (DB-backed, no redeploy)
+const concurrencyDraft = ref<Record<string, string>>({})
+const concurrencyDirty = computed(() => {
+    const saved = concurrencySavedValue.value
+    return jobTypes.some(job => (concurrencyDraft.value[job.key] ?? '') !== String(saved?.[job.key] ?? ''))
+})
+const concurrencySavedValue = ref<Record<string, number> | null>(null)
+const savingConcurrency = ref(false)
+const concurrencySaved = ref(false)
+
+async function loadConcurrency() {
+    try {
+        const res = await $fetch<{ success: boolean; data: { queueConcurrency: Record<string, number> | null } }>('/api/v1/admin/site-settings')
+        const saved = res.data?.queueConcurrency || null
+        concurrencySavedValue.value = saved
+        const draft: Record<string, string> = {}
+        for (const job of jobTypes) {
+            draft[job.key] = saved?.[job.key] ? String(saved[job.key]) : ''
+        }
+        concurrencyDraft.value = draft
+        concurrencySaved.value = false
+    } catch (err: any) {
+        console.error('Failed to load queue concurrency:', err)
+    }
+}
+
+async function saveConcurrency() {
+    savingConcurrency.value = true
+    concurrencySaved.value = false
+    try {
+        const payload: Record<string, number> = {}
+        for (const job of jobTypes) {
+            const raw = concurrencyDraft.value[job.key]?.trim()
+            if (raw) {
+                const num = parseInt(raw, 10)
+                if (Number.isFinite(num) && num > 0) payload[job.key] = Math.max(1, Math.min(32, num))
+            }
+        }
+        await $fetch('/api/v1/admin/site-settings', {
+            method: 'PUT',
+            body: { queueConcurrency: Object.keys(payload).length > 0 ? payload : null },
+        })
+        concurrencySavedValue.value = Object.keys(payload).length > 0 ? payload : null
+        concurrencySaved.value = true
+        toast('Queue concurrency updated — takes effect within ~30s', 'success')
+    } catch (err: any) {
+        toast(err?.data?.statusMessage || 'Failed to save queue concurrency', 'error')
+    } finally {
+        savingConcurrency.value = false
+    }
+}
+
 type ReprocessScope = 'faces' | 'thumbnails' | 'metadata'
 
 const reprocessActions: Array<{ scope: ReprocessScope; label: string; icon: string }> = [
@@ -416,6 +489,7 @@ async function retryAllFailedJobs() {
 onMounted(() => {
     refresh()
     refreshQueue()
+    loadConcurrency()
     queueTimer = setInterval(() => { refreshQueue() }, 5000)
 })
 

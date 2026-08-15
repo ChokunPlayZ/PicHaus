@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     if (user.role !== 'ADMIN') throw createError({ statusCode: 403, statusMessage: 'Admin only' })
 
     const body = await readBody(event)
-    const { siteName, accentColor, logoImageId, allowRegistration, googleOAuthEnabled, googleOAuthAllowedDomain, googleOAuthShiftBypassEnabled, googleButtonText, googleButtonLogoId, microsoftOAuthEnabled, microsoftOAuthTenantId, microsoftButtonText, microsoftButtonLogoId } = body
+    const { siteName, accentColor, logoImageId, allowRegistration, googleOAuthEnabled, googleOAuthAllowedDomain, googleOAuthShiftBypassEnabled, googleButtonText, googleButtonLogoId, microsoftOAuthEnabled, microsoftOAuthTenantId, microsoftButtonText, microsoftButtonLogoId, queueConcurrency } = body
 
     if (siteName !== undefined && (typeof siteName !== 'string' || siteName.trim().length === 0)) {
         throw createError({ statusCode: 400, statusMessage: 'siteName must be a non-empty string' })
@@ -33,6 +33,21 @@ export default defineEventHandler(async (event) => {
     if (microsoftOAuthTenantId !== undefined) update.microsoftOAuthTenantId = microsoftOAuthTenantId?.trim() || null
     if (microsoftButtonText !== undefined) update.microsoftButtonText = microsoftButtonText?.trim() || null
     if (microsoftButtonLogoId !== undefined) update.microsoftButtonLogoId = microsoftButtonLogoId || null
+
+    if (queueConcurrency !== undefined && queueConcurrency !== null) {
+        if (typeof queueConcurrency !== 'object' || Array.isArray(queueConcurrency)) {
+            throw createError({ statusCode: 400, statusMessage: 'queueConcurrency must be an object' })
+        }
+        const validated: Record<string, number> = {}
+        for (const [type, value] of Object.entries(queueConcurrency)) {
+            const num = typeof value === 'number' ? value : typeof value === 'string' ? parseInt(value, 10) : NaN
+            if (!Number.isFinite(num) || num <= 0) {
+                throw createError({ statusCode: 400, statusMessage: `queueConcurrency.${type} must be a positive integer` })
+            }
+            validated[type] = Math.floor(num)
+        }
+        update.queueConcurrency = validated
+    }
 
     // Upsert: try update first, insert if no row exists
     const existing = await db.select({ id: siteSettings.id }).from(siteSettings).where(eq(siteSettings.id, 1)).limit(1)

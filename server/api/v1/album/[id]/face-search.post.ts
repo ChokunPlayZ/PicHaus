@@ -76,7 +76,7 @@ export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
     if (!id) throw createError({ statusCode: 400, statusMessage: 'Album ID is required' })
 
-    enforceRateLimit(event, { key: 'face-search', limit: 10, windowMs: 60 * 60 * 1000 })
+    enforceRateLimit(event, { key: 'face-search', limit: 300, windowMs: 60 * 60 * 1000 })
 
     const formData = await readMultipartFormData(event)
     if (!formData || formData.length === 0) {

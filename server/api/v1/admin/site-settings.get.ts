@@ -35,6 +35,7 @@ export default defineEventHandler(async (event) => {
             microsoftButtonLogoId: row.microsoftButtonLogoId ?? null,
             microsoftButtonLogoUrl: row.microsoftButtonLogoId ? `/api/assets/logo/${row.microsoftButtonLogoId}` : null,
             microsoftClientIdConfigured: !!process.env.MICROSOFT_CLIENT_ID,
+            queueConcurrency: row.queueConcurrency ?? null,
         },
     }
 })
