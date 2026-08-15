@@ -4,6 +4,7 @@ import { readStorageFile } from './storage'
 import { faces, people, photos } from '../db/schema'
 import { db } from './db'
 import { and, eq, isNull } from 'drizzle-orm'
+import sharp from 'sharp'
 
 interface FaceDetectionJobPayload {
     photoId: string
@@ -99,6 +100,89 @@ export const clusteringInternals = {
     assignPerson,
 }
 
+/**
+ * Normalize ML bounding boxes (pixels in the detection image) to 0..1 relative
+ * to the original image. Normalized coordinates are scale-invariant: the
+ * correct conversion is `pixel / detectionDimension`.
+ */
+export function normalizeFaceBoxes(
+    faces: DetectedFace[],
+    detectionWidth: number,
+    detectionHeight: number,
+): DetectedFace[] {
+    const detWidth = detectionWidth || 1
+    const detHeight = detectionHeight || 1
+    return faces.map((face) => ({
+        ...face,
+        boundingBox: {
+            x1: face.boundingBox.x1 / detWidth,
+            y1: face.boundingBox.y1 / detHeight,
+            x2: face.boundingBox.x2 / detWidth,
+            y2: face.boundingBox.y2 / detHeight,
+        },
+    }))
+}
+
+/**
+ * Downscale the image before sending it to the ML engine, and normalize the
+ * returned bounding boxes to 0..1 relative to the ORIGINAL (rotated) image.
+ *
+ * The ML engine's face boxes are pixel coordinates in the image it actually
+ * received. Normalized coordinates are scale-invariant: a face at the center
+ * of the detection image is also at the center of the original, so the
+ * correct conversion is simply `pixel / detectionDimension`. No extra scale
+ * factor is applied (multiplying by the resize ratio would double-count and
+ * push boxes outside 0..1).
+ *
+ * EXIF orientation is baked into the detection copy via sharp's `.rotate()`
+ * so the boxes are in the same rotated space the UI crops in (the thumb
+ * endpoint also `.rotate()`s before `.extract()`).
+ *
+ * @returns normalized face boxes (0..1 relative to the original photo)
+ */
+async function downscaleAndDetect(imageBuffer: Buffer): Promise<DetectedFace[]> {
+    const maxDimension = parseInt(
+        process.env.MACHINE_LEARNING_FACE_MAX_DIMENSION || '2048',
+        10,
+    )
+
+    const metadata = await sharp(imageBuffer).rotate().metadata()
+    const originalWidth = metadata.width ?? 0
+    const originalHeight = metadata.height ?? 0
+    const needsOrientationFix = Boolean(metadata.orientation && metadata.orientation !== 1)
+    const needsResize = originalWidth > maxDimension || originalHeight > maxDimension
+
+    let detectionBuffer = imageBuffer
+    let detectionWidth = originalWidth
+    let detectionHeight = originalHeight
+
+    if (needsResize) {
+        detectionBuffer = await sharp(imageBuffer)
+            .rotate()
+            .resize(maxDimension, maxDimension, {
+                fit: 'inside',
+                withoutEnlargement: true,
+            })
+            .jpeg({ quality: 90, progressive: true })
+            .toBuffer()
+
+        const detMeta = await sharp(detectionBuffer).metadata()
+        detectionWidth = detMeta.width || originalWidth
+        detectionHeight = detMeta.height || originalHeight
+    } else if (needsOrientationFix) {
+        // Small image but EXIF-rotated: send an orientation-baked copy so the
+        // boxes land in the same rotated space the UI expects.
+        detectionBuffer = await sharp(imageBuffer)
+            .rotate()
+            .jpeg({ quality: 90, progressive: true })
+            .toBuffer()
+    }
+
+    const detectedFaces = await detectFaces(detectionBuffer)
+
+    return normalizeFaceBoxes(detectedFaces, detectionWidth, detectionHeight)
+}
+
 async function handleFaceDetectionJob(job: JobRecord): Promise<void> {
     if (process.env.FACE_DETECTION_ENABLED !== 'true') return
 
@@ -120,7 +204,7 @@ async function handleFaceDetectionJob(job: JobRecord): Promise<void> {
         return
     }
 
-    const detectedFaces = await detectFaces(buffer)
+    const detectedFaces = await downscaleAndDetect(buffer)
 
     await db.$client`DELETE FROM faces WHERE "photoId" = ${photo.id}`
     if (detectedFaces.length === 0) return
