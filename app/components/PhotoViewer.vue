@@ -169,18 +169,18 @@
                             <div v-for="face in faces" :key="face.id"
                                 class="absolute pointer-events-auto" :style="faceBoxStyle(face)"
                                 @mousedown.stop @touchstart.stop @touchmove.stop>
-                                <button v-if="face.personId && face.personName"
+                                <button v-if="face.personId"
                                     @click.stop="navigateToPerson(face.personId)" @mousedown.stop @touchstart.stop @touchmove.stop
-                                    :aria-label="`Open ${face.personName}`" :title="face.personName"
+                                    :aria-label="`Open ${face.personName || 'person'}`" :title="face.personName || 'Open person'"
                                     class="absolute inset-0 rounded-[3px] border-2 transition hover:bg-white/15"
                                     style="border-color: rgba(255,255,255,0.85);"></button>
                                 <div v-else class="absolute inset-0 rounded-[3px] border-2"
                                     style="border-color: rgba(255,255,255,0.55);"></div>
-                                <button v-if="face.personId && face.personName"
+                                <button v-if="face.personId"
                                     @click.stop="navigateToPerson(face.personId)" @mousedown.stop @touchstart.stop @touchmove.stop
                                     class="absolute -bottom-7 left-0 max-w-[180px] flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
                                     style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
-                                    <span class="truncate">{{ face.personName }}</span>
+                                    <span class="truncate">{{ face.personName || 'Unnamed person' }}</span>
                                 </button>
                             </div>
                         </div>
