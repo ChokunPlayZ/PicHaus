@@ -5,10 +5,23 @@
                 class="absolute overflow-hidden group cursor-pointer rounded-lg"
                 :style="boxStyle(index)"
                 @mouseover="($event.currentTarget as HTMLElement).style.outline = '2px solid var(--accent)'"
-                @mouseout="($event.currentTarget as HTMLElement).style.outline = 'none'">
+                @mouseout="($event.currentTarget as HTMLElement).style.outline = isSelected(match.photo.id) ? '3px solid var(--accent)' : 'none'">
                 <img :src="thumbUrl(match.photo)" :alt="match.photo.originalName || match.photo.id"
                     loading="lazy" decoding="async"
                     class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" />
+
+                <!-- Selection toggle (span with role so it doesn't nest a button inside the tile button) -->
+                <span
+                    class="absolute top-1.5 right-1.5 z-10 flex items-center justify-center w-6 h-6 rounded-full transition-transform active:scale-90"
+                    :style="isSelected(match.photo.id)
+                        ? { background: 'var(--accent)', boxShadow: '0 0 0 2px rgba(255,255,255,0.45)' }
+                        : { background: 'rgba(0,0,0,0.45)', boxShadow: '0 0 0 1.5px rgba(255,255,255,0.35)' }"
+                    role="button"
+                    :aria-pressed="isSelected(match.photo.id)"
+                    :aria-label="`Select ${match.photo.originalName || match.photo.id}`"
+                    @click.stop="toggleSelect(match.photo.id)">
+                    <Icon v-if="isSelected(match.photo.id)" name="lucide:check" class="h-3.5 w-3.5 text-white" :stroke-width="3" />
+                </span>
             </button>
         </div>
     </div>
@@ -39,10 +52,12 @@ interface FaceSearchPhoto {
 
 const props = defineProps<{
     matches: { photo: FaceSearchPhoto; similarity: number }[]
+    selectedMap?: Record<string, boolean>
 }>()
 
 const emit = defineEmits<{
     open: [photo: FaceSearchPhoto]
+    'toggle-select': [id: string]
 }>()
 
 const containerRef = ref<HTMLElement | null>(null)
@@ -73,13 +88,20 @@ const layout = computed(() => {
 const boxStyle = (index: number) => {
     const box = layout.value?.boxes?.[index]
     if (!box) return { display: 'none' }
-    return {
+    const match = props.matches[index]
+    const style: Record<string, string> = {
         top: `${box.top}px`,
         left: `${box.left}px`,
         width: `${box.width}px`,
         height: `${box.height}px`,
         background: 'var(--surface-3)',
     }
+    // Persistent selected outline (hover outline is handled by mouseover/out)
+    if (match && isSelected(match.photo.id)) {
+        style.outline = '3px solid var(--accent)'
+        style.outlineOffset = '2px'
+    }
+    return style
 }
 
 const thumbUrl = (photo: FaceSearchPhoto) => {
@@ -88,6 +110,9 @@ const thumbUrl = (photo: FaceSearchPhoto) => {
 }
 
 const openMatch = (photo: FaceSearchPhoto) => emit('open', photo)
+
+const isSelected = (id: string) => !!props.selectedMap?.[id]
+const toggleSelect = (id: string) => emit('toggle-select', id)
 
 let resizeObserver: ResizeObserver | null = null
 onMounted(() => {
