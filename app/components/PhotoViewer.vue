@@ -173,14 +173,17 @@
                                     @click.stop="navigateToPerson(face.personId)" @mousedown.stop @touchstart.stop @touchmove.stop
                                     :aria-label="`Open ${face.personName || (face.personInstagram ? `@${face.personInstagram}` : 'person')}`"
                                     :title="face.personName || (face.personInstagram ? `@${face.personInstagram}` : 'Open person')"
-                                    class="absolute inset-0 rounded-[3px] border-2 transition hover:bg-white/15"
-                                    style="border-color: rgba(255,255,255,0.85);"></button>
+                                    class="absolute inset-0 rounded-[3px] border-2 transition"
+                                    :class="hoveredPersonId === face.personId ? '' : 'hover:bg-white/15'"
+                                    :style="hoveredPersonId === face.personId
+                                        ? 'border-color: var(--accent); background: color-mix(in srgb, var(--accent) 30%, transparent);'
+                                        : 'border-color: rgba(255,255,255,0.85);'"></button>
                                 <div v-else class="absolute inset-0 rounded-[3px] border-2"
                                     style="border-color: rgba(255,255,255,0.55);"></div>
                                 <button v-if="face.personId"
                                     @click.stop="navigateToPerson(face.personId)" @mousedown.stop @touchstart.stop @touchmove.stop
-                                    class="absolute -bottom-7 left-0 max-w-[180px] flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
-                                    style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
+                                    class="absolute -bottom-7 left-0 max-w-[180px] flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium transition"
+                                    :style="`background: ${hoveredPersonId === face.personId ? 'var(--accent)' : 'rgba(0,0,0,0.55)'}; color: ${hoveredPersonId === face.personId ? 'var(--accent-text)' : '#fff'}; backdrop-filter: blur(4px);`">
                                     <span class="truncate">{{ face.personName || (face.personInstagram ? `@${face.personInstagram}` : 'Unnamed person') }}</span>
                                 </button>
                             </div>
@@ -286,11 +289,13 @@
                             <a v-for="person in peopleWithHandle" :key="person.id"
                                 :href="`https://instagram.com/${person.instagram}`" target="_blank"
                                 rel="noopener noreferrer"
-                                class="flex items-center space-x-3 rounded-xl p-2 -mx-2 transition hover:bg-white/5">
+                                @mouseenter="hoveredPersonId = person.id"
+                                @mouseleave="hoveredPersonId = null"
+                                :class="`flex items-center space-x-3 rounded-xl p-2 -mx-2 transition ${hoveredPersonId === person.id ? 'bg-white/10' : 'hover:bg-white/5'}`">
                                 <img v-if="person.faceUrl || person.representativeFaceUrl"
                                     :src="person.faceUrl || person.representativeFaceUrl || undefined"
                                     alt="" class="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                                    style="border: 1px solid rgba(255,255,255,0.15);"
+                                    :style="`border: 1px solid ${hoveredPersonId === person.id ? 'var(--accent)' : 'rgba(255,255,255,0.15)'};`"
                                     loading="lazy" decoding="async" />
                                 <div v-else
                                     class="w-10 h-10 rounded-full flex items-center justify-center text-white/60 font-semibold text-sm flex-shrink-0"
@@ -510,6 +515,7 @@ const faces = ref<FaceOverlay[]>([])
 const faceOverlayRect = ref<{ left: number; top: number; width: number; height: number } | null>(null)
 const peopleWithHandle = ref<PeopleWithHandle[]>([])
 const peopleLoading = ref(false)
+const hoveredPersonId = ref<string | null>(null)
 let peopleAbortController: AbortController | null = null
 let facesAbortController: AbortController | null = null
 let faceResizeObserver: ResizeObserver | null = null
@@ -691,6 +697,7 @@ watch(watchedPhoto, async (current, previous) => {
         }
         fetchFaces()
         fetchPeopleWithHandle()
+        hoveredPersonId.value = null
         updateFaceOverlayGeometry()
     })
 }, { immediate: true })
