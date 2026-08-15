@@ -385,6 +385,7 @@
             :next-photo-id="nextPhotoId" :previous-photo-timestamp="previousPhotoTimestamp"
             :next-photo-timestamp="nextPhotoTimestamp" :show-metadata="showMetadata"
             :show-favorite="true"
+            :show-people="true" :album-id="albumId"
             :is-favorited="selectedPhoto ? isFavorited(selectedPhoto.id) : false"
             @close="closePhotoViewer" @previous="previousPhoto" @next="nextPhoto"
             @toggle-favorite="selectedPhoto && toggleFavorite(selectedPhoto.id)" />

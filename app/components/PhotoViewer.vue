@@ -274,6 +274,39 @@
                         </div>
                     </div>
 
+                    <!-- People in this photo (only those with an Instagram handle) -->
+                    <div v-if="props.showPeople && (peopleWithHandle.length > 0 || peopleLoading)" class="mb-6">
+                        <h4 class="text-sm font-medium text-white/50 mb-2">People</h4>
+                        <div v-if="peopleLoading && peopleWithHandle.length === 0" class="flex items-center gap-2 text-xs text-white/40">
+                            <Icon name="lucide:loader-2" class="w-4 h-4 animate-spin" :stroke-width="2" />
+                            <span>Loading people…</span>
+                        </div>
+                        <div v-else class="space-y-3">
+                            <a v-for="person in peopleWithHandle" :key="person.id"
+                                :href="`https://instagram.com/${person.instagram}`" target="_blank"
+                                rel="noopener noreferrer"
+                                class="flex items-center space-x-3 rounded-xl p-2 -mx-2 transition hover:bg-white/5">
+                                <img v-if="person.representativeFaceUrl" :src="person.representativeFaceUrl"
+                                    alt="" class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                                    style="border: 1px solid rgba(255,255,255,0.15);"
+                                    loading="lazy" decoding="async" />
+                                <div v-else
+                                    class="w-10 h-10 rounded-full flex items-center justify-center text-white/60 font-semibold text-sm flex-shrink-0"
+                                    style="background: rgba(255,255,255,0.1);">
+                                    <Icon name="lucide:user" class="w-5 h-5" :stroke-width="1.5" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-white font-medium truncate">{{ person.name || 'Unnamed person' }}</p>
+                                    <p class="text-xs flex items-center gap-1.5" style="color: var(--accent);">
+                                        <Icon name="lucide:instagram" class="w-3.5 h-3.5" :stroke-width="2" />
+                                        <span class="truncate">@{{ person.instagram }}</span>
+                                    </p>
+                                </div>
+                                <Icon name="lucide:arrow-up-right" class="w-4 h-4 flex-shrink-0 text-white/30" :stroke-width="2" />
+                            </a>
+                        </div>
+                    </div>
+
                     <!-- EXIF Data -->
                     <div class="space-y-4" v-if="showMetadata">
                         <h4 class="text-sm font-medium text-white/50 border-b border-white/10 pb-2">Camera Info</h4>
@@ -404,10 +437,14 @@ const props = withDefaults(defineProps<{
     showMetadata?: boolean
     showFavorite?: boolean
     isFavorited?: boolean
+    showPeople?: boolean
+    albumId?: string | null
 }>(), {
     showMetadata: true,
     showFavorite: false,
-    isFavorited: false
+    isFavorited: false,
+    showPeople: false,
+    albumId: null,
 })
 
 const emit = defineEmits(['close', 'previous', 'next', 'toggleFavorite'])
@@ -451,12 +488,23 @@ interface FaceOverlay {
     personName?: string | null
 }
 
+interface PeopleWithHandle {
+    id: string
+    name: string | null
+    instagram: string | null
+    representativeFaceId: string | null
+    representativeFaceUrl: string | null
+}
+
 const isAuthenticated = () => !!getAuthToken()
 const isDesktop = ref(false)
 const facesAvailable = ref(false)
 const showFaces = ref(true)
 const faces = ref<FaceOverlay[]>([])
 const faceOverlayRect = ref<{ left: number; top: number; width: number; height: number } | null>(null)
+const peopleWithHandle = ref<PeopleWithHandle[]>([])
+const peopleLoading = ref(false)
+let peopleAbortController: AbortController | null = null
 let facesAbortController: AbortController | null = null
 let faceResizeObserver: ResizeObserver | null = null
 let hasMountedFaceSupport = false
@@ -539,6 +587,31 @@ function navigateToPerson(personId: string) {
     navigateTo(`/people/${personId}`)
 }
 
+async function fetchPeopleWithHandle() {
+    if (!props.showPeople || !props.albumId) {
+        peopleWithHandle.value = []
+        return
+    }
+    peopleAbortController?.abort()
+    const controller = new AbortController()
+    peopleAbortController = controller
+    peopleLoading.value = true
+    try {
+        const res = await $fetch<{ success: boolean; data: PeopleWithHandle[] }>(
+            `/api/v1/album/${props.albumId}/photos/${props.photo.id}/people`,
+            { signal: controller.signal }
+        )
+        if (controller.signal.aborted) return
+        peopleWithHandle.value = Array.isArray(res?.data) ? res.data : []
+    } catch {
+        // People list is optional; failures simply hide the section.
+        peopleWithHandle.value = []
+    } finally {
+        if (peopleAbortController === controller) peopleAbortController = null
+        peopleLoading.value = false
+    }
+}
+
 const getPhotoCacheKey = (photoId: string, timestamp: number | string | null | undefined) => `${photoId}:${timestamp || ''}`
 const buildFullImageSrc = (photoId: string, timestamp: number | string | null | undefined) => {
     return buildAssetUrl(`/api/assets/full/${photoId}?t=${timestamp || ''}`)
@@ -611,6 +684,7 @@ watch(watchedPhoto, async (current, previous) => {
             preloadImage(props.nextPhotoId)
         }
         fetchFaces()
+        fetchPeopleWithHandle()
         updateFaceOverlayGeometry()
     })
 }, { immediate: true })
@@ -668,6 +742,7 @@ onMounted(() => {
     if (imageAreaEl.value) faceResizeObserver.observe(imageAreaEl.value)
     nextTick(() => {
         fetchFaces()
+        fetchPeopleWithHandle()
         updateFaceOverlayGeometry()
     })
 })
@@ -677,6 +752,7 @@ onUnmounted(() => {
     document.body.style.overflow = ''
     removePanListeners()
     facesAbortController?.abort()
+    peopleAbortController?.abort()
     facesAbortController = null
     faceResizeObserver?.disconnect()
     faceResizeObserver = null
