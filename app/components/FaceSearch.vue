@@ -97,7 +97,7 @@
                             <div class="w-14 h-14 rounded-full overflow-hidden relative flex-shrink-0"
                                 style="border: 1px solid var(--separator); background: var(--surface-3);">
                                 <img v-if="previewUrl" :src="previewUrl" alt="" aria-hidden="true"
-                                    class="absolute w-full h-full object-cover"
+                                    class="absolute inset-0 w-full h-full object-cover"
                                     :style="faceCropStyle(face.box)" />
                             </div>
                             <div class="min-w-0">
@@ -289,41 +289,33 @@ const boxOverlayStyle = (box: FaceBox) => ({
     background: 'rgba(var(--accent-rgb), 0.12)',
 })
 
-// The circle thumbnail shows the reference photo in a square element box with
-// object-fit: cover. The face box (normalized 0..1) must land at the circle
-// center. Cover scales the photo to fill the box and crops the overflow,
-// which shifts the visible window for non-square photos, so the offset must
-// be corrected by the photo's aspect ratio.
+// The circle thumbnail shows the reference photo filling the circle exactly
+// (w-full h-full) with object-fit: cover and an object-position aimed at the
+// face center, so the face is always visible and centered — never distorted,
+// never clipped to empty space, regardless of photo aspect or face position.
 //
-// Element box: C/zoom × C/zoom (square). Cover content: (s*w, s*h) centered,
-// s = max(E/w, E/h). Face center in element coords:
-//   faceX = cx*s*w + (E - s*w)/2,  faceY = cy*s*h + (E - s*h)/2
-// Element positioned at left L: container shows element coords [-L, -L+C];
-// face at container center means -L + C/2 = face → L = C/2 - face.
-// With wScale = max(1, w/h) and hScale = max(1, h/w):
-//   left% = 100 * (0.5 - (cx*wScale + (1-wScale)/2) / zoom)
-//   top%  = 100 * (0.5 - (cy*hScale + (1-hScale)/2) / zoom)
+// Cover in a square box scales the photo to:
+//   contW = C * max(1, aspect),  contH = C * max(1, 1/aspect)
+// (aspect = naturalWidth / naturalHeight). The overflow is on the axis where
+// contSize > C. object-position p% aligns the p% point of the image with the
+// p% point of the box, i.e. the image shifts by (contSize - C) * p/100. To
+// center the face (at fraction cx/cy of the image): p = (fraction*contSize - C/2) / (contSize - C).
+// On the axis with no overflow the whole image is shown, so the face is
+// visible there regardless of p (use 50).
 const faceCropStyle = (box: FaceBox) => {
     const centerX = (box.x1 + box.x2) / 2
     const centerY = (box.y1 + box.y2) / 2
-    const size = Math.max(box.x2 - box.x1, box.y2 - box.y1) * 1.4
-    const zoom = Math.min(Math.max(size, 0.05), 1)
 
     const dims = previewDims.value
     const aspect = dims && dims.height > 0 ? dims.width / dims.height : 1
+
     const wScale = Math.max(1, aspect)
     const hScale = Math.max(1, 1 / aspect)
-
-    const leftPct = 100 * (0.5 - (centerX * wScale + (1 - wScale) / 2) / zoom)
-    const topPct = 100 * (0.5 - (centerY * hScale + (1 - hScale) / 2) / zoom)
+    const px = wScale > 1 ? ((centerX * wScale - 0.5) / (wScale - 1)) * 100 : 50
+    const py = hScale > 1 ? ((centerY * hScale - 0.5) / (hScale - 1)) * 100 : 50
 
     return {
-        width: `${100 / zoom}%`,
-        height: `${100 / zoom}%`,
-        left: `${leftPct}%`,
-        top: `${topPct}%`,
-        maxWidth: 'none',
-        maxHeight: 'none',
+        objectPosition: `${px}% ${py}%`,
     }
 }
 
