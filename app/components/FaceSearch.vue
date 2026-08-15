@@ -97,7 +97,7 @@
                             <div class="w-14 h-14 rounded-full overflow-hidden relative flex-shrink-0"
                                 style="border: 1px solid var(--separator); background: var(--surface-3);">
                                 <img v-if="previewUrl" :src="previewUrl" alt="" aria-hidden="true"
-                                    class="absolute inset-0 w-full h-full object-cover"
+                                    class="absolute"
                                     :style="faceCropStyle(face.box)" />
                             </div>
                             <div class="min-w-0">
@@ -289,33 +289,52 @@ const boxOverlayStyle = (box: FaceBox) => ({
     background: 'rgba(var(--accent-rgb), 0.12)',
 })
 
-// The circle thumbnail shows the reference photo filling the circle exactly
-// (w-full h-full) with object-fit: cover and an object-position aimed at the
-// face center, so the face is always visible and centered — never distorted,
-// never clipped to empty space, regardless of photo aspect or face position.
+// The circle thumbnail zooms the reference photo so the detected face fills
+// the circle. The crop is a SQUARE window in pixel space (side = 1.4× the
+// larger face dimension), so a square circle is filled without distortion.
 //
-// Cover in a square box scales the photo to:
-//   contW = C * max(1, aspect),  contH = C * max(1, 1/aspect)
-// (aspect = naturalWidth / naturalHeight). The overflow is on the axis where
-// contSize > C. object-position p% aligns the p% point of the image with the
-// p% point of the box, i.e. the image shifts by (contSize - C) * p/100. To
-// center the face (at fraction cx/cy of the image): p = (fraction*contSize - C/2) / (contSize - C).
-// On the axis with no overflow the whole image is shown, so the face is
-// visible there regardless of p (use 50).
+// The img element is sized to the photo's real aspect ratio (no object-fit,
+// no cropping) at a scale that maps the crop window onto the container:
+//   scale = max(C / windowSidePx, C / min(W, H))
+// (the second term guarantees the photo still covers the circle — no empty
+// space even for extreme aspect ratios). The window center in img px is
+// (winCxPx*scale, winCyPx*scale), so positioning it at the container center:
+//   left% = 50 - winCxPx*scale/C*100,  top% = 50 - winCyPx*scale/C*100
 const faceCropStyle = (box: FaceBox) => {
-    const centerX = (box.x1 + box.x2) / 2
-    const centerY = (box.y1 + box.y2) / 2
-
+    const C = 56 // w-14 h-14 circle
     const dims = previewDims.value
-    const aspect = dims && dims.height > 0 ? dims.width / dims.height : 1
+    const W = dims && dims.width > 0 ? dims.width : 1
+    const H = dims && dims.height > 0 ? dims.height : 1
 
-    const wScale = Math.max(1, aspect)
-    const hScale = Math.max(1, 1 / aspect)
-    const px = wScale > 1 ? ((centerX * wScale - 0.5) / (wScale - 1)) * 100 : 50
-    const py = hScale > 1 ? ((centerY * hScale - 0.5) / (hScale - 1)) * 100 : 50
+    // Face box in photo pixels.
+    const faceWPx = (box.x2 - box.x1) * W
+    const faceHPx = (box.y2 - box.y1) * H
+    // Square crop window side, 1.4× padding so the face isn't cropped tight.
+    const windowSidePx = Math.max(faceWPx, faceHPx) * 1.4
+
+    // Scale: fit the window to the circle, but never so small the photo stops
+    // covering the circle on its shorter axis.
+    const scale = Math.max(C / windowSidePx, C / Math.min(W, H))
+
+    // Window center in photo px, clamped so the square window stays inside the
+    // photo (edge faces keep the window in-bounds → no empty space).
+    const rawCxPx = ((box.x1 + box.x2) / 2) * W
+    const rawCyPx = ((box.y1 + box.y2) / 2) * H
+    const winCxPx = Math.min(Math.max(rawCxPx, windowSidePx / 2), W - windowSidePx / 2)
+    const winCyPx = Math.min(Math.max(rawCyPx, windowSidePx / 2), H - windowSidePx / 2)
+
+    const widthPct = (W * scale) / C * 100
+    const heightPct = (H * scale) / C * 100
+    const leftPct = 50 - (winCxPx * scale) / C * 100
+    const topPct = 50 - (winCyPx * scale) / C * 100
 
     return {
-        objectPosition: `${px}% ${py}%`,
+        width: `${widthPct}%`,
+        height: `${heightPct}%`,
+        left: `${leftPct}%`,
+        top: `${topPct}%`,
+        maxWidth: 'none',
+        maxHeight: 'none',
     }
 }
 
