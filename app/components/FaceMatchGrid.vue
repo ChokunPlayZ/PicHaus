@@ -46,7 +46,10 @@ const emit = defineEmits<{
 }>()
 
 const containerRef = ref<HTMLElement | null>(null)
-const containerWidth = ref(typeof window !== 'undefined' ? Math.min(window.innerWidth - 64, 640) : 640)
+// Default to a sane width; the ResizeObserver corrects it to the real
+// container width immediately on mount (no artificial 640px cap so big
+// screens get a proper wide justified layout).
+const containerWidth = ref(640)
 
 const layout = computed(() => {
     if (!props.matches.length) return null

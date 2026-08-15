@@ -64,6 +64,7 @@ export default {
     searchByFaceMatchPlural: 'photos',
     searchByFaceNoMatches: 'No matching photos found',
     searchByFaceBadType: 'Please choose a JPEG, PNG, or WebP image',
+    searchByFaceSingleOnly: 'Please choose only one picture',
     searchByFaceTooLarge: 'Photo is too large (max 25 MB)',
     searchByFaceError: 'Search failed. Please try again.'
 }

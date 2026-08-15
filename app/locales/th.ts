@@ -64,6 +64,7 @@ export default {
     searchByFaceMatchPlural: 'รูป',
     searchByFaceNoMatches: 'ไม่พบรูปภาพที่ตรงกัน',
     searchByFaceBadType: 'กรุณาเลือกไฟล์ JPEG, PNG หรือ WebP',
+    searchByFaceSingleOnly: 'กรุณาเลือกรูปเพียง 1 รูปเท่านั้น',
     searchByFaceTooLarge: 'รูปภาพใหญ่เกินไป (สูงสุด 25 MB)',
     searchByFaceError: 'การค้นหาล้มเหลว กรุณาลองอีกครั้ง'
 }

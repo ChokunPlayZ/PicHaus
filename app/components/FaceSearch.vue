@@ -31,7 +31,7 @@
             <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                 <div class="relative inline-block max-w-full flex-shrink-0">
                     <img :src="previewUrl" alt="Reference photo"
-                        class="block max-h-72 sm:max-h-96 w-auto mx-auto rounded-xl"
+                        class="block max-h-[50vh] min-h-48 w-auto mx-auto rounded-xl"
                         style="max-width: 100%; background: var(--surface-2);" />
                     <div v-for="face in resultFaces" :key="face.index"
                         class="absolute border-2 rounded-lg pointer-events-none flex items-start"
@@ -236,12 +236,23 @@ const acceptFile = (file: File | undefined) => {
 
 const onFileChange = (event: Event) => {
     const input = event.target as HTMLInputElement
-    acceptFile(input.files?.[0])
+    const files = Array.from(input.files || [])
+    if (files.length > 1) {
+        error.value = t('searchByFaceSingleOnly')
+        input.value = ''
+        return
+    }
+    acceptFile(files[0])
 }
 
 const onDrop = (event: DragEvent) => {
     dragActive.value = false
-    acceptFile(event.dataTransfer?.files?.[0])
+    const files = Array.from(event.dataTransfer?.files || [])
+    if (files.length > 1) {
+        error.value = t('searchByFaceSingleOnly')
+        return
+    }
+    acceptFile(files[0])
 }
 
 const runSearch = async () => {
