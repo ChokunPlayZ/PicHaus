@@ -177,6 +177,10 @@ onMounted(() => initLanguage())
 const fileInput = ref<HTMLInputElement | null>(null)
 const dragActive = ref(false)
 const previewUrl = ref<string | null>(null)
+// Natural dimensions of the reference photo, used to correct the circle crop
+// for object-fit: cover's aspect-cropping (a landscape photo crops
+// horizontally inside the square element box, shifting the crop window).
+const previewDims = ref<{ width: number; height: number } | null>(null)
 const searchFile = ref<File | null>(null)
 const searching = ref(false)
 const done = ref(false)
@@ -191,6 +195,7 @@ watch(() => props.albumIds, () => reset(), { deep: true })
 const reset = () => {
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
     previewUrl.value = null
+    previewDims.value = null
     searchFile.value = null
     searching.value = false
     done.value = false
@@ -217,6 +222,16 @@ const acceptFile = (file: File | undefined) => {
     done.value = false
     resultFaces.value = []
     viewerIndex.value = null
+
+    // Load natural dimensions so faceCropStyle can correct for object-fit:
+    // cover's aspect cropping (the circle crop must land on the face box).
+    const probe = new Image()
+    probe.onload = () => {
+        if (probe.naturalWidth > 0 && probe.naturalHeight > 0) {
+            previewDims.value = { width: probe.naturalWidth, height: probe.naturalHeight }
+        }
+    }
+    probe.src = previewUrl.value
 }
 
 const onFileChange = (event: Event) => {
@@ -274,22 +289,39 @@ const boxOverlayStyle = (box: FaceBox) => ({
     background: 'rgba(var(--accent-rgb), 0.12)',
 })
 
-// Expands the detected face box to a square window with a little padding so
-// the face fills the circle. The img has object-fit: cover, so the photo is
-// scaled to cover the (zoom-sized) element box without distortion — the
-// width/height/left/top below only position the crop window.
+// The circle thumbnail shows the reference photo in a square element box with
+// object-fit: cover. The face box (normalized 0..1) must land at the circle
+// center. Cover scales the photo to fill the box and crops the overflow,
+// which shifts the visible window for non-square photos, so the offset must
+// be corrected by the photo's aspect ratio.
+//
+// Element box: C/zoom × C/zoom (square). Cover content: (s*w, s*h) centered,
+// s = max(E/w, E/h). Face center in element coords:
+//   faceX = cx*s*w + (E - s*w)/2,  faceY = cy*s*h + (E - s*h)/2
+// Element positioned at left L: container shows element coords [-L, -L+C];
+// face at container center means -L + C/2 = face → L = C/2 - face.
+// With wScale = max(1, w/h) and hScale = max(1, h/w):
+//   left% = 100 * (0.5 - (cx*wScale + (1-wScale)/2) / zoom)
+//   top%  = 100 * (0.5 - (cy*hScale + (1-hScale)/2) / zoom)
 const faceCropStyle = (box: FaceBox) => {
     const centerX = (box.x1 + box.x2) / 2
     const centerY = (box.y1 + box.y2) / 2
     const size = Math.max(box.x2 - box.x1, box.y2 - box.y1) * 1.4
     const zoom = Math.min(Math.max(size, 0.05), 1)
-    const left = Math.min(Math.max(centerX - zoom / 2, 0), 1 - zoom)
-    const top = Math.min(Math.max(centerY - zoom / 2, 0), 1 - zoom)
+
+    const dims = previewDims.value
+    const aspect = dims && dims.height > 0 ? dims.width / dims.height : 1
+    const wScale = Math.max(1, aspect)
+    const hScale = Math.max(1, 1 / aspect)
+
+    const leftPct = 100 * (0.5 - (centerX * wScale + (1 - wScale) / 2) / zoom)
+    const topPct = 100 * (0.5 - (centerY * hScale + (1 - hScale) / 2) / zoom)
+
     return {
         width: `${100 / zoom}%`,
         height: `${100 / zoom}%`,
-        left: `${(-left / zoom) * 100}%`,
-        top: `${(-top / zoom) * 100}%`,
+        left: `${leftPct}%`,
+        top: `${topPct}%`,
         maxWidth: 'none',
         maxHeight: 'none',
     }

@@ -48,15 +48,12 @@ export interface FaceMatchOptions {
     threshold: number
     maxMatchesPerFace?: number
     /**
-     * When true (default), reference faces that are BOTH embedding-similar AND
-     * spatially overlapping are treated as duplicate detections of the same
-     * face and dropped, keeping only the highest-scoring detection. The ML
-     * engine can return the same face twice with slightly different boxes.
-     *
-     * A person who legitimately appears multiple times in the reference photo
-     * (mirror, collage, double exposure, twins standing apart) has NON-
-     * overlapping boxes, so those groups are preserved — dedup only fires for
-     * overlapping boxes, which cannot be a real second occurrence.
+     * When true (default), reference faces whose embeddings are similar are
+     * treated as the same person and deduplicated, keeping only the
+     * highest-scoring detection per person. The same person can legitimately
+     * appear multiple times in one reference photo (before/after splits,
+     * mirrors, collages, double exposures); each occurrence produces its own
+     * ML detection but should yield ONE result group.
      */
     deduplicate?: boolean
     /**
@@ -66,7 +63,9 @@ export interface FaceMatchOptions {
     duplicateThreshold?: number
     /**
      * Minimum intersection-over-union of the two face boxes for them to count
-     * as duplicate detections of the same face. Defaults to 0.3.
+     * as duplicate detections of the same face. Defaults to 0 (identity-only
+     * dedup — spatial overlap is NOT required, so the same person appearing
+     * in different parts of the photo still merges into one result group).
      */
     duplicateIoU?: number
 }
@@ -86,14 +85,14 @@ function boxIoU(a: { x1: number; y1: number; x2: number; y2: number }, b: { x1: 
 }
 
 // Greedy duplicate removal: accepts faces in descending detection score order
-// and drops any face that is BOTH embedding-similar AND box-overlapping with
-// an already-accepted one. This merges the ML engine's repeated detections of
-// the same face in the same spot while preserving legitimate repeated
-// appearances of a person in different parts of the reference photo.
+// and drops any face whose embedding is similar to an already-accepted one.
+// This merges the same person appearing multiple times in the reference photo
+// (before/after splits, mirrors, collages) into a single result group while
+// keeping genuinely different people separate.
 export function deduplicateReferenceFaces(
     referenceFaces: ReferenceFaceInput[],
     threshold: number,
-    iouThreshold = 0.3,
+    iouThreshold = 0,
 ): ReferenceFaceInput[] {
     if (referenceFaces.length <= 1) return referenceFaces
 
@@ -127,7 +126,7 @@ export function matchReferenceFaces(
     const maxMatchesPerFace = options.maxMatchesPerFace ?? Number.POSITIVE_INFINITY
     const deduplicate = options.deduplicate ?? true
     const duplicateThreshold = options.duplicateThreshold ?? options.threshold
-    const duplicateIoU = options.duplicateIoU ?? 0.3
+    const duplicateIoU = options.duplicateIoU ?? 0
 
     const uniqueFaces = deduplicate
         ? deduplicateReferenceFaces(referenceFaces, duplicateThreshold, duplicateIoU)
