@@ -354,6 +354,9 @@ const fetchPhotos = async (reset = false) => {
     } finally {
         loading.value = false
         loadingMore.value = false
+        // Large screens: first page(s) may not fill the viewport, so the
+        // sentinel is already visible and IntersectionObserver never re-fires.
+        fillViewportIfNeeded()
     }
 }
 
@@ -523,6 +526,18 @@ function onPhotoSaved(updatedPhoto: { id: string; [key: string]: any }) {
 }
 
 // Lifecycle
+let fillViewportTimer: ReturnType<typeof setTimeout> | null = null
+function fillViewportIfNeeded() {
+    if (fillViewportTimer) clearTimeout(fillViewportTimer)
+    fillViewportTimer = setTimeout(() => {
+        const el = sentinel.value
+        if (!el || loading.value || loadingMore.value || !hasMore.value) return
+        const rect = el.getBoundingClientRect()
+        const inView = rect.top <= window.innerHeight && rect.bottom >= 0
+        if (inView) fetchPhotos(false)
+    }, 150)
+}
+
 onMounted(() => {
     fetchOptions()
     fetchPhotos(true)

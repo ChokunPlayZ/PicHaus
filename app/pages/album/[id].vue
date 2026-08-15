@@ -2673,6 +2673,7 @@ const fetchAlbum = async (silent = false) => {
         loading.value = false
         loadingPhotos.value = false
         syncProcessingPoll()
+        fillViewportIfNeeded()
     }
 }
 
@@ -2729,6 +2730,10 @@ const loadMorePhotos = async () => {
         console.error('Failed to load more photos:', err)
     } finally {
         loadingPhotos.value = false
+        // If the page still isn't tall enough to scroll (large screen), the
+        // sentinel stays in view and IntersectionObserver never re-fires —
+        // load the next page manually.
+        fillViewportIfNeeded()
     }
 }
 
@@ -2770,6 +2775,25 @@ const loadAllPhotos = async () => {
 
 // Infinite scroll observer
 let infiniteScrollObserver: IntersectionObserver | null = null
+
+// On large screens the first page(s) may not fill the viewport, so the
+// sentinel is already visible and IntersectionObserver only fires once (when
+// hasMore was still false) — it never re-fires because the intersection state
+// never changes. This checks whether the sentinel is currently in view and
+// loads the next page if so.
+let fillViewportTimer: ReturnType<typeof setTimeout> | null = null
+function fillViewportIfNeeded() {
+    if (fillViewportTimer) clearTimeout(fillViewportTimer)
+    fillViewportTimer = setTimeout(() => {
+        const el = sentinelRef.value
+        if (!el || loadingPhotos.value || !hasMore.value) return
+        const rect = el.getBoundingClientRect()
+        const inView = rect.top <= window.innerHeight && rect.bottom >= 0
+        if (inView) {
+            loadMorePhotos()
+        }
+    }, 150)
+}
 
 watch(sentinelRef, (el) => {
     if (infiniteScrollObserver) {

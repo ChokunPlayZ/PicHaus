@@ -711,6 +711,26 @@ async function loadMonthPhotos(key: string, append = false) {
     } else {
         delete placeholderAttempted[key]
     }
+
+    // Large screens: if the sentinel for this month is already in view (page
+    // didn't fill the viewport), IntersectionObserver may have fired before
+    // hasMore was set — load the next page manually.
+    scheduleSentinelFillCheck(key)
+}
+
+let sentinelFillTimer: ReturnType<typeof setTimeout> | null = null
+function scheduleSentinelFillCheck(key: string) {
+    if (sentinelFillTimer) clearTimeout(sentinelFillTimer)
+    sentinelFillTimer = setTimeout(() => {
+        const monthData = loadedMonths.value.get(key)
+        if (!monthData?.hasMore || monthData.loadingMore || monthData.loading) return
+        const el = monthSentinelRefs.value[key]
+        if (!el || !scrollContainer.value) return
+        const containerRect = scrollContainer.value.getBoundingClientRect()
+        const rect = el.getBoundingClientRect()
+        const inView = rect.top <= containerRect.bottom && rect.bottom >= containerRect.top
+        if (inView) loadMonthPhotos(key, true)
+    }, 150)
 }
 
 // ── Scroll tracking ────────────────────────────────────────────────────────

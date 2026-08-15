@@ -61,23 +61,33 @@
                                 </div>
                             </form>
                             <template v-else>
-                                <a v-if="person.instagram" :href="`https://instagram.com/${person.instagram}`" target="_blank" rel="noopener noreferrer"
-                                    class="inline-flex items-center gap-1.5 text-sm transition"
-                                    style="color: var(--text-link); text-decoration: none;"
-                                    @mouseover="($event.currentTarget as HTMLElement).style.textDecoration = 'underline'"
-                                    @mouseout="($event.currentTarget as HTMLElement).style.textDecoration = 'none'"
-                                    @click.stop>
-                                    <Icon name="lucide:instagram" class="w-4 h-4" :stroke-width="2" />
-                                    @{{ person.instagram }}
-                                </a>
-                                <button v-else @click="startEditInstagram"
-                                    class="inline-flex items-center gap-1.5 text-sm transition"
-                                    style="color: var(--text-3); background: transparent; border: none; cursor: pointer; padding: 0;"
-                                    @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-link)'"
-                                    @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
-                                    <Icon name="lucide:instagram" class="w-4 h-4" :stroke-width="2" />
-                                    <span>Add Instagram</span>
-                                </button>
+                                <div class="inline-flex items-center gap-1.5">
+                                    <a v-if="person.instagram" :href="`https://instagram.com/${person.instagram}`" target="_blank" rel="noopener noreferrer"
+                                        class="inline-flex items-center gap-1.5 text-sm transition"
+                                        style="color: var(--text-link); text-decoration: none;"
+                                        @mouseover="($event.currentTarget as HTMLElement).style.textDecoration = 'underline'"
+                                        @mouseout="($event.currentTarget as HTMLElement).style.textDecoration = 'none'"
+                                        @click.stop>
+                                        <Icon name="lucide:instagram" class="w-4 h-4" :stroke-width="2" />
+                                        @{{ person.instagram }}
+                                    </a>
+                                    <button v-if="person.instagram" @click="startEditInstagram"
+                                        :aria-label="`Edit Instagram handle`" title="Edit Instagram handle"
+                                        class="p-1 rounded-md transition"
+                                        style="color: var(--text-3); background: transparent; border: none; cursor: pointer;"
+                                        @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-link)'; ($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                                        @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'; ($event.currentTarget as HTMLElement).style.background = 'transparent'">
+                                        <Icon name="lucide:pencil" class="w-3.5 h-3.5" :stroke-width="2" />
+                                    </button>
+                                    <button v-else @click="startEditInstagram"
+                                        class="inline-flex items-center gap-1.5 text-sm transition"
+                                        style="color: var(--text-3); background: transparent; border: none; cursor: pointer; padding: 0;"
+                                        @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-link)'"
+                                        @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
+                                        <Icon name="lucide:instagram" class="w-4 h-4" :stroke-width="2" />
+                                        <span>Add Instagram</span>
+                                    </button>
+                                </div>
                             </template>
                         </div>
                     </div>
