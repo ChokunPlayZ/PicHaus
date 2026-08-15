@@ -582,6 +582,7 @@
 </template>
 
 <script setup lang="ts">
+import { navigateTo } from '#app'
 const dialog = useDialog()
 import { clearAuthToken } from '~/utils/auth-client'
 import { ALBUM_THEMES } from '~/composables/useAlbumTheme'

@@ -96,6 +96,7 @@
 </template>
 
 <script setup lang="ts">
+import { navigateTo } from '#app'
 import { buildAssetUrl } from '~/utils/auth-client'
 
 definePageMeta({ middleware: 'auth' })

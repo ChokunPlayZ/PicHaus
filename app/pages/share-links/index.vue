@@ -355,6 +355,7 @@
 </template>
 
 <script setup lang="ts">
+import { navigateTo } from '#app'
 const dialog = useDialog()
 import { buildAssetUrl } from '~/utils/auth-client'
 import { ALBUM_THEMES } from '~/composables/useAlbumTheme'

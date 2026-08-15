@@ -96,7 +96,8 @@
                         <div class="flex items-center gap-3 mb-3">
                             <div class="w-14 h-14 rounded-full overflow-hidden relative flex-shrink-0"
                                 style="border: 1px solid var(--separator); background: var(--surface-3);">
-                                <img v-if="previewUrl" :src="previewUrl" alt="" aria-hidden="true" class="absolute"
+                                <img v-if="previewUrl" :src="previewUrl" alt="" aria-hidden="true"
+                                    class="absolute w-full h-full object-cover"
                                     :style="faceCropStyle(face.box)" />
                             </div>
                             <div class="min-w-0">
@@ -109,17 +110,8 @@
                             </div>
                         </div>
 
-                        <div v-if="face.matches.length > 0"
-                            class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                            <button v-for="match in face.matches" :key="match.photo.id" @click="openMatch(match.photo)"
-                                class="aspect-square rounded-lg overflow-hidden group relative cursor-pointer"
-                                style="background: var(--surface-3);"
-                                @mouseover="($event.currentTarget as HTMLElement).style.outline = '2px solid var(--accent)'"
-                                @mouseout="($event.currentTarget as HTMLElement).style.outline = 'none'">
-                                <img :src="thumbUrl(match.photo)" :alt="match.photo.originalName || match.photo.id"
-                                    loading="lazy" decoding="async"
-                                    class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" />
-                            </button>
+                        <div v-if="face.matches.length > 0">
+                            <FaceMatchGrid :matches="face.matches" @open="openMatch" />
                         </div>
                         <p v-else class="text-xs" style="color: var(--text-3);">{{ t('searchByFaceNoMatches') }}</p>
                     </div>
@@ -282,8 +274,10 @@ const boxOverlayStyle = (box: FaceBox) => ({
     background: 'rgba(var(--accent-rgb), 0.12)',
 })
 
-// Expands the detected face box to a square with a little padding so the crop
-// thumbnail never distorts while still focusing on the face.
+// Expands the detected face box to a square window with a little padding so
+// the face fills the circle. The img has object-fit: cover, so the photo is
+// scaled to cover the (zoom-sized) element box without distortion — the
+// width/height/left/top below only position the crop window.
 const faceCropStyle = (box: FaceBox) => {
     const centerX = (box.x1 + box.x2) / 2
     const centerY = (box.y1 + box.y2) / 2
@@ -299,11 +293,6 @@ const faceCropStyle = (box: FaceBox) => {
         maxWidth: 'none',
         maxHeight: 'none',
     }
-}
-
-const thumbUrl = (photo: FaceSearchPhoto) => {
-    const cacheBuster = photo.updatedAt || photo.createdAt || ''
-    return buildAssetUrl(`/api/assets/thumb/${photo.id}?t=${cacheBuster}`)
 }
 
 const viewerPhotos = computed<FaceSearchPhoto[]>(() => resultFaces.value.flatMap(face => face.matches.map(m => m.photo)))
