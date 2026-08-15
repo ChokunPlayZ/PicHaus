@@ -287,7 +287,8 @@
                                 :href="`https://instagram.com/${person.instagram}`" target="_blank"
                                 rel="noopener noreferrer"
                                 class="flex items-center space-x-3 rounded-xl p-2 -mx-2 transition hover:bg-white/5">
-                                <img v-if="person.representativeFaceUrl" :src="person.representativeFaceUrl"
+                                <img v-if="person.faceUrl || person.representativeFaceUrl"
+                                    :src="person.faceUrl || person.representativeFaceUrl || undefined"
                                     alt="" class="w-10 h-10 rounded-full object-cover flex-shrink-0"
                                     style="border: 1px solid rgba(255,255,255,0.15);"
                                     loading="lazy" decoding="async" />
@@ -497,6 +498,8 @@ interface PeopleWithHandle {
     instagram: string | null
     representativeFaceId: string | null
     representativeFaceUrl: string | null
+    faceId: string | null
+    faceUrl: string | null
 }
 
 const isAuthenticated = () => !!getAuthToken()

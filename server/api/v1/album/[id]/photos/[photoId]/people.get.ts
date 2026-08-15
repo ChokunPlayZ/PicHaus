@@ -67,11 +67,14 @@ export default defineEventHandler(async (event) => {
     if (!hasAccess) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
 
     // Distinct people with an Instagram handle, attached to this photo's faces.
+    // The returned face is the detection from THIS photo (not the person's
+    // stored representative face), so the viewer can show how they look here.
     const rows = await db.selectDistinctOn([people.id], {
         id: people.id,
         name: people.name,
         instagram: people.instagram,
         representativeFaceId: people.representativeFaceId,
+        faceId: faces.id,
     })
         .from(faces)
         .innerJoin(people, eq(faces.personId, people.id))
@@ -92,6 +95,10 @@ export default defineEventHandler(async (event) => {
             representativeFaceUrl: p.representativeFaceId
                 ? `/api/v1/faces/${p.representativeFaceId}/thumb`
                 : null,
+            // The face detected in THIS photo, so the thumbnail matches what
+            // the visitor is looking at.
+            faceId: p.faceId,
+            faceUrl: p.faceId ? `/api/v1/faces/${p.faceId}/thumb` : null,
         })),
     }
 })
