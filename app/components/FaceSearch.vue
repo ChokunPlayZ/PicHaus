@@ -26,55 +26,43 @@
                 @change="onFileChange" />
         </div>
 
-        <!-- Reference preview -->
+        <!-- Reference selected: compact action bar (no big photo) -->
         <div v-else>
-            <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                <div class="relative inline-block max-w-full flex-shrink-0">
-                    <img :src="previewUrl" alt="Reference photo"
-                        class="block max-h-[50vh] min-h-48 w-auto mx-auto rounded-xl"
-                        style="max-width: 100%; background: var(--surface-2);" />
-                    <div v-for="face in resultFaces" :key="face.index"
-                        class="absolute border-2 rounded-lg pointer-events-none flex items-start"
-                        :style="boxOverlayStyle(face.box)">
-                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md -mt-5 -ml-1"
-                            style="background: var(--accent); color: var(--accent-text);">
-                            {{ face.index + 1 }}
-                        </span>
-                    </div>
-                </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <img v-if="previewUrl" :src="previewUrl" alt="Reference photo"
+                    class="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+                    style="border: 1px solid var(--separator); background: var(--surface-2);" />
 
-                <div class="flex flex-col items-center sm:items-start gap-3 w-full sm:w-auto">
-                    <div v-if="searching" class="flex items-center gap-2.5">
-                        <div class="w-5 h-5 rounded-full border-2 animate-spin"
-                            style="border-color: var(--separator); border-top-color: var(--accent);"></div>
-                        <span class="text-sm" style="color: var(--text-2);">{{ t('searchByFaceSearching') }}</span>
-                    </div>
-                    <button v-else-if="!done" @click="runSearch"
-                        class="px-5 py-2.5 rounded-full text-sm font-semibold transition active:scale-95 text-accent-text inline-flex items-center gap-2"
-                        style="background: var(--accent);"
-                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
-                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
-                        <Icon name="lucide:search" class="h-4 w-4" :stroke-width="2" />
-                        {{ t('searchByFaceRun') }}
-                    </button>
-                    <button v-else @click="reset()"
-                        class="px-5 py-2.5 rounded-full text-sm font-semibold transition active:scale-95 inline-flex items-center gap-2"
-                        style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
-                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
-                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
-                        <Icon name="lucide:refresh-cw" class="h-4 w-4" :stroke-width="2" />
-                        {{ t('searchByFaceNewSearch') }}
-                    </button>
-                    <button @click="reset()"
-                        class="text-sm transition inline-flex items-center gap-1.5"
-                        style="color: var(--text-3);"
-                        @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
-                        @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
-                        <Icon name="lucide:x" class="h-3.5 w-3.5" :stroke-width="2" />
-                        {{ t('clear') }}
-                    </button>
-                    <p v-if="error" class="text-sm max-w-xs" style="color: var(--error-text);">{{ error }}</p>
+                <div v-if="searching" class="flex items-center gap-2.5">
+                    <div class="w-5 h-5 rounded-full border-2 animate-spin"
+                        style="border-color: var(--separator); border-top-color: var(--accent);"></div>
+                    <span class="text-sm" style="color: var(--text-2);">{{ t('searchByFaceSearching') }}</span>
                 </div>
+                <button v-else-if="!done" @click="runSearch"
+                    class="px-5 py-2.5 rounded-full text-sm font-semibold transition active:scale-95 text-accent-text inline-flex items-center gap-2"
+                    style="background: var(--accent);"
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-hover)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--accent)'">
+                    <Icon name="lucide:search" class="h-4 w-4" :stroke-width="2" />
+                    {{ t('searchByFaceRun') }}
+                </button>
+                <button v-else @click="reset()"
+                    class="px-5 py-2.5 rounded-full text-sm font-semibold transition active:scale-95 inline-flex items-center gap-2"
+                    style="background: var(--surface-2); color: var(--text-1); border: 1px solid var(--separator);"
+                    @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.background = 'var(--surface-2)'">
+                    <Icon name="lucide:refresh-cw" class="h-4 w-4" :stroke-width="2" />
+                    {{ t('searchByFaceNewSearch') }}
+                </button>
+                <button @click="reset()"
+                    class="text-sm transition inline-flex items-center gap-1.5"
+                    style="color: var(--text-3);"
+                    @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
+                    @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
+                    <Icon name="lucide:x" class="h-3.5 w-3.5" :stroke-width="2" />
+                    {{ t('clear') }}
+                </button>
+                <p v-if="error" class="text-sm max-w-xs" style="color: var(--error-text);">{{ error }}</p>
             </div>
 
             <!-- Results -->
@@ -290,15 +278,6 @@ const foundSummary = computed(() => {
 const matchCountLabel = (count: number) => t('searchByFaceMatchCount')
     .replace('{count}', String(count))
     .replace('{noun}', count === 1 ? t('searchByFaceMatchSingle') : t('searchByFaceMatchPlural'))
-
-const boxOverlayStyle = (box: FaceBox) => ({
-    left: `${box.x1 * 100}%`,
-    top: `${box.y1 * 100}%`,
-    width: `${(box.x2 - box.x1) * 100}%`,
-    height: `${(box.y2 - box.y1) * 100}%`,
-    borderColor: 'var(--accent)',
-    background: 'rgba(var(--accent-rgb), 0.12)',
-})
 
 // The circle thumbnail zooms the reference photo so the detected face fills
 // the circle. The crop is a SQUARE window in pixel space (side = 1.4× the
