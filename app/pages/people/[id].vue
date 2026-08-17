@@ -107,7 +107,7 @@
                     style="background: var(--surface-1); border: 1px solid var(--separator);">
                     <p class="text-sm" style="color: var(--text-2);">No photos found for this person.</p>
                 </div>
-                <FaceMatchGrid v-else :matches="gridMatches" @open="onOpenPersonPhoto">
+                <FaceMatchGrid v-else :matches="gridMatches" :show-favorite="false" @open="onOpenPersonPhoto">
                     <template #badge="{ photo }">
                         <span
                             v-if="faceCountFor(photo.id) > 0"

@@ -17,7 +17,7 @@
                      nest a button inside the tile button; inline min-height: 0
                      beats the mobile [role="button"] min-height rule so it stays
                      a circle on phones. -->
-                <span
+                <span v-if="showFavorite"
                     class="absolute bottom-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer"
                     :style="{
                         minHeight: '0',
@@ -63,10 +63,13 @@ interface FaceSearchPhoto {
     } | null
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     matches: { photo: FaceSearchPhoto; similarity: number }[]
     favoritedMap?: Record<string, boolean>
-}>()
+    showFavorite?: boolean
+}>(), {
+    showFavorite: true,
+})
 
 const emit = defineEmits<{
     open: [photo: FaceSearchPhoto]
