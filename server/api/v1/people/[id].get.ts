@@ -22,6 +22,8 @@ export default defineEventHandler(async (event) => {
         albumId: albums.id,
         photoUpdatedAt: photos.updatedAt,
         photoCreatedAt: photos.createdAt,
+        photoWidth: photos.width,
+        photoHeight: photos.height,
         x1: faces.x1,
         y1: faces.y1,
         x2: faces.x2,

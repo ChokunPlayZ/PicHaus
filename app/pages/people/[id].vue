@@ -107,29 +107,18 @@
                     style="background: var(--surface-1); border: 1px solid var(--separator);">
                     <p class="text-sm" style="color: var(--text-2);">No photos found for this person.</p>
                 </div>
-                <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    <button v-for="photo in personPhotos" :key="photo.photoId"
-                        class="aspect-square rounded-xl overflow-hidden relative group cursor-pointer"
-                        style="background: var(--surface-3);"
-                        :aria-label="`Open photo in album`"
-                        @click="openPersonPhoto(photo)">
-                        <img v-if="!isPhotoBroken(photo.photoId)" :src="photo.thumbUrl" :alt="displayName"
-                            loading="lazy" decoding="async"
-                            class="absolute inset-0 w-full h-full object-cover transition group-hover:scale-[1.03]"
-                            @error="onPhotoError(photo.photoId)" />
-                        <div v-else class="absolute inset-0 flex items-center justify-center">
-                            <Icon name="lucide:image" class="w-8 h-8" style="color: var(--text-3);" :stroke-width="1.5" />
-                        </div>
-                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300"></div>
+                <FaceMatchGrid v-else :matches="gridMatches" @open="onOpenPersonPhoto">
+                    <template #badge="{ photo }">
                         <span
-                            class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium backdrop-blur-md"
+                            v-if="faceCountFor(photo.id) > 0"
+                            class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium backdrop-blur-md z-10"
                             style="background: rgba(0,0,0,0.55); color: #fff;"
-                            :title="`${photo.faceCount} ${photo.faceCount === 1 ? 'face' : 'faces'} in this photo`">
+                            :title="`${faceCountFor(photo.id)} ${faceCountFor(photo.id) === 1 ? 'face' : 'faces'} in this photo`">
                             <Icon name="lucide:scan-face" class="w-3 h-3 inline-block -mt-0.5 mr-1" :stroke-width="2" />
-                            {{ photo.faceCount }}
+                            {{ faceCountFor(photo.id) }}
                         </span>
-                    </button>
-                </div>
+                    </template>
+                </FaceMatchGrid>
             </template>
         </div>
 
@@ -206,6 +195,8 @@ interface Face {
     albumId: string | null
     photoUpdatedAt: number
     photoCreatedAt: number
+    photoWidth: number
+    photoHeight: number
     x1: number
     y1: number
     x2: number
@@ -216,7 +207,10 @@ interface PersonPhoto {
     photoId: string
     albumId: string | null
     faceCount: number
-    thumbUrl: string
+    photoWidth: number
+    photoHeight: number
+    photoCreatedAt: number
+    photoUpdatedAt: number | null
 }
 
 interface Person {
@@ -242,7 +236,6 @@ const person = ref<Person | null>(null)
 const loading = ref(true)
 const fetchError = ref<string | null>(null)
 const failedThumbs = ref(new Set<string>())
-const failedPhotos = ref(new Set<string>())
 const editing = ref(false)
 const renameDraft = ref('')
 const editingInstagram = ref(false)
@@ -277,12 +270,35 @@ const personPhotos = computed<PersonPhoto[]>(() => {
                 photoId: face.photoId,
                 albumId: face.albumId,
                 faceCount: 1,
-                thumbUrl: buildAssetUrl(`/api/assets/thumb/${face.photoId}?t=${face.photoUpdatedAt || face.photoCreatedAt || ''}`),
+                photoWidth: face.photoWidth,
+                photoHeight: face.photoHeight,
+                photoCreatedAt: face.photoCreatedAt,
+                photoUpdatedAt: face.photoUpdatedAt,
             })
         }
     }
     return [...byPhoto.values()]
 })
+const personPhotoById = computed(() => new Map(personPhotos.value.map(photo => [photo.photoId, photo])))
+const gridMatches = computed(() =>
+    personPhotos.value.map(photo => ({
+        photo: {
+            id: photo.photoId,
+            filename: '',
+            originalName: displayName.value,
+            size: 0,
+            blurhash: null,
+            width: photo.photoWidth,
+            height: photo.photoHeight,
+            dateTaken: null,
+            createdAt: photo.photoCreatedAt,
+            updatedAt: photo.photoUpdatedAt,
+            uploader: null,
+        },
+        similarity: 0,
+    })),
+)
+const faceCountFor = (photoId: string) => personPhotoById.value.get(photoId)?.faceCount ?? 0
 const displayNameOf = (target: PersonSummary) => target.name?.trim() || 'Unnamed person'
 const countLabelOf = (target: PersonSummary) =>
     `${target.faceCount} ${target.faceCount === 1 ? 'face' : 'faces'}`
@@ -291,12 +307,6 @@ const isThumbBroken = (id: string | null) => !id || failedThumbs.value.has(id)
 
 function onThumbError(id: string | null) {
     if (id) failedThumbs.value.add(id)
-}
-
-const isPhotoBroken = (id: string | null) => !id || failedPhotos.value.has(id)
-
-function onPhotoError(id: string | null) {
-    if (id) failedPhotos.value.add(id)
 }
 
 async function loadPerson() {
@@ -374,9 +384,10 @@ async function saveInstagram() {
     }
 }
 
-function openPersonPhoto(photo: PersonPhoto) {
-    if (!photo.albumId) return
-    navigateTo(`/album/${photo.albumId}?photo=${photo.photoId}`)
+function onOpenPersonPhoto(photo: { id: string }) {
+    const personPhoto = personPhotoById.value.get(photo.id)
+    if (!personPhoto?.albumId) return
+    navigateTo(`/album/${personPhoto.albumId}?photo=${personPhoto.photoId}`)
 }
 
 const filteredMergePeople = computed(() => {

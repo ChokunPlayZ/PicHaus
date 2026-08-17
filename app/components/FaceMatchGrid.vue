@@ -10,6 +10,8 @@
                     loading="lazy" decoding="async"
                     class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" />
 
+                <slot name="badge" :photo="match.photo" />
+
                 <!-- Favorite button — same layout/placement as the gallery tiles
                      (bottom-right, circle, heart). Span with role so it doesn't
                      nest a button inside the tile button; inline min-height: 0
