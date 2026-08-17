@@ -4,9 +4,9 @@
         <aside
             class="hidden lg:flex fixed inset-y-0 left-0 w-64 z-50 flex-col"
             aria-label="Primary navigation"
-            style="background: #191b1a; border-right: 1px solid rgba(255,255,255,.08);">
-            <div class="px-5 pt-6 pb-5" style="border-bottom: 1px solid rgba(255,255,255,.08);">
-                <div class="font-semibold text-base leading-tight flex items-center gap-2" style="color: #f4f0e8;">
+            style="background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
+            <div class="px-5 pt-6 pb-5" style="border-bottom: 1px solid var(--separator);">
+                <div class="font-semibold text-base leading-tight flex items-center gap-2" style="color: var(--text-1);">
                     <img v-if="effectiveLogoImageUrl" :src="effectiveLogoImageUrl" alt="Logo"
                         class="h-8 max-w-[140px] object-contain" />
                     <template v-else>
@@ -19,10 +19,10 @@
             </div>
 
             <div class="px-3 py-4 space-y-1 flex-1 overflow-y-auto">
-                <div class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.15em]" style="color: rgba(255,255,255,.35);">Workspace</div>
+                <div class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.15em]" style="color: var(--text-3);">Workspace</div>
                 <button v-if="showBack" @click="handleBack"
                     class="w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center gap-2.5 mb-2"
-                    style="color: rgba(255,255,255,.58); background: transparent;"
+                    style="color: var(--text-2); background: transparent;"
                     @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
                     @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-2)'">
                     <Icon name="lucide:chevron-left" class="w-4 h-4 shrink-0" :stroke-width="2" />
@@ -32,7 +32,7 @@
                 <!-- Search Button -->
                 <button @click="isOpen = true"
                     class="w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center justify-between mb-2 group"
-                    style="color: rgba(255,255,255,.55); background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.08);">
+                    style="color: var(--text-2); background: var(--surface-2); border: 1px solid var(--separator);">
                     <span class="inline-flex items-center gap-2.5">
                         <Icon name="lucide:search" class="w-4 h-4 shrink-0 transition-colors group-hover:text-[var(--text-1)]" :stroke-width="2" />
                         <span class="group-hover:text-[var(--text-1)] transition-colors">Search...</span>
@@ -44,7 +44,7 @@
                 </button>
 
                 <button v-for="item in navItems" :key="item.path" @click="navigateTo(item.path)"
-                    :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)"
+                    :class="sidebarButtonClass(item.path)"
                     :aria-current="isActivePath(item.path) ? 'page' : undefined">
                     <span class="inline-flex items-center gap-2.5">
                         <Icon :name="getIconName(item.icon)" class="w-4 h-4" :stroke-width="2" />
@@ -53,32 +53,32 @@
                 </button>
 
                 <template v-if="user?.role === 'ADMIN'">
-                    <div class="pt-2 pb-1 px-3" style="font-size: 11px; font-weight: 600; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: 0.06em;">Admin</div>
-                    <button @click="navigateTo('/admin/users')" :class="sidebarButtonClass('/admin/users')" :style="sidebarButtonStyle('/admin/users')">
+                    <div class="pt-2 pb-1 px-3" style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em;">Admin</div>
+                    <button @click="navigateTo('/admin/users')" :class="sidebarButtonClass('/admin/users')">
                         <span class="inline-flex items-center gap-2.5">
                             <Icon name="lucide:users" class="w-4 h-4" :stroke-width="2" />
                             <span>Users</span>
                         </span>
                     </button>
-                    <button @click="navigateTo('/admin/status')" :class="sidebarButtonClass('/admin/status')" :style="sidebarButtonStyle('/admin/status')">
+                    <button @click="navigateTo('/admin/status')" :class="sidebarButtonClass('/admin/status')">
                         <span class="inline-flex items-center gap-2.5">
                             <Icon name="lucide:activity" class="w-4 h-4" :stroke-width="2" />
                             <span>Server Status</span>
                         </span>
                     </button>
-                    <button @click="navigateTo('/admin/invites')" :class="sidebarButtonClass('/admin/invites')" :style="sidebarButtonStyle('/admin/invites')">
+                    <button @click="navigateTo('/admin/invites')" :class="sidebarButtonClass('/admin/invites')">
                         <span class="inline-flex items-center gap-2.5">
                             <Icon name="lucide:mail" class="w-4 h-4" :stroke-width="2" />
                             <span>Invites</span>
                         </span>
                     </button>
-                    <button @click="navigateTo('/admin/logos')" :class="sidebarButtonClass('/admin/logos')" :style="sidebarButtonStyle('/admin/logos')">
+                    <button @click="navigateTo('/admin/logos')" :class="sidebarButtonClass('/admin/logos')">
                         <span class="inline-flex items-center gap-2.5">
                             <Icon name="lucide:image" class="w-4 h-4" :stroke-width="2" />
                             <span>Logos</span>
                         </span>
                     </button>
-                    <button @click="navigateTo('/admin/settings')" :class="sidebarButtonClass('/admin/settings')" :style="sidebarButtonStyle('/admin/settings')">
+                    <button @click="navigateTo('/admin/settings')" :class="sidebarButtonClass('/admin/settings')">
                         <span class="inline-flex items-center gap-2.5">
                             <Icon name="lucide:settings" class="w-4 h-4" :stroke-width="2" />
                             <span>Site Settings</span>
@@ -87,11 +87,11 @@
                 </template>
             </div>
 
-            <div class="p-3 space-y-1" style="border-top: 1px solid rgba(255,255,255,.08);">
+            <div class="p-3 space-y-1" style="border-top: 1px solid var(--separator);">
                 <!-- Theme Toggle -->
                 <button @click="toggleTheme"
                     class="w-full text-left text-sm font-medium px-3 py-2 rounded-lg transition flex items-center justify-between"
-                    style="color: rgba(255,255,255,.58); background: transparent;"
+                    style="color: var(--text-2); background: transparent;"
                     @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--surface-3)'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
                     @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'; ($event.currentTarget as HTMLElement).style.color = 'var(--text-2)'">
                     <span class="inline-flex items-center gap-2.5">
@@ -100,7 +100,7 @@
                     </span>
                 </button>
 
-                <button @click="navigateTo('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2.5'" :style="sidebarButtonStyle('/settings')">
+                <button @click="navigateTo('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2.5'">
                     <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-6 h-6 rounded-full object-cover flex-shrink-0" style="border: 1px solid var(--separator);" />
                     <div v-else
                         class="w-6 h-6 rounded-full flex items-center justify-center uppercase text-[10px] font-semibold flex-shrink-0"
@@ -186,7 +186,7 @@
                     </button>
 
                     <button v-for="item in navItems" :key="`m-${item.path}`" @click="goMobile(item.path)"
-                        :class="sidebarButtonClass(item.path)" :style="sidebarButtonStyle(item.path)"
+                        :class="sidebarButtonClass(item.path)"
                         :aria-current="isActivePath(item.path) ? 'page' : undefined">
                         <span class="inline-flex items-center gap-2.5">
                             <Icon :name="getIconName(item.icon)" class="w-4 h-4" :stroke-width="2" />
@@ -196,31 +196,31 @@
 
                     <template v-if="user?.role === 'ADMIN'">
                         <div class="pt-2 pb-1 px-3" style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em;">Admin</div>
-                        <button @click="goMobile('/admin/users')" :class="sidebarButtonClass('/admin/users')" :style="sidebarButtonStyle('/admin/users')">
+                        <button @click="goMobile('/admin/users')" :class="sidebarButtonClass('/admin/users')">
                             <span class="inline-flex items-center gap-2.5">
                                 <Icon name="lucide:users" class="w-4 h-4" :stroke-width="2" />
                                 <span>Users</span>
                             </span>
                         </button>
-                        <button @click="goMobile('/admin/status')" :class="sidebarButtonClass('/admin/status')" :style="sidebarButtonStyle('/admin/status')">
+                        <button @click="goMobile('/admin/status')" :class="sidebarButtonClass('/admin/status')">
                             <span class="inline-flex items-center gap-2.5">
                                 <Icon name="lucide:activity" class="w-4 h-4" :stroke-width="2" />
                                 <span>Server Status</span>
                             </span>
                         </button>
-                        <button @click="goMobile('/admin/invites')" :class="sidebarButtonClass('/admin/invites')" :style="sidebarButtonStyle('/admin/invites')">
+                        <button @click="goMobile('/admin/invites')" :class="sidebarButtonClass('/admin/invites')">
                             <span class="inline-flex items-center gap-2.5">
                                 <Icon name="lucide:mail" class="w-4 h-4" :stroke-width="2" />
                                 <span>Invites</span>
                             </span>
                         </button>
-                        <button @click="goMobile('/admin/logos')" :class="sidebarButtonClass('/admin/logos')" :style="sidebarButtonStyle('/admin/logos')">
+                        <button @click="goMobile('/admin/logos')" :class="sidebarButtonClass('/admin/logos')">
                             <span class="inline-flex items-center gap-2.5">
                                 <Icon name="lucide:image" class="w-4 h-4" :stroke-width="2" />
                                 <span>Logos</span>
                             </span>
                         </button>
-                        <button @click="goMobile('/admin/settings')" :class="sidebarButtonClass('/admin/settings')" :style="sidebarButtonStyle('/admin/settings')">
+                        <button @click="goMobile('/admin/settings')" :class="sidebarButtonClass('/admin/settings')">
                             <span class="inline-flex items-center gap-2.5">
                                 <Icon name="lucide:settings" class="w-4 h-4" :stroke-width="2" />
                                 <span>Site Settings</span>
@@ -242,7 +242,7 @@
                         </span>
                     </button>
 
-                    <button @click="goMobile('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2.5'" :style="sidebarButtonStyle('/settings')">
+                    <button @click="goMobile('/settings')" :class="sidebarButtonClass('/settings') + ' flex items-center gap-2.5'">
                         <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-6 h-6 rounded-full object-cover flex-shrink-0" style="border: 1px solid var(--separator);" />
                         <div v-else
                             class="w-6 h-6 rounded-full flex items-center justify-center uppercase text-[10px] font-semibold flex-shrink-0"
@@ -328,15 +328,8 @@ const sidebarButtonClass = (path: string) => {
     const isActive = isActivePath(path)
     const base = 'w-full text-left cursor-pointer text-sm px-3 py-2 rounded-lg transition-colors whitespace-nowrap'
     return isActive
-        ? `${base} font-medium`
-        : `${base}`
-}
-
-const sidebarButtonStyle = (path: string) => {
-    const isActive = isActivePath(path)
-    return isActive
-        ? `background: rgba(255,255,255,.1); color: #fff;`
-        : `color: rgba(255,255,255,.58); background: transparent;`
+        ? `${base} sidebar-active`
+        : `${base} sidebar-inactive`
 }
 
 const goMobile = async (path: string) => {
