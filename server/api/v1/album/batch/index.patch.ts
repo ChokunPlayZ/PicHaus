@@ -1,9 +1,9 @@
 import { eq, inArray } from 'drizzle-orm'
 import { albums } from '../../../../db/schema'
 import { getUnixTimestamp, requireAuth } from '../../../../utils/auth'
-import { normalizeTags } from '../../../../utils/albums'
+import { normalizeTags, resolveAlbumVisibility } from '../../../../utils/albums'
 
-type VisibilityAction = 'keep' | 'public' | 'private'
+type VisibilityAction = 'keep' | 'public' | 'community' | 'private'
 type TagAction = 'none' | 'replace' | 'add' | 'remove'
 
 export default defineEventHandler(async (event) => {
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, statusMessage: 'At least one album ID is required' })
         }
 
-        const visibilityAction: VisibilityAction = ['keep', 'public', 'private'].includes(body.visibilityAction)
+        const visibilityAction: VisibilityAction = ['keep', 'public', 'community', 'private'].includes(body.visibilityAction)
             ? body.visibilityAction : 'keep'
         const tagAction: TagAction = ['none', 'replace', 'add', 'remove'].includes(body.tagAction)
             ? body.tagAction : 'none'
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
 
                 await tx.update(albums).set({
                     updatedAt: now,
-                    isPublic: visibilityAction === 'keep' ? album.isPublic : visibilityAction === 'public',
+                    ...(visibilityAction === 'keep' ? {} : resolveAlbumVisibility({ visibility: visibilityAction })),
                     tags: nextTags,
                 }).where(eq(albums.id, album.id))
             }

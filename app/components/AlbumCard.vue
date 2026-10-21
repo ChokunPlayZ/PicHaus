@@ -42,6 +42,11 @@
             <div v-else class="w-full h-full flex items-center justify-center">
                 <Icon name="lucide:camera" class="w-7 h-7" style="color: var(--text-3);" :stroke-width="1.5" />
             </div>
+            <span v-if="album.isCommunity" class="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
+                style="background: var(--surface-1); color: var(--text-1);">
+                <Icon name="lucide:users" class="w-3.5 h-3.5" />
+                Community
+            </span>
         </div>
 
         <!-- Info -->
@@ -74,6 +79,7 @@ interface Album {
     description?: string | null
     tags?: string[]
     eventDate?: number | null
+    isCommunity?: boolean
     coverPhoto?: { id: string; blurhash: string | null } | null
 }
 

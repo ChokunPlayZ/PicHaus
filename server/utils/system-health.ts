@@ -34,7 +34,7 @@ const REQUIRED_TABLES = [
 
 const REQUIRED_COLUMNS: Record<string, string[]> = {
     users: ['id', 'email', 'passwordHash', 'createdAt', 'updatedAt', 'role', 'avatarPath', 'googleId', 'microsoftId', 'themePreference'],
-    albums: ['id', 'title', 'createdAt', 'updatedAt', 'ownerId', 'themePreset', 'customTheme', 'logoText', 'logoImageId'],
+    albums: ['id', 'title', 'createdAt', 'updatedAt', 'ownerId', 'isCommunity', 'themePreset', 'customTheme', 'logoText', 'logoImageId'],
     photos: ['id', 'filename', 'storagePath', 'thumbnailStoragePath', 'blurhash', 'size', 'albumId'],
     share_groups: ['id', 'title', 'createdAt', 'updatedAt', 'ownerId', 'themePreset', 'customTheme', 'logoText', 'logoImageId', 'tags'],
     share_links: ['id', 'token', 'type', 'views', 'createdAt', 'showMetadata', 'uploadMessage', 'albumId', 'shareGroupId'],

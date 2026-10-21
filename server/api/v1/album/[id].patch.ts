@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { albums, users } from '../../../db/schema'
 import { getUnixTimestamp, requireAuth } from '../../../utils/auth'
 import { requireRouterParamValue } from '../../../utils/api'
-import { assertAlbumOwnerWithEmail, avatarUrl, normalizeTags, serializeAlbum } from '../../../utils/albums'
+import { assertAlbumOwnerWithEmail, avatarUrl, normalizeTags, resolveAlbumVisibility, serializeAlbum } from '../../../utils/albums'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
             eventDate: body.eventDate !== undefined
                 ? (body.eventDate ? BigInt(body.eventDate) : null)
                 : album.eventDate,
-            isPublic: body.isPublic ?? album.isPublic,
+            ...resolveAlbumVisibility(body, album),
             themePreset: body.themePreset !== undefined ? (body.themePreset || null) : album.themePreset,
             customTheme: body.customTheme !== undefined ? (body.customTheme || null) : album.customTheme,
             logoText: body.logoText !== undefined ? (body.logoText || null) : album.logoText,

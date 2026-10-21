@@ -36,6 +36,7 @@ A self-hosted, collaborative photo album platform built for photography clubs. P
 ## Features
 
 - **Collaborative albums** — invite collaborators or share an upload link; anyone with the link can upload without an account
+- **Community albums** — make an album discoverable and viewable by every signed-in user on your instance
 - **EXIF metadata** — camera model, lens, focal length, ISO, aperture, shutter speed, date taken — extracted automatically on upload
 - **Justified photo grid** — responsive masonry layout via Immich's WASM-accelerated justified-layout engine
 - **Blurhash placeholders** — progressive image loading with smooth fade-in
@@ -215,7 +216,11 @@ The setup endpoint is permanently disabled once the first account exists.
 
 ### Albums
 
-Albums are the primary organisational unit. Each album has a title, optional description, optional event date, tags, visibility (public/private), and an optional cover photo.
+Albums are the primary organisational unit. Each album has a title, optional description, optional event date, tags, visibility (private/community/public), and an optional cover photo.
+
+Enable **Make album visible to the community** when creating or editing an album to make it appear in every signed-in user's album list. Users can browse and download its photos; uploading, editing, deleting, and managing share links still require the existing owner or collaborator permissions. Use the **Community albums** filter to browse instance-wide albums, or **My albums** to see only albums you own. Visibility can also be changed for multiple owned albums using batch edit. The public and community checkboxes are mutually exclusive; leave both unchecked for private visibility.
+
+**Private** albums remain restricted to owners, collaborators, and valid share links. **Public** albums can be viewed by anonymous visitors with the album URL. Community visibility alone does not grant anonymous access; owners can still explicitly create share links. Switching a community album back to private removes instance-wide access without revoking existing collaborators or share links.
 
 **Creating an album**
 

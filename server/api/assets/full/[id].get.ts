@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { photos, shareLinks } from '../../../db/schema'
 import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
+import { hasCommunityAlbumAccess } from '../../../utils/albums'
 import { getImmutableAssetCacheControl, sendCachedAsset } from '../../../utils/asset-response'
 import { getDirectAssetUrl, statStorageFile } from '../../../utils/storage'
 
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
     } else {
         const authUserId = getAuthUserId(event)
         if (authUserId) {
-            if (photo.album.ownerId === authUserId) {
+            if (photo.album.ownerId === authUserId || await hasCommunityAlbumAccess(photo.album, authUserId)) {
                 hasAccess = true
             } else {
                 hasAccess = photo.album.collaborators.some(c => c.userId === authUserId)
@@ -62,6 +63,7 @@ export default defineEventHandler(async (event) => {
 
     if (!hasAccess) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
     if (!photo.storagePath) throw createError({ statusCode: 404, statusMessage: 'File path not found' })
+    if (photo.album.isCommunity) setHeader(event, 'Cache-Control', 'private, no-store')
 
     try {
         const metadata = await statStorageFile(photo.storagePath)
@@ -75,7 +77,7 @@ export default defineEventHandler(async (event) => {
             storagePath: photo.storagePath,
             metadata,
             contentType: safeMimeType,
-            cacheControl: getImmutableAssetCacheControl(photo.album.isPublic),
+            cacheControl: photo.album.isCommunity ? 'private, no-store' : getImmutableAssetCacheControl(photo.album.isPublic),
             lastModified: new Date(Number(photo.updatedAt || photo.createdAt) * 1000),
             etagSeed: `full:${photo.id}:${photo.updatedAt || photo.createdAt || ''}`,
         })

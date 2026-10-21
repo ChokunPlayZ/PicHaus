@@ -263,6 +263,7 @@
 </template>
 
 <script setup lang="ts">
+import { navigateTo } from '#app'
 import { clearAuthToken } from '~/utils/auth-client'
 import { applyThemeClass, setThemePreference, type ThemePreference } from '~/utils/theme'
 

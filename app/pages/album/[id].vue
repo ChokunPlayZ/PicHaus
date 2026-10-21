@@ -45,9 +45,9 @@
                                 {{ getPhotographersDisplay }}
                             </button>
                         </div>
-                        <span v-if="album.isPublic"
+                        <span v-if="album.isPublic || album.isCommunity"
                             class="inline-block mt-2 px-2 py-0.5 rounded-full text-xs"
-                            style="background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border);">Public</span>
+                            style="background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border);">{{ album.isCommunity ? 'Community' : 'Public' }}</span>
                     </div>
                 </div>
 
@@ -933,11 +933,7 @@
                         @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <input v-model="editForm.isPublic" type="checkbox" id="editIsPublic"
-                        class="w-4 h-4 rounded" style="accent-color: var(--accent);" />
-                    <label for="editIsPublic" class="text-sm" style="color: var(--text-2);">Make album public</label>
-                </div>
+                <AlbumVisibilityFields id="edit-album-visibility" v-model="editForm.visibility" muted />
 
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text-2);">Color Theme</label>
@@ -1636,6 +1632,7 @@ interface Album {
     tags: string[]
     eventDate: number | null
     isPublic: boolean
+    isCommunity: boolean
     themePreset: string | null
     customTheme: string | null
     logoText: string | null
@@ -1884,7 +1881,7 @@ const editForm = ref({
     description: '',
     tags: '',
     eventDate: '',
-    isPublic: false,
+    visibility: 'private' as 'private' | 'community' | 'public',
     themePreset: 'default' as string,
     customTheme: { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' },
     logoText: '',
@@ -2643,7 +2640,7 @@ const fetchAlbum = async (silent = false) => {
                 description: album.value.description ?? '',
                 tags: (album.value.tags || []).join(', '),
                 eventDate: album.value.eventDate ? (new Date(album.value.eventDate * 1000).toISOString().split('T')[0] ?? '') : '',
-                isPublic: album.value.isPublic,
+                visibility: album.value.isCommunity ? 'community' : album.value.isPublic ? 'public' : 'private',
                 themePreset: album.value.themePreset ?? 'default',
                 customTheme: parsedCustomTheme,
                 logoText: album.value.logoText ?? '',
@@ -2794,7 +2791,7 @@ const handleUpdateAlbum = async () => {
                 description: editForm.value.description || null,
                 tags: parseTagsInput(editForm.value.tags),
                 eventDate,
-                isPublic: editForm.value.isPublic,
+                visibility: editForm.value.visibility,
                 themePreset: editForm.value.themePreset === 'default' ? null : editForm.value.themePreset,
                 customTheme: editForm.value.themePreset === 'custom' ? JSON.stringify(editForm.value.customTheme) : null,
                 logoText: editForm.value.logoText || null,

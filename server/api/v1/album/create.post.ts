@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { albums, users } from '../../../db/schema'
 import { getUnixTimestamp, requireAuth } from '../../../utils/auth'
-import { normalizeTags, serializeAlbum } from '../../../utils/albums'
+import { normalizeTags, resolveAlbumVisibility, serializeAlbum } from '../../../utils/albums'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
             description: body.description || null,
             tags,
             eventDate: body.eventDate ? BigInt(body.eventDate) : null,
-            isPublic: body.isPublic ?? false,
+            ...resolveAlbumVisibility(body),
             ownerId: user.id,
             createdAt: now,
             updatedAt: now,

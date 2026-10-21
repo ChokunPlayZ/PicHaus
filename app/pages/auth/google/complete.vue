@@ -21,6 +21,7 @@
 </template>
 
 <script setup lang="ts">
+import { navigateTo } from '#app'
 import { setAuthToken } from '~/utils/auth-client'
 
 const route = useRoute()
