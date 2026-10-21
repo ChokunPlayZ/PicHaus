@@ -51,6 +51,7 @@ export const albums = pgTable('albums', {
     tags: text('tags').array().default([]).notNull(),
     eventDate: bigint('eventDate', { mode: 'bigint' }),
     isPublic: boolean('isPublic').default(false).notNull(),
+    isCommunity: boolean('isCommunity').default(false).notNull(),
     createdAt: bigint('createdAt', { mode: 'bigint' }).notNull(),
     updatedAt: bigint('updatedAt', { mode: 'bigint' }).notNull(),
     ownerId: uuid('ownerId').notNull().references(() => users.id, { onDelete: 'cascade' }),

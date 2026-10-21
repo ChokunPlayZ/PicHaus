@@ -3,6 +3,7 @@ import sharp from 'sharp'
 import { eq } from 'drizzle-orm'
 import { faces, shareLinks } from '../../../../db/schema'
 import { getAuthUserId, getUnixTimestamp } from '../../../../utils/auth'
+import { hasCommunityAlbumAccess } from '../../../../utils/albums'
 import { readStorageFile } from '../../../../utils/storage'
 
 function clamp(value: number, min: number, max: number): number {
@@ -32,7 +33,7 @@ export default defineEventHandler(async (event) => {
         } else {
             const authUserId = getAuthUserId(event)
             if (authUserId) {
-                if (album.ownerId === authUserId) {
+                if (album.ownerId === authUserId || await hasCommunityAlbumAccess(album, authUserId)) {
                     hasAccess = true
                 } else {
                     hasAccess = album.collaborators.some(c => c.userId === authUserId)
@@ -92,7 +93,7 @@ export default defineEventHandler(async (event) => {
             .toBuffer()
 
         setHeader(event, 'Content-Type', 'image/webp')
-        setHeader(event, 'Cache-Control', 'private, max-age=3600')
+        setHeader(event, 'Cache-Control', album.isCommunity ? 'private, no-store' : 'private, max-age=3600')
         setHeader(event, 'Content-Length', thumbBuffer.length)
         return sendStream(event, Readable.from([thumbBuffer]))
     } catch (error: any) {

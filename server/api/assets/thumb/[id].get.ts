@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { photos, shareLinks } from '../../../db/schema'
 import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
+import { hasCommunityAlbumAccess } from '../../../utils/albums'
 import { getImmutableAssetCacheControl, sendCachedAsset } from '../../../utils/asset-response'
 import { getDirectAssetUrl, statStorageFile } from '../../../utils/storage'
 
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
     } else {
         const authUserId = getAuthUserId(event)
         if (authUserId) {
-            if (photo.album.ownerId === authUserId) {
+            if (photo.album.ownerId === authUserId || await hasCommunityAlbumAccess(photo.album, authUserId)) {
                 hasAccess = true
             } else {
                 hasAccess = photo.album.collaborators.some(c => c.userId === authUserId)
@@ -62,7 +63,12 @@ export default defineEventHandler(async (event) => {
 
     if (!hasAccess) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
 
-    if (!photo.thumbnailStoragePath) return sendRedirect(event, `/api/assets/full/${id}`)
+    // Image requests carry the session in the URL, so preserve it when a
+    // thumbnail is unavailable and the browser follows the full-size fallback.
+    const accessToken = getQuery(event).access_token
+    const fullUrl = `/api/assets/full/${id}${typeof accessToken === 'string' ? `?access_token=${encodeURIComponent(accessToken)}` : ''}`
+    if (photo.album.isCommunity) setHeader(event, 'Cache-Control', 'private, no-store')
+    if (!photo.thumbnailStoragePath) return sendRedirect(event, fullUrl)
 
     try {
         const metadata = await statStorageFile(photo.thumbnailStoragePath)
@@ -73,12 +79,12 @@ export default defineEventHandler(async (event) => {
             storagePath: photo.thumbnailStoragePath,
             metadata,
             contentType: 'image/webp',
-            cacheControl: getImmutableAssetCacheControl(photo.album.isPublic),
+            cacheControl: photo.album.isCommunity ? 'private, no-store' : getImmutableAssetCacheControl(photo.album.isPublic),
             lastModified: new Date(Number(photo.updatedAt || photo.createdAt) * 1000),
             etagSeed: `thumb:${photo.id}:${photo.updatedAt || photo.createdAt || ''}`,
         })
     } catch (error: any) {
         if (error?.statusCode) throw error
-        return sendRedirect(event, `/api/assets/full/${id}`)
+        return sendRedirect(event, fullUrl)
     }
 })

@@ -4,6 +4,7 @@ import { albums, shareLinks, shareGroups, albumToShareGroups, photos } from '../
 import { readStorageFile } from '../../../../utils/storage'
 import justifiedLayout from 'justified-layout'
 import { getAuthUserId, getUnixTimestamp } from '../../../../utils/auth'
+import { hasCommunityAlbumAccess } from '../../../../utils/albums'
 
 export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
     if (!album) throw createError({ statusCode: 404, statusMessage: 'Album not found' })
 
-    if (!album.isPublic) {
+    if (!album.isPublic && !await hasCommunityAlbumAccess(album, getAuthUserId(event))) {
         const authUserId = getAuthUserId(event)
         const isOwner = authUserId === album.owner.id
         const isCollaborator = !!authUserId && album.collaborators.some(c => c.userId === authUserId)
@@ -118,6 +119,9 @@ export default defineEventHandler(async (event) => {
     }
 
     const finalImage = await composite.composite(composites).png().toBuffer()
-    setHeaders(event, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' })
+    setHeaders(event, {
+        'Content-Type': 'image/png',
+        'Cache-Control': album.isPublic ? 'public, max-age=3600' : 'private, no-store',
+    })
     return finalImage
 })

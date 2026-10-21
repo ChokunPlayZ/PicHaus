@@ -72,6 +72,13 @@
                         {{ filteredAlbums.length }} of {{ albums.length }} albums
                     </div>
                     <div class="flex items-center flex-wrap gap-2">
+                        <select v-model="albumScope" aria-label="Show albums"
+                            class="px-2 py-1.5 text-xs rounded-lg transition"
+                            style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
+                            <option value="all">All albums</option>
+                            <option value="mine">My albums</option>
+                            <option value="community">Community albums</option>
+                        </select>
                         <div class="flex items-center gap-1">
                             <span class="text-xs font-semibold mr-1" style="color: var(--text-3);">Sort:</span>
                             <select v-model="albumSortBy"
@@ -104,7 +111,7 @@
                             :style="albumViewMode === 'timeline' ? 'background: var(--accent-light); color: var(--accent);' : 'background: var(--surface-3); color: var(--text-2);'">
                             Timeline
                         </button>
-                        <button v-if="searchQuery || tagQuery || activeTag" @click="clearAlbumFilters"
+                        <button v-if="searchQuery || tagQuery || activeTag || albumScope !== 'all'" @click="clearAlbumFilters"
                             class="px-3 py-1.5 rounded-lg text-xs font-medium transition"
                             style="background: var(--surface-3); color: var(--text-2);">
                             Clear
@@ -198,6 +205,8 @@
                             <div class="flex items-start justify-between gap-4">
                                 <div class="min-w-0">
                                     <h3 class="font-semibold text-base truncate" style="color: var(--text-1);">{{ album.name }}</h3>
+                                    <span v-if="album.isCommunity" class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs"
+                                        style="background: var(--accent-light); color: var(--accent);">Community</span>
                                     <p v-if="album.description" class="text-sm mt-0.5 line-clamp-1" style="color: var(--text-2);">{{ album.description }}</p>
                                     <div v-if="album.tags && album.tags.length > 0" class="flex flex-wrap gap-1 mt-2">
                                         <span v-for="tag in album.tags" :key="`${album.id}-${group.key}-${tag}`"
@@ -292,11 +301,7 @@
                             @blur="($event.target as HTMLElement).style.borderColor = 'var(--separator)'; ($event.target as HTMLElement).style.boxShadow = 'none'" />
                     </div>
 
-                    <label class="flex items-center gap-2.5 cursor-pointer">
-                        <input v-model="newAlbum.isPublic" type="checkbox" class="w-4 h-4 rounded"
-                            style="accent-color: var(--accent);" />
-                        <span class="text-sm" style="color: var(--text-1);">Make album public</span>
-                    </label>
+                    <AlbumVisibilityFields id="new-album-visibility" v-model="newAlbum.visibility" />
 
                     <div v-if="createError" class="rounded-xl px-4 py-3 text-sm"
                         style="background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text);">
@@ -483,6 +488,7 @@
                             style="background: var(--surface-2); border: 1px solid var(--separator); color: var(--text-1); outline: none;">
                             <option value="keep">Keep unchanged</option>
                             <option value="public">Make public</option>
+                            <option value="community">Make community — all signed-in users</option>
                             <option value="private">Make private</option>
                         </select>
                     </div>
@@ -576,6 +582,7 @@
 </template>
 
 <script setup lang="ts">
+import { navigateTo } from '#app'
 const dialog = useDialog()
 import { clearAuthToken } from '~/utils/auth-client'
 import { ALBUM_THEMES } from '~/composables/useAlbumTheme'
@@ -589,6 +596,7 @@ interface Album {
     createdAt?: number
     updatedAt?: number
     isPublic: boolean
+    isCommunity: boolean
     owner: {
         id: string
         name: string | null
@@ -613,7 +621,7 @@ const newAlbum = ref({
     description: '',
     tags: '',
     eventDate: '',
-    isPublic: false,
+    visibility: 'private' as 'private' | 'community' | 'public',
 })
 const creating = ref(false)
 const createError = ref('')
@@ -636,13 +644,14 @@ const shareGroupError = ref('')
 const createdShareLink = ref<string | null>(null)
 const showBatchEditModal = ref(false)
 const batchEdit = ref({
-    visibilityAction: 'keep' as 'keep' | 'public' | 'private',
+    visibilityAction: 'keep' as 'keep' | 'public' | 'community' | 'private',
     tagAction: 'none' as 'none' | 'replace' | 'add' | 'remove',
     tags: '',
 })
 const batchEditing = ref(false)
 const batchEditError = ref('')
 const searchQuery = ref('')
+const albumScope = ref<'all' | 'mine' | 'community'>('all')
 const tagQuery = ref('')
 const activeTag = ref('')
 const albumViewMode = ref<'grid' | 'timeline'>('grid')
@@ -674,6 +683,8 @@ const filteredAlbums = computed(() => {
     const tagSearch = tagQuery.value.trim().toLowerCase()
 
     return albums.value.filter((album) => {
+        if (albumScope.value === 'mine' && album.owner.id !== user.value?.id) return false
+        if (albumScope.value === 'community' && !album.isCommunity) return false
         const name = album.name?.toLowerCase() || ''
         const description = album.description?.toLowerCase() || ''
         const owner = album.owner.name?.toLowerCase() || ''
@@ -782,6 +793,7 @@ const timelineGroups = computed(() => {
 })
 
 const clearAlbumFilters = () => {
+    albumScope.value = 'all'
     searchQuery.value = ''
     tagQuery.value = ''
     activeTag.value = ''
@@ -963,11 +975,11 @@ const handleCreateAlbum = async () => {
                 description: newAlbum.value.description || null,
                 tags: parseTagsInput(newAlbum.value.tags),
                 eventDate,
-                isPublic: newAlbum.value.isPublic,
+                visibility: newAlbum.value.visibility,
             },
         })
 
-        newAlbum.value = { name: '', description: '', tags: '', eventDate: '', isPublic: false }
+        newAlbum.value = { name: '', description: '', tags: '', eventDate: '', visibility: 'private' }
         showCreateModal.value = false
         await fetchAlbums()
     } catch (err: any) {

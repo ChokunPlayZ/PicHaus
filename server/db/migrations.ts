@@ -362,4 +362,11 @@ ON CONFLICT ("id") DO NOTHING`,
             `CREATE INDEX IF NOT EXISTS "faces_personId_idx" ON "faces"("personId")`,
         ],
     },
+    {
+        name: '0021_community_albums.sql',
+        statements: [
+            `ALTER TABLE "albums" ADD COLUMN IF NOT EXISTS "isCommunity" BOOLEAN NOT NULL DEFAULT false`,
+            `CREATE INDEX IF NOT EXISTS "albums_community_createdAt_idx" ON "albums" ("createdAt") WHERE "isCommunity" = true`,
+        ],
+    },
 ]

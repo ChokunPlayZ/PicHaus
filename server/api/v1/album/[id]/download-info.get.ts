@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
 
         if (!album) throw createError({ statusCode: 404, statusMessage: 'Album not found' })
 
-        if (!album.isPublic) {
+        if (!album.isPublic && !(album.isCommunity && user)) {
             let hasAccess = false
 
             const shareToken = getCookie(event, `album-access-${id}`)

@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
     const isOwner = photo.album.ownerId === user.id
     const isCollaborator = photo.album.collaborators.some(c => c.userId === user.id)
-    if (!isOwner && !isCollaborator && !photo.album.isPublic) {
+    if (!isOwner && !isCollaborator && !photo.album.isPublic && !photo.album.isCommunity) {
         throw createError({ statusCode: 403, statusMessage: 'You do not have permission to view this photo' })
     }
 

@@ -1,6 +1,7 @@
 import { eq, and, or, desc, asc, ilike, sql, inArray } from 'drizzle-orm'
 import { albums, photos, users, albumCollaborators, shareLinks, shareGroups, albumToShareGroups } from '../../../db/schema'
 import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
+import { hasCommunityAlbumAccess } from '../../../utils/albums'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -40,6 +41,7 @@ export default defineEventHandler(async (event) => {
         const isOwner = authUserId === album.ownerId
         const collaborator = album.collaborators.find(c => c.userId === authUserId)
         const isCollaborator = !!collaborator
+        const hasCommunityAccess = await hasCommunityAlbumAccess(album, authUserId)
 
         let hasEmail = false
         if (authUserId) {
@@ -52,7 +54,7 @@ export default defineEventHandler(async (event) => {
 
         let hasShareLinkAccess = false
 
-        if (!album.isPublic && !isOwner && !isCollaborator) {
+        if (!album.isPublic && !isOwner && !isCollaborator && !hasCommunityAccess) {
             const shareToken = getCookie(event, `album-access-${id}`)
             if (shareToken) {
                 const link = await db.query.shareLinks.findFirst({ where: eq(shareLinks.token, shareToken) })
@@ -82,7 +84,7 @@ export default defineEventHandler(async (event) => {
             }
         }
 
-        if (!album.isPublic && !isOwner && !isCollaborator && !hasShareLinkAccess) {
+        if (!album.isPublic && !isOwner && !isCollaborator && !hasCommunityAccess && !hasShareLinkAccess) {
             throw createError({ statusCode: 403, statusMessage: 'You do not have permission to view this album' })
         }
 

@@ -7,6 +7,7 @@ export default defineEventHandler(async (event) => {
         const user = await requireAuth(event)
 
         const where = or(
+            eq(albums.isCommunity, true),
             eq(albums.ownerId, user.id),
             exists(
                 db.select().from(albumCollaborators).where(
@@ -24,6 +25,7 @@ export default defineEventHandler(async (event) => {
             description: albums.description,
             tags: albums.tags,
             isPublic: albums.isPublic,
+            isCommunity: albums.isCommunity,
             eventDate: albums.eventDate,
             createdAt: albums.createdAt,
             updatedAt: albums.updatedAt,
@@ -72,6 +74,7 @@ export default defineEventHandler(async (event) => {
                     description: album.description,
                     tags: album.tags,
                     isPublic: album.isPublic,
+                    isCommunity: album.isCommunity,
                     eventDate: album.eventDate ? Number(album.eventDate) : null,
                     createdAt: Number(album.createdAt),
                     updatedAt: Number(album.updatedAt),
@@ -86,7 +89,8 @@ export default defineEventHandler(async (event) => {
                 }
             }),
         }
-    } catch (error) {
+    } catch (error: any) {
+        if (error.statusCode) throw error
         throw createError({ statusCode: 500, statusMessage: 'Failed to fetch albums' })
     }
 })
