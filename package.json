@@ -2,6 +2,7 @@
   "name": "PicHaus",
   "type": "module",
   "private": true,
+  "packageManager": "bun@1.4.4",
   "scripts": {
     "backup": "bun run tools/backup.ts",
     "build": "nuxt build",

@@ -77,7 +77,7 @@ A self-hosted, collaborative photo album platform built for photography clubs. P
 
 ### Prerequisites
 
-- [Bun](https://bun.sh) ≥ 1.0
+- [Bun](https://bun.sh) 1.4.4 (matches `packageManager` in `package.json` and the Docker build)
 - PostgreSQL 14+
 
 ```bash
@@ -114,6 +114,8 @@ docker run -d \
 ```
 
 > **Note**: `DATABASE_URL` is only needed at runtime — the build step has no database dependency.
+
+Docker installs dependencies with `--frozen-lockfile`. When updating dependencies or `overrides`, use the same Bun version locally as the Docker build, run `bun install`, and commit the updated `bun.lock` with `package.json`. Different Bun versions can interpret overrides differently and reject a lockfile that installs successfully locally.
 
 ### docker-compose example
 
