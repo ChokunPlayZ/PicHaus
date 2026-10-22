@@ -166,6 +166,23 @@ describe('community album access', () => {
         await expect(handlers.download!({})).resolves.toMatchObject({ success: true })
     })
 
+    it('serializes download info with database BigInt timestamps as JSON numbers', async () => {
+        const photo = {
+            id: 'photo', originalName: 'original.jpg', filename: 'stored.jpg',
+            createdAt: 1700000000n, updatedAt: 1700003600n,
+            uploaderId: owner.id, uploaderName: owner.name,
+            uploaderInstagram: null, uploaderAvatarPath: null,
+        }
+        dbMock.select.mockReturnValueOnce(selectResult([photo]))
+
+        const response = await handlers.download!({})
+
+        expect(JSON.parse(JSON.stringify(response))).toEqual({
+            success: true,
+            data: [{ ...photo, createdAt: 1700000000, updatedAt: 1700003600 }],
+        })
+    })
+
     it.each(['detail', 'download', 'full', 'thumb', 'publicAlbum', 'publicPhotos'])('denies anonymous access through %s', async (route) => {
         headers = {}
         await expect(handlers[route]!({})).rejects.toMatchObject({ statusCode: 403 })
