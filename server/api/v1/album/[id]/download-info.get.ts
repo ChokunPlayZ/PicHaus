@@ -55,7 +55,14 @@ export default defineEventHandler(async (event) => {
             .leftJoin(users, eq(photos.uploaderId, users.id))
             .where(eq(photos.albumId, id!))
 
-        return { success: true, data: photoRows }
+        return {
+            success: true,
+            data: photoRows.map(photo => ({
+                ...photo,
+                createdAt: Number(photo.createdAt),
+                updatedAt: Number(photo.updatedAt),
+            })),
+        }
     } catch (error: any) {
         if (error.statusCode) throw error
         throw createError({ statusCode: 500, statusMessage: 'Failed to fetch photos' })
