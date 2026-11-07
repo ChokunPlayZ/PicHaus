@@ -168,19 +168,19 @@
                             :style="faceOverlayStyle">
                             <div v-for="face in faces" :key="face.id"
                                 class="absolute pointer-events-auto" :style="faceBoxStyle(face)"
-                                @mousedown.stop>
-                                <button v-if="face.personId && face.personName"
+                                @mousedown.stop @touchstart.stop @touchmove.stop @touchend.stop @dblclick.stop>
+                                <button v-if="face.personId"
                                     @click.stop="navigateToPerson(face.personId)"
-                                    :aria-label="`Open ${face.personName}`" :title="face.personName"
+                                    :aria-label="`Open ${face.personName || 'Unnamed person'}`" :title="face.personName || 'Unnamed person'"
                                     class="absolute inset-0 rounded-[3px] border-2 transition hover:bg-white/15"
                                     style="border-color: rgba(255,255,255,0.85);"></button>
                                 <div v-else class="absolute inset-0 rounded-[3px] border-2"
                                     style="border-color: rgba(255,255,255,0.55);"></div>
-                                <button v-if="face.personId && face.personName"
+                                <button v-if="face.personId"
                                     @click.stop="navigateToPerson(face.personId)" @mousedown.stop
                                     class="absolute -bottom-7 left-0 max-w-[180px] flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
                                     style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
-                                    <span class="truncate">{{ face.personName }}</span>
+                                    <span class="truncate">{{ face.personName || 'Unnamed person' }}</span>
                                 </button>
                             </div>
                         </div>
@@ -210,6 +210,12 @@
                     <button v-if="zoomLevel > minZoom" @click.stop="resetZoom" aria-label="Reset zoom"
                         class="flex h-10 min-w-14 items-center justify-center rounded-full bg-white/10 px-3 text-xs font-semibold text-white/80 transition active:scale-90 active:bg-white/20">
                         {{ Math.round(zoomLevel * 100) }}%
+                    </button>
+                    <button v-if="canUseFaceOverlays" @click.stop="showFaces = !showFaces"
+                        :aria-label="showFaces ? 'Hide faces' : 'Show faces'" :aria-pressed="showFaces"
+                        class="flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition active:scale-90"
+                        :class="showFaces ? 'bg-white/20' : 'active:bg-white/15'">
+                        <Icon name="lucide:scan-face" class="h-5 w-5" :stroke-width="2" />
                     </button>
                 </div>
             </div>
@@ -272,6 +278,18 @@
                                 <p class="text-xs text-white/50">{{ formatDate(photo.createdAt) }}</p>
                             </div>
                         </div>
+                    </div>
+
+                    <div v-if="canUseFaceOverlays" class="mb-6">
+                        <button @click="showFaces = !showFaces" :aria-pressed="showFaces"
+                            class="flex w-full items-center justify-between gap-3 rounded-xl bg-white/10 px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/15">
+                            <span class="flex items-center gap-2">
+                                <Icon name="lucide:scan-face" class="h-4 w-4" />
+                                {{ faces.length }} {{ faces.length === 1 ? 'face' : 'faces' }} detected
+                            </span>
+                            <span>{{ showFaces ? 'Hide faces' : 'Show faces' }}</span>
+                        </button>
+                        <p v-if="showFaces && zoomLevel > 1" class="mt-2 text-xs text-white/50">Reset zoom to view face boxes.</p>
                     </div>
 
                     <!-- EXIF Data -->
@@ -364,9 +382,9 @@ const viewerLoadedImageKeys = new Set<string>()
 </script>
 
 <script setup lang="ts">
-import { buildAssetUrl } from '~/utils/auth-client'
+import { buildAssetUrl, getAuthToken } from '~/utils/auth-client'
 import { t, initLanguage } from '~/utils/i18n'
-import { getAuthToken } from '~/utils/auth-client'
+import type { FaceOverlay, PhotoFacesResponse } from '~/types/people'
 
 interface Photo {
     id: string
@@ -440,30 +458,16 @@ const failedImageKeys = new Set<string>()
 const minZoom = 1
 const maxZoom = 4
 
-interface FaceOverlay {
-    id: string
-    x1: number
-    y1: number
-    x2: number
-    y2: number
-    score?: number
-    personId?: string | null
-    personName?: string | null
-}
-
-const isAuthenticated = () => !!getAuthToken()
-const isDesktop = ref(false)
-const facesAvailable = ref(false)
+const isAuthenticated = ref(false)
 const showFaces = ref(false)
 const faces = ref<FaceOverlay[]>([])
 const faceOverlayRect = ref<{ left: number; top: number; width: number; height: number } | null>(null)
 let facesAbortController: AbortController | null = null
 let faceResizeObserver: ResizeObserver | null = null
 let hasMountedFaceSupport = false
-let desktopSyncListener: (() => void) | null = null
 
-const canUseFaceOverlays = computed(() => isAuthenticated() && isDesktop.value && facesAvailable.value)
-const canShowFaceOverlays = computed(() => canUseFaceOverlays.value && showFaces.value && zoomLevel.value <= 1)
+const canUseFaceOverlays = computed(() => isAuthenticated.value && faces.value.length > 0)
+const canShowFaceOverlays = computed(() => canUseFaceOverlays.value && showFaces.value && !imageLoading.value && zoomLevel.value <= 1)
 
 const faceOverlayStyle = computed(() => {
     const rect = faceOverlayRect.value
@@ -510,22 +514,20 @@ function updateFaceOverlayGeometry() {
 }
 
 async function fetchFaces() {
-    facesAvailable.value = false
-    showFaces.value = false
+    if (!hasMountedFaceSupport) return
+    facesAbortController?.abort()
     faces.value = []
     faceOverlayRect.value = null
-    if (!isAuthenticated()) return
+    if (!isAuthenticated.value) return
 
-    facesAbortController?.abort()
     const controller = new AbortController()
     facesAbortController = controller
     try {
-        const res = await $fetch<{ faces: FaceOverlay[] }>(`/api/v1/photos/${props.photo.id}/faces`, {
+        const res = await $fetch<PhotoFacesResponse>(`/api/v1/photos/${props.photo.id}/faces`, {
             signal: controller.signal
         })
         if (controller.signal.aborted) return
-        faces.value = Array.isArray(res?.faces) ? res.faces : []
-        facesAvailable.value = faces.value.length > 0
+        faces.value = res.data
         updateFaceOverlayGeometry()
     } catch {
         // Face overlays are optional; public viewers and offline states simply hide them.
@@ -601,6 +603,7 @@ watch(watchedPhoto, async (current, previous) => {
     imageLoading.value = !viewerLoadedImageKeys.has(imageKey)
     currentImageSrc.value = buildFullImageSrc(current.id, current.timestamp)
     resetZoom()
+    if (hasMountedFaceSupport) fetchFaces()
 
     // Preload adjacent images
     nextTick(() => {
@@ -610,7 +613,6 @@ watch(watchedPhoto, async (current, previous) => {
         if (!shouldAvoidFullPreload() && props.nextPhotoId) {
             preloadImage(props.nextPhotoId)
         }
-        fetchFaces()
         updateFaceOverlayGeometry()
     })
 }, { immediate: true })
@@ -658,14 +660,10 @@ onMounted(() => {
     document.body.style.overflow = 'hidden'
     nextTick(() => viewerEl.value?.focus())
     hasMountedFaceSupport = true
-    isDesktop.value = window.innerWidth >= 768
-    desktopSyncListener = () => {
-        isDesktop.value = window.innerWidth >= 768
-        if (isDesktop.value) updateFaceOverlayGeometry()
-    }
-    window.addEventListener('resize', desktopSyncListener)
+    isAuthenticated.value = !!getAuthToken()
     faceResizeObserver = new ResizeObserver(() => updateFaceOverlayGeometry())
     if (imageAreaEl.value) faceResizeObserver.observe(imageAreaEl.value)
+    if (currentImageStageEl.value) faceResizeObserver.observe(currentImageStageEl.value)
     nextTick(() => {
         fetchFaces()
         updateFaceOverlayGeometry()
@@ -680,10 +678,7 @@ onUnmounted(() => {
     facesAbortController = null
     faceResizeObserver?.disconnect()
     faceResizeObserver = null
-    if (desktopSyncListener) {
-        window.removeEventListener('resize', desktopSyncListener)
-        desktopSyncListener = null
-    }
+    hasMountedFaceSupport = false
 })
 
 // Computed style for mobile transform (desktop should not have transform)

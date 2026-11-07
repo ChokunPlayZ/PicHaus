@@ -7,7 +7,7 @@
                 <div class="min-w-0">
                     <h1 class="text-3xl font-bold tracking-tight" style="color: var(--text-1);">People</h1>
                     <p class="text-sm mt-1" style="color: var(--text-2);">
-                        {{ people.length }} {{ people.length === 1 ? 'person' : 'people' }} found in your library
+                        {{ total }} {{ total === 1 ? 'person' : 'people' }} found in your library
                     </p>
                 </div>
                 <button @click="loadPeople" :disabled="loading"
@@ -33,7 +33,7 @@
                 </div>
             </template>
 
-            <div v-else-if="fetchError" class="rounded-2xl p-6 text-center"
+            <div v-else-if="fetchError && people.length === 0" class="rounded-2xl p-6 text-center"
                 style="background: var(--error-bg); border: 1px solid var(--error-border);">
                 <p class="text-sm" style="color: var(--error-text);">{{ fetchError }}</p>
                 <button @click="loadPeople" class="mt-3 text-sm underline" style="color: var(--error);">Try again</button>
@@ -91,6 +91,8 @@
                     </div>
                 </div>
             </div>
+            <InfiniteScrollTrigger v-if="people.length > 0" :loading="loading" :has-more="hasMore" :error="fetchError"
+                @load="loadMore" />
         </div>
     </div>
 </template>
@@ -98,21 +100,19 @@
 <script setup lang="ts">
 import { navigateTo } from '#app'
 import { buildAssetUrl } from '~/utils/auth-client'
+import type { PeopleResponse, PersonSummary as Person } from '~/types/people'
 
 definePageMeta({ middleware: 'auth' })
 
-interface Person {
-    id: string
-    name: string | null
-    faceCount: number
-    representativeFaceId: string | null
-}
-
 const { toast } = useDialog()
 
-const people = ref<Person[]>([])
-const loading = ref(true)
-const fetchError = ref<string | null>(null)
+const { items: people, loading, error: fetchError, total, hasMore, refresh: loadPeople, loadMore } = usePaginatedList<Person>(
+    async (page, signal) => {
+        const res = await $fetch<PeopleResponse>('/api/v1/people', { query: { page, limit: 50 }, signal })
+        return { items: res.data, pagination: res.pagination }
+    },
+    'Failed to load people',
+)
 const failedThumbs = ref(new Set<string>())
 const editingId = ref<string | null>(null)
 const renameDraft = ref('')
@@ -126,19 +126,6 @@ const isThumbBroken = (id: string | null) => !id || failedThumbs.value.has(id)
 
 function onThumbError(id: string | null) {
     if (id) failedThumbs.value.add(id)
-}
-
-async function loadPeople() {
-    loading.value = true
-    fetchError.value = null
-    try {
-        const res = await $fetch<{ people: Person[] }>('/api/v1/people')
-        people.value = Array.isArray(res?.people) ? res.people : []
-    } catch (err: any) {
-        fetchError.value = err?.data?.statusMessage ?? 'Failed to load people'
-    } finally {
-        loading.value = false
-    }
 }
 
 function startRename(person: Person) {
@@ -167,9 +154,9 @@ async function saveRename(person: Person) {
     try {
         await $fetch(`/api/v1/people/${person.id}`, {
             method: 'PATCH',
-            body: { name: name || null }
+            body: { name }
         })
-        person.name = name || null
+        people.value = people.value.map(entry => entry.id === person.id ? { ...entry, name: name || null } : entry)
         toast('Name updated', 'success')
     } catch (err: any) {
         toast(err?.data?.statusMessage || 'Failed to update name', 'error')

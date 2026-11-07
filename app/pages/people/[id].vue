@@ -9,7 +9,7 @@
                 <p class="text-sm" style="color: var(--text-3);">Loading person…</p>
             </div>
 
-            <div v-else-if="fetchError" class="rounded-2xl p-6 text-center"
+            <div v-else-if="fetchError && !person" class="rounded-2xl p-6 text-center"
                 style="background: var(--error-bg); border: 1px solid var(--error-border);">
                 <p class="text-sm" style="color: var(--error-text);">{{ fetchError }}</p>
                 <button @click="loadPerson" class="mt-3 text-sm underline" style="color: var(--error);">Try again</button>
@@ -45,7 +45,7 @@
                         </template>
                         <p class="text-sm mt-2 flex items-center gap-1.5" style="color: var(--text-3);">
                             <Icon name="lucide:scan-face" class="w-4 h-4" :stroke-width="2" />
-                            {{ person.faces.length }} {{ person.faces.length === 1 ? 'face' : 'faces' }}
+                            {{ total }} {{ total === 1 ? 'face' : 'faces' }}
                         </p>
                     </div>
 
@@ -60,12 +60,12 @@
                 </div>
 
                 <h2 class="text-base font-semibold mb-4" style="color: var(--text-1);">Faces</h2>
-                <div v-if="person.faces.length === 0" class="text-center py-12 rounded-2xl"
+                <div v-if="faces.length === 0" class="text-center py-12 rounded-2xl"
                     style="background: var(--surface-1); border: 1px solid var(--separator);">
                     <p class="text-sm" style="color: var(--text-2);">No faces found for this person.</p>
                 </div>
                 <div v-else class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-                    <button v-for="face in person.faces" :key="face.id"
+                    <button v-for="face in faces" :key="face.id"
                         class="aspect-square rounded-lg overflow-hidden relative group cursor-pointer"
                         :style="face.albumId ? 'background: var(--surface-3);' : 'cursor: default;'"
                         :aria-label="face.albumId ? `Open photo in album` : 'Face thumbnail'"
@@ -84,6 +84,7 @@
                         </div>
                     </button>
                 </div>
+                <InfiniteScrollTrigger :loading="loading" :has-more="hasMore" :error="fetchError" @load="loadMore" />
             </template>
         </div>
 
@@ -120,8 +121,7 @@
                 </div>
 
                 <div class="flex-1 overflow-y-auto space-y-2 min-h-0">
-                    <p v-if="mergePeopleLoading" class="text-sm text-center py-8" style="color: var(--text-3);">Loading people…</p>
-                    <p v-else-if="filteredMergePeople.length === 0" class="text-sm text-center py-8"
+                    <p v-if="!mergePeopleLoading && !mergePeopleError && filteredMergePeople.length === 0" class="text-sm text-center py-8"
                         style="color: var(--text-3);">No other people found.</p>
                     <button v-for="target in filteredMergePeople" :key="target.id" @click="mergeInto(target)"
                         :disabled="mergingTargetId === target.id"
@@ -143,6 +143,8 @@
                             class="w-4 h-4 animate-spin shrink-0" style="color: var(--accent);" :stroke-width="2" />
                         <Icon v-else name="lucide:arrow-right" class="w-4 h-4 shrink-0" style="color: var(--text-3);" :stroke-width="2" />
                     </button>
+                    <InfiniteScrollTrigger :loading="mergePeopleLoading" :has-more="mergeHasMore" :error="mergePeopleError"
+                        @load="loadMoreMergePeople" />
                 </div>
             </div>
         </div>
@@ -151,51 +153,45 @@
 
 <script setup lang="ts">
 import { buildAssetUrl } from '~/utils/auth-client'
+import type { PeopleResponse, PersonResponse, PersonSummary, PersonFace as Face } from '~/types/people'
 
 definePageMeta({ middleware: 'auth' })
-
-interface Face {
-    id: string
-    photoId: string
-    albumId: string | null
-    x1: number
-    y1: number
-    x2: number
-    y2: number
-}
-
-interface Person {
-    id: string
-    name: string | null
-    faces: Face[]
-}
-
-interface PersonSummary {
-    id: string
-    name: string | null
-    faceCount: number
-    representativeFaceId: string | null
-}
 
 const route = useRoute()
 const personId = route.params.id as string
 const currentUser = useState<any>('currentUser')
 const { confirm, toast } = useDialog()
 
-const person = ref<Person | null>(null)
-const loading = ref(true)
-const fetchError = ref<string | null>(null)
+const person = ref<PersonSummary | null>(null)
+const { items: faces, loading, error: fetchError, total, hasMore, refresh: loadPerson, loadMore } = usePaginatedList<Face>(
+    async (page, signal) => {
+        const res = await $fetch<PersonResponse>(`/api/v1/people/${personId}`, { query: { page, limit: 50 }, signal })
+        if (!signal.aborted) person.value = res.data.person
+        return { items: res.data.faces, pagination: res.pagination }
+    },
+    'Failed to load person',
+)
 const failedThumbs = ref(new Set<string>())
 const editing = ref(false)
 const renameDraft = ref('')
 const showMergeModal = ref(false)
 const mergeSearch = ref('')
-const mergePeople = ref<PersonSummary[]>([])
-const mergePeopleLoading = ref(false)
+const {
+    items: mergePeople, loading: mergePeopleLoading, error: mergePeopleError,
+    hasMore: mergeHasMore, refresh: loadMergePeople, loadMore: loadMoreMergePeople,
+} = usePaginatedList<PersonSummary>(
+    async (page, signal) => {
+        const res = await $fetch<PeopleResponse>('/api/v1/people', {
+            query: { page, limit: 50, search: mergeSearch.value.trim() }, signal,
+        })
+        return { items: res.data, pagination: res.pagination }
+    },
+    'Failed to load people',
+)
 const mergingTargetId = ref<string | null>(null)
 
 const displayName = computed(() => person.value?.name?.trim() || 'Unnamed person')
-const headerFaceId = computed(() => person.value?.faces[0]?.id || null)
+const headerFaceId = computed(() => person.value?.representativeFaceId || faces.value[0]?.id || null)
 const isAdmin = computed(() => currentUser.value?.role === 'ADMIN')
 
 const faceThumb = (id: string | null) => (id ? buildAssetUrl(`/api/v1/faces/${id}/thumb`) : '')
@@ -207,23 +203,6 @@ const isThumbBroken = (id: string | null) => !id || failedThumbs.value.has(id)
 
 function onThumbError(id: string | null) {
     if (id) failedThumbs.value.add(id)
-}
-
-async function loadPerson() {
-    loading.value = true
-    fetchError.value = null
-    try {
-        const res = await $fetch<{ id: string; name: string | null; faces: Face[] }>(`/api/v1/people/${personId}`)
-        person.value = {
-            id: res.id,
-            name: res.name,
-            faces: Array.isArray(res.faces) ? res.faces : []
-        }
-    } catch (err: any) {
-        fetchError.value = err?.data?.statusMessage ?? 'Failed to load person'
-    } finally {
-        loading.value = false
-    }
 }
 
 function startRename() {
@@ -242,7 +221,7 @@ async function saveRename() {
     try {
         await $fetch(`/api/v1/people/${personId}`, {
             method: 'PATCH',
-            body: { name: name || null }
+            body: { name }
         })
         person.value.name = name || null
         toast('Name updated', 'success')
@@ -256,26 +235,19 @@ function openFacePhoto(face: Face) {
     navigateTo(`/album/${face.albumId}?photo=${face.photoId}`)
 }
 
-const filteredMergePeople = computed(() => {
-    const query = mergeSearch.value.trim().toLowerCase()
-    if (!query) return mergePeople.value
-    return mergePeople.value.filter(p => displayNameOf(p).toLowerCase().includes(query))
-})
+const filteredMergePeople = computed(() => mergePeople.value.filter(p => p.id !== personId))
+
+let mergeSearchTimeout: ReturnType<typeof setTimeout> | undefined
+watch(mergeSearch, () => {
+    clearTimeout(mergeSearchTimeout)
+    if (showMergeModal.value) mergeSearchTimeout = setTimeout(loadMergePeople, 250)
+}, { flush: 'sync' })
+onUnmounted(() => clearTimeout(mergeSearchTimeout))
 
 async function openMergeModal() {
-    showMergeModal.value = true
     mergeSearch.value = ''
-    mergePeopleLoading.value = true
-    try {
-        const res = await $fetch<{ people: PersonSummary[] }>('/api/v1/people')
-        mergePeople.value = (res?.people || []).filter(p => p.id !== personId)
-    } catch (err: any) {
-        mergePeople.value = []
-        toast(err?.data?.statusMessage || 'Failed to load people', 'error')
-        showMergeModal.value = false
-    } finally {
-        mergePeopleLoading.value = false
-    }
+    showMergeModal.value = true
+    await loadMergePeople()
 }
 
 async function mergeInto(target: PersonSummary) {
@@ -302,15 +274,14 @@ async function mergeInto(target: PersonSummary) {
     }
 }
 
-onMounted(async () => {
+onMounted(() => {
+    loadPerson()
     if (!currentUser.value) {
-        try {
-            const res = await $fetch<{ success: boolean; data: any }>('/api/v1/auth/me')
+        $fetch<{ success: boolean; data: any }>('/api/v1/auth/me').then(res => {
             currentUser.value = res.data
-        } catch {
+        }).catch(() => {
             currentUser.value = null
-        }
+        })
     }
-    await loadPerson()
 })
 </script>
