@@ -59,23 +59,23 @@
                     </button>
                 </div>
 
-                <h2 class="text-base font-semibold mb-4" style="color: var(--text-1);">Faces</h2>
+                <h2 class="text-base font-semibold mb-4" style="color: var(--text-1);">Photos</h2>
                 <div v-if="faces.length === 0" class="text-center py-12 rounded-2xl"
                     style="background: var(--surface-1); border: 1px solid var(--separator);">
-                    <p class="text-sm" style="color: var(--text-2);">No faces found for this person.</p>
+                    <p class="text-sm" style="color: var(--text-2);">No photos found for this person.</p>
                 </div>
                 <div v-else class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
                     <button v-for="face in faces" :key="face.id"
                         class="aspect-square rounded-lg overflow-hidden relative group cursor-pointer"
                         :style="face.albumId ? 'background: var(--surface-3);' : 'cursor: default;'"
-                        :aria-label="face.albumId ? `Open photo in album` : 'Face thumbnail'"
+                        :aria-label="face.albumId ? `Open photo in album` : 'Photo thumbnail'"
                         @click="openFacePhoto(face)">
-                        <img v-if="!isThumbBroken(face.id)" :src="faceThumb(face.id)" :alt="displayName"
+                        <img v-if="!failedPhotoThumbs.has(face.photoId)" :src="photoThumb(face.photoId)" :alt="`Photo of ${displayName}`"
                             loading="lazy" decoding="async"
-                            class="absolute inset-0 w-full h-full object-cover transition group-hover:scale-[1.04]"
-                            @error="onThumbError(face.id)" />
+                            class="absolute inset-0 w-full h-full object-contain"
+                            @error="failedPhotoThumbs.add(face.photoId)" />
                         <div v-else class="absolute inset-0 flex items-center justify-center">
-                            <Icon name="lucide:user" class="w-6 h-6" style="color: var(--text-3);" :stroke-width="1.5" />
+                            <Icon name="lucide:image" class="w-6 h-6" style="color: var(--text-3);" :stroke-width="1.5" />
                         </div>
                         <div v-if="face.albumId"
                             class="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300 flex items-end justify-end">
@@ -172,6 +172,7 @@ const { items: faces, loading, error: fetchError, total, hasMore, refresh: loadP
     'Failed to load person',
 )
 const failedThumbs = ref(new Set<string>())
+const failedPhotoThumbs = ref(new Set<string>())
 const editing = ref(false)
 const renameDraft = ref('')
 const showMergeModal = ref(false)
@@ -195,6 +196,7 @@ const headerFaceId = computed(() => person.value?.representativeFaceId || faces.
 const isAdmin = computed(() => currentUser.value?.role === 'ADMIN')
 
 const faceThumb = (id: string | null) => (id ? buildAssetUrl(`/api/v1/faces/${id}/thumb`) : '')
+const photoThumb = (id: string) => buildAssetUrl(`/api/assets/thumb/${id}`)
 const displayNameOf = (target: PersonSummary) => target.name?.trim() || 'Unnamed person'
 const countLabelOf = (target: PersonSummary) =>
     `${target.faceCount} ${target.faceCount === 1 ? 'face' : 'faces'}`

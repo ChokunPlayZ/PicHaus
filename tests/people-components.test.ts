@@ -54,6 +54,41 @@ describe('People page API rendering', () => {
         faceButton!.props.onClick()
         expect(navigateTo).toHaveBeenCalledWith('/album/album?photo=photo')
     })
+
+    it('shows uncropped photo thumbnails while keeping the header face portrait', async () => {
+        fetchMock.mockResolvedValue({ success: true, data: { person, faces: [face] }, pagination })
+        const { root } = mount('app/pages/people/[id].vue')
+        await flushComponent()
+        expect(nodes(root).find(el => el.tag === 'h2')?.text).toBe('Photos')
+        const photo = nodes(root).find(el => el.tag === 'img' && el.props.src === '/api/assets/thumb/photo')
+        expect(photo).toBeDefined()
+        expect(photo!.props.class).toContain('object-contain')
+        expect(photo!.props.class).not.toContain('object-cover')
+        expect(photo!.props.class).not.toContain('scale-')
+        expect(photo!.props.loading).toBe('lazy')
+        expect(nodes(root).filter(el => el.tag === 'img' && el.props.src === '/api/v1/faces/face/thumb')).toHaveLength(1)
+    })
+
+    it('keeps the photo visible when the header face thumbnail fails', async () => {
+        fetchMock.mockResolvedValue({ success: true, data: { person, faces: [face] }, pagination })
+        const { root } = mount('app/pages/people/[id].vue')
+        await flushComponent()
+        nodes(root).find(el => el.tag === 'img' && el.props.src === '/api/v1/faces/face/thumb')!.props.onError()
+        await flushComponent()
+        expect(nodes(root).some(el => el.tag === 'img' && el.props.src === '/api/assets/thumb/photo')).toBe(true)
+    })
+
+    it('keeps the header portrait and album link when a photo thumbnail fails', async () => {
+        fetchMock.mockResolvedValue({ success: true, data: { person, faces: [face] }, pagination })
+        const { root } = mount('app/pages/people/[id].vue')
+        await flushComponent()
+        nodes(root).find(el => el.tag === 'img' && el.props.src === '/api/assets/thumb/photo')!.props.onError()
+        await flushComponent()
+        expect(nodes(root).some(el => el.tag === 'img' && el.props.src === '/api/assets/thumb/photo')).toBe(false)
+        expect(nodes(root).some(el => el.tag === 'img' && el.props.src === '/api/v1/faces/face/thumb')).toBe(true)
+        nodes(root).find(el => el.props['aria-label'] === 'Open photo in album')!.props.onClick()
+        expect(navigateTo).toHaveBeenCalledWith('/album/album?photo=photo')
+    })
 })
 
 describe('photo viewer face boxes', () => {
