@@ -4,6 +4,7 @@ import { ModuleKind, transpileModule } from 'typescript'
 import { computed, createRenderer, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import * as vueRuntime from 'vue'
 import { usePaginatedList } from '../../app/composables/usePaginatedList'
+import { useJustifiedLayout } from '../../app/composables/useJustifiedLayout'
 
 // Exercise the real SFC setup and template without adding a browser/DOM dependency.
 export interface TestNode {
@@ -47,7 +48,7 @@ export function mountVueFile(path: string, globals: Record<string, any>, props: 
     const script = compileScript(descriptor, { id: path, inlineTemplate: true })
     const code = transpileModule(script.content, { compilerOptions: { module: ModuleKind.CommonJS } }).outputText
     const imports = {
-        computed, ref, watch, onMounted, onUnmounted, nextTick, usePaginatedList,
+        computed, ref, watch, onMounted, onUnmounted, nextTick, usePaginatedList, useJustifiedLayout,
         definePageMeta: () => {}, ...globals,
     }
     const exports: any = {}
@@ -67,6 +68,7 @@ export function mountVueFile(path: string, globals: Record<string, any>, props: 
     const app = renderer.createApp(component, props)
     for (const name of ['Icon', 'NavBar', 'InfiniteScrollTrigger']) app.component(name, { render: () => h('stub') })
     app.component('PhotoViewer', { render: () => h('photo-viewer') })
+    app.component('PhotoTile', { setup: (_props, { slots }) => () => h('photo-tile', slots.default?.()) })
     app.component('NuxtLink', {
         props: ['to'],
         setup: (props, { slots }) => () => h('a', { href: props.to }, slots.default?.()),

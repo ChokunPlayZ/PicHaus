@@ -8,6 +8,7 @@ vi.mock('../server/utils/people', () => ({ getVisibleAlbumIds: vi.fn(async () =>
 
 const person = { id: 'person', name: 'Alice', representativeFaceId: 'face', createdAt: 1n, updatedAt: 2n }
 const face = { id: 'face', photoId: 'photo', albumId: 'visible-album', x1: 0.1, y1: 0.2, x2: 0.3, y2: 0.4, score: 0.99, createdAt: 3n }
+const album = { id: 'visible-album', name: 'Summer Party', description: 'An afternoon with friends', eventDate: 1785542400n }
 const photo = {
     id: 'photo', filename: 'photo.jpg', originalName: 'Original.jpg', size: 1024, width: 600, height: 400,
     cameraModel: 'Camera', lens: 'Lens', focalLength: '50mm', iso: 100, aperture: '2.8', shutterSpeed: '1/100',
@@ -88,12 +89,13 @@ describe('people pagination', () => {
 
     it('paginates faces independently of the person face count', async () => {
         query = { page: '2', limit: '2' }
-        const rows = result([{ ...face, photo, uploader }])
+        const rows = result([{ ...face, photo, uploader, album }])
         database.select.mockReturnValueOnce(rows).mockReturnValueOnce(result([{ total: 3 }]))
         const response = await detail({})
         expect(response).toMatchObject({
             data: { person: { id: person.id, name: 'Alice', faceCount: 3 }, faces: [{
                 ...face, createdAt: 3,
+                album: { ...album, eventDate: 1785542400 },
                 photo: {
                     ...photo, dateTaken: 4, createdAt: 5, updatedAt: 6,
                     uploader: { name: 'Photographer', instagram: 'photographer', avatar: '/api/assets/avatar/uploader' },
@@ -107,15 +109,18 @@ describe('people pagination', () => {
         expect(rows.leftJoin).toHaveBeenCalledTimes(1)
         expect(Object.keys(database.select.mock.calls[0][0].photo)).not.toContain('storagePath')
         expect(Object.keys(database.select.mock.calls[0][0].uploader)).not.toContain('email')
+        expect(Object.keys(database.select.mock.calls[0][0].album)).toEqual(['id', 'name', 'description', 'eventDate'])
+        expect(database.select).toHaveBeenCalledTimes(2)
         expect(new PgDialect().sqlToQuery(rows.where.mock.calls[0][0]).params).toEqual(['person', 'visible-album'])
         expect(() => JSON.stringify(response)).not.toThrow()
     })
 
     it('returns viewer metadata when the photo has no capture date or uploader', async () => {
-        database.select.mockReturnValueOnce(result([{ ...face, photo: { ...photo, dateTaken: null }, uploader: null }]))
+        database.select.mockReturnValueOnce(result([{ ...face, photo: { ...photo, dateTaken: null }, uploader: null, album: { ...album, eventDate: null, description: null } }]))
             .mockReturnValueOnce(result([{ total: 1 }]))
         const response = await detail({})
         expect(response.data.faces[0].photo).toMatchObject({ dateTaken: null, uploader: null, createdAt: 5, updatedAt: 6 })
+        expect(response.data.faces[0].album).toMatchObject({ name: 'Summer Party', eventDate: null, description: null })
         expect(() => JSON.stringify(response)).not.toThrow()
     })
 

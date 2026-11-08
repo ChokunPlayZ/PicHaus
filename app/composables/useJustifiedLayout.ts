@@ -1,4 +1,5 @@
 import justifiedLayout from 'justified-layout'
+import { computed, onUnmounted, ref, watch, type Ref } from 'vue'
 
 interface PhotoDimensions {
     width?: number | null

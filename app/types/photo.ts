@@ -1,3 +1,10 @@
+export interface PhotoAlbum {
+    id: string
+    name: string
+    description?: string | null
+    eventDate?: number | null
+}
+
 export interface Photo {
     id: string
     filename: string

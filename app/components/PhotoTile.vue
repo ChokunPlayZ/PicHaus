@@ -84,6 +84,8 @@
             <Icon v-if="favorited" name="lucide:heart" class="h-3.5 w-3.5 fill-current" :stroke-width="2" />
             <Icon v-else name="lucide:heart" class="h-3.5 w-3.5" :stroke-width="2" />
         </button>
+
+        <slot />
     </div>
 </template>
 

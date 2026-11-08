@@ -281,9 +281,16 @@
                     </div>
 
                     <NuxtLink v-if="albumId" :to="`/album/${albumId}?photo=${photo.id}`"
-                        class="mb-6 flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/15">
-                        <Icon name="lucide:external-link" class="h-4 w-4" />
-                        Go to original album
+                        class="mb-6 block rounded-xl bg-white/10 px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/15">
+                        <span class="flex items-center gap-2">
+                            <Icon name="lucide:external-link" class="h-4 w-4 shrink-0" />
+                            Go to original album
+                        </span>
+                        <template v-if="originalAlbum">
+                            <span class="mt-2 block font-semibold text-white break-words">{{ originalAlbum.name }}</span>
+                            <span v-if="originalAlbum.eventDate != null" class="mt-1 block text-xs text-white/50">{{ formatAlbumDate(originalAlbum.eventDate) }}</span>
+                            <span v-if="originalAlbum.description" class="mt-1 block text-xs text-white/60 line-clamp-3">{{ originalAlbum.description }}</span>
+                        </template>
                     </NuxtLink>
 
                     <div v-if="canUseFaceOverlays" class="mb-6">
@@ -391,11 +398,12 @@ const viewerLoadedImageKeys = new Set<string>()
 import { buildAssetUrl, getAuthToken } from '~/utils/auth-client'
 import { t, initLanguage } from '~/utils/i18n'
 import type { FaceOverlay, PhotoFacesResponse } from '~/types/people'
-import type { Photo } from '~/types/photo'
+import type { Photo, PhotoAlbum } from '~/types/photo'
 
 const props = withDefaults(defineProps<{
     photo: Photo
     albumId?: string | null
+    album?: PhotoAlbum | null
     hasPrevious: boolean
     hasNext: boolean
     previousPhotoId?: string | null
@@ -412,6 +420,7 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits(['close', 'previous', 'next', 'toggleFavorite'])
+const originalAlbum = computed(() => props.album?.id === props.albumId ? props.album : null)
 
 onMounted(() => {
     initLanguage()
@@ -1042,6 +1051,9 @@ const handleInfoTouchEnd = () => {
     swipeOffset.value = 0
     isSwiping.value = false
 }
+
+const formatAlbumDate = (timestamp: number) =>
+    new Date(timestamp * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 
 const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString('en-US', {

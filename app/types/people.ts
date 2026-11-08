@@ -1,4 +1,4 @@
-import type { Photo } from './photo'
+import type { Photo, PhotoAlbum } from './photo'
 
 export interface Pagination {
     page: number
@@ -28,6 +28,7 @@ export interface FaceOverlay {
 export interface PersonFace extends FaceOverlay {
     photoId: string
     albumId: string | null
+    album?: PhotoAlbum | null
     photo: Photo
 }
 

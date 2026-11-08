@@ -64,31 +64,32 @@
                     style="background: var(--surface-1); border: 1px solid var(--separator);">
                     <p class="text-sm" style="color: var(--text-2);">No photos found for this person.</p>
                 </div>
-                <div v-else class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-                    <button v-for="(face, index) in faces" :key="face.id"
-                        class="aspect-square rounded-lg overflow-hidden relative group cursor-pointer"
-                        style="background: var(--surface-3);"
+                <div v-else-if="picturesLayout" ref="containerRef" class="relative w-full"
+                    :style="{ height: `${picturesLayout.containerHeight}px` }">
+                    <PhotoTile v-for="(face, index) in faces" :key="face.id"
+                        :photo="face.photo" :position="picturesLayout.getPosition(index)"
+                        role="button" tabindex="0"
                         aria-label="Open photo"
-                        @click="openPhotoViewer(index)">
-                        <img v-if="!failedPhotoThumbs.has(face.photoId)" :src="photoThumb(face.photoId)" :alt="`Photo of ${displayName}`"
-                            loading="lazy" decoding="async"
-                            class="absolute inset-0 w-full h-full object-contain"
-                            @error="failedPhotoThumbs.add(face.photoId)" />
-                        <div v-else class="absolute inset-0 flex items-center justify-center">
-                            <Icon name="lucide:image" class="w-6 h-6" style="color: var(--text-3);" :stroke-width="1.5" />
-                        </div>
-                        <div
-                            class="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300 flex items-end justify-end">
-                            <Icon name="lucide:expand" class="w-4 h-4 m-2 text-white opacity-0 group-hover:opacity-100 transition"
-                                :stroke-width="2" />
-                        </div>
-                    </button>
+                        @click="openPhotoViewer(index)"
+                        @keydown.enter="openPhotoViewer(index)"
+                        @keydown.space.prevent="openPhotoViewer(index)">
+                        <NuxtLink v-if="face.albumId" :to="`/album/${face.albumId}?photo=${face.photo.id}`"
+                            :title="face.album?.name ? `Go to original album: ${face.album.name}` : 'Go to original album'"
+                            class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-2 pt-6 text-white md:opacity-0 md:group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                            @click.stop @keydown.stop @contextmenu.stop>
+                            <span v-if="face.album?.name" class="block truncate text-xs font-medium">{{ face.album.name }}</span>
+                            <span class="flex items-center gap-1 text-[10px] text-white/80">
+                                Go to original album
+                                <Icon name="lucide:external-link" class="h-3 w-3 shrink-0" />
+                            </span>
+                        </NuxtLink>
+                    </PhotoTile>
                 </div>
                 <InfiniteScrollTrigger :loading="loading" :has-more="hasMore" :error="fetchError" @load="loadMore" />
             </template>
         </div>
 
-        <PhotoViewer v-if="selectedFace" :photo="selectedFace.photo" :album-id="selectedFace.albumId"
+        <PhotoViewer v-if="selectedFace" :photo="selectedFace.photo" :album-id="selectedFace.albumId" :album="selectedFace.album"
             :has-previous="selectedPhotoIndex! > 0" :has-next="selectedPhotoIndex! < faces.length - 1 || hasMore"
             :previous-photo-id="previousPhoto?.id" :next-photo-id="nextPhoto?.id"
             :previous-photo-timestamp="previousPhoto?.updatedAt || previousPhoto?.createdAt"
@@ -179,7 +180,8 @@ const { items: faces, loading, error: fetchError, total, hasMore, refresh: loadP
     'Failed to load person',
 )
 const failedThumbs = ref(new Set<string>())
-const failedPhotoThumbs = ref(new Set<string>())
+const photos = computed(() => faces.value.map(face => face.photo))
+const { containerRef, picturesLayout } = useJustifiedLayout(photos)
 const selectedPhotoIndex = ref<number | null>(null)
 const pendingNextPhotoIndex = ref<number | null>(null)
 const selectedFace = computed(() => selectedPhotoIndex.value === null ? null : faces.value[selectedPhotoIndex.value])
@@ -208,7 +210,6 @@ const headerFaceId = computed(() => person.value?.representativeFaceId || faces.
 const isAdmin = computed(() => currentUser.value?.role === 'ADMIN')
 
 const faceThumb = (id: string | null) => (id ? buildAssetUrl(`/api/v1/faces/${id}/thumb`) : '')
-const photoThumb = (id: string) => buildAssetUrl(`/api/assets/thumb/${id}`)
 const displayNameOf = (target: PersonSummary) => target.name?.trim() || 'Unnamed person'
 const countLabelOf = (target: PersonSummary) =>
     `${target.faceCount} ${target.faceCount === 1 ? 'face' : 'faces'}`

@@ -24,6 +24,12 @@ export default defineEventHandler(async (event) => {
             id: faces.id,
             photoId: faces.photoId,
             albumId: albums.id,
+            album: {
+                id: albums.id,
+                name: albums.title,
+                description: albums.description,
+                eventDate: albums.eventDate,
+            },
             x1: faces.x1,
             y1: faces.y1,
             x2: faces.x2,
@@ -89,10 +95,14 @@ export default defineEventHandler(async (event) => {
                 createdAt: Number(person.createdAt),
                 updatedAt: Number(person.updatedAt),
             },
-            faces: faceRows.map(({ photo, uploader, ...face }) => ({
+            faces: faceRows.map(({ photo, uploader, album, ...face }) => ({
                 ...face,
                 score: face.score === null ? null : face.score,
                 createdAt: Number(face.createdAt),
+                album: album ? {
+                    ...album,
+                    eventDate: album.eventDate === null ? null : Number(album.eventDate),
+                } : null,
                 photo: {
                     ...photo,
                     dateTaken: photo.dateTaken === null ? null : Number(photo.dateTaken),

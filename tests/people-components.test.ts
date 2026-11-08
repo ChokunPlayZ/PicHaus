@@ -3,8 +3,9 @@ import { ref } from 'vue'
 import { flushComponent, mountVueFile, nodes, text } from './helpers/vue-component'
 
 const person = { id: 'person', name: 'Alice', faceCount: 75, representativeFaceId: 'face' }
-const photo = { id: 'photo', filename: 'photo.jpg', originalName: 'photo.jpg', size: 100, createdAt: 1, updatedAt: 2, uploader: null }
-const face = { id: 'face', personId: 'person', personName: 'Alice', photoId: 'photo', albumId: 'album', photo, x1: 0.1, y1: 0.2, x2: 0.3, y2: 0.4 }
+const photo = { id: 'photo', filename: 'photo.jpg', originalName: 'photo.jpg', size: 100, width: 1200, height: 800, createdAt: 1, updatedAt: 2, uploader: null }
+const album = { id: 'album', name: 'Summer Party', description: 'An afternoon with friends', eventDate: 1785542400 }
+const face = { id: 'face', personId: 'person', personName: 'Alice', photoId: 'photo', albumId: 'album', album, photo, x1: 0.1, y1: 0.2, x2: 0.3, y2: 0.4 }
 const pagination = { page: 1, limit: 50, total: 75, hasMore: true }
 const mounted: ReturnType<typeof mountVueFile>[] = []
 let fetchMock: ReturnType<typeof vi.fn>
@@ -57,20 +58,25 @@ describe('People page API rendering', () => {
         faceButton!.props.onClick()
         await flushComponent()
         expect(navigateTo).not.toHaveBeenCalled()
-        expect(nodes(root).find(el => el.tag === 'photo-viewer')?.props).toMatchObject({ photo, 'album-id': 'album' })
+        expect(nodes(root).find(el => el.tag === 'photo-viewer')?.props).toMatchObject({ photo, 'album-id': 'album', album })
     })
 
-    it('shows uncropped photo thumbnails while keeping the header face portrait', async () => {
-        fetchMock.mockResolvedValue({ success: true, data: { person, faces: [face] }, pagination })
+    it('uses shared photo tiles in an aspect-ratio-aware grid while keeping the header face portrait', async () => {
+        const portrait = { ...photo, id: 'portrait', width: 800, height: 1200 }
+        fetchMock.mockResolvedValue({ success: true, data: { person, faces: [face, { ...face, id: 'portrait-face', photoId: portrait.id, photo: portrait }] }, pagination })
         const { root } = mount('app/pages/people/[id].vue')
         await flushComponent()
         expect(nodes(root).find(el => el.tag === 'h2')?.text).toBe('Photos')
-        const photo = nodes(root).find(el => el.tag === 'img' && el.props.src === '/api/assets/thumb/photo')
-        expect(photo).toBeDefined()
-        expect(photo!.props.class).toContain('object-contain')
-        expect(photo!.props.class).not.toContain('object-cover')
-        expect(photo!.props.class).not.toContain('scale-')
-        expect(photo!.props.loading).toBe('lazy')
+        const tiles = nodes(root).filter(el => el.tag === 'photo-tile')
+        expect(tiles).toHaveLength(2)
+        expect(tiles.map(tile => tile.props.photo)).toEqual([photo, portrait])
+        for (const tile of tiles) {
+            const { position, photo } = tile.props
+            expect(position.width).toBeGreaterThan(0)
+            expect(position.height).toBeGreaterThan(0)
+            expect(position.width / position.height).toBeCloseTo(photo.width / photo.height)
+            expect(parseFloat(tile.parent!.props.style.height)).toBeGreaterThanOrEqual(position.top + position.height)
+        }
         expect(nodes(root).filter(el => el.tag === 'img' && el.props.src === '/api/v1/faces/face/thumb')).toHaveLength(1)
     })
 
@@ -80,18 +86,31 @@ describe('People page API rendering', () => {
         await flushComponent()
         nodes(root).find(el => el.tag === 'img' && el.props.src === '/api/v1/faces/face/thumb')!.props.onError()
         await flushComponent()
-        expect(nodes(root).some(el => el.tag === 'img' && el.props.src === '/api/assets/thumb/photo')).toBe(true)
+        expect(nodes(root).find(el => el.tag === 'photo-tile')?.props.photo).toEqual(photo)
     })
 
-    it('keeps the header portrait and opens the viewer when a photo thumbnail fails', async () => {
+    it('shows the original album name and links directly to the photo without opening the viewer', async () => {
         fetchMock.mockResolvedValue({ success: true, data: { person, faces: [face] }, pagination })
         const { root } = mount('app/pages/people/[id].vue')
         await flushComponent()
-        nodes(root).find(el => el.tag === 'img' && el.props.src === '/api/assets/thumb/photo')!.props.onError()
+        const link = nodes(root).find(el => el.props.href === '/album/album?photo=photo')!
+        expect(text(link)).toContain('Summer Party')
+        expect(text(link)).toContain('Go to original album')
+        expect(link.props.title).toBe('Go to original album: Summer Party')
+        const stopPropagation = vi.fn()
+        link.props.onClick({ stopPropagation })
+        link.props.onKeydown({ key: 'Enter', stopPropagation })
+        expect(stopPropagation).toHaveBeenCalledTimes(2)
+        expect(nodes(root).some(el => el.tag === 'photo-viewer')).toBe(false)
+    })
+
+    it.each(['Enter', ' '])('opens shared photo tiles with the keyboard (%s)', async (key) => {
+        fetchMock.mockResolvedValue({ success: true, data: { person, faces: [face] }, pagination })
+        const { root } = mount('app/pages/people/[id].vue')
         await flushComponent()
-        expect(nodes(root).some(el => el.tag === 'img' && el.props.src === '/api/assets/thumb/photo')).toBe(false)
-        expect(nodes(root).some(el => el.tag === 'img' && el.props.src === '/api/v1/faces/face/thumb')).toBe(true)
-        nodes(root).find(el => el.props['aria-label'] === 'Open photo')!.props.onClick()
+        const tile = nodes(root).find(el => el.tag === 'photo-tile')!
+        expect(tile.props).toMatchObject({ role: 'button', tabindex: '0', 'aria-label': 'Open photo' })
+        tile.props.onKeydown.forEach((handler: (event: any) => void) => handler({ key, preventDefault: vi.fn() }))
         await flushComponent()
         expect(nodes(root).find(el => el.tag === 'photo-viewer')?.props.photo).toEqual(photo)
         expect(navigateTo).not.toHaveBeenCalled()
@@ -100,6 +119,7 @@ describe('People page API rendering', () => {
     it('navigates in page order across albums and closes back to the grid', async () => {
         const faces = [face, {
             ...face, id: 'face-2', photoId: 'photo-2', albumId: 'another-album',
+            album: { ...album, id: 'another-album', name: 'Winter Party' },
             photo: { ...photo, id: 'photo-2', updatedAt: 3 },
         }, {
             ...face, id: 'face-3', photoId: 'photo-3', photo: { ...photo, id: 'photo-3', updatedAt: 4 },
@@ -111,12 +131,12 @@ describe('People page API rendering', () => {
         nodes(root).filter(el => el.props['aria-label'] === 'Open photo')[1]!.props.onClick()
         await flushComponent()
         expect(viewer().props).toMatchObject({
-            photo: faces[1]!.photo, 'album-id': 'another-album', 'has-previous': true, 'has-next': true,
+            photo: faces[1]!.photo, 'album-id': 'another-album', album: faces[1]!.album, 'has-previous': true, 'has-next': true,
             'previous-photo-id': 'photo', 'next-photo-id': 'photo-3', 'previous-photo-timestamp': 2, 'next-photo-timestamp': 4,
         })
         viewer().props.onNext()
         await flushComponent()
-        expect(viewer().props).toMatchObject({ photo: faces[2]!.photo, 'album-id': 'album', 'has-next': false })
+        expect(viewer().props).toMatchObject({ photo: faces[2]!.photo, 'album-id': 'album', album, 'has-next': false })
         viewer().props.onNext()
         await flushComponent()
         expect(viewer().props.photo.id).toBe('photo-3')
@@ -139,6 +159,7 @@ describe('People page API rendering', () => {
         fetchMock.mockResolvedValue({ success: true, data: { person, faces: [{ ...face, albumId: null }] }, pagination })
         const { root } = mount('app/pages/people/[id].vue')
         await flushComponent()
+        expect(text(root)).not.toContain('Go to original album')
         nodes(root).find(el => el.props['aria-label'] === 'Open photo')!.props.onClick()
         await flushComponent()
         expect(nodes(root).find(el => el.tag === 'photo-viewer')?.props).toMatchObject({ photo, 'album-id': null })
@@ -210,23 +231,45 @@ describe('People page API rendering', () => {
 describe('photo viewer original album link', () => {
     it('links to the current photo in its original album from the info panel', async () => {
         fetchMock.mockResolvedValue({ success: true, data: [] })
-        const component = mount('app/components/PhotoViewer.vue', { photo, albumId: 'album', hasPrevious: false, hasNext: false })
+        const component = mount('app/components/PhotoViewer.vue', { photo, albumId: 'album', album, hasPrevious: false, hasNext: false })
         await flushComponent()
         nodes(component.root).find(el => el.props['aria-label'] === 'Photo information')!.props.onClick()
         await flushComponent()
         expect(nodes(component.root).find(el => el.props.href === '/album/album?photo=photo')).toBeDefined()
         expect(text(component.root)).toContain('Go to original album')
+        expect(text(component.root)).toContain('Summer Party')
+        expect(text(component.root)).toContain('An afternoon with friends')
+        expect(text(component.root)).toContain(new Date(album.eventDate * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }))
         component.app._instance!.props.photo = { ...photo, id: 'photo-2' }
         component.app._instance!.props.albumId = 'another-album'
         await flushComponent()
         expect(nodes(component.root).find(el => el.props.href === '/album/another-album?photo=photo-2')).toBeDefined()
         expect(nodes(component.root).some(el => el.props.href === '/album/album?photo=photo')).toBe(false)
+        expect(text(component.root)).not.toContain('Summer Party')
+        component.app._instance!.props.album = { id: 'another-album', name: 'Winter Party', description: null, eventDate: null }
+        await flushComponent()
+        expect(text(component.root)).toContain('Winter Party')
+        expect(text(component.root)).not.toContain('An afternoon with friends')
+        expect(text(component.root)).not.toContain('Invalid Date')
+    })
+
+    it('keeps the original album link when album details are unavailable', async () => {
+        fetchMock.mockResolvedValue({ success: true, data: [] })
+        const { root } = mount('app/components/PhotoViewer.vue', { photo, albumId: 'album', hasPrevious: false, hasNext: false })
+        await flushComponent()
+        nodes(root).find(el => el.props['aria-label'] === 'Photo information')!.props.onClick()
+        await flushComponent()
+        expect(nodes(root).some(el => el.props.href === '/album/album?photo=photo')).toBe(true)
+        expect(text(root)).toContain('Go to original album')
     })
 
     it('does not add album links to viewers without an album ID', async () => {
-        const { root } = mount('app/components/PhotoViewer.vue', { photo, hasPrevious: false, hasNext: false }, null)
+        const { root } = mount('app/components/PhotoViewer.vue', { photo, album, hasPrevious: false, hasNext: false }, null)
+        await flushComponent()
+        nodes(root).find(el => el.props['aria-label'] === 'Photo information')!.props.onClick()
         await flushComponent()
         expect(text(root)).not.toContain('Go to original album')
+        expect(text(root)).not.toContain('Summer Party')
     })
 })
 
