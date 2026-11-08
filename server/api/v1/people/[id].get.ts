@@ -1,5 +1,5 @@
 import { eq, and, count, desc, inArray } from 'drizzle-orm'
-import { people, faces, photos, albums } from '../../../db/schema'
+import { people, faces, photos, albums, users } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
 import { getVisibleAlbumIds } from '../../../utils/people'
 import { parsePagination } from '../../../utils/pagination'
@@ -30,10 +30,35 @@ export default defineEventHandler(async (event) => {
             y2: faces.y2,
             score: faces.score,
             createdAt: faces.createdAt,
+            photo: {
+                id: photos.id,
+                filename: photos.filename,
+                originalName: photos.originalName,
+                size: photos.size,
+                width: photos.width,
+                height: photos.height,
+                blurhash: photos.blurhash,
+                cameraModel: photos.cameraModel,
+                lens: photos.lens,
+                focalLength: photos.focalLength,
+                iso: photos.iso,
+                aperture: photos.aperture,
+                shutterSpeed: photos.shutterSpeed,
+                dateTaken: photos.dateTaken,
+                createdAt: photos.createdAt,
+                updatedAt: photos.updatedAt,
+            },
+            uploader: {
+                id: users.id,
+                name: users.name,
+                instagram: users.instagram,
+                avatarPath: users.avatarPath,
+            },
         })
             .from(faces)
             .innerJoin(photos, eq(faces.photoId, photos.id))
             .innerJoin(albums, eq(photos.albumId, albums.id))
+            .leftJoin(users, eq(photos.uploaderId, users.id))
             .where(where)
             .orderBy(desc(faces.createdAt), faces.id)
             .limit(limit)
@@ -64,10 +89,21 @@ export default defineEventHandler(async (event) => {
                 createdAt: Number(person.createdAt),
                 updatedAt: Number(person.updatedAt),
             },
-            faces: faceRows.map(face => ({
+            faces: faceRows.map(({ photo, uploader, ...face }) => ({
                 ...face,
                 score: face.score === null ? null : face.score,
                 createdAt: Number(face.createdAt),
+                photo: {
+                    ...photo,
+                    dateTaken: photo.dateTaken === null ? null : Number(photo.dateTaken),
+                    createdAt: Number(photo.createdAt),
+                    updatedAt: Number(photo.updatedAt),
+                    uploader: uploader ? {
+                        name: uploader.name,
+                        instagram: uploader.instagram,
+                        avatar: uploader.avatarPath ? `/api/assets/avatar/${uploader.id}` : null,
+                    } : null,
+                },
             })),
         },
         pagination: { page, limit, total, hasMore: offset + faceRows.length < total },

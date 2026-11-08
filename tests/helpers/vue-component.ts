@@ -66,6 +66,11 @@ export function mountVueFile(path: string, globals: Record<string, any>, props: 
     )
     const app = renderer.createApp(component, props)
     for (const name of ['Icon', 'NavBar', 'InfiniteScrollTrigger']) app.component(name, { render: () => h('stub') })
+    app.component('PhotoViewer', { render: () => h('photo-viewer') })
+    app.component('NuxtLink', {
+        props: ['to'],
+        setup: (props, { slots }) => () => h('a', { href: props.to }, slots.default?.()),
+    })
     const root = node('root')
     app.mount(root)
     return { root, app }

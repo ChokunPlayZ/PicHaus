@@ -280,6 +280,12 @@
                         </div>
                     </div>
 
+                    <NuxtLink v-if="albumId" :to="`/album/${albumId}?photo=${photo.id}`"
+                        class="mb-6 flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/15">
+                        <Icon name="lucide:external-link" class="h-4 w-4" />
+                        Go to original album
+                    </NuxtLink>
+
                     <div v-if="canUseFaceOverlays" class="mb-6">
                         <button @click="showFaces = !showFaces" :aria-pressed="showFaces"
                             class="flex w-full items-center justify-between gap-3 rounded-xl bg-white/10 px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/15">
@@ -385,34 +391,11 @@ const viewerLoadedImageKeys = new Set<string>()
 import { buildAssetUrl, getAuthToken } from '~/utils/auth-client'
 import { t, initLanguage } from '~/utils/i18n'
 import type { FaceOverlay, PhotoFacesResponse } from '~/types/people'
-
-interface Photo {
-    id: string
-
-    filename: string
-    originalName: string
-    size: number
-    createdAt: number
-    uploader: {
-        name: string | null
-        instagram?: string | null
-        avatar?: string | null
-    } | null
-    cameraModel?: string | null
-    lens?: string | null
-    focalLength?: string | null
-    aperture?: string | null
-    shutterSpeed?: string | null
-    iso?: number | null
-    dateTaken?: number | null
-    blurhash?: string | null
-    width?: number | null
-    height?: number | null
-    updatedAt?: number | null
-}
+import type { Photo } from '~/types/photo'
 
 const props = withDefaults(defineProps<{
     photo: Photo
+    albumId?: string | null
     hasPrevious: boolean
     hasNext: boolean
     previousPhotoId?: string | null

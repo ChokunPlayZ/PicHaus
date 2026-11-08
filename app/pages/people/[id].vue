@@ -65,11 +65,11 @@
                     <p class="text-sm" style="color: var(--text-2);">No photos found for this person.</p>
                 </div>
                 <div v-else class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-                    <button v-for="face in faces" :key="face.id"
+                    <button v-for="(face, index) in faces" :key="face.id"
                         class="aspect-square rounded-lg overflow-hidden relative group cursor-pointer"
-                        :style="face.albumId ? 'background: var(--surface-3);' : 'cursor: default;'"
-                        :aria-label="face.albumId ? `Open photo in album` : 'Photo thumbnail'"
-                        @click="openFacePhoto(face)">
+                        style="background: var(--surface-3);"
+                        aria-label="Open photo"
+                        @click="openPhotoViewer(index)">
                         <img v-if="!failedPhotoThumbs.has(face.photoId)" :src="photoThumb(face.photoId)" :alt="`Photo of ${displayName}`"
                             loading="lazy" decoding="async"
                             class="absolute inset-0 w-full h-full object-contain"
@@ -77,9 +77,9 @@
                         <div v-else class="absolute inset-0 flex items-center justify-center">
                             <Icon name="lucide:image" class="w-6 h-6" style="color: var(--text-3);" :stroke-width="1.5" />
                         </div>
-                        <div v-if="face.albumId"
+                        <div
                             class="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300 flex items-end justify-end">
-                            <Icon name="lucide:external-link" class="w-4 h-4 m-2 text-white opacity-0 group-hover:opacity-100 transition"
+                            <Icon name="lucide:expand" class="w-4 h-4 m-2 text-white opacity-0 group-hover:opacity-100 transition"
                                 :stroke-width="2" />
                         </div>
                     </button>
@@ -87,6 +87,13 @@
                 <InfiniteScrollTrigger :loading="loading" :has-more="hasMore" :error="fetchError" @load="loadMore" />
             </template>
         </div>
+
+        <PhotoViewer v-if="selectedFace" :photo="selectedFace.photo" :album-id="selectedFace.albumId"
+            :has-previous="selectedPhotoIndex! > 0" :has-next="selectedPhotoIndex! < faces.length - 1 || hasMore"
+            :previous-photo-id="previousPhoto?.id" :next-photo-id="nextPhoto?.id"
+            :previous-photo-timestamp="previousPhoto?.updatedAt || previousPhoto?.createdAt"
+            :next-photo-timestamp="nextPhoto?.updatedAt || nextPhoto?.createdAt"
+            @close="closePhotoViewer" @previous="showPreviousPhoto" @next="showNextPhoto" />
 
         <!-- Merge into another person (admin) -->
         <div v-if="showMergeModal"
@@ -173,6 +180,11 @@ const { items: faces, loading, error: fetchError, total, hasMore, refresh: loadP
 )
 const failedThumbs = ref(new Set<string>())
 const failedPhotoThumbs = ref(new Set<string>())
+const selectedPhotoIndex = ref<number | null>(null)
+const pendingNextPhotoIndex = ref<number | null>(null)
+const selectedFace = computed(() => selectedPhotoIndex.value === null ? null : faces.value[selectedPhotoIndex.value])
+const previousPhoto = computed(() => selectedPhotoIndex.value === null ? null : faces.value[selectedPhotoIndex.value - 1]?.photo)
+const nextPhoto = computed(() => selectedPhotoIndex.value === null ? null : faces.value[selectedPhotoIndex.value + 1]?.photo)
 const editing = ref(false)
 const renameDraft = ref('')
 const showMergeModal = ref(false)
@@ -232,10 +244,42 @@ async function saveRename() {
     }
 }
 
-function openFacePhoto(face: Face) {
-    if (!face.albumId) return
-    navigateTo(`/album/${face.albumId}?photo=${face.photoId}`)
+function openPhotoViewer(index: number) {
+    pendingNextPhotoIndex.value = null
+    selectedPhotoIndex.value = index
 }
+
+function closePhotoViewer() {
+    pendingNextPhotoIndex.value = null
+    selectedPhotoIndex.value = null
+}
+
+function showPreviousPhoto() {
+    pendingNextPhotoIndex.value = null
+    if (selectedPhotoIndex.value !== null && selectedPhotoIndex.value > 0) selectedPhotoIndex.value--
+}
+
+function showNextPhoto() {
+    const index = selectedPhotoIndex.value
+    if (index === null) return
+    if (index < faces.value.length - 1) {
+        pendingNextPhotoIndex.value = null
+        selectedPhotoIndex.value = index + 1
+    } else if (hasMore.value) {
+        pendingNextPhotoIndex.value = index
+        if (!loading.value) loadMore()
+    }
+}
+
+// A next-photo request also waits for any page already loading behind the viewer.
+watch([loading, () => faces.value.length], () => {
+    const index = pendingNextPhotoIndex.value
+    if (index === null || loading.value) return
+    pendingNextPhotoIndex.value = null
+    if (selectedPhotoIndex.value !== index) return
+    if (index < faces.value.length - 1) selectedPhotoIndex.value = index + 1
+    else if (fetchError.value) toast(fetchError.value, 'error')
+})
 
 const filteredMergePeople = computed(() => mergePeople.value.filter(p => p.id !== personId))
 

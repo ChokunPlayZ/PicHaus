@@ -1,3 +1,5 @@
+import type { Photo } from './photo'
+
 export interface Pagination {
     page: number
     limit: number
@@ -26,6 +28,7 @@ export interface FaceOverlay {
 export interface PersonFace extends FaceOverlay {
     photoId: string
     albumId: string | null
+    photo: Photo
 }
 
 export interface PeopleResponse {
