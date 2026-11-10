@@ -118,79 +118,8 @@
                 </div>
             </div>
 
-            <!-- Upload Section -->
-            <div v-if="album.permissions.canUpload" class="mb-8">
-                <input type="file" ref="fileInput" multiple accept="image/*" class="hidden"
-                    @change="handleFileSelect" />
-
-                <!-- Upload Progress Modal/Panel -->
-                <div v-if="showUploadModal"
-                    class="mt-4 rounded-xl overflow-hidden"
-                    style="background: var(--surface-1); border: 1px solid var(--separator); box-shadow: var(--shadow-sm);">
-                    <div class="p-4 flex justify-between items-center" style="border-bottom: 1px solid var(--separator);">
-                        <h3 class="text-sm font-semibold" style="color: var(--text-1);">Upload Queue</h3>
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg" style="background: var(--surface-2); color: var(--text-2);">
-                                <span>Concurrent:</span>
-                                <input type="number" v-model.number="maxConcurrency" min="1" max="5"
-                                    class="w-7 bg-transparent text-center focus:outline-none" style="color: var(--text-1);" />
-                            </div>
-                            <button v-if="uploadQueue.some(i => i.status === 'failed')" @click="retryFailed"
-                                class="text-xs px-2 py-1 rounded-lg transition"
-                                style="background: var(--error-bg); color: var(--error-text);">Retry Failed</button>
-                            <button @click="clearCompleted"
-                                class="text-xs px-2 py-1 rounded-lg transition"
-                                style="background: var(--surface-3); color: var(--text-2);">Clear Done</button>
-                            <button @click="showUploadModal = false" style="color: var(--text-3);"
-                                @mouseover="($event.currentTarget as HTMLElement).style.color = 'var(--text-1)'"
-                                @mouseout="($event.currentTarget as HTMLElement).style.color = 'var(--text-3)'">
-                                <Icon name="lucide:x" class="h-5 w-5" :stroke-width="2" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Overall Progress Bar -->
-                    <div class="px-4 py-3" style="border-bottom: 1px solid var(--separator);">
-                        <div class="flex items-center justify-between text-xs mb-2">
-                            <span style="color: var(--text-2);">Overall Progress</span>
-                            <span class="font-medium" style="color: var(--text-1);">{{ uploadProgress.completed }}/{{ uploadProgress.total }} ({{ uploadProgress.percentage }}%)</span>
-                        </div>
-                        <div class="w-full h-1.5 rounded-full overflow-hidden" style="background: var(--surface-3);">
-                            <div class="h-full rounded-full transition-all duration-300 ease-out"
-                                style="background: var(--accent);"
-                                :style="{ width: `${uploadProgress.percentage}%` }"></div>
-                        </div>
-                    </div>
-
-                    <div class="max-h-60 overflow-y-auto p-2 space-y-1">
-                        <div v-for="item in uploadQueue" :key="item.id"
-                            class="flex items-center gap-3 p-2 rounded-lg"
-                            style="background: var(--surface-2);">
-                            <div class="shrink-0 w-5 flex justify-center text-sm">
-                                <span v-if="item.status === 'hashing' || item.status === 'checking' || item.status === 'uploading'"
-                                    class="w-4 h-4 rounded-full border-2 animate-spin block"
-                                    style="border-color: var(--separator); border-top-color: var(--accent);"></span>
-                                <span v-else-if="item.status === 'completed'" style="color: var(--success);">✓</span>
-                                <span v-else-if="item.status === 'skipped'" style="color: var(--warning);">↷</span>
-                                <span v-else-if="item.status === 'failed'" style="color: var(--error);">✕</span>
-                                <span v-else style="color: var(--text-3);">•</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-sm truncate" style="color: var(--text-1);">{{ item.file.name }}</div>
-                                <div class="text-xs flex items-center gap-2" style="color: var(--text-3);">
-                                    <span class="capitalize">{{ item.status }}</span>
-                                    <span v-if="item.error" style="color: var(--error-text);">{{ item.error }}</span>
-                                    <span v-if="item.status === 'uploading'" style="color: var(--accent);">{{ item.progress }}%</span>
-                                </div>
-                                <div v-if="item.status === 'uploading'" class="mt-1 h-1 rounded-full overflow-hidden" style="background: var(--surface-3);">
-                                    <div class="h-full rounded-full transition-all duration-300" style="background: var(--accent);"
-                                        :style="{ width: `${item.progress}%` }"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <input v-if="album.permissions.canUpload" type="file" ref="fileInput" multiple accept="image/*" class="hidden"
+                @change="handleFileSelect" />
 
             <!-- Filters Section -->
             <div class="mb-6 rounded-xl p-3" style="background: var(--surface-1); border: 1px solid var(--separator);">
@@ -1558,7 +1487,6 @@ const downloadBlob = (blob: Blob, filename: string) => {
     setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 const { confirm: dialogConfirm, toast } = useDialog()
-import { calculateSHA256 } from '~/utils/hash'
 
 interface User {
     id: string
@@ -1595,14 +1523,6 @@ interface Photo {
     aperture?: string | null
     shutterSpeed?: string | null
     iso?: number | null
-}
-
-interface UploadItem {
-    id: string
-    file: File
-    status: 'hashing' | 'checking' | 'pending' | 'uploading' | 'completed' | 'failed' | 'skipped'
-    error?: string
-    progress?: number
 }
 
 interface Collaborator {
@@ -2086,38 +2006,10 @@ watch(showCropModal, (val) => {
 
 const copied = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
-const uploading = ref(false)
-const uploadQueue = ref<UploadItem[]>([])
-const isProcessingQueue = ref(false)
-const showUploadModal = ref(false)
+const { queue: uploadQueue, addFiles, completedVersions } = useUploadQueue()
+const uploading = computed(() => uploadQueue.value.some(item => item.albumId === albumId && !['completed', 'failed', 'skipped'].includes(item.status)))
 const isDragging = ref(false)
 let dragEnterCounter = 0
-
-const VIDEO_FILE_RE = /\.(mp4|m4v|mov|webm|avi|mkv|wmv|flv|mpeg|mpg|3gp|3g2)$/i
-const IMAGE_FILE_RE = /\.(heic|heif|raw|arw|cr2|nef|orf|rw2|dng)$/i
-
-const isVideoFile = (file: File) => file.type.startsWith('video/') || VIDEO_FILE_RE.test(file.name)
-const isAcceptedImageFile = (file: File) => !isVideoFile(file) && (file.type.startsWith('image/') || IMAGE_FILE_RE.test(file.name))
-
-const uploadProgress = computed(() => {
-    const total = uploadQueue.value.length
-    if (total === 0) return { completed: 0, total: 0, percentage: 0 }
-
-    // Calculate effective progress based on bytes/percentage of each file
-    const totalProgress = uploadQueue.value.reduce((sum, item) => {
-        // Checking/Hashing counts as 0% for file progress, finished is 100%
-        // We use the item.progress (0-100)
-        return sum + (item.progress || 0)
-    }, 0)
-
-    const completed = uploadQueue.value.filter(i => i.status === 'completed' || i.status === 'skipped' || i.status === 'failed').length
-
-    return {
-        completed,
-        total,
-        percentage: Math.round(totalProgress / total)
-    }
-})
 
 const downloading = ref(false)
 const downloadProgress = ref({ current: 0, total: 0 })
@@ -2559,10 +2451,6 @@ onUnmounted(() => {
     window.removeEventListener('keydown', handleKeydown)
     resetTheme()
     applyAccent(siteSettings.value.accentColor)
-    if (processingPollTimer) {
-        clearInterval(processingPollTimer)
-        processingPollTimer = null
-    }
 })
 
 // Check authentication (don't redirect if failed, just set user to null)
@@ -2575,26 +2463,10 @@ const checkAuth = async () => {
     }
 }
 
-// Processing status polling
-let processingPollTimer: ReturnType<typeof setInterval> | null = null
-const hasActiveProcessing = computed(() =>
-    photos.value.some(p => p.processingStatus === 'pending' || p.processingStatus === 'processing')
-)
-
-function syncProcessingPoll() {
-    if (hasActiveProcessing.value && !processingPollTimer) {
-        processingPollTimer = setInterval(() => { fetchAlbum(true) }, 5000)
-    } else if (!hasActiveProcessing.value && processingPollTimer) {
-        clearInterval(processingPollTimer)
-        processingPollTimer = null
-    }
-}
-
-watch(hasActiveProcessing, () => syncProcessingPoll())
-
 // Fetch album (initial load)
 const fetchAlbum = async (silent = false) => {
     try {
+        const browsingState = JSON.stringify([filters.value, sortBy.value, sortOrder.value, page.value])
         if (!silent) {
             loading.value = page.value === 1
             loadingPhotos.value = page.value > 1
@@ -2602,7 +2474,7 @@ const fetchAlbum = async (silent = false) => {
 
         // Build query params with filters and sorting
         const params = new URLSearchParams({
-            page: page.value.toString(),
+            page: silent ? '1' : page.value.toString(),
             limit: limit.value.toString(),
             sort: sortBy.value,
             order: sortOrder.value
@@ -2611,16 +2483,37 @@ const fetchAlbum = async (silent = false) => {
         if (filters.value.camera) params.append('camera', filters.value.camera)
         if (filters.value.lens) params.append('lens', filters.value.lens)
         if (filters.value.photographer) params.append('photographer', filters.value.photographer)
+        if (silent && !hasMore.value && photos.value.length > limit.value) params.append('all', 'true')
 
         const response = await $fetch<{ success: boolean; data: Album }>(`/api/v1/album/${albumId}?${params.toString()}`)
+        let refreshedPhotos = response.data.photos || []
+        let pagination = response.data.pagination
+        if (silent && !params.has('all')) {
+            // Refresh the loaded window, not just the last page; do not reset browsing position.
+            for (let currentPage = 2; currentPage <= page.value && pagination?.hasMore; currentPage++) {
+                params.set('page', currentPage.toString())
+                const next = await $fetch<{ success: boolean; data: Album }>(`/api/v1/album/${albumId}?${params.toString()}`)
+                refreshedPhotos = [...refreshedPhotos, ...next.data.photos]
+                pagination = next.data.pagination
+            }
+        }
+        if (silent && (!_mounted || browsingState !== JSON.stringify([filters.value, sortBy.value, sortOrder.value, page.value]))) return
         album.value = response.data
 
         if (response.data.photos) {
-            photos.value = response.data.photos
+            if (silent) {
+                const currentPhoto = selectedPhotoIndex.value === null ? null : photos.value[selectedPhotoIndex.value]
+                // A new photo can push the currently viewed photo just beyond the loaded window.
+                if (currentPhoto && !refreshedPhotos.some(photo => photo.id === currentPhoto.id)) refreshedPhotos.push(currentPhoto)
+                photos.value = refreshedPhotos
+                if (currentPhoto) selectedPhotoIndex.value = photos.value.findIndex(photo => photo.id === currentPhoto.id)
+            } else {
+                photos.value = response.data.photos
+            }
         }
 
-        if (response.data.pagination) {
-            hasMore.value = response.data.pagination.hasMore
+        if (pagination) {
+            hasMore.value = pagination.hasMore
         }
 
         if (response.data.filtersData) {
@@ -2630,7 +2523,7 @@ const fetchAlbum = async (silent = false) => {
         }
 
         // Populate edit form
-        if (album.value) {
+        if (album.value && !silent) {
             let parsedCustomTheme = { bgStart: '#2d2d2d', bgEnd: '#141414', btnStart: '#d4d4d4', btnEnd: '#a3a3a3' }
             if (album.value.customTheme) {
                 try { parsedCustomTheme = JSON.parse(album.value.customTheme) } catch { /* use defaults */ }
@@ -2656,11 +2549,14 @@ const fetchAlbum = async (silent = false) => {
         }
         error.value = err.data?.statusMessage || 'Failed to load album'
     } finally {
-        loading.value = false
-        loadingPhotos.value = false
-        syncProcessingPoll()
+        if (!silent) {
+            loading.value = false
+            loadingPhotos.value = false
+        }
     }
 }
+
+watch(() => completedVersions.value[albumId], () => { if (_mounted) void fetchAlbum(true) })
 
 // Copy album link
 const copyAlbumLink = async () => {
@@ -2702,7 +2598,8 @@ const loadMorePhotos = async () => {
         })
 
         if (response.data.photos && response.data.photos.length > 0) {
-            photos.value = [...photos.value, ...response.data.photos]
+            const existing = new Set(photos.value.map(photo => photo.id))
+            photos.value = [...photos.value, ...response.data.photos.filter((photo: Photo) => !existing.has(photo.id))]
             page.value = nextPage
         }
 
@@ -3691,222 +3588,12 @@ const triggerFileInput = () => {
 }
 
 
-// Helper to safely parse JSON
-const tryParseJSON = (json: string) => {
-    try {
-        return JSON.parse(json)
-    } catch (e) {
-        return null
-    }
-}
-
-// Queue Processing Logic
-const maxConcurrency = ref(3)
-const isHashing = ref(false)
-const activeUploads = ref(0)
-
-const processNextStep = async () => {
-    // 1. Check if we need to hash/check any files (Sequential: One at a time)
-    if (!isHashing.value) {
-        const itemHashing = uploadQueue.value.find(item => item.status === 'hashing')
-
-        if (itemHashing) {
-            isHashing.value = true
-            try {
-                // Calculate hash
-                const hash = await calculateSHA256(itemHashing.file)
-
-                // Check duplicate
-                // We send array of 1 to reuse the existing endpoint
-                const { duplicates } = await $fetch<{ success: boolean, duplicates: string[] }>(`/api/v1/album/${albumId}/check-duplicates`, {
-                    method: 'POST',
-                    body: { hashes: [hash] }
-                })
-
-                if (duplicates.includes(hash)) {
-                    itemHashing.status = 'skipped'
-                    itemHashing.progress = 100
-                } else {
-                    itemHashing.status = 'pending'
-                }
-            } catch (err: any) {
-                console.error('Hash/Check failed:', err)
-                itemHashing.status = 'failed'
-                itemHashing.error = err.message || 'Verification failed'
-            } finally {
-                isHashing.value = false
-                // Trigger next step immediately after hashing one
-                processNextStep()
-            }
-        }
-    }
-
-    // 2. Check if we can start more uploads (Concurrent: Up to maxConcurrency)
-    // Filter for actual active uploads to be safe (though activeUploads ref should track it)
-    const currentActive = uploadQueue.value.filter(i => i.status === 'uploading').length
-    // Sync ref just in case
-    activeUploads.value = currentActive
-
-    if (currentActive < maxConcurrency.value) {
-        const nextItem = uploadQueue.value.find(item => item.status === 'pending')
-
-        if (nextItem) {
-            // Start upload (async fire and forget)
-            uploadFile(nextItem)
-            // Try to start another if we still have capacity
-            processNextStep()
-        }
-    }
-}
-
-const uploadFile = async (item: UploadItem) => {
-    item.status = 'uploading'
-    item.progress = 0
-
-    try {
-        const authToken = getAuthToken()
-        const hash = await calculateSHA256(item.file)
-
-        // 1. Initiate resumable upload
-        const initRes = await $fetch<{ success: boolean; uploadId?: string; nextOffset?: number; duplicate?: boolean }>(
-            `/api/v1/album/${albumId}/upload/resumable/initiate`,
-            {
-                method: 'POST',
-                body: {
-                    filename: item.file.name,
-                    fileSize: item.file.size,
-                    fileHash: hash,
-                    mimeType: item.file.type || 'application/octet-stream',
-                },
-                headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
-            }
-        )
-
-        if (initRes.duplicate) {
-            item.status = 'skipped'
-            item.progress = 100
-            
-            // Check if all done to refresh album
-            if (uploadQueue.value.every(i => ['completed', 'skipped', 'failed'].includes(i.status))) {
-                fetchAlbum()
-            }
-            return
-        }
-
-        const uploadId = initRes.uploadId
-        let offset = initRes.nextOffset ?? 0
-        const CHUNK_SIZE = 2 * 1024 * 1024 // 2 MB chunks
-
-        // 2. Upload chunks one by one
-        while (offset < item.file.size) {
-            const chunk = item.file.slice(offset, offset + CHUNK_SIZE)
-            const currentOffset = offset
-
-            await new Promise<void>((resolvePromise, rejectPromise) => {
-                const xhr = new XMLHttpRequest()
-
-                xhr.upload.onprogress = (e) => {
-                    if (e.lengthComputable) {
-                        const chunkUploaded = e.loaded
-                        const totalUploaded = currentOffset + chunkUploaded
-                        item.progress = Math.round((totalUploaded * 100) / item.file.size)
-                    }
-                }
-
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        const res = tryParseJSON(xhr.responseText)
-                        if (res && res.nextOffset !== undefined) {
-                            offset = res.nextOffset
-                        } else {
-                            offset += chunk.size
-                        }
-                        resolvePromise()
-                    } else {
-                        rejectPromise({
-                            status: xhr.status,
-                            statusText: xhr.statusText,
-                            data: tryParseJSON(xhr.responseText),
-                        })
-                    }
-                }
-
-                xhr.onerror = () => rejectPromise({ status: 0, statusText: 'Network Error' })
-
-                xhr.open('POST', `/api/v1/album/${albumId}/upload/resumable/chunk?uploadId=${uploadId}&offset=${currentOffset}`)
-                xhr.setRequestHeader('Content-Type', 'application/octet-stream')
-                if (authToken) {
-                    xhr.setRequestHeader('Authorization', `Bearer ${authToken}`)
-                }
-                xhr.send(chunk)
-            })
-        }
-
-        item.status = 'completed'
-        item.progress = 100
-
-        // Check if all done to refresh album
-        if (uploadQueue.value.every(i => ['completed', 'skipped', 'failed'].includes(i.status))) {
-            fetchAlbum()
-        }
-
-    } catch (err: any) {
-        if (err.status === 409) {
-            item.status = 'skipped'
-            item.progress = 100
-            // Check if all done to refresh album
-            if (uploadQueue.value.every(i => ['completed', 'skipped', 'failed'].includes(i.status))) {
-                fetchAlbum()
-            }
-        } else {
-            console.error('Upload failed:', err)
-            item.status = 'failed'
-            item.error = err.data?.statusMessage || err.statusText || 'Upload failed'
-            item.progress = 0
-        }
-    } finally {
-        processNextStep()
-    }
-}
-
-// Entry point for processing
-const processQueue = () => {
-    processNextStep()
-}
-
 const queueSelectedFiles = (files: File[]) => {
     if (files.length === 0) return
-
-    showUploadModal.value = true
-
-    let rejectedCount = 0
-    let acceptedCount = 0
-
-    for (const file of files) {
-        if (!isAcceptedImageFile(file)) {
-            rejectedCount++
-            uploadQueue.value.push({
-                id: Math.random().toString(36).substring(7),
-                file,
-                status: 'failed',
-                error: 'Only image files can be uploaded. Videos are not supported.',
-                progress: 100,
-            })
-            continue
-        }
-
-        acceptedCount++
-        uploadQueue.value.push({
-            id: Math.random().toString(36).substring(7),
-            file,
-            status: 'hashing',
-        })
-    }
-
+    const rejectedCount = addFiles(albumId, album.value?.name || 'Album', files)
     if (rejectedCount > 0) {
         toast('Only image files can be uploaded. Videos are not supported.', 'error')
     }
-    if (acceptedCount > 0) processQueue()
 }
 
 // Handle file selection
@@ -3930,24 +3617,6 @@ const handleDrop = async (event: DragEvent) => {
     if (!files || files.length === 0) return
 
     queueSelectedFiles(Array.from(files))
-}
-
-// Retry Logic
-const retryFailed = () => {
-    uploadQueue.value.forEach(item => {
-        if (item.status === 'failed') {
-            item.status = 'pending'
-            item.error = undefined
-        }
-    })
-    processQueue()
-}
-
-const clearCompleted = () => {
-    uploadQueue.value = uploadQueue.value.filter(item => item.status !== 'completed' && item.status !== 'skipped')
-    if (uploadQueue.value.length === 0) {
-        showUploadModal.value = false
-    }
 }
 
 // Logout

@@ -1,6 +1,7 @@
 import { eq, and, asc, desc, gte, lte, count, sql } from 'drizzle-orm'
 import { albums, photos } from '../../../../db/schema'
 import { requireApiToken } from '../../../../utils/api-token'
+import { photoIsReady } from '../../../../utils/photo-visibility'
 
 const parseUnix = (value: unknown): bigint | null => {
     if (typeof value !== 'string' || value.trim() === '') return null
@@ -44,6 +45,7 @@ export default defineEventHandler(async (event) => {
 
     const conditions = [
         eq(photos.albumId, albumId),
+        photoIsReady(),
         album.coverPhotoId ? sql`${photos.id} != ${album.coverPhotoId}::uuid` : undefined,
         fromDateTaken ? gte(photos.dateTaken, fromDateTaken) : undefined,
         toDateTaken ? lte(photos.dateTaken, toDateTaken) : undefined,

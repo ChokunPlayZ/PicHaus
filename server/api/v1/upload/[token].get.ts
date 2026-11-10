@@ -1,6 +1,7 @@
 import { eq, and, sql, count, inArray, desc, arrayOverlaps } from 'drizzle-orm'
 import { shareLinks, shareGroups, albumCollaborators, albums, photos, users, albumToShareGroups } from '../../../db/schema'
 import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
+import { photoIsReady } from '../../../utils/photo-visibility'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -91,7 +92,7 @@ export default defineEventHandler(async (event) => {
 
         const countResult = await db.select({ photoCount: sql<number>`COUNT(*)` })
             .from(photos)
-            .where(eq(photos.albumId, shareLink.album.id))
+            .where(and(eq(photos.albumId, shareLink.album.id), photoIsReady()))
 
         const photoCount = countResult[0]?.photoCount ?? 0
 
@@ -149,17 +150,17 @@ async function resolveGroupAlbums(shareGroupId: string, group: { ownerId: string
     const [countRows, coverRows, fallbackRows] = await Promise.all([
         db.select({ albumId: photos.albumId, photoCount: count() })
             .from(photos)
-            .where(inArray(photos.albumId, albumIds))
+            .where(and(inArray(photos.albumId, albumIds), photoIsReady()))
             .groupBy(photos.albumId),
         coverIds.length > 0
             ? db.select({ id: photos.id, blurhash: photos.blurhash })
                 .from(photos)
-                .where(inArray(photos.id, coverIds))
+                .where(and(inArray(photos.id, coverIds), photoIsReady()))
             : Promise.resolve([]),
         noCoverIds.length > 0
             ? db.selectDistinctOn([photos.albumId], { albumId: photos.albumId, id: photos.id, blurhash: photos.blurhash })
                 .from(photos)
-                .where(inArray(photos.albumId, noCoverIds))
+                .where(and(inArray(photos.albumId, noCoverIds), photoIsReady()))
                 .orderBy(
                     photos.albumId,
                     sql`CASE WHEN ${photos.width} > ${photos.height} THEN 0 WHEN ${photos.width} = ${photos.height} THEN 1 ELSE 2 END`,

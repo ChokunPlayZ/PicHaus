@@ -2,6 +2,7 @@ import { defineEventHandler, getQuery } from 'h3'
 import { eq, and, desc, sql, count, isNotNull, notInArray } from 'drizzle-orm'
 import { photos, users, albums } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
+import { photoIsReady } from '../../../utils/photo-visibility'
 
 // Max plausible Unix timestamp in seconds (year 9999)
 const MAX_UNIX_SECONDS = 253402300000n
@@ -12,7 +13,7 @@ export default defineEventHandler(async (event) => {
 
     const mode = (query.mode as string) || 'months'
 
-    const userFilter = eq(photos.uploaderId, user.id)
+    const userFilter = and(eq(photos.uploaderId, user.id), photoIsReady())
 
     // Fetch cover photo IDs to exclude from all timeline views
     const coverAlbumRows = await db.select({ coverPhotoId: albums.coverPhotoId })
@@ -65,6 +66,7 @@ export default defineEventHandler(async (event) => {
                 ) AS earliest_ts
             FROM photos
             WHERE photos."uploaderId" = ${user.id}
+            AND ${photoIsReady()}
             ${coverExclusionSQL}
             GROUP BY month_key, month_label
             ORDER BY month_key DESC

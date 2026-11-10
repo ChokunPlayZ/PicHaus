@@ -26,6 +26,7 @@
     </template>
 
     <NuxtPage />
+    <UploadProgressPanel />
     <CommandPalette />
     <AppConfirmDialog />
     <AppToast />

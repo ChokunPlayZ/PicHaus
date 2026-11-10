@@ -14,11 +14,14 @@ export interface TestNode {
     parent: TestNode | null
     children: TestNode[]
     focus: () => void
+    addEventListener: (type: string, listener: (event: any) => void) => void
+    removeEventListener: (type: string, listener: (event: any) => void) => void
     getBoundingClientRect: () => { left: number; top: number; width: number; height: number }
 }
 function node(tag: string, text = ''): TestNode {
     return {
         tag, text, props: {}, parent: null, children: [], focus: () => {},
+        addEventListener() {}, removeEventListener() {},
         getBoundingClientRect: () => tag === 'img'
             ? { left: 100, top: 150, width: 400, height: 300 }
             : { left: 0, top: 0, width: 600, height: 600 },

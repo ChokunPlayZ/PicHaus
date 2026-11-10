@@ -2,6 +2,7 @@ import { defineEventHandler, getQuery, createError } from 'h3'
 import { eq, and, asc, desc, gte, lte, ilike, sql, count, isNotNull, notInArray } from 'drizzle-orm'
 import { photos, users, albums } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
+import { photoIsReady } from '../../../utils/photo-visibility'
 
 const SORTABLE_FIELDS = ['dateTaken', 'createdAt', 'updatedAt', 'iso'] as const
 type SortableField = typeof SORTABLE_FIELDS[number]
@@ -27,6 +28,7 @@ export default defineEventHandler(async (event) => {
 
     const conditions = [
         eq(photos.uploaderId, user.id),
+        photoIsReady(),
         camera ? ilike(photos.cameraModel, `%${camera}%`) : undefined,
         lens ? ilike(photos.lens, `%${lens}%`) : undefined,
         iso ? eq(photos.iso, iso) : undefined,

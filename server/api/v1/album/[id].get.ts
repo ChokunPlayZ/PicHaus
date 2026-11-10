@@ -2,6 +2,7 @@ import { eq, and, or, desc, asc, ilike, sql, inArray } from 'drizzle-orm'
 import { albums, photos, users, albumCollaborators, shareLinks, shareGroups, albumToShareGroups } from '../../../db/schema'
 import { getAuthUserId, getUnixTimestamp } from '../../../utils/auth'
 import { hasCommunityAlbumAccess } from '../../../utils/albums'
+import { photoIsReady } from '../../../utils/photo-visibility'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -32,7 +33,7 @@ export default defineEventHandler(async (event) => {
             with: {
                 owner: { columns: { id: true, name: true, email: true, instagram: true, avatarPath: true } },
                 collaborators: { with: { user: { columns: { id: true, name: true, email: true, instagram: true, avatarPath: true } } } },
-                coverPhoto: { columns: { id: true, blurhash: true } },
+                coverPhoto: { columns: { id: true, blurhash: true, processingStatus: true } },
             },
         })
 
@@ -101,6 +102,7 @@ export default defineEventHandler(async (event) => {
 
         const photoWhere = and(
             eq(photos.albumId, id),
+            photoIsReady(),
             album.coverPhotoId ? sql`${photos.id} != ${album.coverPhotoId}::uuid` : undefined,
             camera ? ilike(photos.cameraModel, `%${camera}%`) : undefined,
             lens ? ilike(photos.lens, `%${lens}%`) : undefined,
@@ -146,15 +148,15 @@ export default defineEventHandler(async (event) => {
             })
                 .from(photos)
                 .innerJoin(users, eq(photos.uploaderId, users.id))
-                .where(eq(photos.albumId, id))
+                .where(and(eq(photos.albumId, id), photoIsReady()))
                 .groupBy(users.id),
             db.select({ camera: photos.cameraModel })
                 .from(photos)
-                .where(and(eq(photos.albumId, id), sql`${photos.cameraModel} IS NOT NULL AND ${photos.cameraModel} != ''`))
+                .where(and(eq(photos.albumId, id), photoIsReady(), sql`${photos.cameraModel} IS NOT NULL AND ${photos.cameraModel} != ''`))
                 .groupBy(photos.cameraModel),
             db.select({ lens: photos.lens })
                 .from(photos)
-                .where(and(eq(photos.albumId, id), sql`${photos.lens} IS NOT NULL AND ${photos.lens} != ''`))
+                .where(and(eq(photos.albumId, id), photoIsReady(), sql`${photos.lens} IS NOT NULL AND ${photos.lens} != ''`))
                 .groupBy(photos.lens),
         ])
 
@@ -202,12 +204,13 @@ export default defineEventHandler(async (event) => {
                 },
             }))
 
-        let coverPhoto: { id: string; blurhash: string } | null = album.coverPhoto ?? null
+        let coverPhoto: { id: string; blurhash: string } | null = album.coverPhoto &&
+            (album.coverPhoto.processingStatus == null || album.coverPhoto.processingStatus === 'completed') ? album.coverPhoto : null
         if (!coverPhoto) {
             const [fallback] = await db.execute(sql`
                 SELECT id, blurhash
                 FROM photos
-                WHERE "albumId" = ${id}::uuid
+                WHERE "albumId" = ${id}::uuid AND ${photoIsReady()}
                 ORDER BY CASE WHEN width >= height THEN 1 ELSE 0 END DESC, "createdAt" DESC
                 LIMIT 1
             `) as any[]

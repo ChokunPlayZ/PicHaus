@@ -1,6 +1,7 @@
 import { eq, or, exists, and, desc, inArray, sql } from 'drizzle-orm'
 import { albums, users, albumCollaborators, photos } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
+import { photoIsReady } from '../../../utils/photo-visibility'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -34,7 +35,7 @@ export default defineEventHandler(async (event) => {
             ownerName: users.name,
             ownerInstagram: users.instagram,
             ownerAvatarPath: users.avatarPath,
-            photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = ${albums.id})`,
+            photoCount: sql<number>`(SELECT COUNT(*) FROM photos WHERE photos."albumId" = ${albums.id} AND ${photoIsReady()})`,
             collaboratorCount: sql<number>`(
                 SELECT COUNT(*) FROM album_collaborators 
                 WHERE album_collaborators."albumId" = ${albums.id}
@@ -44,8 +45,8 @@ export default defineEventHandler(async (event) => {
                     AND photos."uploaderId" = album_collaborators."userId"
                 )
             )`,
-            latestPhotoId: sql<string | null>`(SELECT id FROM photos WHERE photos."albumId" = ${albums.id} ORDER BY "createdAt" DESC LIMIT 1)`,
-            latestPhotoBlurhash: sql<string | null>`(SELECT blurhash FROM photos WHERE photos."albumId" = ${albums.id} ORDER BY "createdAt" DESC LIMIT 1)`,
+            latestPhotoId: sql<string | null>`(SELECT id FROM photos WHERE photos."albumId" = ${albums.id} AND ${photoIsReady()} ORDER BY "createdAt" DESC LIMIT 1)`,
+            latestPhotoBlurhash: sql<string | null>`(SELECT blurhash FROM photos WHERE photos."albumId" = ${albums.id} AND ${photoIsReady()} ORDER BY "createdAt" DESC LIMIT 1)`,
         })
             .from(albums)
             .leftJoin(users, eq(albums.ownerId, users.id))
@@ -55,7 +56,7 @@ export default defineEventHandler(async (event) => {
         // Batch-fetch cover photos by ID
         const coverPhotoIds = [...new Set(rows.map(r => r.coverPhotoId).filter(Boolean))] as string[]
         const coverPhotoRows = coverPhotoIds.length > 0
-            ? await db.select({ id: photos.id, blurhash: photos.blurhash }).from(photos).where(inArray(photos.id, coverPhotoIds))
+            ? await db.select({ id: photos.id, blurhash: photos.blurhash }).from(photos).where(and(inArray(photos.id, coverPhotoIds), photoIsReady()))
             : []
         const coverPhotoMap = new Map(coverPhotoRows.map(p => [p.id, p]))
 

@@ -1,5 +1,6 @@
 import { eq, and, asc, desc, sql } from 'drizzle-orm'
 import { albums, photos, users } from '../../../../db/schema'
+import { photoIsReady } from '../../../../utils/photo-visibility'
 
 export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
@@ -38,6 +39,7 @@ export default defineEventHandler(async (event) => {
 
     const photoWhere = and(
         eq(photos.albumId, id),
+        photoIsReady(),
         photographer ? eq(photos.uploaderId, photographer) : undefined
     )
 
@@ -80,7 +82,7 @@ export default defineEventHandler(async (event) => {
         })
             .from(photos)
             .innerJoin(users, eq(photos.uploaderId, users.id))
-            .where(eq(photos.albumId, id)),
+            .where(and(eq(photos.albumId, id), photoIsReady())),
     ])
 
     const total = Number(countResult[0]?.total ?? 0)

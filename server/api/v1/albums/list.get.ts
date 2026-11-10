@@ -1,6 +1,7 @@
-import { eq, desc, count, inArray, sql } from 'drizzle-orm'
+import { and, eq, desc, count, inArray, sql } from 'drizzle-orm'
 import { albums, photos } from '../../../db/schema'
 import { requireAuth } from '../../../utils/auth'
+import { photoIsReady } from '../../../utils/photo-visibility'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
@@ -23,12 +24,12 @@ export default defineEventHandler(async (event) => {
     const [countRows, coverPhotoRows, fallbackRows] = await Promise.all([
         db.select({ albumId: photos.albumId, photoCount: count() })
             .from(photos)
-            .where(inArray(photos.albumId, albumIds))
+            .where(and(inArray(photos.albumId, albumIds), photoIsReady()))
             .groupBy(photos.albumId),
         coverIds.length > 0
             ? db.select({ id: photos.id, blurhash: photos.blurhash })
                 .from(photos)
-                .where(inArray(photos.id, coverIds))
+                .where(and(inArray(photos.id, coverIds), photoIsReady()))
             : Promise.resolve([]),
         noCoverIds.length > 0
             ? db.selectDistinctOn([photos.albumId], {
@@ -37,7 +38,7 @@ export default defineEventHandler(async (event) => {
                 blurhash: photos.blurhash,
             })
                 .from(photos)
-                .where(inArray(photos.albumId, noCoverIds))
+                .where(and(inArray(photos.albumId, noCoverIds), photoIsReady()))
                 .orderBy(
                     photos.albumId,
                     sql`CASE WHEN ${photos.width} > ${photos.height} THEN 0 WHEN ${photos.width} = ${photos.height} THEN 1 ELSE 2 END`,

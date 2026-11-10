@@ -3,6 +3,7 @@ import { users, shareLinks, shareGroups, albumCollaborators, albums, photos, alb
 import { getUnixTimestamp, getAuthUserId, createAccessToken } from '../../../utils/auth'
 import argon2 from 'argon2'
 import { enforceRateLimit } from '../../../utils/rate-limit'
+import { photoIsReady } from '../../../utils/photo-visibility'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -83,14 +84,14 @@ export default defineEventHandler(async (event) => {
 
             const [countRows, coverRows, fallbackRows] = await Promise.all([
                 albumIds.length > 0
-                    ? db.select({ albumId: photos.albumId, photoCount: count() }).from(photos).where(inArray(photos.albumId, albumIds)).groupBy(photos.albumId)
+                    ? db.select({ albumId: photos.albumId, photoCount: count() }).from(photos).where(and(inArray(photos.albumId, albumIds), photoIsReady())).groupBy(photos.albumId)
                     : Promise.resolve([]),
                 coverIds.length > 0
-                    ? db.select({ id: photos.id, blurhash: photos.blurhash }).from(photos).where(inArray(photos.id, coverIds))
+                    ? db.select({ id: photos.id, blurhash: photos.blurhash }).from(photos).where(and(inArray(photos.id, coverIds), photoIsReady()))
                     : Promise.resolve([]),
                 noCoverIds.length > 0
                     ? db.selectDistinctOn([photos.albumId], { albumId: photos.albumId, id: photos.id, blurhash: photos.blurhash })
-                        .from(photos).where(inArray(photos.albumId, noCoverIds))
+                        .from(photos).where(and(inArray(photos.albumId, noCoverIds), photoIsReady()))
                         .orderBy(photos.albumId, sql`CASE WHEN ${photos.width} > ${photos.height} THEN 0 WHEN ${photos.width} = ${photos.height} THEN 1 ELSE 2 END`, desc(photos.createdAt))
                     : Promise.resolve([]),
             ])

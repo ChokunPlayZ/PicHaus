@@ -1,5 +1,6 @@
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { albums, photos } from '../../../db/schema'
+import { photoIsReady } from '../../../utils/photo-visibility'
 
 export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
     const countResult = await db.select({ photoCount: sql<number>`COUNT(*)` })
         .from(photos)
-        .where(eq(photos.albumId, id))
+        .where(and(eq(photos.albumId, id), photoIsReady()))
     const photoCount = Number(countResult[0]?.photoCount ?? 0)
 
     return {
